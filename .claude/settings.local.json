@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npm -v)",
+      "Bash(git --version)",
+      "Bash(npx --yes create-next-app@latest . --typescript --tailwind --app --eslint --src-dir --import-alias \"@/*\" --use-npm --skip-install=false)",
+      "Read(//c/Users/super/OneDrive/Рабочий стол/Claude/**)",
+      "Bash(mv FirstTry firsttryclaude)",
+      "Bash(npx --yes create-next-app@latest firsttryclaude --typescript --tailwind --app --eslint --src-dir --import-alias \"@/*\" --use-npm)",
+      "Bash(git config *)",
+      "Bash(npm run *)"
+    ]
+  }
+}
