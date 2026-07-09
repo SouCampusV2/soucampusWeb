@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import type { Metadata } from "next";
 import { projects } from "@/lib/projects";
 
@@ -24,7 +25,15 @@ export default function PortfolioPage() {
             href={`/portfolio/${project.slug}`}
             className="group block overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800"
           >
-            <div className="aspect-[4/3] bg-gradient-to-br from-emerald-500/20 via-zinc-200 to-zinc-100 transition-transform duration-300 group-hover:scale-105 dark:from-emerald-500/10 dark:via-zinc-800 dark:to-zinc-900" />
+            <div className="relative aspect-[4/3] overflow-hidden">
+              <Image
+                src={project.image}
+                alt={project.title}
+                fill
+                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
+                className="object-cover transition-transform duration-300 group-hover:scale-105"
+              />
+            </div>
             <div className="p-5">
               <span className="text-xs font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
                 {project.tag}

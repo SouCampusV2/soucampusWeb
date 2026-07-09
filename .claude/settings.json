@@ -2,7 +2,17 @@
   "permissions": {
     "allow": [
       "Bash(git add *)",
-      "Bash(git commit -m ' *)"
+      "Bash(git commit -m ' *)",
+      "Read(//c/Users/super/AppData/Local/Temp/**)",
+      "Read(//c/Users/super/AppData/Local/Temp/claude/**)",
+      "Bash(grep -iE \"\\\\.\\(png|jpg|jpeg|webp\\)$\")",
+      "Bash(find /c/Users/super -iname \"*.png\" -mmin -30 2>/dev/null | grep -v node_modules | head -30)",
+      "Read(//c/Users/super/**)",
+      "Bash(mv \"bluespawn_renderv2_main.webp\" \"bluespawn.webp\")",
+      "Bash(mv \"FcJDRgVWIAMmj9A2.jpeg\" \"pirate-rpg.jpeg\")",
+      "Bash(mv \"HeavenKeyStone.png\" \"sky-cathedral.png\")",
+      "Bash(mv \"TrialSenior2.png\" \"dragon-shrine.png\")",
+      "WebFetch(domain:honeyfrost.net)"
     ]
   }
 }

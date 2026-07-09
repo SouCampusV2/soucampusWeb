@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { projects, getProject } from "@/lib/projects";
@@ -44,11 +45,23 @@ export default async function ProjectPage({
         {project.title}
       </h1>
 
-      <dl className="mt-6 flex gap-8 border-y border-zinc-200 py-4 text-sm dark:border-zinc-800">
+      <dl className="mt-6 flex flex-wrap gap-8 border-y border-zinc-200 py-4 text-sm dark:border-zinc-800">
         <div>
           <dt className="text-zinc-500 dark:text-zinc-400">Срок выполнения</dt>
           <dd className="font-semibold text-zinc-950 dark:text-white">
             {project.deadline}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-zinc-500 dark:text-zinc-400">Размер</dt>
+          <dd className="font-semibold text-zinc-950 dark:text-white">
+            {project.size}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-zinc-500 dark:text-zinc-400">Стоимость</dt>
+          <dd className="font-semibold text-zinc-950 dark:text-white">
+            {project.price}
           </dd>
         </div>
       </dl>
@@ -57,13 +70,15 @@ export default async function ProjectPage({
         {project.description}
       </p>
 
-      <div className="mt-10 grid grid-cols-2 gap-4 sm:grid-cols-3">
-        {Array.from({ length: project.gallery }).map((_, i) => (
-          <div
-            key={i}
-            className="aspect-square rounded-xl bg-gradient-to-br from-emerald-500/20 via-zinc-200 to-zinc-100 dark:from-emerald-500/10 dark:via-zinc-800 dark:to-zinc-900"
-          />
-        ))}
+      <div className="relative mt-10 aspect-video overflow-hidden rounded-2xl">
+        <Image
+          src={project.image}
+          alt={project.title}
+          fill
+          sizes="(min-width: 1024px) 896px, 100vw"
+          className="object-cover"
+          priority
+        />
       </div>
     </main>
   );
