@@ -12,7 +12,29 @@
       "Bash(mv \"FcJDRgVWIAMmj9A2.jpeg\" \"pirate-rpg.jpeg\")",
       "Bash(mv \"HeavenKeyStone.png\" \"sky-cathedral.png\")",
       "Bash(mv \"TrialSenior2.png\" \"dragon-shrine.png\")",
-      "WebFetch(domain:honeyfrost.net)"
+      "WebFetch(domain:honeyfrost.net)",
+      "Bash(curl -s -o /dev/null -w \"%{http_code}\" http://localhost:3000)",
+      "Bash(npx tsc *)",
+      "Bash(curl -s -o /dev/null -w \"home: %{http_code}\\\\n\" http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"contact: %{http_code}\\\\n\" http://localhost:3000/contact)",
+      "WebFetch(domain:wise.com)",
+      "WebFetch(domain:www.revolut.com)",
+      "Bash(tail -30 /tmp/dev2.log)",
+      "Read(//tmp/**)",
+      "Bash(curl -s http://localhost:3000/)",
+      "Bash(curl -s -o /dev/null -w \"about: %{http_code}\\\\n\" http://localhost:3000/about)",
+      "Bash(grep -n \"orange-600\\\\|orange-500\\\\|orange-400\\\\|Primary \\(акцент\\)\\\\|Primary \\(\\\\`variant\" CLAUDE.md)",
+      "Bash(curl -s \"http://localhost:3000/_next/image?url=https%3A%2F%2Fwise.com%2Fweb-art%2Fassets%2Fflags%2Feur.svg&w=256&q=75\" -o /dev/null -w \"flag-proxy: %{http_code}\\\\n\")",
+      "Bash(curl -s \"http://localhost:3000/_next/static/chunks/%5Broot-of-the-server%5D__1v49ax_._.css\")",
+      "Bash(sed -n '95,190p' /tmp/out.css)",
+      "Bash(tail -20 /tmp/dev4.log)",
+      "Bash(tasklist)",
+      "Bash(taskkill //F //PID 14768)",
+      "Bash(taskkill //F //PID 680)",
+      "Bash(taskkill //F //PID 18948)",
+      "Bash(taskkill //F //PID 17508)",
+      "Bash(tail -60 /tmp/dev5.log)",
+      "Bash(python3 -)"
     ]
   }
 }

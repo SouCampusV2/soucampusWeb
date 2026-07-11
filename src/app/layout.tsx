@@ -1,22 +1,19 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { PageTransition } from "@/components/PageTransition";
+import { PricingSection } from "@/components/PricingSection";
+import { ContactFooter } from "@/components/ContactFooter";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const jakarta = Plus_Jakarta_Sans({
+  variable: "--font-jakarta",
   subsets: ["latin"],
 });
 
 export const metadata: Metadata = {
   title: "SouCampus builds — Minecraft builds on order",
-  description: "Строю карты в Minecraft на заказ: замки, спавны, города.",
+  description: "Custom Minecraft builds on order: castles, spawns, cities.",
 };
 
 export default function RootLayout({
@@ -25,14 +22,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="en"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${jakarta.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">
         <PageTransition>
           <Navbar />
           {children}
+          <PricingSection />
+          <ContactFooter />
         </PageTransition>
       </body>
     </html>

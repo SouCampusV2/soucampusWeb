@@ -9,13 +9,12 @@ export const metadata: Metadata = {
 
 export default function PortfolioPage() {
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-6 py-24">
-      <h1 className="text-4xl font-bold tracking-tight text-zinc-950 dark:text-white">
+    <main className="mx-auto max-w-6xl flex-1 px-6 py-28">
+      <h1 className="text-4xl font-extrabold tracking-tight text-zinc-950 sm:text-5xl">
         Portfolio
       </h1>
       <p className="mt-3 max-w-xl text-zinc-600 dark:text-zinc-400">
-        Все работы. Нажми на карточку, чтобы посмотреть подробности, сроки и
-        галерею.
+        All the work. Click a card to see details, timeline and gallery.
       </p>
 
       <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -35,10 +34,10 @@ export default function PortfolioPage() {
               />
             </div>
             <div className="p-5">
-              <span className="text-xs font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+              <span className="text-xs font-medium uppercase tracking-wide text-orange-600 dark:text-orange-400">
                 {project.tag}
               </span>
-              <h2 className="mt-1 font-semibold text-zinc-950 dark:text-white">
+              <h2 className="mt-1 text-lg font-semibold text-zinc-950">
                 {project.title}
               </h2>
               <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">

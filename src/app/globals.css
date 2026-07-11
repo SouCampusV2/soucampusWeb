@@ -1,26 +1,257 @@
 @import "tailwindcss";
 
+/* Сайт всегда светлый: делаем `dark:`-классы Tailwind классово-зависимыми
+   (от класса .dark на html), а не от системной темы — и никогда не
+   проставляем этот класс. Так `dark:`-утилиты в разметке просто не
+   срабатывают, без необходимости вычищать их из каждого компонента. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+html {
+  scrollbar-gutter: stable;
+  color-scheme: light;
+}
+
 :root {
-  --background: #ffffff;
+  --background: #fbfbff;
   --foreground: #171717;
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --font-sans: var(--font-jakarta);
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+/* Промежуточные пастельные шаги на каждые 50 (150/250/350/450/550/650/750/850)
+   для orange/lime/blue — недостающие полутона между стоковыми шагами Tailwind
+   (50/100/200/300/400/500/600/700/800/900/950). Каждое значение — усреднение
+   RGB-каналов двух соседних реальных hex Tailwind v4 (не собственная выдумка).
+   Заводить через @theme не получилось (см. CLAUDE.md) — объявлены руками, тут,
+   как обычные bg-/text-/border- классы. БЕЗ модификаторов (hover:, sm: и т.п. —
+   к ним не приделать, это не настоящие сгенерированные Tailwind-утилиты). */
+@layer utilities {
+  .bg-orange-150 {
+    background-color: #ffe2bf;
+  }
+  .text-orange-150 {
+    color: #ffe2bf;
+  }
+  .border-orange-150 {
+    border-color: #ffe2bf;
+  }
+  .bg-orange-250 {
+    background-color: #ffc88b;
+  }
+  .text-orange-250 {
+    color: #ffc88b;
+  }
+  .border-orange-250 {
+    border-color: #ffc88b;
+  }
+  .bg-orange-350 {
+    background-color: #ffa244;
+  }
+  .text-orange-350 {
+    color: #ffa244;
+  }
+  .border-orange-350 {
+    border-color: #ffa244;
+  }
+  .bg-orange-450 {
+    background-color: #ff7d0d;
+  }
+  .text-orange-450 {
+    color: #ff7d0d;
+  }
+  .border-orange-450 {
+    border-color: #ff7d0d;
+  }
+  .bg-orange-550 {
+    background-color: #f76000;
+  }
+  .text-orange-550 {
+    color: #f76000;
+  }
+  .border-orange-550 {
+    border-color: #f76000;
+  }
+  .bg-orange-650 {
+    background-color: #db4700;
+  }
+  .text-orange-650 {
+    color: #db4700;
+  }
+  .border-orange-650 {
+    border-color: #db4700;
+  }
+  .bg-orange-750 {
+    background-color: #b23500;
+  }
+  .text-orange-750 {
+    color: #b23500;
+  }
+  .border-orange-750 {
+    border-color: #b23500;
+  }
+  .bg-orange-850 {
+    background-color: #8f2c06;
+  }
+  .text-orange-850 {
+    color: #8f2c06;
+  }
+  .border-orange-850 {
+    border-color: #8f2c06;
+  }
+
+  .bg-lime-150 {
+    background-color: #e2fbb2;
+  }
+  .text-lime-150 {
+    color: #e2fbb2;
+  }
+  .border-lime-150 {
+    border-color: #e2fbb2;
+  }
+  .bg-lime-250 {
+    background-color: #caf775;
+  }
+  .text-lime-250 {
+    color: #caf775;
+  }
+  .border-lime-250 {
+    border-color: #caf775;
+  }
+  .bg-lime-350 {
+    background-color: #aced29;
+  }
+  .text-lime-350 {
+    color: #aced29;
+  }
+  .border-lime-350 {
+    border-color: #aced29;
+  }
+  .bg-lime-450 {
+    background-color: #8fd900;
+  }
+  .text-lime-450 {
+    color: #8fd900;
+  }
+  .border-lime-450 {
+    border-color: #8fd900;
+  }
+  .bg-lime-550 {
+    background-color: #71b900;
+  }
+  .text-lime-550 {
+    color: #71b900;
+  }
+  .border-lime-550 {
+    border-color: #71b900;
+  }
+  .bg-lime-650 {
+    background-color: #579100;
+  }
+  .text-lime-650 {
+    color: #579100;
+  }
+  .border-lime-650 {
+    border-color: #579100;
+  }
+  .bg-lime-750 {
+    background-color: #447000;
+  }
+  .text-lime-750 {
+    color: #447000;
+  }
+  .border-lime-750 {
+    border-color: #447000;
+  }
+  .bg-lime-850 {
+    background-color: #395b07;
+  }
+  .text-lime-850 {
+    color: #395b07;
+  }
+  .border-lime-850 {
+    border-color: #395b07;
+  }
+
+  .bg-blue-150 {
+    background-color: #cde3ff;
+  }
+  .text-blue-150 {
+    color: #cde3ff;
+  }
+  .border-blue-150 {
+    border-color: #cde3ff;
+  }
+  .bg-blue-250 {
+    background-color: #a7d0ff;
+  }
+  .text-blue-250 {
+    color: #a7d0ff;
+  }
+  .border-blue-250 {
+    border-color: #a7d0ff;
+  }
+  .bg-blue-350 {
+    background-color: #72b4ff;
+  }
+  .text-blue-350 {
+    color: #72b4ff;
+  }
+  .border-blue-350 {
+    border-color: #72b4ff;
+  }
+  .bg-blue-450 {
+    background-color: #4291ff;
+  }
+  .text-blue-450 {
+    color: #4291ff;
+  }
+  .border-blue-450 {
+    border-color: #4291ff;
+  }
+  .bg-blue-550 {
+    background-color: #236ffe;
+  }
+  .text-blue-550 {
+    color: #236ffe;
+  }
+  .border-blue-550 {
+    border-color: #236ffe;
+  }
+  .bg-blue-650 {
+    background-color: #1552f1;
+  }
+  .text-blue-650 {
+    color: #1552f1;
+  }
+  .border-blue-650 {
+    border-color: #1552f1;
+  }
+  .bg-blue-750 {
+    background-color: #1742cf;
+  }
+  .text-blue-750 {
+    color: #1742cf;
+  }
+  .border-blue-750 {
+    border-color: #1742cf;
+  }
+  .bg-blue-850 {
+    background-color: #1b3ba3;
+  }
+  .text-blue-850 {
+    color: #1b3ba3;
+  }
+  .border-blue-850 {
+    border-color: #1b3ba3;
+  }
 }

@@ -1,7 +1,16 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  images: {
+    dangerouslyAllowSVG: true,
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "wise.com",
+        pathname: "/web-art/assets/flags/**",
+      },
+    ],
+  },
 };
 
 export default nextConfig;

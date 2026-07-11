@@ -6,14 +6,16 @@ export const metadata: Metadata = {
 
 export default function ShopPage() {
   return (
-    <main className="mx-auto flex max-w-3xl flex-1 flex-col items-center justify-center px-6 py-24 text-center">
-      <h1 className="text-4xl font-bold tracking-tight text-zinc-950 dark:text-white">
-        Магазин скоро откроется
-      </h1>
-      <p className="mt-4 text-zinc-600 dark:text-zinc-400">
-        Здесь появятся цифровые товары — карты и другие Minecraft-проекты на
-        продажу.
-      </p>
+    <main className="mx-auto flex max-w-6xl flex-1 flex-col items-center justify-center px-6 py-28 text-center">
+      <div className="max-w-2xl">
+        <h1 className="text-4xl font-extrabold tracking-tight text-zinc-950 sm:text-5xl">
+          Shop opening soon
+        </h1>
+        <p className="mt-4 text-zinc-600">
+          Digital products will appear here — maps and other Minecraft
+          projects for sale.
+        </p>
+      </div>
     </main>
   );
 }

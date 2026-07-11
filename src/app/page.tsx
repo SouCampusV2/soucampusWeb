@@ -2,8 +2,8 @@ import { Hero } from "@/components/Hero";
 import { Stats } from "@/components/Stats";
 import { RecentProjects } from "@/components/RecentProjects";
 import { ClientReviews } from "@/components/ClientReviews";
+import { CountriesMarquee } from "@/components/CountriesMarquee";
 import { HowItWorks } from "@/components/HowItWorks";
-import { ContactFooter } from "@/components/ContactFooter";
 
 export default function Home() {
   return (
@@ -11,9 +11,9 @@ export default function Home() {
       <Hero />
       <Stats />
       <RecentProjects />
+      <CountriesMarquee />
       <ClientReviews />
       <HowItWorks />
-      <ContactFooter />
     </main>
   );
 }

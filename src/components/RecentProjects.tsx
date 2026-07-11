@@ -9,17 +9,17 @@ export function RecentProjects() {
   const recent = projects.slice(0, 3);
 
   return (
-    <section className="mx-auto max-w-6xl px-6 py-24">
+    <section className="mx-auto max-w-6xl px-6 py-28">
       <motion.h2
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-white"
+        className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl"
       >
-        Последние работы
+        Recent projects
       </motion.h2>
       <p className="mt-2 max-w-xl text-zinc-600 dark:text-zinc-400">
-        Несколько последних проектов. Полный каталог — в разделе Portfolio.
+        A few recent projects. See the full catalog in Portfolio.
       </p>
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -45,10 +45,10 @@ export function RecentProjects() {
                 />
               </div>
               <div className="p-5">
-                <span className="text-xs font-medium uppercase tracking-wide text-emerald-600 dark:text-emerald-400">
+                <span className="text-xs font-medium uppercase tracking-wide text-orange-600 dark:text-orange-400">
                   {project.tag}
                 </span>
-                <h3 className="mt-1 font-semibold text-zinc-950 dark:text-white">
+                <h3 className="mt-1 text-lg font-semibold text-zinc-950">
                   {project.title}
                 </h3>
                 <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
