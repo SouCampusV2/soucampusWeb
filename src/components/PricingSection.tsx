@@ -7,11 +7,13 @@ type Accent = "blue" | "orange" | "lime";
 
 // Тот же оттенок фона (-400) и та же hover-логика (на шаг темнее — -500),
 // что у primary-кнопки, но иконка стрелки белая (не тёмная, как текст
-// кнопки) — так лучше видно на цветном кружке.
+// кнопки) — так лучше видно на цветном кружке. group-hover, не hover —
+// карточка целиком кликабельна, стрелка должна реагировать на наведение
+// в любую точку карточки, не только на сам кружок.
 const ACCENT_ARROW: Record<Accent, string> = {
-  blue: "bg-blue-400 hover:bg-blue-500 text-white",
-  orange: "bg-orange-400 hover:bg-orange-500 text-white",
-  lime: "bg-lime-400 hover:bg-lime-500 text-white",
+  blue: "bg-blue-400 group-hover:bg-blue-500 text-white",
+  orange: "bg-orange-400 group-hover:bg-orange-500 text-white",
+  lime: "bg-lime-400 group-hover:bg-lime-500 text-white",
 };
 
 const PLANS = [
@@ -80,26 +82,28 @@ export function PricingSection() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: i * 0.1 }}
-              className={`flex flex-col justify-between rounded-3xl bg-zinc-100 p-8 ${plan.span}`}
+              className={plan.span}
             >
-              <div>
-                <h3 className="text-lg font-semibold text-zinc-950">
-                  {plan.name}
-                </h3>
-                <p className="mt-1 text-sm font-medium text-zinc-600">
-                  {plan.price}
-                </p>
-                <p className="mt-4 text-sm leading-6 text-zinc-600">
-                  {plan.description}
-                </p>
-              </div>
+              <div className="group flex h-full cursor-pointer flex-col justify-between rounded-3xl bg-zinc-100 p-8 transition-colors hover:bg-[#ececee]">
+                <div>
+                  <h3 className="text-lg font-semibold text-zinc-950">
+                    {plan.name}
+                  </h3>
+                  <p className="mt-1 text-sm font-medium text-zinc-600">
+                    {plan.price}
+                  </p>
+                  <p className="mt-4 text-sm leading-6 text-zinc-600">
+                    {plan.description}
+                  </p>
+                </div>
 
-              <div className="mt-8 flex justify-end">
-                <ArrowCircle
-                  direction="right"
-                  className="h-10 w-10"
-                  colorClassName={ACCENT_ARROW[plan.accent]}
-                />
+                <div className="mt-8 flex justify-end">
+                  <ArrowCircle
+                    direction="right"
+                    className="h-10 w-10"
+                    colorClassName={ACCENT_ARROW[plan.accent]}
+                  />
+                </div>
               </div>
             </motion.div>
           ))}
