@@ -1,36 +1,50 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SouCampus builds
 
-## Getting Started
+Custom Minecraft maps, structures and worlds — built on order.
 
-First, run the development server:
+## The story
+
+I build custom Minecraft maps and structures for clients — spawns, RPG maps, cathedrals, dragon shrines, whatever they can dream up. This repo is that business turning into a real website: a portfolio to show finished work, and eventually a shop for digital builds and subscriptions.
+
+It's also my hands-on way of learning modern web development — going from "I know HTML/CSS and a bit of JS" to actually shipping something real, with an AI pair (Claude Code) helping me learn the syntax and architecture along the way, one feature at a time instead of all at once.
+
+## Stack
+
+**In use right now:**
+
+- [Next.js](https://nextjs.org) (App Router) + TypeScript
+- [Tailwind CSS v4](https://tailwindcss.com)
+- [Motion](https://motion.dev) (`motion/react`) for animation
+- Deployed on [Vercel](https://vercel.com)
+
+**Planned, not wired up yet:**
+
+- [Supabase](https://supabase.com) — database + auth, for a mini content admin and later the shop
+- [Stripe](https://stripe.com) — payments for the digital build shop
+- CI/CD via GitHub Actions
+- Docker, once there's an actual reason for it
+
+## Getting started
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Project structure
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+- `src/app/` — pages (Next.js App Router): home, `/portfolio`, `/portfolio/[slug]`, `/about`, `/contact`, `/shop`
+- `src/components/` — landing sections and shared UI (`Button`, `ArrowCircle`, `Navbar`, `PageTransition`, ...)
+- `src/lib/projects.ts` — portfolio project data
+- `CLAUDE.md` — project plan and learning roadmap
+- `DESIGN.md` — the design system: colors, typography, layout rules, reusable components
 
-## Learn More
+## Roadmap
 
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. ~~Working portfolio site~~ — done
+2. Real content everywhere (currently placeholders: Discord invite, About me, reviews, stats, pricing)
+3. Mini content admin backed by Supabase
+4. Shop: catalog, cart, checkout, Stripe
+5. Docker, CI/CD, tests, analytics
