@@ -14,7 +14,7 @@ const displayFont = Unbounded({
 
 export function Hero() {
   return (
-    <section className="relative flex flex-col items-center px-6 pb-24 pt-28 text-center">
+    <section className="relative flex flex-col items-center px-6 pb-24 pt-20 text-center">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 -top-32 -z-10 h-[42rem] bg-[radial-gradient(circle_at_50%_0%,rgba(249,115,22,0.35),transparent_70%)]"

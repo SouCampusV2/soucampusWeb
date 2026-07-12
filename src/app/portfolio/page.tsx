@@ -15,30 +15,39 @@ export const metadata: Metadata = {
   title: "Portfolio — SouCampus builds",
 };
 
-// Cycles through a small bento pattern so the grid stays visually varied no
-// matter how many projects get added later — not one fixed layout per card.
+// Same cap as PortfolioHero's carousel — the grid below picks up the rest,
+// no repeats between the two.
+const CAROUSEL_ITEMS = 5;
+
+// Cycles through a varied bento pattern (big feature, small squares, wide
+// banners) so the grid stays visually interesting no matter how many
+// projects get added later — not one fixed layout per card.
 const SPAN_PATTERN = [
   "lg:col-span-4 lg:row-span-2",
-  "lg:col-span-2",
-  "lg:col-span-2",
-  "lg:col-span-4 lg:row-span-2",
+  "lg:col-span-2 lg:row-span-1",
+  "lg:col-span-2 lg:row-span-2",
+  "lg:col-span-2 lg:row-span-1",
+  "lg:col-span-3 lg:row-span-1",
+  "lg:col-span-3 lg:row-span-1",
 ];
 
 export default function PortfolioPage() {
+  const gridProjects = projects.slice(CAROUSEL_ITEMS);
+
   return (
     <main className="w-full mx-auto max-w-6xl flex-1 px-6 pb-28">
       <PortfolioHero projects={projects} />
 
       <div className="mt-28 border-t border-zinc-200 pt-16">
         <h2 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
-          More work
+          More projects
         </h2>
         <p className="mt-2 max-w-xl text-zinc-600">
-          The full catalog. Click a build to see details, timeline and gallery.
+          The full portfolio. Click a build to see details, timeline and gallery.
         </p>
 
         <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-6 lg:auto-rows-[220px] lg:grid-flow-dense">
-          {projects.map((project, i) => (
+          {gridProjects.map((project, i) => (
             <Link
               key={project.slug}
               href={`/portfolio/${project.slug}`}

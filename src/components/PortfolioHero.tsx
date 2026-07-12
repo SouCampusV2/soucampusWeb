@@ -47,7 +47,12 @@ const ArrowButton = ({
 // quick pass across the row doesn't fire a switch every panel it crosses.
 const HOVER_HOLD_MS = 90;
 
-export function PortfolioHero({ projects }: Props) {
+// The expanding-panel layout only reads well with a handful of panels —
+// cap the carousel itself, the rest live in the grid below.
+const MAX_CAROUSEL_ITEMS = 5;
+
+export function PortfolioHero({ projects: allProjects }: Props) {
+  const projects = allProjects.slice(0, MAX_CAROUSEL_ITEMS);
   const [active, setActive] = useState(0);
   const current = projects[active];
   const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -66,7 +71,7 @@ export function PortfolioHero({ projects }: Props) {
   };
 
   return (
-    <section className="relative pt-28">
+    <section className="relative pt-20">
       <div
         aria-hidden
         className="pointer-events-none absolute inset-x-0 -top-32 -z-10 h-[36rem] bg-[radial-gradient(circle_at_50%_0%,rgba(163,230,53,0.35),transparent_70%)]"

@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <main className="w-full mx-auto max-w-6xl flex-1 px-6 pb-28">
-      <div className="grid gap-12 pt-28 sm:grid-cols-2 sm:items-start">
+      <div className="grid gap-12 pt-20 sm:grid-cols-2 sm:items-start">
         <div>
           <h1
             className={`${displayFont.className} text-4xl leading-tight tracking-tight text-zinc-950 sm:text-5xl`}

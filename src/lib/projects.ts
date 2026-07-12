@@ -8,6 +8,8 @@ export type Project = {
   size: string;
   price: string;
   image: string;
+  /** Extra shots of the same build, shown in the gallery on its subpage. */
+  gallery?: string[];
 };
 
 export const projects: Project[] = [
@@ -58,6 +60,158 @@ export const projects: Project[] = [
     size: "350×350",
     price: "trial",
     image: "/portfolio/dragon-shrine.png",
+  },
+
+  // Batch added from freshly dropped photos in public/portfolio/ — titles,
+  // tags, summaries and descriptions are AI guesses from looking at the
+  // images (asked for explicitly), and deadline/size/price are placeholder
+  // estimates, not real figures. Review and correct all of these before
+  // launch, same as the rest of the placeholder content tracked in
+  // CLAUDE.md.
+  {
+    slug: "sakura-pagoda-palace",
+    title: "Sakura Pagoda Palace",
+    tag: "Trial work",
+    summary: "A pastel pagoda palace wrapped in cherry blossoms, floating just above the water.",
+    description:
+      "A layered pagoda-style palace with blue-tiled roofs and gold trim, built on a small island ringed with cherry blossom trees and pale stone monuments. Soft, dreamy lighting and a tight, detailed footprint make it feel like a postcard.",
+    deadline: "1 week",
+    size: "150×150",
+    price: "trial",
+    image: "/portfolio/11.png",
+  },
+  {
+    slug: "riviera",
+    title: "Riviera",
+    tag: "Personal project",
+    summary: "A dense Mediterranean city block of terracotta roofs, plazas and winding roads.",
+    description:
+      "A full city district built from the ground up: terracotta-roofed townhouses, domed civic buildings, palm-lined boulevards and a network of roads connecting it all. Built as an exercise in large-scale urban layout rather than a single showpiece structure.",
+    deadline: "3 weeks",
+    size: "600×600",
+    price: "personal project",
+    image: "/portfolio/34772813742102363211.jpg",
+  },
+  {
+    slug: "frostwick-holiday",
+    title: "Frostwick Holiday",
+    tag: "Personal project",
+    summary: "A snow-covered village built around a towering, glowing Christmas tree.",
+    description:
+      "A festive village of candy-striped cabins and frosted spires gathered around a massive decorated tree, with Santa's sleigh crossing the night sky overhead. A seasonal passion project built for the holidays.",
+    deadline: "2 weeks",
+    size: "200×200",
+    price: "personal project",
+    image: "/portfolio/Christmas.png",
+  },
+  {
+    slug: "skyhold-sanctuary",
+    title: "Skyhold Sanctuary",
+    tag: "Personal project",
+    summary: "A cluster of pine-covered floating islands anchored by a grand stone keep.",
+    description:
+      "A chain of rugged floating islands connected by bridges and vines, crowned with a large stone-and-timber keep overlooking a green pine forest. A bigger, wilder companion piece to Sky Cathedral.",
+    deadline: "3 weeks",
+    size: "400×400",
+    price: "personal project",
+    image: "/portfolio/Islands.png",
+  },
+  {
+    slug: "keystone-spire",
+    title: "Keystone Spire",
+    tag: "Order",
+    summary: "A fortified mountain stronghold with tiered pagoda towers and red war banners.",
+    description:
+      "A defensible mountain base built into a forested cliffside: layered pagoda-roofed towers, a windmill, and a central courtyard, all flying red banners. Commissioned as a server spawn and stronghold.",
+    deadline: "2 weeks",
+    size: "300×300",
+    price: "€200",
+    image: "/portfolio/KeyStone3_1_1_1_1_1.png",
+  },
+  {
+    slug: "laylah-park",
+    title: "LaylahPark",
+    tag: "Order",
+    summary: "A foggy amusement park with a working ferris wheel and a grand entrance gate.",
+    description:
+      "A full amusement park commission: a fog-wrapped ferris wheel reading \"WOW\", a fountain plaza, and a pair of ornate mansions framed by cherry blossoms. Named after the client's project.",
+    deadline: "3 weeks",
+    size: "350×350",
+    price: "€300",
+    image: "/portfolio/LaylahPark.png",
+  },
+  {
+    slug: "honeycomb-bazaar",
+    title: "Honeycomb Bazaar",
+    tag: "Order",
+    summary: "A fantasy marketplace built into a giant hollowed-out honeycomb hive.",
+    description:
+      "A glowing bazaar built around an oversized beehive, with stalls lit by lanterns and framed by huge stylised flowers. Built as a commissioned marketplace hub for a server.",
+    deadline: "1 week",
+    size: "150×150",
+    price: "€120",
+    image: "/portfolio/Marketplace.png",
+  },
+  {
+    slug: "ghostlight-village",
+    title: "Ghostlight Village",
+    tag: "Order",
+    summary: "A misty mountain village of pagoda rooftops, red gates and stone paths.",
+    description:
+      "A large Asian-inspired village built across a foggy mountainside: multi-tiered pagoda towers, red banners, a central shrine courtyard, and cobbled streets connecting every building. Gallery includes ground-level streets and a dusk-lit town square.",
+    deadline: "1 month",
+    size: "500×500",
+    price: "team project",
+    image: "/portfolio/MrGhost1.png",
+    gallery: ["/portfolio/MrGhost2.png", "/portfolio/MrGhost3.png"],
+  },
+  {
+    slug: "ember-ruins",
+    title: "Ember Ruins",
+    tag: "Trial work",
+    summary: "A tropical island ruin with terracotta spires and an overgrown market street.",
+    description:
+      "A trial piece built for a studio: a weathered island settlement with glowing orange rock spires, a covered market street and a small dock, all wrapped in dense jungle.",
+    deadline: "1 week",
+    size: "200×200",
+    price: "trial",
+    image: "/portfolio/TrialBreadBuilds.png",
+  },
+  {
+    slug: "nova-ringport",
+    title: "Nova Ringport",
+    tag: "Personal project",
+    summary: "A neon space station encircled by a glowing planetary ring.",
+    description:
+      "A sci-fi space station built around a massive control spire, wrapped in a luminous pink ring and orbited by drifting asteroids and a passing starship. A personal project exploring neon/glow builds outside the usual fantasy style.",
+    deadline: "2 weeks",
+    size: "250×250",
+    price: "personal project",
+    image: "/portfolio/darkhanu_kosmos.png",
+  },
+  {
+    slug: "amethyst-grove",
+    title: "Amethyst Grove",
+    tag: "Personal project",
+    summary: "A glowing violet island shrine surrounded by oversized magic flora.",
+    description:
+      "A small mystical island centered on a glowing altar, framed by oversized red blossoms and floating platforms. Built as a personal study in purple and violet lighting.",
+    deadline: "1 week",
+    size: "150×150",
+    price: "personal project",
+    image: "/portfolio/purplekrisha0000.png",
+  },
+  {
+    slug: "genesis-dome",
+    title: "Genesis Dome",
+    tag: "Personal project",
+    summary: "A city sealed inside a glowing wireframe dome, floating above alien terrain.",
+    description:
+      "A compact futuristic city enclosed in a glowing geodesic dome, set above a pink alien landscape. A personal showcase build.",
+    deadline: "2 weeks",
+    size: "200×200",
+    price: "personal project",
+    image: "/portfolio/seniorsoucampus0000.jpg",
   },
 ];
 

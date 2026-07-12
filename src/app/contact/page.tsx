@@ -60,7 +60,7 @@ export default function ContactPage() {
       {/* Hero — same glow technique as the homepage Hero: a radial gradient
           bled up behind the navbar (-top-32) instead of a flat background,
           so there's no white gap above/behind the floating navbar pill. */}
-      <section className="relative pb-16 pt-28">
+      <section className="relative pb-16 pt-20">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 -top-32 -z-10 h-[calc(100%+8rem)] bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.35),transparent_70%)]"

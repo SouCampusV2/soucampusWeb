@@ -70,6 +70,22 @@ export default async function ProjectPage({
             priority
           />
         </div>
+
+        {project.gallery && project.gallery.length > 0 && (
+          <div className="mt-6 grid grid-cols-2 gap-4">
+            {project.gallery.map((src) => (
+              <div key={src} className="relative aspect-video overflow-hidden rounded-2xl">
+                <Image
+                  src={src}
+                  alt={project.title}
+                  fill
+                  sizes="(min-width: 1024px) 384px, 50vw"
+                  className="object-cover"
+                />
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </main>
   );
