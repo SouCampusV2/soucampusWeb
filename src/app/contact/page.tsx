@@ -54,7 +54,7 @@ export default function ContactPage() {
             <span className="text-sm font-medium text-zinc-700">
               Get in touch
             </span>
-            <h1 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl text-zinc-900">
+            <h1 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl text-zinc-950">
               I&apos;m here, always on Discord
             </h1>
             <p className="mt-4 max-w-md text-zinc-700">

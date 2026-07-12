@@ -34,7 +34,8 @@
       "Bash(taskkill //F //PID 18948)",
       "Bash(taskkill //F //PID 17508)",
       "Bash(tail -60 /tmp/dev5.log)",
-      "Bash(python3 -)"
+      "Bash(python3 -)",
+      "Bash(curl -s *)"
     ]
   }
 }

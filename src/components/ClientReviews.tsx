@@ -92,7 +92,7 @@ const ArrowButton = ({
     <ArrowCircle
       direction={direction}
       className="h-11 w-11"
-      colorClassName="bg-zinc-950 hover:bg-zinc-800 text-lime-300"
+      colorClassName="bg-orange-400 hover:bg-orange-500 text-white"
     />
   </button>
 );
@@ -152,7 +152,7 @@ export function ClientReviews() {
                     </span>
                   </div>
 
-                  <p className="mt-6 text-base font-medium leading-6 text-zinc-900">
+                  <p className="mt-6 text-base font-medium leading-6 text-zinc-950">
                     &ldquo;{review.text}&rdquo;
                   </p>
                 </div>

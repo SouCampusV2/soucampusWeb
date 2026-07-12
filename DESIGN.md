@@ -44,7 +44,7 @@
 - `colorClassName` — переопределяет фон/цвет/hover кружка целиком (дефолт `bg-zinc-950 hover:bg-zinc-800 text-white`). Для акцентных цветов сюда передаётся связка вида `bg-orange-400 hover:bg-orange-500 text-white` — та же hover-логика "на шаг темнее", что у primary-кнопки.
 - `label` — необязательный текст слева от кружка, `text-zinc-950 font-semibold` (как текст primary-кнопки). Вариант "текст + стрелка" вместо голой иконки.
 - `cursor-pointer` встроен в сам кружок. Hover — **не** увеличение (`scale`), а смена цвета — раньше было `hover:scale-105`, убрали по просьбе пользователя, оставили только цвет.
-- Используется в `ClientReviews` (кнопки карусели, кружок `bg-zinc-950 text-lime-300` — та же комбинация, что в `CountriesMarquee`) и в `PricingSection` (декоративная стрелка на бенто-карточках плана, цвет = акцент конкретного плана).
+- Используется в `ClientReviews` (кнопки карусели, кружок `bg-orange-400 hover:bg-orange-500 text-white` — primary-акцент, белая стрелка) и в `PricingSection` (декоративная стрелка на бенто-карточках плана, цвет = акцент конкретного плана). `CountriesMarquee` использует свою комбинацию `bg-zinc-950 text-lime-300`.
 
 ### Skeleton — `src/components/Skeleton.tsx`
 

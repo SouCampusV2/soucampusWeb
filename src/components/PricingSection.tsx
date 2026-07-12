@@ -83,7 +83,7 @@ export function PricingSection() {
               className={`flex flex-col justify-between rounded-3xl bg-zinc-100 p-8 ${plan.span}`}
             >
               <div>
-                <h3 className="text-xl font-semibold text-zinc-950">
+                <h3 className="text-lg font-semibold text-zinc-950">
                   {plan.name}
                 </h3>
                 <p className="mt-1 text-sm font-medium text-zinc-600">
