@@ -6,65 +6,76 @@ import { Skeleton } from "@/components/Skeleton";
 import { Button } from "@/components/Button";
 import { ArrowCircle } from "@/components/ArrowCircle";
 
+type Accent = "orange" | "lime";
+
 // TODO: replace with real client photos, quotes and names — this shape
 // (name/role/flag/text/accent) should map directly onto a future
 // `reviews` table when this section is wired up to the database.
+// Only two card accents (orange/lime) — the CTA button stays orange either
+// way (primary color per DESIGN.md), the accent only tints the card itself.
 const reviews = [
   {
     name: "Client A",
     role: "Server Owner, Placeholder SMP",
     flag: "🇸🇬",
     text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Delivered on time and exactly what we asked for.",
-    accent: "orange" as const,
+    accent: "orange" as Accent,
   },
   {
     name: "Client B",
     role: "Founder, Placeholder Studio",
     flag: "🇺🇸",
     text: "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua, the whole build exceeded expectations.",
-    accent: "lime" as const,
+    accent: "lime" as Accent,
   },
   {
     name: "Client C",
     role: "Community Manager, Placeholder Network",
     flag: "🇬🇧",
     text: "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
-    accent: "blue" as const,
+    accent: "orange" as Accent,
   },
   {
     name: "Client D",
     role: "Owner, Placeholder Realm",
     flag: "🇦🇺",
     text: "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat.",
-    accent: "orange" as const,
+    accent: "lime" as Accent,
   },
   {
     name: "Client E",
     role: "Founder, Placeholder Guild",
     flag: "🇩🇪",
     text: "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim.",
-    accent: "lime" as const,
+    accent: "orange" as Accent,
   },
   {
     name: "Client F",
     role: "Owner, Placeholder Server",
     flag: "🇨🇦",
     text: "At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium.",
-    accent: "blue" as const,
+    accent: "lime" as Accent,
   },
   {
     name: "Client G",
     role: "Producer, Placeholder Network",
     flag: "🇳🇱",
     text: "Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus.",
-    accent: "orange" as const,
+    accent: "orange" as Accent,
   },
 ];
 
-const ACCENT_CARD = {
+const ACCENT_CARD: Record<Accent, string> = {
   orange: "bg-orange-100 text-zinc-950",
   lime: "bg-lime-100 text-zinc-950",
-  blue: "bg-blue-100 text-zinc-950",
+};
+
+// Эксперимент (ветка experiment/colors): кнопка того же акцента, что и
+// карточка, вместо обычного "кнопки всегда orange" из DESIGN.md.
+const ACCENT_BUTTON: Record<Accent, string> = {
+  orange:
+    "text-orange-500 underline decoration-2 underline-offset-4 hover:text-orange-600",
+  lime: "text-lime-600 underline decoration-2 underline-offset-4 hover:text-lime-700",
 };
 
 const CARD_WIDTH = 340;
@@ -163,8 +174,13 @@ export function ClientReviews() {
                     <p className="text-sm text-zinc-700">{review.role}</p>
                   </footer>
 
-                  <Button variant="secondary" size="sm" className="mt-6">
-                    Read {review.name.split(" ")[1] ?? review.name}&apos;s story
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    colorClassName={ACCENT_BUTTON[review.accent]}
+                    className="mt-6"
+                  >
+                    Read story
                   </Button>
                 </div>
               </blockquote>

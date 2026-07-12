@@ -20,8 +20,8 @@ export function Navbar() {
     <div className="sticky top-4 z-50 px-4">
       <header className="mx-auto max-w-6xl rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/60 backdrop-blur-xl">
         <nav className="flex items-center justify-between px-6 py-3">
-          <Link href="/" className="text-xl font-extrabold tracking-tight">
-            SouCampus<span className="text-orange-500">.builds</span>
+          <Link href="/" className="text-xl font-extrabold tracking-tight text-orange-500" data-page-transition="true">
+            SouCampus
           </Link>
 
           <ul className="hidden items-center gap-8 text-sm font-medium text-zinc-600 sm:flex">

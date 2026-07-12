@@ -34,7 +34,8 @@ export function Hero() {
         <span
           className={`${displayFont.className} mt-4 block text-4xl leading-tight sm:text-6xl`}
         >
-          your ideas and dreams
+          your <span className="text-lime-500">ideas</span> and{" "}
+          <span className="text-blue-500">dreams</span>
         </span>
       </motion.h1>
 

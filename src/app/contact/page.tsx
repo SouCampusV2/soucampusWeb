@@ -1,6 +1,15 @@
 import type { Metadata } from "next";
+import { Unbounded } from "next/font/google";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
+import { ArrowCircle } from "@/components/ArrowCircle";
+
+// Тот же дисплейный шрифт, что у Hero на главной — тут используется на
+// H1 страницы, чтобы обе "герой"-секции сайта визуально рифмовались.
+const displayFont = Unbounded({
+  weight: "800",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
   title: "Contact — SouCampus builds",
@@ -46,16 +55,25 @@ const FAQ = [
 
 export default function ContactPage() {
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-6 py-28">
-      {/* Hero */}
-      <section className="overflow-hidden rounded-3xl bg-orange-50 px-8 py-16 text-white sm:px-16">
-        <div className="grid items-center gap-10 sm:grid-cols-2">
+    <>
+      {/* Hero — same glow technique as the homepage Hero: a radial gradient
+          bled up behind the navbar (-top-32) instead of a flat background,
+          so there's no white gap above/behind the floating navbar pill. */}
+      <section className="relative px-6 py-16 sm:px-16">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 -top-32 -z-10 h-[calc(100%+8rem)] bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.35),transparent_70%)]"
+        />
+        <div className="mx-auto grid max-w-6xl items-center gap-10 sm:grid-cols-2">
           <div>
             <span className="text-sm font-medium text-zinc-700">
               Get in touch
             </span>
-            <h1 className="mt-2 text-4xl font-extrabold tracking-tight sm:text-5xl text-zinc-950">
-              I&apos;m here, always on Discord
+            <h1
+              className={`${displayFont.className} mt-2 text-4xl leading-tight tracking-tight text-zinc-950 sm:text-5xl`}
+            >
+              I&apos;m here, always on{" "}
+              <span className="text-blue-500">Discord</span>
             </h1>
             <p className="mt-4 max-w-md text-zinc-700">
               Orders, questions and support — all in one place. We reply on
@@ -68,8 +86,16 @@ export default function ContactPage() {
                 rel="noopener noreferrer"
                 variant="primary"
                 size="lg"
+                colorClassName="rounded-full bg-blue-400 text-zinc-950 hover:bg-blue-500"
+                className="gap-3"
               >
-                Join Discord →
+                Join Discord
+                <ArrowCircle
+                  direction="right"
+                  variant="bare"
+                  className="h-6 w-6"
+                  colorClassName="text-zinc-950"
+                />
               </Button>
             </div>
           </div>
@@ -81,8 +107,13 @@ export default function ContactPage() {
         </div>
       </section>
 
+      {/* Divider — same full-width bar as Stats.tsx on the homepage, but
+          solid blue instead of tri-color (this page's accent is blue). */}
+      <div className="h-1 w-full bg-blue-400" />
+
+      <main className="mx-auto max-w-6xl flex-1 px-6">
       {/* Chat to us directly */}
-      <section className="grid items-center gap-10 border-t border-zinc-200 py-20 sm:grid-cols-2">
+      <section className="grid items-center gap-10 py-20 sm:grid-cols-2">
         {/* TODO: replace with a real Discord conversation screenshot */}
         <div className="relative aspect-video overflow-hidden rounded-2xl">
           <Skeleton className="h-full w-full" />
@@ -155,6 +186,7 @@ export default function ContactPage() {
           </div>
         </div>
       </section>
-    </main>
+      </main>
+    </>
   );
 }

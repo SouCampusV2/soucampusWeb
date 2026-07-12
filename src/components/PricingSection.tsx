@@ -27,23 +27,23 @@ const PLANS = [
   },
   {
     name: "Builder",
-    price: "?€/mo",
+    price: "5.99€/mo",
     description:
-      "Every build in the library so far, plus new ones each month. Builds are saved to your profile on the site.",
+      "A lot of builds in the library so far, plus new ones each month. Builds are saved to your profile on the site.",
     accent: "orange" as Accent,
     span: "lg:col-span-2",
   },
   {
     name: "Pro",
-    price: "?€/mo",
+    price: "9.99€/mo",
     description:
       "Everything in Builder plus a commercial license for the builds and early access to new drops.",
     accent: "lime" as Accent,
     span: "lg:col-span-2",
   },
   {
-    name: "Studio",
-    price: "?€/mo",
+    name: "Support",
+    price: "min 25€/mo",
     description:
       "For teams and servers — multiple members, shared library access and priority on custom orders.",
     accent: "blue" as Accent,
@@ -51,7 +51,7 @@ const PLANS = [
   },
   {
     name: "Lifetime",
-    price: "?€ once",
+    price: "300€ once",
     description:
       "One-time payment — lifetime access to the entire build library, including everything released in the future.",
     accent: "orange" as Accent,
@@ -63,15 +63,14 @@ export function PricingSection() {
   return (
     <section className="border-t border-zinc-200 py-28">
       <div className="mx-auto max-w-6xl px-6">
-        <span className="inline-block rounded-full border border-orange-500/30 bg-orange-500/10 px-4 py-1 text-sm font-medium text-orange-600">
-          Coming soon to the shop
-        </span>
         <h2 className="mt-4 text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
           Choose your plan
         </h2>
         <p className="mt-3 max-w-md text-zinc-600">
           A subscription unlocks the build library — everything you get is
           saved to your profile on the site.
+
+          <br></br>  <i>Coming soon...</i>
         </p>
 
         <div className="mt-10 grid gap-4 lg:grid-cols-6">

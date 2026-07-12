@@ -3,8 +3,13 @@ import Link from "next/link";
 type Variant = "primary" | "secondary";
 type Size = "sm" | "md" | "lg";
 
+// h-14 (56px) — фиксированная высота ВСЕХ кнопок независимо от size/variant
+// и от содержимого (текст, иконка, текст+иконка). Раньше высота задавалась
+// вертикальным паддингом (py-*), из-за чего кнопка с иконкой внутри (см.
+// "Join Discord" на /contact) становилась выше обычной текстовой кнопки
+// того же size — паддинг теперь только горизонтальный.
 const base =
-  "inline-flex cursor-pointer items-center justify-center font-semibold transition-transform hover:scale-105";
+  "inline-flex h-14 cursor-pointer items-center justify-center font-semibold transition-transform hover:scale-105";
 
 const variants: Record<Variant, string> = {
   primary: "rounded-full bg-orange-400 text-zinc-950 hover:bg-orange-500",
@@ -12,10 +17,14 @@ const variants: Record<Variant, string> = {
     "text-orange-500 underline decoration-2 underline-offset-4 hover:text-orange-600",
 };
 
+// Точечное переопределение цвета primary-кнопки (по умолчанию — оранжевый,
+// см. правило "кнопки всегда orange" в DESIGN.md). Использовать только для
+// осознанных экспериментов/исключений, не как обычный способ красить кнопки.
+
 const paddingBySize: Record<Size, string> = {
-  sm: "px-5 py-2",
-  md: "px-7 py-3",
-  lg: "px-8 py-4",
+  sm: "px-5",
+  md: "px-7",
+  lg: "px-8",
 };
 
 const textBySize: Record<Size, string> = {
@@ -34,6 +43,7 @@ type ButtonProps = {
   target?: string;
   rel?: string;
   onClick?: () => void;
+  colorClassName?: string;
 };
 
 export function Button({
@@ -46,9 +56,11 @@ export function Button({
   target,
   rel,
   onClick,
+  colorClassName,
 }: ButtonProps) {
   const padding = variant === "primary" ? paddingBySize[size] : "";
-  const classes = `${base} ${variants[variant]} ${padding} ${textBySize[size]} ${className}`;
+  const color = colorClassName ?? variants[variant];
+  const classes = `${base} ${color} ${padding} ${textBySize[size]} ${className}`;
 
   if (href) {
     return (
