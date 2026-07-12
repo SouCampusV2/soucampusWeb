@@ -5,9 +5,9 @@ import { animate, useInView } from "motion/react";
 
 // TODO: replace with real numbers
 const stats = [
-  { label: "Completed orders", value: 30, suffix: "+", color: "text-orange-400", bar: "bg-orange-400" },
-  { label: "Players who've seen the builds", value: 7, suffix: "M+", color: "text-lime-300", bar: "bg-lime-400" },
-  { label: "Happy clients", value: 25, suffix: "+", color: "text-blue-400", bar: "bg-blue-400" },
+  { label: "Completed orders", value: 246, suffix: "+", color: "text-orange-400", bar: "bg-orange-400" },
+  { label: "Players who've seen the builds", value: 30, suffix: "K+", color: "text-lime-300", bar: "bg-lime-400" },
+  { label: "Happy clients", value: 31, suffix: "+", color: "text-blue-400", bar: "bg-blue-400" },
 ];
 
 function Counter({ to, suffix }: { to: number; suffix: string }) {

@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import { Unbounded } from "next/font/google";
 import { Button } from "@/components/Button";
+
+// Same display font as the hero headings — the navbar rhymes with them.
+const displayFont = Unbounded({
+  weight: "800",
+  subsets: ["latin"],
+});
 
 const links = [
   { href: "/", label: "Home" },
@@ -20,7 +27,11 @@ export function Navbar() {
     <div className="sticky top-4 z-50 px-4">
       <header className="mx-auto max-w-6xl rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/60 backdrop-blur-xl">
         <nav className="flex items-center justify-between px-6 py-3">
-          <Link href="/" className="text-xl font-extrabold tracking-tight text-orange-500" data-page-transition="true">
+          <Link
+            href="/"
+            className={`${displayFont.className} text-lg tracking-tight text-orange-500`}
+            data-page-transition="true"
+          >
             SouCampus
           </Link>
 

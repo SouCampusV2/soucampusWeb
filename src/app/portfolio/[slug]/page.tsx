@@ -30,7 +30,7 @@ export default async function ProjectPage({
   if (!project) notFound();
 
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-6 py-28">
+    <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-28">
       <div className="mx-auto max-w-3xl">
         <Link href="/portfolio" className="text-sm font-medium text-orange-600">
           ← All work

@@ -1,51 +1,74 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import type { Metadata } from "next";
+import { Unbounded } from "next/font/google";
 import { projects } from "@/lib/projects";
+import { PortfolioHero } from "@/components/PortfolioHero";
+
+// Same display font as the hero headings — the card title rhymes with them.
+const displayFont = Unbounded({
+  weight: "800",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
   title: "Portfolio — SouCampus builds",
 };
 
+// Cycles through a small bento pattern so the grid stays visually varied no
+// matter how many projects get added later — not one fixed layout per card.
+const SPAN_PATTERN = [
+  "lg:col-span-4 lg:row-span-2",
+  "lg:col-span-2",
+  "lg:col-span-2",
+  "lg:col-span-4 lg:row-span-2",
+];
+
 export default function PortfolioPage() {
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-6 py-28">
-      <h1 className="text-4xl font-extrabold tracking-tight text-zinc-950 sm:text-5xl">
-        Portfolio
-      </h1>
-      <p className="mt-3 max-w-xl text-zinc-600 dark:text-zinc-400">
-        All the work. Click a card to see details, timeline and gallery.
-      </p>
+    <main className="w-full mx-auto max-w-6xl flex-1 px-6 pb-28">
+      <PortfolioHero projects={projects} />
 
-      <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {projects.map((project) => (
-          <Link
-            key={project.slug}
-            href={`/portfolio/${project.slug}`}
-            className="group block overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800"
-          >
-            <div className="relative aspect-[4/3] overflow-hidden">
-              <Image
-                src={project.image}
-                alt={project.title}
-                fill
-                sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                className="object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-            </div>
-            <div className="p-5">
-              <span className="text-xs font-medium uppercase tracking-wide text-orange-600 dark:text-orange-400">
-                {project.tag}
-              </span>
-              <h2 className="mt-1 text-lg font-semibold text-zinc-950">
-                {project.title}
-              </h2>
-              <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-                {project.summary}
-              </p>
-            </div>
-          </Link>
-        ))}
+      <div className="mt-28 border-t border-zinc-200 pt-16">
+        <h2 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
+          More work
+        </h2>
+        <p className="mt-2 max-w-xl text-zinc-600">
+          The full catalog. Click a build to see details, timeline and gallery.
+        </p>
+
+        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-6 lg:auto-rows-[220px] lg:grid-flow-dense">
+          {projects.map((project, i) => (
+            <Link
+              key={project.slug}
+              href={`/portfolio/${project.slug}`}
+              className={`group relative block overflow-hidden rounded-2xl border border-zinc-200 ${SPAN_PATTERN[i % SPAN_PATTERN.length]}`}
+            >
+              <div className="relative h-full min-h-[220px] w-full">
+                <Image
+                  src={project.image}
+                  alt={project.title}
+                  fill
+                  sizes="(min-width: 1024px) 40vw, (min-width: 640px) 50vw, 100vw"
+                  className="object-cover transition-transform duration-300 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-zinc-950/10 to-transparent" />
+
+                <span className="absolute left-4 top-4 rounded-full bg-lime-300/90 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-950">
+                  {project.tag}
+                </span>
+
+                <div className="absolute inset-x-0 bottom-0 p-5 transition-transform duration-300 group-hover:-translate-y-1">
+                  <h3
+                    className={`${displayFont.className} text-lg leading-tight text-lime-400`}
+                  >
+                    {project.title}
+                  </h3>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
       </div>
     </main>
   );

@@ -1,5 +1,12 @@
 import type { Metadata } from "next";
+import { Unbounded } from "next/font/google";
 import { Skeleton } from "@/components/Skeleton";
+
+// Same display font as the homepage Hero — rhymes the site's hero headings.
+const displayFont = Unbounded({
+  weight: "800",
+  subsets: ["latin"],
+});
 
 export const metadata: Metadata = {
   title: "About me — SouCampus builds",
@@ -7,10 +14,12 @@ export const metadata: Metadata = {
 
 export default function AboutPage() {
   return (
-    <main className="mx-auto max-w-6xl flex-1 px-6 py-28">
-      <div className="grid gap-12 sm:grid-cols-2 sm:items-center">
+    <main className="w-full mx-auto max-w-6xl flex-1 px-6 pb-28">
+      <div className="grid gap-12 pt-28 sm:grid-cols-2 sm:items-start">
         <div>
-          <h1 className="text-4xl font-extrabold tracking-tight text-zinc-950 sm:text-5xl">
+          <h1
+            className={`${displayFont.className} text-4xl leading-tight tracking-tight text-zinc-950 sm:text-5xl`}
+          >
             About me
           </h1>
           <p className="mt-6 leading-7 text-zinc-700">

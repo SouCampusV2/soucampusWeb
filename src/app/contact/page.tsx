@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
+import { Plus } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
 import { ArrowCircle } from "@/components/ArrowCircle";
@@ -59,12 +60,12 @@ export default function ContactPage() {
       {/* Hero — same glow technique as the homepage Hero: a radial gradient
           bled up behind the navbar (-top-32) instead of a flat background,
           so there's no white gap above/behind the floating navbar pill. */}
-      <section className="relative px-6 py-16 sm:px-16">
+      <section className="relative pb-16 pt-28">
         <div
           aria-hidden
           className="pointer-events-none absolute inset-x-0 -top-32 -z-10 h-[calc(100%+8rem)] bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.35),transparent_70%)]"
         />
-        <div className="mx-auto grid max-w-6xl items-center gap-10 sm:grid-cols-2">
+        <div className="mx-auto grid max-w-6xl items-start gap-10 px-6 sm:grid-cols-2">
           <div>
             <span className="text-sm font-medium text-zinc-700">
               Get in touch
@@ -107,11 +108,7 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* Divider — same full-width bar as Stats.tsx on the homepage, but
-          solid blue instead of tri-color (this page's accent is blue). */}
-      <div className="h-1 w-full bg-blue-400" />
-
-      <main className="mx-auto max-w-6xl flex-1 px-6">
+      <main className="w-full mx-auto max-w-6xl flex-1 px-6">
       {/* Chat to us directly */}
       <section className="grid items-center gap-10 py-20 sm:grid-cols-2">
         {/* TODO: replace with a real Discord conversation screenshot */}
@@ -133,6 +130,7 @@ export default function ContactPage() {
               rel="noopener noreferrer"
               variant="secondary"
               size="md"
+              colorClassName="text-blue-500 underline decoration-2 underline-offset-4 hover:text-blue-600"
             >
               Open Discord
             </Button>
@@ -151,7 +149,12 @@ export default function ContactPage() {
             no need to message on Discord.
           </p>
           <div className="mt-6">
-            <Button href="#faq" variant="secondary" size="md">
+            <Button
+              href="#faq"
+              variant="secondary"
+              size="md"
+              colorClassName="text-blue-500 underline decoration-2 underline-offset-4 hover:text-blue-600"
+            >
               See the questions
             </Button>
           </div>
@@ -163,27 +166,25 @@ export default function ContactPage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="border-t border-zinc-200 py-20">
-        <div className="mx-auto max-w-2xl">
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
-            Frequently asked questions
-          </h2>
+      <section id="faq" className="scroll-mt-24 border-t border-zinc-200 py-20">
+        <h2 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
+          Frequently asked questions
+        </h2>
 
-          <div className="mt-6 divide-y divide-zinc-200 rounded-2xl border border-zinc-200">
-            {FAQ.map((item) => (
-              <details key={item.question} className="group px-6 py-4">
-                <summary className="flex cursor-pointer list-none items-center justify-between font-medium text-zinc-900 marker:content-none [&::-webkit-details-marker]:hidden">
-                  {item.question}
-                  <span className="ml-4 shrink-0 text-xl leading-none text-zinc-400 transition-transform group-open:rotate-45">
-                    +
-                  </span>
-                </summary>
-                <p className="mt-3 text-sm leading-6 text-zinc-600">
-                  {item.answer}
-                </p>
-              </details>
-            ))}
-          </div>
+        <div className="mt-8 divide-y divide-zinc-200">
+          {FAQ.map((item) => (
+            <details key={item.question} className="group">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-6 text-lg font-semibold text-zinc-950 marker:content-none [&::-webkit-details-marker]:hidden">
+                {item.question}
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                  <Plus size={20} weight="bold" />
+                </span>
+              </summary>
+              <p className="-mt-2 pb-6 text-sm leading-6 text-zinc-600">
+                {item.answer}
+              </p>
+            </details>
+          ))}
         </div>
       </section>
       </main>
