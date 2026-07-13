@@ -97,7 +97,6 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     document.addEventListener("click", onClick, { capture: true });
     return () =>
       document.removeEventListener("click", onClick, { capture: true });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname, waveMs, router, cell]);
 
   // Маршрут реально сменился — экран уже полностью закрыт блоками, начинаем раскрытие
@@ -134,7 +133,10 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
             }}
           >
             {Array.from({ length: total }).map((_, i) => {
-              const rand = pattern[i] ?? Math.random();
+              // Детерминированный fallback на случай, если pattern ещё не
+              // подстроился под новый размер сетки (после resize) — без
+              // Math.random, чтобы не нарушать чистоту рендера.
+              const rand = pattern[i] ?? ((i * 9301 + 49297) % 233280) / 233280;
               const row = Math.floor(i / cell.cols);
               const rowFromBottom = cell.rows - 1 - row;
               // нижние ряды идут первыми — волна снизу вверх в обе стороны
