@@ -78,7 +78,7 @@ export const projects: Project[] = [
     deadline: "1 week",
     size: "150×150",
     price: "trial",
-    image: "/portfolio/11.png",
+    image: "/portfolio/sakura-pagoda-palace.png",
   },
   {
     slug: "riviera",
@@ -90,7 +90,7 @@ export const projects: Project[] = [
     deadline: "3 weeks",
     size: "600×600",
     price: "personal project",
-    image: "/portfolio/34772813742102363211.jpg",
+    image: "/portfolio/riviera.jpg",
   },
   {
     slug: "frostwick-holiday",
@@ -102,7 +102,7 @@ export const projects: Project[] = [
     deadline: "2 weeks",
     size: "200×200",
     price: "personal project",
-    image: "/portfolio/Christmas.png",
+    image: "/portfolio/frostwick-holiday.png",
   },
   {
     slug: "skyhold-sanctuary",
@@ -114,7 +114,7 @@ export const projects: Project[] = [
     deadline: "3 weeks",
     size: "400×400",
     price: "personal project",
-    image: "/portfolio/Islands.png",
+    image: "/portfolio/skyhold-sanctuary.png",
   },
   {
     slug: "keystone-spire",
@@ -126,7 +126,7 @@ export const projects: Project[] = [
     deadline: "2 weeks",
     size: "300×300",
     price: "€200",
-    image: "/portfolio/KeyStone3_1_1_1_1_1.png",
+    image: "/portfolio/keystone-spire.png",
   },
   {
     slug: "laylah-park",
@@ -138,7 +138,7 @@ export const projects: Project[] = [
     deadline: "3 weeks",
     size: "350×350",
     price: "€300",
-    image: "/portfolio/LaylahPark.png",
+    image: "/portfolio/laylah-park.png",
   },
   {
     slug: "honeycomb-bazaar",
@@ -150,7 +150,7 @@ export const projects: Project[] = [
     deadline: "1 week",
     size: "150×150",
     price: "€120",
-    image: "/portfolio/Marketplace.png",
+    image: "/portfolio/honeycomb-bazaar.png",
   },
   {
     slug: "ghostlight-village",
@@ -162,8 +162,8 @@ export const projects: Project[] = [
     deadline: "1 month",
     size: "500×500",
     price: "team project",
-    image: "/portfolio/MrGhost1.png",
-    gallery: ["/portfolio/MrGhost2.png", "/portfolio/MrGhost3.png"],
+    image: "/portfolio/ghostlight-village.png",
+    gallery: ["/portfolio/ghostlight-village-2.png", "/portfolio/ghostlight-village-3.png"],
   },
   {
     slug: "ember-ruins",
@@ -175,7 +175,7 @@ export const projects: Project[] = [
     deadline: "1 week",
     size: "200×200",
     price: "trial",
-    image: "/portfolio/TrialBreadBuilds.png",
+    image: "/portfolio/ember-ruins.png",
   },
   {
     slug: "nova-ringport",
@@ -187,7 +187,7 @@ export const projects: Project[] = [
     deadline: "2 weeks",
     size: "250×250",
     price: "personal project",
-    image: "/portfolio/darkhanu_kosmos.png",
+    image: "/portfolio/nova-ringport.png",
   },
   {
     slug: "amethyst-grove",
@@ -199,7 +199,7 @@ export const projects: Project[] = [
     deadline: "1 week",
     size: "150×150",
     price: "personal project",
-    image: "/portfolio/purplekrisha0000.png",
+    image: "/portfolio/amethyst-grove.png",
   },
   {
     slug: "genesis-dome",
@@ -211,7 +211,7 @@ export const projects: Project[] = [
     deadline: "2 weeks",
     size: "200×200",
     price: "personal project",
-    image: "/portfolio/seniorsoucampus0000.jpg",
+    image: "/portfolio/genesis-dome.jpg",
   },
 ];
 
