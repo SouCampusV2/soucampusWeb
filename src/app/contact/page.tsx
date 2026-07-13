@@ -63,7 +63,7 @@ export default function ContactPage() {
       <section className="relative pb-16 pt-20">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-x-0 -top-32 -z-10 h-[calc(100%+8rem)] bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.35),transparent_70%)]"
+          className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[calc(100%+8rem)] w-full max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.35),transparent_70%)]"
         />
         <div className="mx-auto grid max-w-6xl items-start gap-10 px-6 sm:grid-cols-2">
           <div>

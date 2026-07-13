@@ -74,7 +74,7 @@ export function PortfolioHero({ projects: allProjects }: Props) {
     <section className="relative pt-20">
       <div
         aria-hidden
-        className="pointer-events-none absolute inset-x-0 -top-32 -z-10 h-[36rem] bg-[radial-gradient(circle_at_50%_0%,rgba(163,230,53,0.35),transparent_70%)]"
+        className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[36rem] w-full max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(163,230,53,0.35),transparent_70%)]"
       />
 
       <div className="flex items-end justify-between gap-6">
