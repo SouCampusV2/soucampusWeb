@@ -15,13 +15,13 @@ It's also my hands-on way of learning modern web development — going from "I k
 - [Next.js](https://nextjs.org) (App Router) + TypeScript
 - [Tailwind CSS v4](https://tailwindcss.com)
 - [Motion](https://motion.dev) (`motion/react`) for animation
-- [Vercel Analytics](https://vercel.com/analytics) — traffic/page views (visible on Vercel once deployed)
+- [Vercel Analytics](https://vercel.com/analytics) — traffic/page views
+- Deployed on [Vercel](https://vercel.com) at [soucampus.online](https://soucampus.online) — `master` auto-deploys to production on every push, `dev` gets its own Preview URL
 - CI via GitHub Actions — lint + build on every push/PR to `master`
 - A weekly Claude Code cloud routine — runs the `design-check` and `structure-check` skills against the repo and drops a report in `reports/`
 
 **Planned, not wired up yet:**
 
-- Deploy on [Vercel](https://vercel.com) (not deployed yet)
 - [Supabase](https://supabase.com) — database + auth, for a mini content admin and later the shop
 - [Stripe](https://stripe.com) — payments for the digital build shop
 - Docker, once there's an actual reason for it
@@ -34,6 +34,8 @@ npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+Day-to-day work happens on the `dev` branch (Vercel gives it its own Preview URL); `master` is production and auto-deploys on push.
 
 ## Project structure
 
@@ -48,8 +50,9 @@ Open [http://localhost:3000](http://localhost:3000).
 ## Roadmap
 
 1. ~~Working portfolio site~~ — done
-2. Real content everywhere (currently placeholders: Discord invite, About me, reviews, stats, pricing)
-3. Mobile/tablet responsive pass, then deploy on Vercel
-4. Mini content admin backed by Supabase
-5. Shop: catalog, cart, checkout, Stripe
-6. Docker, tests, deeper analytics (e.g. PostHog)
+2. ~~Deploy on Vercel~~ — done
+3. Real content everywhere (done: Discord invite, portfolio, reviews — still placeholder: About me, stats, pricing, FAQ)
+4. Mobile/tablet responsive pass
+5. Mini content admin backed by Supabase
+6. Shop: catalog, cart, checkout, Stripe
+7. Docker, tests, deeper analytics (e.g. PostHog)
