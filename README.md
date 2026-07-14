@@ -1,4 +1,4 @@
-# SouCampus builds
+# SouCampus builds - https://soucampus.online/
 
 Custom Minecraft maps, structures and worlds — built on order.
 
