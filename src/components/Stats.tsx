@@ -5,7 +5,7 @@ import { animate, useInView } from "motion/react";
 
 // TODO: replace with real numbers
 const stats = [
-  { label: "Completed orders and projects", value: 246, suffix: "+", color: "text-orange-400", bar: "bg-orange-400" },
+  { label: "Crafted orders and projects", value: 246, suffix: "+", color: "text-orange-400", bar: "bg-orange-400" },
   { label: "Players who've seen the builds", value: 30, suffix: "K+", color: "text-lime-300", bar: "bg-lime-400" },
   { label: "Really happy clients", value: 81, suffix: "+", color: "text-blue-400", bar: "bg-blue-400" },
 ];

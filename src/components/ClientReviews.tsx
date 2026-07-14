@@ -8,59 +8,62 @@ import { ArrowButton } from "@/components/ArrowButton";
 
 type Accent = "orange" | "lime";
 
-// TODO: replace with real client photos, quotes and names — this shape
-// (name/role/flag/text/accent) should map directly onto a future
+// Real client testimonials, condensed to a similar length and a more formal
+// tone (source: Discord feedback, collected in a CSV). Country flags are
+// still placeholders — swap for real ones once countries + local icon files
+// are confirmed (see CountriesMarquee for the local-icon pattern to follow).
+// This shape (name/role/flag/text/accent) maps directly onto a future
 // `reviews` table when this section is wired up to the database.
 // Only two card accents (orange/lime) — the CTA button stays orange either
 // way (primary color per DESIGN.md), the accent only tints the card itself.
 const reviews = [
   {
-    name: "Client A",
-    role: "Server Owner, Placeholder SMP",
+    name: "Erik",
+    role: "Server Owner, Luckycraft",
     flag: "🇸🇬",
-    text: "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Delivered on time and exactly what we asked for.",
+    text: "Worked with SouCampus for over a year across multiple projects — fast communication, reliably great results, and rarely needs creative direction.",
     accent: "orange" as Accent,
   },
   {
-    name: "Client B",
-    role: "Founder, Placeholder Studio",
+    name: "Ghost",
+    role: "Owner, GuardiumMC",
     flag: "🇺🇸",
-    text: "Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua, the whole build exceeded expectations.",
+    text: "Consistently impressed by his creativity and skill — every build feels like it belongs in a living world, with a soul and story behind the design.",
     accent: "lime" as Accent,
   },
   {
-    name: "Client C",
-    role: "Community Manager, Placeholder Network",
+    name: "rambomine",
+    role: "Owner, RamboMC",
     flag: "🇬🇧",
-    text: "Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip.",
+    text: "Incredibly skilled and reliable — builds match the vision perfectly, deadlines are respected, and the attention to detail stands out every time.",
     accent: "orange" as Accent,
   },
   {
-    name: "Client D",
-    role: "Owner, Placeholder Realm",
+    name: "TheErikCZ",
+    role: "Founder, BreadBuilds",
     flag: "🇦🇺",
-    text: "Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat.",
+    text: "Worked with SouCampus from early commissions to now supplying builds for our shop — hugely talented, with a great eye for detail.",
     accent: "lime" as Accent,
   },
   {
-    name: "Client E",
-    role: "Founder, Placeholder Guild",
+    name: "Scooter",
+    role: "Owner, Stranded",
     flag: "🇩🇪",
-    text: "Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim.",
+    text: "Fast, responsive and easy to work with — every build has consistently exceeded expectations.",
     accent: "orange" as Accent,
   },
   {
-    name: "Client F",
-    role: "Owner, Placeholder Server",
+    name: "Luke & Sven",
+    role: "Owners, AstroSMP",
     flag: "🇨🇦",
-    text: "At vero eos et accusamus et iusto odio dignissimos ducimus qui blanditiis praesentium.",
+    text: "Fantastic results that genuinely improved the player experience on our servers — fast delivery, fair pricing, and an easy recommendation.",
     accent: "lime" as Accent,
   },
   {
-    name: "Client G",
-    role: "Producer, Placeholder Network",
+    name: "Nathan",
+    role: "Owner, LunaSMP",
     flag: "🇳🇱",
-    text: "Nam libero tempore, cum soluta nobis est eligendi optio cumque nihil impedit quo minus.",
+    text: "Loved the creativity and the communication — our new spawn is a hit with players. Nothing to complain about.",
     accent: "orange" as Accent,
   },
 ];
