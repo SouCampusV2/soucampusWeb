@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
 import { Navbar } from "@/components/Navbar";
 import { PageTransition } from "@/components/PageTransition";
@@ -30,6 +31,7 @@ export default function RootLayout({
           <PricingSection />
           <ContactFooter />
         </PageTransition>
+        <Analytics />
       </body>
     </html>
   );
