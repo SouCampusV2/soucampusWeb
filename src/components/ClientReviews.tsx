@@ -4,7 +4,7 @@ import { useState } from "react";
 import { motion } from "motion/react";
 import { Skeleton } from "@/components/Skeleton";
 import { Button } from "@/components/Button";
-import { ArrowCircle } from "@/components/ArrowCircle";
+import { ArrowButton } from "@/components/ArrowButton";
 
 type Accent = "orange" | "lime";
 
@@ -84,30 +84,6 @@ const STEP = CARD_WIDTH + CARD_GAP;
 const VISIBLE = 3;
 const MAX_INDEX = Math.max(0, reviews.length - VISIBLE);
 
-const ArrowButton = ({
-  direction,
-  onClick,
-  disabled,
-}: {
-  direction: "left" | "right";
-  onClick: () => void;
-  disabled: boolean;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    disabled={disabled}
-    aria-label={direction === "left" ? "Previous" : "Next"}
-    className="cursor-pointer disabled:cursor-default disabled:opacity-30"
-  >
-    <ArrowCircle
-      direction={direction}
-      className="h-11 w-11"
-      colorClassName="bg-orange-400 hover:bg-orange-500 text-white"
-    />
-  </button>
-);
-
 export function ClientReviews() {
   const [index, setIndex] = useState(0);
 
@@ -158,7 +134,7 @@ export function ClientReviews() {
                   {/* TODO: replace with real client photo */}
                   <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full">
                     <Skeleton className="h-full w-full" />
-                    <span className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#fbfbff] bg-white text-xs">
+                    <span className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#fbfbff] bg-[#fbfbff] text-xs">
                       {review.flag}
                     </span>
                   </div>

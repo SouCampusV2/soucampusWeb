@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
 import { Unbounded } from "next/font/google";
 import { ArrowCircle } from "@/components/ArrowCircle";
+import { ArrowButton } from "@/components/ArrowButton";
 import { Button } from "@/components/Button";
 import type { Project } from "@/lib/projects";
 
@@ -18,27 +19,6 @@ const displayFont = Unbounded({
 type Props = {
   projects: Project[];
 };
-
-const ArrowButton = ({
-  direction,
-  onClick,
-}: {
-  direction: "left" | "right";
-  onClick: () => void;
-}) => (
-  <button
-    type="button"
-    onClick={onClick}
-    aria-label={direction === "left" ? "Previous" : "Next"}
-    className="cursor-pointer"
-  >
-    <ArrowCircle
-      direction={direction}
-      className="h-11 w-11"
-      colorClassName="bg-lime-400 hover:bg-lime-500 text-zinc-950"
-    />
-  </button>
-);
 
 // Honeyfrost-style hero: a row of panels, the active one expanded via
 // animated flexGrow. Hover expands on desktop, tap/click expands on
@@ -90,8 +70,16 @@ export function PortfolioHero({ projects: allProjects }: Props) {
         </div>
 
         <div className="hidden shrink-0 gap-3 sm:flex">
-          <ArrowButton direction="left" onClick={() => goTo(active - 1)} />
-          <ArrowButton direction="right" onClick={() => goTo(active + 1)} />
+          <ArrowButton
+            direction="left"
+            onClick={() => goTo(active - 1)}
+            colorClassName="bg-lime-400 hover:bg-lime-500 text-zinc-950"
+          />
+          <ArrowButton
+            direction="right"
+            onClick={() => goTo(active + 1)}
+            colorClassName="bg-lime-400 hover:bg-lime-500 text-zinc-950"
+          />
         </div>
       </div>
 
