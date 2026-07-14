@@ -16,8 +16,7 @@ export const metadata: Metadata = {
   title: "Contact — SouCampus builds",
 };
 
-// TODO: replace "#" with the real Discord server invite link
-const DISCORD_INVITE = "#";
+const DISCORD_INVITE = "https://discord.gg/ft8HVk8Cg";
 
 const FAQ = [
   {
