@@ -5,19 +5,17 @@ import Image from "next/image";
 
 const CIRCLE_SIZE = 128;
 
-// TODO: hotlinking wise.com's own flag assets is fragile (their CDN, not ours) —
-// swap for locally hosted copies before shipping this to production.
 const COUNTRIES = [
-  { code: "EUR", src: "https://wise.com/web-art/assets/flags/eur.svg" },
-  { code: "USD", src: "https://wise.com/web-art/assets/flags/usd.svg" },
-  { code: "NL", src: "https://wise.com/web-art/assets/flags/nl.svg" },
-  { code: "GBP", src: "https://wise.com/web-art/assets/flags/gbp.svg" },
-  { code: "DE", src: "https://wise.com/web-art/assets/flags/de.svg" },
-  { code: "FR", src: "https://wise.com/web-art/assets/flags/fr.svg" },
-  { code: "IT", src: "https://wise.com/web-art/assets/flags/it.svg" },
-  { code: "CA", src: "https://wise.com/web-art/assets/flags/ca.svg" },
-  { code: "UAH", src: "https://wise.com/web-art/assets/flags/uah.svg" },
-  { code: "EE", src: "https://wise.com/web-art/assets/flags/ee.svg" },
+  { code: "EUR", src: "/countries/eur.svg" },
+  { code: "USD", src: "/countries/usd.svg" },
+  { code: "NL", src: "/countries/nl.svg" },
+  { code: "GBP", src: "/countries/gbp.svg" },
+  { code: "DE", src: "/countries/de.svg" },
+  { code: "FR", src: "/countries/fr.svg" },
+  { code: "IT", src: "/countries/it.svg" },
+  { code: "CA", src: "/countries/ca.svg" },
+  { code: "UAH", src: "/countries/uah.svg" },
+  { code: "EE", src: "/countries/ee.svg" },
 ];
 
 export function CountriesMarquee() {
