@@ -5,17 +5,21 @@ import Image from "next/image";
 
 const CIRCLE_SIZE = 128;
 
+// Decorative list, kept as a local array on purpose — unlike `reviews` or
+// `stats`, this changes rarely and doesn't need to live in a database table.
+// Shaped the same way regardless (id/label/src per row) so every data
+// source on the site follows one consistent style.
 const COUNTRIES = [
-  { code: "EUR", src: "/countries/eur.svg" },
-  { code: "USD", src: "/countries/usd.svg" },
-  { code: "NL", src: "/countries/nl.svg" },
-  { code: "GBP", src: "/countries/gbp.svg" },
-  { code: "DE", src: "/countries/de.svg" },
-  { code: "FR", src: "/countries/fr.svg" },
-  { code: "IT", src: "/countries/it.svg" },
-  { code: "CA", src: "/countries/ca.svg" },
-  { code: "UAH", src: "/countries/uah.svg" },
-  { code: "EE", src: "/countries/ee.svg" },
+  { id: "eur", label: "Eurozone", src: "/countries/eur.svg" },
+  { id: "usd", label: "United States", src: "/countries/usd.svg" },
+  { id: "nl", label: "Netherlands", src: "/countries/nl.svg" },
+  { id: "gbp", label: "United Kingdom", src: "/countries/gbp.svg" },
+  { id: "de", label: "Germany", src: "/countries/de.svg" },
+  { id: "fr", label: "France", src: "/countries/fr.svg" },
+  { id: "it", label: "Italy", src: "/countries/it.svg" },
+  { id: "ca", label: "Canada", src: "/countries/ca.svg" },
+  { id: "uah", label: "Ukraine", src: "/countries/uah.svg" },
+  { id: "ee", label: "Estonia", src: "/countries/ee.svg" },
 ];
 
 export function CountriesMarquee() {
@@ -107,7 +111,7 @@ export function CountriesMarquee() {
 
             {loop.map((country, i) => (
               <span
-                key={`${country.code}-${i}`}
+                key={`${country.id}-${i}`}
                 ref={(el) => {
                   chipRefs.current[i] = el;
                 }}
@@ -115,7 +119,7 @@ export function CountriesMarquee() {
               >
                 <Image
                   src={country.src}
-                  alt={country.code}
+                  alt={country.label}
                   width={CIRCLE_SIZE}
                   height={CIRCLE_SIZE}
                   className="h-full w-full object-cover"

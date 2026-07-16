@@ -4,6 +4,7 @@ import { RecentProjects } from "@/components/RecentProjects";
 import { ClientReviews } from "@/components/ClientReviews";
 import { CountriesMarquee } from "@/components/CountriesMarquee";
 import { HowItWorks } from "@/components/HowItWorks";
+import { AuthorCta } from "@/components/AuthorCta";
 
 export default function Home() {
   return (
@@ -14,6 +15,7 @@ export default function Home() {
       <CountriesMarquee />
       <ClientReviews />
       <HowItWorks />
+      <AuthorCta />
     </main>
   );
 }
