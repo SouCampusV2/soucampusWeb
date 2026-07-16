@@ -46,13 +46,14 @@ Day-to-day work happens on the `dev` branch (Vercel gives it its own Preview URL
 - `.claude/skills/` — custom Claude Code skills used to review this repo (`design-check`, `structure-check`)
 - `CLAUDE.md` — project plan and learning roadmap
 - `DESIGN.md` — the design system: colors, typography, layout rules, reusable components
+- `RESPONSIVE_PLAN.md` — working checklist for the mobile/tablet responsive pass (to be folded into `DESIGN.md` once the breakpoint rules settle)
 
 ## Roadmap
 
 1. ~~Working portfolio site~~ — done
 2. ~~Deploy on Vercel~~ — done
 3. ~~Real content everywhere~~ — done (Discord invite, portfolio, reviews, About me, FAQ, stats, pricing); only the author's photo is still a placeholder
-4. ~~Mobile/tablet responsive pass~~ — first pass done (see `RESPONSIVE_PLAN.md` for the remaining second-priority polish)
+4. ~~Mobile/tablet responsive pass~~ — done (see `RESPONSIVE_PLAN.md` for the full breakdown; rules still need porting into `DESIGN.md`)
 5. Mini content admin backed by Supabase
 6. Shop: catalog, cart, checkout, Stripe
 7. Docker, tests, deeper analytics (e.g. PostHog)
