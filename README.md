@@ -51,7 +51,7 @@ Day-to-day work happens on the `dev` branch (Vercel gives it its own Preview URL
 
 1. ~~Working portfolio site~~ — done
 2. ~~Deploy on Vercel~~ — done
-3. Real content everywhere (done: Discord invite, portfolio, reviews, About me, FAQ — still placeholder: stats numbers, pricing)
+3. ~~Real content everywhere~~ — done (Discord invite, portfolio, reviews, About me, FAQ, stats, pricing); only the author's photo is still a placeholder
 4. ~~Mobile/tablet responsive pass~~ — first pass done (see `RESPONSIVE_PLAN.md` for the remaining second-priority polish)
 5. Mini content admin backed by Supabase
 6. Shop: catalog, cart, checkout, Stripe

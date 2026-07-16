@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
-import { Plus } from "@phosphor-icons/react/dist/ssr";
+import { Plus, Minus } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
 import { ArrowCircle } from "@/components/ArrowCircle";
@@ -21,15 +21,18 @@ const DISCORD_INVITE = "https://discord.gg/ft8HVk8Cg";
 const FAQ = [
   {
     question: "How much does a map cost?",
-    answer: "Placeholder — price depends on scale and timeline, discussed on Discord.",
+    answer:
+      "The base rate is 1.25€ per 1×1 unit. For example, a 100×100 map costs 125€ under this pricing. The exact final price depends on the size and scope of your project — feel free to share your idea in a Discord ticket and I'll calculate the cost for you.",
   },
   {
     question: "How long does an order take?",
-    answer: "Placeholder — timeline depends on the project's complexity.",
+    answer:
+      "A 150×150 map can be done in as little as 2-3 days at minimum, but the actual timeline mainly depends on the amount of work involved and my personal schedule at the time. Larger or more detailed projects will naturally take longer.",
   },
   {
     question: "How does payment work?",
-    answer: "Placeholder — payment details are discussed individually in a ticket.",
+    answer:
+      "Payment is required upfront — either: 50% before starting, and the remaining 50% before I send the schematic or world file, or 100% upfront, in which case you'll get to watch the build process live on my server as it happens.",
   },
   {
     question: "Can I request changes after delivery?",
@@ -181,7 +184,8 @@ export default function ContactPage() {
               <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-6 text-lg font-semibold text-zinc-950 marker:content-none [&::-webkit-details-marker]:hidden">
                 {item.question}
                 <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
-                  <Plus size={20} weight="bold" />
+                  <Plus size={20} weight="bold" className="group-open:hidden" />
+                  <Minus size={20} weight="bold" className="hidden group-open:block" />
                 </span>
               </summary>
               <p className="-mt-2 pb-6 text-sm leading-6 text-zinc-600">

@@ -10,8 +10,11 @@ type Size = "sm" | "md" | "lg";
 // кнопки того же size — паддинг теперь только горизонтальный. На мобильном
 // (< 640px) кнопка немного компактнее (h-12/48px) — h-14 ощущается слишком
 // массивной на телефоне.
+// active:scale-95 — a distinct "pressed" state (not just the hover:scale-105
+// growing back on release), so clicking/tapping actually feels like it
+// registered instead of the button looking totally flat/unresponsive.
 const base =
-  "inline-flex h-12 cursor-pointer items-center justify-center font-semibold transition-transform hover:scale-105 sm:h-14";
+  "inline-flex h-12 cursor-pointer items-center justify-center font-semibold transition-transform hover:scale-105 active:scale-95 sm:h-14";
 
 const variants: Record<Variant, string> = {
   primary: "rounded-full bg-orange-400 text-zinc-950 hover:bg-orange-500",

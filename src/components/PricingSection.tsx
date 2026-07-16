@@ -83,7 +83,7 @@ export function PricingSection() {
               transition={{ delay: i * 0.1 }}
               className={plan.span}
             >
-              <div className="group flex h-full cursor-pointer flex-col justify-between rounded-3xl bg-zinc-100 p-6 transition-colors hover:bg-[#ececee] sm:p-8">
+              <div className="group flex h-full cursor-pointer flex-col justify-between rounded-3xl bg-zinc-100 p-6 transition-colors hover:bg-[#ececee] active:bg-[#ececee] sm:p-8">
                 <div>
                   <h3 className="text-lg font-semibold text-zinc-950">
                     {plan.name}

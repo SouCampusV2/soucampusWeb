@@ -13,6 +13,8 @@ const displayFont = Unbounded({
   subsets: ["latin"],
 });
 
+const DISCORD_INVITE = "https://discord.gg/ft8HVk8Cg";
+
 const links = [
   { href: "/", label: "Home" },
   { href: "/portfolio", label: "Portfolio" },
@@ -70,7 +72,13 @@ export function Navbar() {
           </ul>
 
           <div className="hidden min-[760px]:block">
-            <Button href="/contact" variant="primary" size="sm" pageTransition>
+            <Button
+              href={DISCORD_INVITE}
+              target="_blank"
+              rel="noopener noreferrer"
+              variant="primary"
+              size="sm"
+            >
               Order now
             </Button>
           </div>
@@ -123,6 +131,18 @@ export function Navbar() {
                   </Link>
                 </li>
               ))}
+              <li className="px-6 py-3">
+                <Button
+                  href={DISCORD_INVITE}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  variant="primary"
+                  size="sm"
+                  className="w-full"
+                >
+                  Order now
+                </Button>
+              </li>
             </motion.ul>
           )}
         </AnimatePresence>
