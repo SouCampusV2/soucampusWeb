@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Unbounded } from "next/font/google";
@@ -22,10 +23,29 @@ const links = [
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
+  const [prevPathname, setPrevPathname] = useState(pathname);
+
+  // PageTransition intercepts nav-link clicks in the capture phase and
+  // calls stopPropagation (see PageTransition.tsx) so its own delayed
+  // router.push wins the race against Next's Link — but that also stops
+  // the click from ever reaching this menu's own onClick={() =>
+  // setOpen(false)} on the mobile link, since stopPropagation there halts
+  // propagation before it can reach any bubble-phase handler on the
+  // target. Closing on route change instead sidesteps the click entirely:
+  // whenever the pathname actually changes, the menu closes, regardless of
+  // how the navigation got triggered. Done during render (the "adjusting
+  // state when a prop changes" pattern React recommends), not in a useEffect
+  // — setState synchronously inside an effect body triggers an extra
+  // cascading render for no benefit here.
+  if (pathname !== prevPathname) {
+    setPrevPathname(pathname);
+    setOpen(false);
+  }
 
   return (
     <div className="sticky top-4 z-50 px-4">
-      <header className="mx-auto max-w-6xl rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/60 backdrop-blur-xl">
+      <header className="relative mx-auto max-w-6xl rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/60 backdrop-blur-xl">
         <nav className="flex items-center justify-between px-6 py-3">
           <Link
             href="/"
@@ -35,7 +55,7 @@ export function Navbar() {
             SouCampus
           </Link>
 
-          <ul className="hidden items-center gap-8 text-sm font-medium text-zinc-600 sm:flex">
+          <ul className="hidden items-center gap-8 text-sm font-medium text-zinc-600 min-[760px]:flex">
             {links.map((link) => (
               <li key={link.href}>
                 <Link
@@ -49,7 +69,7 @@ export function Navbar() {
             ))}
           </ul>
 
-          <div className="hidden sm:block">
+          <div className="hidden min-[760px]:block">
             <Button href="/contact" variant="primary" size="sm" pageTransition>
               Order now
             </Button>
@@ -57,7 +77,7 @@ export function Navbar() {
 
           <button
             onClick={() => setOpen((v) => !v)}
-            className="flex h-9 w-9 cursor-pointer flex-col items-center justify-center gap-1.5 sm:hidden"
+            className="flex h-9 w-9 cursor-pointer flex-col items-center justify-center gap-1.5 min-[760px]:hidden"
             aria-label="Toggle menu"
           >
             <motion.span
@@ -81,7 +101,15 @@ export function Navbar() {
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="overflow-hidden border-t border-zinc-200 sm:hidden"
+              // absolute + top-[calc(100%+8px)]: a floating card below the
+              // pill, not a normal-flow sibling — growing/shrinking this no
+              // longer changes the header's own flow height, which is what
+              // was shoving every section on the page down (and briefly
+              // exposing the plain white body background) every time the
+              // menu opened. Its own rounded-3xl card (not flush against
+              // the pill) means the always-`rounded-full` header above
+              // never has to flatten its corners to fit a flush dropdown.
+              className="absolute inset-x-0 top-[calc(100%+8px)] overflow-hidden rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 backdrop-blur-xl min-[760px]:hidden"
             >
               {links.map((link) => (
                 <li key={link.href}>

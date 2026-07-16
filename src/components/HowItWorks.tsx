@@ -12,7 +12,7 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section className="bg-lime-300 py-28">
+    <section className="bg-lime-300 py-16 sm:py-28">
       <div className="mx-auto max-w-6xl px-6">
         <motion.h2
           initial={{ opacity: 0, y: 16 }}
@@ -27,7 +27,7 @@ export function HowItWorks() {
           5 steps.
         </p>
 
-        <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="mt-10 grid gap-6 sm:mt-12 sm:grid-cols-2 sm:gap-8 md:grid-cols-3 lg:grid-cols-5">
           {steps.map((step, i) => (
             <motion.div
               key={step.title}

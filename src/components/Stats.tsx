@@ -61,21 +61,27 @@ function Counter({ to, suffix }: { to: number; suffix: string }) {
   );
 }
 
+function Divider() {
+  return (
+    <div className="flex h-1 w-full">
+      {stats.map((stat) => (
+        <div key={stat.id} className={`h-full flex-1 ${stat.bar}`} />
+      ))}
+    </div>
+  );
+}
+
 export function Stats() {
   return (
-    <section className="pb-16">
-      <div className="flex h-1 w-full">
-        {stats.map((stat) => (
-          <div key={stat.id} className={`h-full flex-1 ${stat.bar}`} />
-        ))}
-      </div>
+    <section>
+      <Divider />
 
       <div className="mx-auto max-w-6xl px-6">
-        <div className="mt-8 grid grid-cols-1 gap-8 sm:grid-cols-3">
+        <div className="my-10 grid grid-cols-1 gap-6 sm:my-16 sm:grid-cols-3 sm:gap-8">
           {stats.map((stat) => (
             <div key={stat.id} className="text-center">
               <div
-                className={`text-6xl font-extrabold tabular-nums ${stat.color}`}
+                className={`text-4xl font-extrabold tabular-nums sm:text-6xl ${stat.color}`}
               >
                 <Counter to={stat.value} suffix={stat.suffix} />
               </div>
@@ -84,6 +90,7 @@ export function Stats() {
           ))}
         </div>
       </div>
+
     </section>
   );
 }

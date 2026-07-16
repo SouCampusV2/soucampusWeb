@@ -6,7 +6,7 @@ export const metadata: Metadata = {
 
 export default function ShopPage() {
   return (
-    <main className="w-full mx-auto max-w-6xl flex-1 px-6 pb-28">
+    <main className="w-full mx-auto max-w-6xl flex-1 px-6 pb-16 sm:pb-28">
       <div className="max-w-2xl pt-20">
         <h1 className="text-4xl font-extrabold tracking-tight text-zinc-950 sm:text-5xl">
           Shop opening soon

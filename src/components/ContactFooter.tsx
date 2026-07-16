@@ -6,7 +6,7 @@ import { Button } from "@/components/Button";
 export function ContactFooter() {
   return (
     <section className="border-t border-zinc-200 dark:border-zinc-800">
-      <div className="mx-auto max-w-6xl px-6 py-28 text-center">
+      <div className="mx-auto max-w-6xl px-6 py-16 text-center sm:py-28">
         <motion.h2
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}

@@ -33,23 +33,28 @@ const FAQ = [
   },
   {
     question: "Can I request changes after delivery?",
-    answer: "Placeholder — revision terms will be described here.",
+    answer:
+      "A certain number of revisions is included in the price (agreed on in advance — for example, 1-2 free revisions within a week after delivery). Additional revisions beyond the agreed scope are billed separately by arrangement.",
   },
   {
     question: "Which Minecraft versions do you build on?",
-    answer: "Placeholder — list of supported versions.",
+    answer:
+      "I work across a wide range of versions — both older and current ones. If you have a specific version or modpack in mind, just mention it in the ticket and we'll figure out together whether it's feasible for your idea.",
   },
   {
-    question: "Do you work with existing servers or only from scratch?",
-    answer: "Placeholder — both, discussed individually.",
+    question: "Do you improve existing maps?",
+    answer:
+      "Yes, I do improve/enhance existing maps. How much can be done depends heavily on your specific requests and the overall scope of work needed. Reach out on Discord to discuss the details of your map and what you'd like improved.",
   },
   {
     question: "Can I order a map for a specific mode (PvP, RPG, parkour)?",
-    answer: "Placeholder — yes, describe your idea on Discord and I'll suggest options.",
+    answer:
+      "Yes, of course. Describe your idea on Discord and I'll suggest options — suitable mechanics, style, and map structure for the mode you have in mind (PvP arenas, RPG locations with quest structures, parkour courses with checkpoints, and so on).",
   },
   {
     question: "What if I don't like the result?",
-    answer: "Placeholder — revision and refund terms will be described here.",
+    answer:
+      "I send you continuous updates throughout the build, so you'll always be able to see and comment on progress as it happens. If everything looked good along the way and you're only unhappy with the final result at the very end, that won't be grounds for a refund or rework. However, if we go through a couple of rounds of rebuilding early on and it's genuinely not working out, I'll refund part of what you paid: 45% back if you paid 50% upfront, or 95% back if you paid the full 100% upfront.",
   },
 ];
 
@@ -59,18 +64,18 @@ export default function ContactPage() {
       {/* Hero — same glow technique as the homepage Hero: a radial gradient
           bled up behind the navbar (-top-32) instead of a flat background,
           so there's no white gap above/behind the floating navbar pill. */}
-      <section className="relative pb-16 pt-20">
+      <section className="relative pb-8 pt-20 sm:pb-16">
         <div
           aria-hidden
           className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[calc(100%+8rem)] w-full max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.35),transparent_70%)]"
         />
         <div className="mx-auto grid max-w-6xl items-start gap-10 px-6 sm:grid-cols-2">
           <div>
-            <span className="text-sm font-medium text-zinc-700">
+            <span className="text-sm font-semibold text-blue-500">
               Get in touch
             </span>
             <h1
-              className={`${displayFont.className} mt-2 text-4xl leading-tight tracking-tight text-zinc-950 sm:text-5xl`}
+              className={`${displayFont.className} mt-3 text-4xl leading-tight tracking-tight text-zinc-950 sm:text-5xl`}
             >
               I&apos;m here, always on{" "}
               <span className="text-blue-500">Discord</span>
@@ -109,7 +114,7 @@ export default function ContactPage() {
 
       <main className="w-full mx-auto max-w-6xl flex-1 px-6">
       {/* Chat to us directly */}
-      <section className="grid items-center gap-10 py-20 sm:grid-cols-2">
+      <section className="grid items-center gap-8 py-10 sm:gap-10 sm:py-20 sm:grid-cols-2">
         {/* TODO: replace with a real Discord conversation screenshot */}
         <div className="relative aspect-video overflow-hidden rounded-2xl">
           <Skeleton className="h-full w-full" />
@@ -138,7 +143,7 @@ export default function ContactPage() {
       </section>
 
       {/* Ready-to-go answers */}
-      <section className="grid items-center gap-10 border-t border-zinc-200 py-20 sm:grid-cols-2">
+      <section className="grid items-center gap-8 border-t border-zinc-200 py-10 sm:gap-10 sm:py-20 sm:grid-cols-2">
         <div className="sm:order-1">
           <h2 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
             Ready-to-go answers
@@ -165,7 +170,7 @@ export default function ContactPage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="scroll-mt-24 border-t border-zinc-200 py-20">
+      <section id="faq" className="scroll-mt-24 border-t border-zinc-200 py-10 sm:py-20">
         <h2 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
           Frequently asked questions
         </h2>

@@ -23,7 +23,7 @@ const PLANS = [
     description:
       "Access to part of the build library — see what's on offer before subscribing.",
     accent: "blue" as Accent,
-    span: "lg:col-span-2",
+    span: "md:col-span-2",
   },
   {
     name: "Builder",
@@ -31,7 +31,7 @@ const PLANS = [
     description:
       "A lot of builds in the library so far, plus new ones each month. Builds are saved to your profile on the site.",
     accent: "orange" as Accent,
-    span: "lg:col-span-2",
+    span: "md:col-span-2",
   },
   {
     name: "Pro",
@@ -39,7 +39,7 @@ const PLANS = [
     description:
       "Everything in Builder plus a commercial license for the builds and early access to new drops.",
     accent: "lime" as Accent,
-    span: "lg:col-span-2",
+    span: "md:col-span-2",
   },
   {
     name: "Support",
@@ -47,7 +47,7 @@ const PLANS = [
     description:
       "For teams and servers — multiple members, shared library access and priority on custom orders.",
     accent: "blue" as Accent,
-    span: "lg:col-span-3",
+    span: "md:col-span-3",
   },
   {
     name: "Lifetime",
@@ -55,13 +55,13 @@ const PLANS = [
     description:
       "One-time payment — lifetime access to the entire build library, including everything released in the future.",
     accent: "orange" as Accent,
-    span: "lg:col-span-3",
+    span: "md:col-span-3",
   },
 ];
 
 export function PricingSection() {
   return (
-    <section className="border-t border-zinc-200 py-28">
+    <section className="border-t border-zinc-200 py-16 sm:py-28">
       <div className="mx-auto max-w-6xl px-6">
         <h2 className="mt-4 text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
           Choose your plan
@@ -73,7 +73,7 @@ export function PricingSection() {
           <br></br>  <i>Coming soon...</i>
         </p>
 
-        <div className="mt-10 grid gap-4 lg:grid-cols-6">
+        <div className="mt-10 grid gap-3 sm:gap-4 md:grid-cols-6">
           {PLANS.map((plan, i) => (
             <motion.div
               key={plan.name}
@@ -83,7 +83,7 @@ export function PricingSection() {
               transition={{ delay: i * 0.1 }}
               className={plan.span}
             >
-              <div className="group flex h-full cursor-pointer flex-col justify-between rounded-3xl bg-zinc-100 p-8 transition-colors hover:bg-[#ececee]">
+              <div className="group flex h-full cursor-pointer flex-col justify-between rounded-3xl bg-zinc-100 p-6 transition-colors hover:bg-[#ececee] sm:p-8">
                 <div>
                   <h3 className="text-lg font-semibold text-zinc-950">
                     {plan.name}

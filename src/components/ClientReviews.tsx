@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { Skeleton } from "@/components/Skeleton";
 import { Button } from "@/components/Button";
@@ -81,17 +81,43 @@ const ACCENT_BUTTON: Record<Accent, string> = {
   lime: "text-lime-600 underline decoration-2 underline-offset-4 hover:text-lime-700",
 };
 
-const CARD_WIDTH = 340;
+// Card width used to be a fixed 340px, always — on a 375px phone that's
+// almost the entire screen with no room to peek the next card, and the
+// carousel's arrows were hidden below `sm:` besides, so mobile had no way
+// to reach cards past the first (see RESPONSIVE_PLAN.md). Card width is now
+// responsive via CSS (`w-[78vw] sm:w-[340px]`), so `cardWidth` below is
+// *measured* from the actual rendered card rather than assumed — the
+// spring-animated `x` offset needs the real pixel width to land each card
+// in the same place the CSS put it, at any viewport size.
 const CARD_GAP = 24;
-const STEP = CARD_WIDTH + CARD_GAP;
-const VISIBLE = 3;
-const MAX_INDEX = Math.max(0, reviews.length - VISIBLE);
+const DEFAULT_CARD_WIDTH = 340;
 
 export function ClientReviews() {
   const [index, setIndex] = useState(0);
+  const [cardWidth, setCardWidth] = useState(DEFAULT_CARD_WIDTH);
+  const [visible, setVisible] = useState(3);
+  const firstCardRef = useRef<HTMLQuoteElement>(null);
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function measure() {
+      const card = firstCardRef.current;
+      const track = trackRef.current;
+      if (!card || !track) return;
+      const width = card.getBoundingClientRect().width;
+      setCardWidth(width);
+      setVisible(Math.max(1, Math.round(track.clientWidth / (width + CARD_GAP))));
+    }
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, []);
+
+  const step = cardWidth + CARD_GAP;
+  const maxIndex = Math.max(0, reviews.length - visible);
 
   return (
-    <section className="bg-[#fbfbff] py-28">
+    <section className="bg-[#fbfbff] py-16 sm:py-28">
       <div className="mx-auto max-w-6xl px-6">
         <div className="flex items-end justify-between gap-6">
           <motion.h2
@@ -103,7 +129,7 @@ export function ClientReviews() {
             Hear from clients working with me
           </motion.h2>
 
-          <div className="hidden shrink-0 gap-3 sm:flex">
+          <div className="flex shrink-0 gap-3">
             <ArrowButton
               direction="left"
               onClick={() => setIndex((i) => Math.max(0, i - 1))}
@@ -111,8 +137,8 @@ export function ClientReviews() {
             />
             <ArrowButton
               direction="right"
-              onClick={() => setIndex((i) => Math.min(MAX_INDEX, i + 1))}
-              disabled={index === MAX_INDEX}
+              onClick={() => setIndex((i) => Math.min(maxIndex, i + 1))}
+              disabled={index === maxIndex}
             />
           </div>
         </div>
@@ -121,16 +147,25 @@ export function ClientReviews() {
       <div className="mt-12 overflow-hidden">
         <div className="mx-auto max-w-6xl px-6">
           <motion.div
-            className="flex gap-6"
-            animate={{ x: -index * STEP }}
+            ref={trackRef}
+            className="flex cursor-grab gap-6 active:cursor-grabbing"
+            drag="x"
+            dragConstraints={{ left: -maxIndex * step, right: 0 }}
+            dragElastic={0.15}
+            onDragEnd={(_, info) => {
+              const threshold = step / 3;
+              if (info.offset.x < -threshold) setIndex((i) => Math.min(maxIndex, i + 1));
+              else if (info.offset.x > threshold) setIndex((i) => Math.max(0, i - 1));
+            }}
+            animate={{ x: -index * step }}
             transition={{ type: "spring", stiffness: 260, damping: 30 }}
           >
             {reviews.map((review, i) => (
               <blockquote
                 key={review.name}
-                style={{ width: CARD_WIDTH }}
-                className={`flex shrink-0 flex-col justify-between rounded-3xl p-6 ${
-                  i % 2 === 1 ? "mt-8" : ""
+                ref={i === 0 ? firstCardRef : undefined}
+                className={`flex w-[78vw] shrink-0 flex-col justify-between rounded-3xl p-6 sm:w-[340px] ${
+                  i % 2 === 1 ? "sm:mt-8" : ""
                 } ${ACCENT_CARD[review.accent]}`}
               >
                 <div>

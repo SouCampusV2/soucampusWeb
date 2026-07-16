@@ -35,10 +35,10 @@ export default function PortfolioPage() {
   const gridProjects = projects.slice(CAROUSEL_ITEMS);
 
   return (
-    <main className="w-full mx-auto max-w-6xl flex-1 px-6 pb-28">
+    <main className="w-full mx-auto max-w-6xl flex-1 px-6 pb-16 sm:pb-28">
       <PortfolioHero projects={projects} />
 
-      <div className="mt-28 border-t border-zinc-200 pt-16">
+      <div className="mt-16 border-t border-zinc-200 pt-10 sm:mt-28 sm:pt-16">
         <h2 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
           More projects
         </h2>
@@ -46,7 +46,7 @@ export default function PortfolioPage() {
           The full portfolio. Click a build to see details, timeline and gallery.
         </p>
 
-        <div className="mt-10 grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-6 lg:auto-rows-[220px] lg:grid-flow-dense">
+        <div className="mt-10 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-6 lg:auto-rows-[220px] lg:grid-flow-dense">
           {gridProjects.map((project, i) => (
             <Link
               key={project.slug}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
 import { Skeleton } from "@/components/Skeleton";
+import { AuthorCta } from "@/components/AuthorCta";
 
 // Same display font as the homepage Hero — rhymes the site's hero headings.
 const displayFont = Unbounded({
@@ -54,16 +55,17 @@ const TIMELINE = [
 
 export default function AboutPage() {
   return (
-    <main className="w-full mx-auto max-w-6xl flex-1 px-6 pb-28">
-      {/* Hero — same glow technique as the other page heroes: radial gradient
-          bled up behind the navbar, fixed pt-20 so the heading sits at the
-          same distance from the navbar on every page (see DESIGN.md). */}
-      <section className="relative pt-20">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute left-1/2 -top-32 -z-10 h-[36rem] w-full max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(163,230,53,0.35),transparent_70%)]"
-        />
+    <>
+      <AuthorCta />
 
+      <main className="w-full mx-auto max-w-6xl flex-1 px-6 pb-16 sm:pb-28">
+      {/* No top glow here — AuthorCta right above already bleeds one in;
+          a second `-top-32` gradient stacked directly under it read as a
+          duplicate/second light source. Instead, a gradient anchored to
+          this section's own bottom fades it out before the plain TIMELINE
+          list below. mt-16 puts real breathing room between the two
+          sections instead of having them sit flush against each other. */}
+      <section className="relative mt-8 pb-16 pt-20 sm:mt-16">
         <div className="mx-auto max-w-2xl text-center">
           <span className="text-sm font-semibold text-lime-600">
             A Long Journey
@@ -74,20 +76,19 @@ export default function AboutPage() {
             Building Worlds Since Childhood
           </h1>
           <p className="mt-6 leading-7 text-zinc-600">
-            Hi! My name is Eugene. For 8 years I&apos;ve been building in
-            Minecraft professionally — from childhood sandcastles to
-            large-scale architectural projects for clients. My goal is to
-            turn clients&apos; ideas into vivid, detailed worlds and keep
-            growing as a builder.
+            For 8 years I&apos;ve been building in Minecraft professionally
+            — from childhood sandcastles to large-scale architectural
+            projects for clients. My goal is to turn clients&apos; ideas
+            into vivid, detailed worlds and keep growing as a builder.
           </p>
         </div>
       </section>
 
-      <div className="mt-24 flex flex-col gap-20">
+      <div className="mt-12 flex flex-col gap-12 sm:mt-24 sm:gap-20">
         {TIMELINE.map((item) => (
           <div key={item.age} className="mx-auto max-w-xl text-center">
             <div
-              className={`${displayFont.className} bg-gradient-to-r from-orange-400 to-lime-500 bg-clip-text text-4xl text-transparent sm:text-5xl`}
+              className={`${displayFont.className} bg-gradient-to-r from-lime-300 to-lime-700 bg-clip-text text-4xl text-transparent sm:text-5xl`}
             >
               {item.age}
             </div>
@@ -99,7 +100,7 @@ export default function AboutPage() {
         ))}
       </div>
 
-      <div className="mx-auto mt-24 max-w-xl text-center">
+      <div className="mx-auto mt-12 max-w-xl text-center sm:mt-24">
         <p className="leading-7 text-zinc-600">
           And of course, a big part of my work is about people. Every client comes not
           with an exact blueprint, but with an image, a feeling, a
@@ -119,12 +120,13 @@ export default function AboutPage() {
       </div>
 
       {/* TODO: replace with a real photo */}
-      <div className="relative mt-20 aspect-[21/9] w-full overflow-hidden rounded-3xl">
+      <div className="relative mt-12 aspect-[21/9] w-full overflow-hidden rounded-3xl sm:mt-20">
         <Skeleton className="h-full w-full" />
         <span className="absolute inset-0 flex items-center justify-center text-sm font-medium text-zinc-400">
           Photo coming soon
         </span>
       </div>
-    </main>
+      </main>
+    </>
   );
 }

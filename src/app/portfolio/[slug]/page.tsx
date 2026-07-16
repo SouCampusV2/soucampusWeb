@@ -30,7 +30,7 @@ export default async function ProjectPage({
   if (!project) notFound();
 
   return (
-    <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-28">
+    <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-16 sm:py-28">
       <div className="mx-auto max-w-3xl">
         <Link href="/portfolio" className="text-sm font-medium text-orange-600">
           ← All work
@@ -72,14 +72,14 @@ export default async function ProjectPage({
         </div>
 
         {project.gallery && project.gallery.length > 0 && (
-          <div className="mt-6 grid grid-cols-2 gap-4">
+          <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4">
             {project.gallery.map((src) => (
               <div key={src} className="relative aspect-video overflow-hidden rounded-2xl">
                 <Image
                   src={src}
                   alt={project.title}
                   fill
-                  sizes="(min-width: 1024px) 384px, 50vw"
+                  sizes="(min-width: 1024px) 384px, (min-width: 640px) 50vw, 100vw"
                   className="object-cover"
                 />
               </div>
