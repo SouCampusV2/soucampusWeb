@@ -3,13 +3,18 @@ import Link from "next/link";
 type Variant = "primary" | "secondary";
 type Size = "sm" | "md" | "lg";
 
-// h-14 (56px) — фиксированная высота ВСЕХ кнопок независимо от size/variant
-// и от содержимого (текст, иконка, текст+иконка). Раньше высота задавалась
-// вертикальным паддингом (py-*), из-за чего кнопка с иконкой внутри (см.
-// "Join Discord" на /contact) становилась выше обычной текстовой кнопки
-// того же size — паддинг теперь только горизонтальный.
+// h-14 (56px) на sm:+ — фиксированная высота ВСЕХ кнопок независимо от
+// size/variant и от содержимого (текст, иконка, текст+иконка). Раньше высота
+// задавалась вертикальным паддингом (py-*), из-за чего кнопка с иконкой
+// внутри (см. "Join Discord" на /contact) становилась выше обычной текстовой
+// кнопки того же size — паддинг теперь только горизонтальный. На мобильном
+// (< 640px) кнопка немного компактнее (h-12/48px) — h-14 ощущается слишком
+// массивной на телефоне.
+// active:scale-95 — a distinct "pressed" state (not just the hover:scale-105
+// growing back on release), so clicking/tapping actually feels like it
+// registered instead of the button looking totally flat/unresponsive.
 const base =
-  "inline-flex h-14 cursor-pointer items-center justify-center font-semibold transition-transform hover:scale-105";
+  "inline-flex h-12 cursor-pointer items-center justify-center font-semibold transition-transform hover:scale-105 active:scale-95 sm:h-14";
 
 const variants: Record<Variant, string> = {
   primary: "rounded-full bg-orange-400 text-zinc-950 hover:bg-orange-500",

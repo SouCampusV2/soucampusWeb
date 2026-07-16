@@ -4,7 +4,11 @@ import { usePathname, useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
 
-const COLS = 16;
+const COLS_DESKTOP = 16;
+// Fewer, bigger squares on narrow screens — at 16 columns a 375px-wide
+// phone gets ~23px cells, which reads as fussy confetti rather than the
+// bold blocky wave this effect is going for on desktop.
+const COLS_MOBILE = 8;
 const ROW_DELAY = 0.02;
 const JITTER = 0.14;
 const CELL_DURATION = 0.22;
@@ -32,15 +36,16 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
   const busy = useRef(false);
 
   const [phase, setPhase] = useState<Phase>("idle");
-  const [cell, setCell] = useState({ size: 0, cols: COLS, rows: COLS });
+  const [cell, setCell] = useState({ size: 0, cols: COLS_DESKTOP, rows: COLS_DESKTOP });
   const [pattern, setPattern] = useState<number[]>([]);
 
   // Держим клетки квадратными под текущий размер окна
   useEffect(() => {
     function measure() {
-      const size = window.innerWidth / COLS;
+      const cols = window.innerWidth < 640 ? COLS_MOBILE : COLS_DESKTOP;
+      const size = window.innerWidth / cols;
       const rows = Math.ceil(window.innerHeight / size);
-      setCell({ size, cols: COLS, rows });
+      setCell({ size, cols, rows });
     }
     measure();
     window.addEventListener("resize", measure);
@@ -90,7 +95,17 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
       setPhase("appearing");
 
       setTimeout(() => {
-        if (pendingHref.current) router.push(pendingHref.current);
+        // `scroll: false` opts out of Next's own scroll restoration — by
+        // default it scrolls to the top of whichever DOM segment actually
+        // changed, not to the true (0,0) top of the document. Since Navbar
+        // lives in the root layout and never remounts between routes, Next
+        // treats it as unchanged and scrolls only far enough to bring the
+        // page-specific content to the top — which lands at scrollY equal
+        // to the navbar's own reserved flow height (~82px), not 0. We do
+        // the scroll ourselves instead, once the route has actually changed
+        // (see the pathname effect below), so every navigation reliably
+        // starts at the real top of the page.
+        if (pendingHref.current) router.push(pendingHref.current, { scroll: false });
       }, waveMs + HOLD_MS);
     }
 
@@ -104,13 +119,27 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     if (pathname === prevPathname.current) return;
     prevPathname.current = pathname;
     pendingHref.current = null;
+    window.scrollTo(0, 0);
+    // Framer Motion's own "height: auto" measurement (used by the mobile
+    // nav dropdown's open/close animation) saves the scroll position before
+    // it measures layout and restores it afterwards, asynchronously, in its
+    // own batched rAF work — which lands *after* the scrollTo(0, 0) above,
+    // silently undoing it back to wherever the user was scrolled to on the
+    // previous page. Confirmed by intercepting window.scrollTo: our call
+    // fires, then ~30ms later Framer's own processBatch/measureAllKeyframes
+    // calls scrollTo again with the old value. A second, delayed correction
+    // reliably lands after that internal restore and wins the race.
+    const rescroll = setTimeout(() => window.scrollTo(0, 0), 100);
     setPhase("revealing");
 
     const timer = setTimeout(() => {
       setPhase("idle");
       busy.current = false;
     }, waveMs);
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      clearTimeout(rescroll);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pathname]);
 

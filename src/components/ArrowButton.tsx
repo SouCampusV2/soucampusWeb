@@ -18,7 +18,7 @@ export const ArrowButton = ({
     onClick={onClick}
     disabled={disabled}
     aria-label={direction === "left" ? "Previous" : "Next"}
-    className="cursor-pointer disabled:cursor-default disabled:opacity-30"
+    className="cursor-pointer transition-transform active:scale-90 disabled:cursor-default disabled:opacity-30"
   >
     <ArrowCircle direction={direction} className="h-11 w-11" colorClassName={colorClassName} />
   </button>

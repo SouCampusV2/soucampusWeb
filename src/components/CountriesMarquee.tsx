@@ -5,19 +5,21 @@ import Image from "next/image";
 
 const CIRCLE_SIZE = 128;
 
-// TODO: hotlinking wise.com's own flag assets is fragile (their CDN, not ours) —
-// swap for locally hosted copies before shipping this to production.
+// Decorative list, kept as a local array on purpose — unlike `reviews` or
+// `stats`, this changes rarely and doesn't need to live in a database table.
+// Shaped the same way regardless (id/label/src per row) so every data
+// source on the site follows one consistent style.
 const COUNTRIES = [
-  { code: "EUR", src: "https://wise.com/web-art/assets/flags/eur.svg" },
-  { code: "USD", src: "https://wise.com/web-art/assets/flags/usd.svg" },
-  { code: "NL", src: "https://wise.com/web-art/assets/flags/nl.svg" },
-  { code: "GBP", src: "https://wise.com/web-art/assets/flags/gbp.svg" },
-  { code: "DE", src: "https://wise.com/web-art/assets/flags/de.svg" },
-  { code: "FR", src: "https://wise.com/web-art/assets/flags/fr.svg" },
-  { code: "IT", src: "https://wise.com/web-art/assets/flags/it.svg" },
-  { code: "CA", src: "https://wise.com/web-art/assets/flags/ca.svg" },
-  { code: "UAH", src: "https://wise.com/web-art/assets/flags/uah.svg" },
-  { code: "EE", src: "https://wise.com/web-art/assets/flags/ee.svg" },
+  { id: "eur", label: "Eurozone", src: "/countries/eur.svg" },
+  { id: "usd", label: "United States", src: "/countries/usd.svg" },
+  { id: "nl", label: "Netherlands", src: "/countries/nl.svg" },
+  { id: "gbp", label: "United Kingdom", src: "/countries/gbp.svg" },
+  { id: "de", label: "Germany", src: "/countries/de.svg" },
+  { id: "fr", label: "France", src: "/countries/fr.svg" },
+  { id: "it", label: "Italy", src: "/countries/it.svg" },
+  { id: "ca", label: "Canada", src: "/countries/ca.svg" },
+  { id: "uah", label: "Ukraine", src: "/countries/uah.svg" },
+  { id: "ee", label: "Estonia", src: "/countries/ee.svg" },
 ];
 
 export function CountriesMarquee() {
@@ -79,7 +81,7 @@ export function CountriesMarquee() {
   const loop = [...COUNTRIES, ...COUNTRIES];
 
   return (
-    <section className="overflow-hidden border-t border-zinc-200 py-20">
+    <section className="overflow-hidden border-t border-zinc-200 py-12 sm:py-20">
       <div className="mx-auto max-w-6xl px-6">
         <h2 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
           Countries I&apos;ve worked with
@@ -88,16 +90,16 @@ export function CountriesMarquee() {
 
       <div ref={roadRef} className="mt-10 overflow-hidden">
         <div className="[mask-image:linear-gradient(to_right,black_88%,transparent)]">
-          <div ref={wheelsRef} className="flex w-max items-center gap-4">
-            <span className="relative flex h-32 w-32 shrink-0 items-center justify-center">
+          <div ref={wheelsRef} className="flex w-max items-center gap-2 sm:gap-4">
+            <span className="relative flex h-20 w-20 shrink-0 items-center justify-center sm:h-32 sm:w-32">
               <span
                 aria-hidden
                 className="absolute inset-y-0 right-0 w-screen rounded-r-full bg-lime-300"
               />
-              <span className="relative z-10 flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-zinc-950 text-lime-300">
+              <span className="relative z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-zinc-950 text-lime-300 sm:h-24 sm:w-24">
                 <svg
-                  width="32"
-                  height="32"
+                  width="24"
+                  height="24"
                   viewBox="0 0 24 24"
                   fill="currentColor"
                   aria-hidden="true"
@@ -109,15 +111,15 @@ export function CountriesMarquee() {
 
             {loop.map((country, i) => (
               <span
-                key={`${country.code}-${i}`}
+                key={`${country.id}-${i}`}
                 ref={(el) => {
                   chipRefs.current[i] = el;
                 }}
-                className="relative flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-50"
+                className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-50 sm:h-32 sm:w-32"
               >
                 <Image
                   src={country.src}
-                  alt={country.code}
+                  alt={country.label}
                   width={CIRCLE_SIZE}
                   height={CIRCLE_SIZE}
                   className="h-full w-full object-cover"

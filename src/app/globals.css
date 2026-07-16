@@ -9,6 +9,7 @@
 html {
   scrollbar-gutter: stable;
   color-scheme: light;
+  overflow-x: hidden;
 }
 
 :root {
