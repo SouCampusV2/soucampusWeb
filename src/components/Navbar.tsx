@@ -47,7 +47,7 @@ export function Navbar() {
 
   return (
     <div className="sticky top-4 z-50 px-4">
-      <header className="relative mx-auto max-w-6xl rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/60 backdrop-blur-xl">
+      <header className="relative mx-auto max-w-6xl rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/60 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/60">
         <nav className="flex items-center justify-between px-6 py-3">
           <Link
             href="/"
@@ -57,12 +57,12 @@ export function Navbar() {
             SouCampus
           </Link>
 
-          <ul className="hidden items-center gap-8 text-sm font-medium text-zinc-600 min-[760px]:flex">
+          <ul className="hidden items-center gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-400 min-[760px]:flex">
             {links.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
-                  className="transition-colors hover:text-zinc-950"
+                  className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
                   data-page-transition="true"
                 >
                   {link.label}
@@ -90,15 +90,15 @@ export function Navbar() {
           >
             <motion.span
               animate={{ rotate: open ? 45 : 0, y: open ? 6 : 0 }}
-              className="h-0.5 w-6 bg-zinc-900"
+              className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
             />
             <motion.span
               animate={{ opacity: open ? 0 : 1 }}
-              className="h-0.5 w-6 bg-zinc-900"
+              className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
             />
             <motion.span
               animate={{ rotate: open ? -45 : 0, y: open ? -6 : 0 }}
-              className="h-0.5 w-6 bg-zinc-900"
+              className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
             />
           </button>
         </nav>
@@ -117,14 +117,14 @@ export function Navbar() {
               // menu opened. Its own rounded-3xl card (not flush against
               // the pill) means the always-`rounded-full` header above
               // never has to flatten its corners to fit a flush dropdown.
-              className="absolute inset-x-0 top-[calc(100%+8px)] overflow-hidden rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 backdrop-blur-xl min-[760px]:hidden"
+              className="absolute inset-x-0 top-[calc(100%+8px)] overflow-hidden rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/95 min-[760px]:hidden"
             >
               {links.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
                     onClick={() => setOpen(false)}
-                    className="block px-6 py-3 text-sm font-medium text-zinc-700"
+                    className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
                     data-page-transition="true"
                   >
                     {link.label}

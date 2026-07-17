@@ -1,9 +1,10 @@
 @import "tailwindcss";
 
-/* Сайт всегда светлый: делаем `dark:`-классы Tailwind классово-зависимыми
-   (от класса .dark на html), а не от системной темы — и никогда не
-   проставляем этот класс. Так `dark:`-утилиты в разметке просто не
-   срабатывают, без необходимости вычищать их из каждого компонента. */
+/* `dark:`-классы Tailwind срабатывают от класса .dark на <html>
+   (не от системной темы) — класс проставляет ThemeProvider.tsx по клику
+   переключателя в футере (плюс блокирующий скрипт в layout.tsx до
+   гидратации, чтобы не мигало светлой темой при сохранённом тёмном
+   выборе). См. DESIGN.md → "Тёмная тема" для правил инверсии цветов. */
 @custom-variant dark (&:where(.dark, .dark *));
 
 html {
@@ -12,9 +13,18 @@ html {
   overflow-x: hidden;
 }
 
+html.dark {
+  color-scheme: dark;
+}
+
 :root {
   --background: #fbfbff;
   --foreground: #171717;
+}
+
+.dark {
+  --background: #09090b; /* zinc-950 */
+  --foreground: #fafafa; /* zinc-50 */
 }
 
 @theme inline {

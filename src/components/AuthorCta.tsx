@@ -27,11 +27,11 @@ const displayFont = Unbounded({
 // one in front of it (was ~15px, which read as too overlapped/layered) —
 // bottom edge = radius - riseUp, so riseUp_i = riseUp_(i+1) + Δradius - 30.
 const RINGS = [
-  { size: 1920, growTo: 1.55, riseUp: 770, color: "bg-lime-100" },
-  { size: 1680, growTo: 1.48, riseUp: 680, color: "bg-lime-200" },
-  { size: 1440, growTo: 1.41, riseUp: 590, color: "bg-lime-300" },
-  { size: 1160, growTo: 1.34, riseUp: 480, color: "bg-lime-400" },
-  { size: 920, growTo: 1.27, riseUp: 390, color: "bg-lime-500" },
+  { size: 1920, growTo: 1.55, riseUp: 770, color: "bg-lime-250" },
+  { size: 1680, growTo: 1.48, riseUp: 680, color: "bg-lime-350" },
+  { size: 1440, growTo: 1.41, riseUp: 590, color: "bg-lime-450" },
+  { size: 1160, growTo: 1.34, riseUp: 480, color: "bg-lime-550" },
+  { size: 920, growTo: 1.27, riseUp: 390, color: "bg-lime-650" },
 ];
 
 // Closing section for the homepage, built from a reference the user coded
@@ -253,7 +253,7 @@ export function AuthorCta() {
         <motion.h2
           {...fadeUp}
           transition={{ duration: 0.8, delay: 0.1 }}
-          className={`${displayFont.className} text-4xl leading-tight text-zinc-950 sm:text-5xl`}
+          className={`${displayFont.className} text-4xl leading-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
         >
           Hi! My name is Eugene c:
         </motion.h2>
@@ -261,7 +261,7 @@ export function AuthorCta() {
         <motion.p
           {...fadeUp}
           transition={{ duration: 0.8, delay: 0.25 }}
-          className="mt-4 max-w-md leading-7 text-zinc-700"
+          className="mt-4 max-w-md leading-7 text-zinc-700 dark:text-zinc-300"
         >
           8 years building worlds in Minecraft professionally. My goal is to
           turn every idea into a map worth exploring.

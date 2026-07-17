@@ -6,6 +6,12 @@ import { Navbar } from "@/components/Navbar";
 import { PageTransition } from "@/components/PageTransition";
 import { PricingSection } from "@/components/PricingSection";
 import { ContactFooter } from "@/components/ContactFooter";
+import { ThemeProvider } from "@/components/ThemeProvider";
+
+// Runs before hydration, straight from a <head> <script> — reads the saved
+// choice and flips the class synchronously, so there's no flash of the
+// light theme while React boots up when a visitor has dark mode saved.
+const THEME_INIT_SCRIPT = `(function(){try{if(localStorage.getItem("theme")==="dark"){document.documentElement.classList.add("dark");}}catch(e){}})();`;
 
 const jakarta = Plus_Jakarta_Sans({
   variable: "--font-jakarta",
@@ -24,13 +30,18 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${jakarta.variable} h-full scroll-smooth antialiased`}>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col">
-        <PageTransition>
-          <Navbar />
-          {children}
-          <PricingSection />
-          <ContactFooter />
-        </PageTransition>
+        <ThemeProvider>
+          <PageTransition>
+            <Navbar />
+            {children}
+            <PricingSection />
+            <ContactFooter />
+          </PageTransition>
+        </ThemeProvider>
         <Analytics />
       </body>
     </html>

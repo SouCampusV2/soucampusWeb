@@ -78,12 +78,12 @@ export default function ContactPage() {
               Get in touch
             </span>
             <h1
-              className={`${displayFont.className} mt-3 text-4xl leading-tight tracking-tight text-zinc-950 sm:text-5xl`}
+              className={`${displayFont.className} mt-3 text-4xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
             >
               I&apos;m here, always on{" "}
               <span className="text-blue-500">Discord</span>
             </h1>
-            <p className="mt-4 max-w-md text-zinc-700">
+            <p className="mt-4 max-w-md text-zinc-700 dark:text-zinc-300">
               Orders, questions and support — all in one place. We reply on
               weekdays and weekends alike.
             </p>
@@ -110,7 +110,7 @@ export default function ContactPage() {
 
           {/* TODO: replace with a real screenshot/photo */}
           <div className="relative hidden aspect-square overflow-hidden rounded-2xl sm:block">
-            <Skeleton className="h-full w-full !bg-zinc-200" />
+            <Skeleton className="h-full w-full !bg-zinc-200 dark:!bg-zinc-800" />
           </div>
         </div>
       </section>
@@ -123,10 +123,10 @@ export default function ContactPage() {
           <Skeleton className="h-full w-full" />
         </div>
         <div>
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
             Chat to us directly
           </h2>
-          <p className="mt-3 text-zinc-600">
+          <p className="mt-3 text-zinc-600 dark:text-zinc-400">
             Describe your map idea in a Discord ticket — I&apos;ll reply
             personally and we&apos;ll work out the details and timeline.
           </p>
@@ -146,12 +146,12 @@ export default function ContactPage() {
       </section>
 
       {/* Ready-to-go answers */}
-      <section className="grid items-center gap-8 border-t border-zinc-200 py-10 sm:gap-10 sm:py-20 sm:grid-cols-2">
+      <section className="grid items-center gap-8 border-t border-zinc-200 py-10 dark:border-zinc-800 sm:gap-10 sm:py-20 sm:grid-cols-2">
         <div className="sm:order-1">
-          <h2 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
+          <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
             Ready-to-go answers
           </h2>
-          <p className="mt-3 text-zinc-600">
+          <p className="mt-3 text-zinc-600 dark:text-zinc-400">
             Common questions about ordering, timelines and payment — below,
             no need to message on Discord.
           </p>
@@ -173,22 +173,22 @@ export default function ContactPage() {
       </section>
 
       {/* FAQ */}
-      <section id="faq" className="scroll-mt-24 border-t border-zinc-200 py-10 sm:py-20">
-        <h2 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
+      <section id="faq" className="scroll-mt-24 border-t border-zinc-200 py-10 dark:border-zinc-800 sm:py-20">
+        <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
           Frequently asked questions
         </h2>
 
-        <div className="mt-8 divide-y divide-zinc-200">
+        <div className="mt-8 divide-y divide-zinc-200 dark:divide-zinc-800">
           {FAQ.map((item) => (
             <details key={item.question} className="group">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-6 text-lg font-semibold text-zinc-950 marker:content-none [&::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-6 text-lg font-semibold text-zinc-950 dark:text-zinc-50 marker:content-none [&::-webkit-details-marker]:hidden">
                 {item.question}
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300">
                   <Plus size={20} weight="bold" className="group-open:hidden" />
                   <Minus size={20} weight="bold" className="hidden group-open:block" />
                 </span>
               </summary>
-              <p className="-mt-2 pb-6 text-sm leading-6 text-zinc-600">
+              <p className="-mt-2 pb-6 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
                 {item.answer}
               </p>
             </details>

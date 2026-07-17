@@ -14,7 +14,7 @@ export function RecentProjects() {
         initial={{ opacity: 0, y: 16 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl"
+        className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl"
       >
         Recent projects
       </motion.h2>
@@ -48,7 +48,7 @@ export function RecentProjects() {
                 <span className="text-xs font-medium uppercase tracking-wide text-orange-600 dark:text-orange-400">
                   {project.tag}
                 </span>
-                <h3 className="mt-1 text-lg font-semibold text-zinc-950">
+                <h3 className="mt-1 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
                   {project.title}
                 </h3>
                 <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">

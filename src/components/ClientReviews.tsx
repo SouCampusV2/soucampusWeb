@@ -69,8 +69,8 @@ const reviews = [
 ];
 
 const ACCENT_CARD: Record<Accent, string> = {
-  orange: "bg-orange-100 text-zinc-950",
-  lime: "bg-lime-100 text-zinc-950",
+  orange: "bg-orange-100 text-zinc-950 dark:bg-orange-950 dark:text-zinc-50",
+  lime: "bg-lime-100 text-zinc-950 dark:bg-lime-950 dark:text-zinc-50",
 };
 
 // Эксперимент (ветка experiment/colors): кнопка того же акцента, что и
@@ -117,14 +117,14 @@ export function ClientReviews() {
   const maxIndex = Math.max(0, reviews.length - visible);
 
   return (
-    <section className="bg-[#fbfbff] py-16 sm:py-28">
+    <section className="bg-[#fbfbff] py-16 dark:bg-zinc-950 sm:py-28">
       <div className="mx-auto max-w-6xl px-6">
         <div className="flex items-end justify-between gap-6">
           <motion.h2
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl"
+            className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl"
           >
             Hear from clients working with me
           </motion.h2>
@@ -172,12 +172,12 @@ export function ClientReviews() {
                   {/* TODO: replace with real client photo */}
                   <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full">
                     <Skeleton className="h-full w-full" />
-                    <span className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#fbfbff] bg-[#fbfbff] text-xs">
+                    <span className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#fbfbff] bg-[#fbfbff] text-xs dark:border-zinc-950 dark:bg-zinc-950">
                       {review.flag}
                     </span>
                   </div>
 
-                  <p className="mt-6 text-base font-medium leading-6 text-zinc-950">
+                  <p className="mt-6 text-base font-medium leading-6 text-zinc-950 dark:text-zinc-50">
                     &ldquo;{review.text}&rdquo;
                   </p>
                 </div>
@@ -185,7 +185,7 @@ export function ClientReviews() {
                 <div className="mt-8">
                   <footer>
                     <p className="font-semibold">{review.name}</p>
-                    <p className="text-sm text-zinc-700">{review.role}</p>
+                    <p className="text-sm text-zinc-700 dark:text-zinc-300">{review.role}</p>
                   </footer>
 
                   <Button

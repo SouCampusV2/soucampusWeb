@@ -69,11 +69,11 @@ export function PortfolioHero({ projects: allProjects }: Props) {
       <div className="flex items-end justify-between gap-6">
         <div>
           <h1
-            className={`${displayFont.className} text-4xl leading-tight tracking-tight text-zinc-950 sm:text-5xl`}
+            className={`${displayFont.className} text-4xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
           >
             Portfolio
           </h1>
-          <p className="mt-3 max-w-xl text-zinc-600">
+          <p className="mt-3 max-w-xl text-zinc-600 dark:text-zinc-400">
            <b>Latest:</b> Hover or tap a build to preview it, then click/tap again for the full story.
           </p>
         </div>
@@ -147,21 +147,21 @@ export function PortfolioHero({ projects: allProjects }: Props) {
 
             <div className="mt-4">
               <h2
-                className={`${displayFont.className} text-2xl uppercase leading-tight tracking-tight text-zinc-950`}
+                className={`${displayFont.className} text-2xl uppercase leading-tight tracking-tight text-zinc-950 dark:text-zinc-50`}
               >
                 {current.title}
               </h2>
-              <p className="mt-2 text-zinc-600">{current.summary}</p>
-              <ul className="mt-3 space-y-1.5 text-sm text-zinc-700">
+              <p className="mt-2 text-zinc-600 dark:text-zinc-400">{current.summary}</p>
+              <ul className="mt-3 space-y-1.5 text-sm text-zinc-700 dark:text-zinc-300">
                 <li>
-                  <span className="font-semibold text-zinc-950">Size:</span> {current.size}
+                  <span className="font-semibold text-zinc-950 dark:text-zinc-50">Size:</span> {current.size}
                 </li>
                 <li>
-                  <span className="font-semibold text-zinc-950">Built in:</span>{" "}
+                  <span className="font-semibold text-zinc-950 dark:text-zinc-50">Built in:</span>{" "}
                   {current.deadline}
                 </li>
                 <li>
-                  <span className="font-semibold text-zinc-950">Price:</span> {current.price}
+                  <span className="font-semibold text-zinc-950 dark:text-zinc-50">Price:</span> {current.price}
                 </li>
               </ul>
               <Button
@@ -252,22 +252,22 @@ export function PortfolioHero({ projects: allProjects }: Props) {
           className="mt-4 hidden gap-6 sm:grid sm:grid-cols-[1fr_1.4fr_auto] sm:items-start sm:gap-10"
         >
           <h2
-            className={`${displayFont.className} text-2xl uppercase leading-tight tracking-tight text-zinc-950 sm:text-3xl`}
+            className={`${displayFont.className} text-2xl uppercase leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-3xl`}
           >
             {current.title}
           </h2>
 
           <div>
-            <p className="text-zinc-600">{current.summary}</p>
-            <ul className="mt-3 space-y-1.5 text-sm text-zinc-700">
+            <p className="text-zinc-600 dark:text-zinc-400">{current.summary}</p>
+            <ul className="mt-3 space-y-1.5 text-sm text-zinc-700 dark:text-zinc-300">
               <li>
-                <span className="font-semibold text-zinc-950">Size:</span> {current.size}
+                <span className="font-semibold text-zinc-950 dark:text-zinc-50">Size:</span> {current.size}
               </li>
               <li>
-                <span className="font-semibold text-zinc-950">Built in:</span> {current.deadline}
+                <span className="font-semibold text-zinc-950 dark:text-zinc-50">Built in:</span> {current.deadline}
               </li>
               <li>
-                <span className="font-semibold text-zinc-950">Price:</span> {current.price}
+                <span className="font-semibold text-zinc-950 dark:text-zinc-50">Price:</span> {current.price}
               </li>
             </ul>
           </div>

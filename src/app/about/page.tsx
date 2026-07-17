@@ -71,11 +71,11 @@ export default function AboutPage() {
             A Long Journey
           </span>
           <h1
-            className={`${displayFont.className} mt-3 text-4xl leading-tight tracking-tight text-zinc-950 sm:text-5xl`}
+            className={`${displayFont.className} mt-3 text-4xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
           >
             Building Worlds Since Childhood
           </h1>
-          <p className="mt-6 leading-7 text-zinc-600">
+          <p className="mt-6 leading-7 text-zinc-600 dark:text-zinc-400">
             For 8 years I&apos;ve been building in Minecraft professionally
             — from childhood sandcastles to large-scale architectural
             projects for clients. My goal is to turn clients&apos; ideas
@@ -92,16 +92,16 @@ export default function AboutPage() {
             >
               {item.age}
             </div>
-            <h3 className="mt-3 text-lg font-semibold text-zinc-950">
+            <h3 className="mt-3 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
               {item.title}
             </h3>
-            <p className="mt-3 leading-7 text-zinc-600">{item.text}</p>
+            <p className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400">{item.text}</p>
           </div>
         ))}
       </div>
 
       <div className="mx-auto mt-12 max-w-xl text-center sm:mt-24">
-        <p className="leading-7 text-zinc-600">
+        <p className="leading-7 text-zinc-600 dark:text-zinc-400">
           And of course, a big part of my work is about people. Every client comes not
           with an exact blueprint, but with an image, a feeling, a
           fragment of an idea — and part of my job is to hear that,
@@ -112,7 +112,7 @@ export default function AboutPage() {
           most memorable projects are born — not because I built what was
           asked, but because I built what was actually needed.
         </p>
-        <p className="mt-6 leading-7 text-zinc-600">
+        <p className="mt-6 leading-7 text-zinc-600 dark:text-zinc-400">
           But the core of it hasn&apos;t changed since I was six: I still
           love to build. Every new commission is a new map, a new style,
           a new puzzle I want to solve beautifully.
