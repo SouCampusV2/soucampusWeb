@@ -3,6 +3,7 @@
 import { usePathname, useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { useTheme } from "@/components/ThemeProvider";
 
 const COLS_DESKTOP = 16;
 // Fewer, bigger squares on narrow screens — at 16 columns a 375px-wide
@@ -16,13 +17,23 @@ const HOLD_MS = 100;
 const EMPTY_RATIO = 0.3; // доля клеток, которые остаются "пустыми" (еле видны)
 
 // Акцентные клетки — не один плоский orange-400, а вразнобой из нескольких
-// оттенков (от светлого к праймери), чтобы волна выглядела живее.
-const ACCENT_SHADES = [
+// оттенков (от светлого к праймери), чтобы волна выглядела живее. Цвета
+// выбираются в JS (не через Tailwind `dark:`), поэтому под тёмную тему —
+// отдельный набор, оттенки отражены вокруг 500 (см. DESIGN.md → "Тёмная
+// тема"): 200<->800, 250<->750, 300<->700, 350<->650, 400<->600.
+const ACCENT_SHADES_LIGHT = [
   "bg-orange-200",
   "bg-orange-250",
   "bg-orange-300",
   "bg-orange-350",
   "bg-orange-400",
+];
+const ACCENT_SHADES_DARK = [
+  "bg-orange-800",
+  "bg-orange-750",
+  "bg-orange-700",
+  "bg-orange-650",
+  "bg-orange-600",
 ];
 
 type Phase = "idle" | "appearing" | "revealing";
@@ -30,6 +41,10 @@ type Phase = "idle" | "appearing" | "revealing";
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { theme } = useTheme();
+  const ACCENT_SHADES = theme === "dark" ? ACCENT_SHADES_DARK : ACCENT_SHADES_LIGHT;
+  const EMPTY_COLOR = theme === "dark" ? "bg-zinc-800" : "bg-zinc-200";
+  const BASE_COLOR = theme === "dark" ? "bg-zinc-950" : "bg-[#fbfbff]";
 
   const prevPathname = useRef(pathname);
   const pendingHref = useRef<string | null>(null);
@@ -173,13 +188,13 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
 
               const color =
                 rand < EMPTY_RATIO
-                  ? "bg-zinc-200"
+                  ? EMPTY_COLOR
                   : rand > 0.5
                     ? ACCENT_SHADES[
                         Math.floor(((rand - 0.5) / 0.5) * ACCENT_SHADES.length) %
                           ACCENT_SHADES.length
                       ]
-                    : "bg-[#fbfbff]";
+                    : BASE_COLOR;
 
               return (
                 <motion.div

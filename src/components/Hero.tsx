@@ -24,7 +24,7 @@ export function Hero() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.1 }}
-        className="max-w-3xl tracking-tight text-zinc-950"
+        className="max-w-3xl tracking-tight text-zinc-950 dark:text-zinc-50"
       >
         <span
           className={`${displayFont.className} block text-4xl leading-tight sm:text-6xl`}
@@ -43,7 +43,7 @@ export function Hero() {
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, delay: 0.2 }}
-        className="mt-6 max-w-xl text-lg text-zinc-600"
+        className="mt-6 max-w-xl text-lg text-zinc-600 dark:text-zinc-400"
       >
         I create custom maps, structures and entire worlds in Minecraft — from
         scratch to a breathtaking masterpiece

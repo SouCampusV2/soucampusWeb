@@ -85,7 +85,7 @@ export function Stats() {
               >
                 <Counter to={stat.value} suffix={stat.suffix} />
               </div>
-              <p className="mt-2 text-sm text-zinc-700">{stat.label}</p>
+              <p className="mt-2 text-sm text-zinc-700 dark:text-zinc-300">{stat.label}</p>
             </div>
           ))}
         </div>

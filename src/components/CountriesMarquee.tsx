@@ -81,9 +81,9 @@ export function CountriesMarquee() {
   const loop = [...COUNTRIES, ...COUNTRIES];
 
   return (
-    <section className="overflow-hidden border-t border-zinc-200 py-12 sm:py-20">
+    <section className="overflow-hidden border-t border-zinc-200 py-12 dark:border-zinc-800 sm:py-20">
       <div className="mx-auto max-w-6xl px-6">
-        <h2 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
+        <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
           Countries I&apos;ve worked with
         </h2>
       </div>
@@ -94,9 +94,9 @@ export function CountriesMarquee() {
             <span className="relative flex h-20 w-20 shrink-0 items-center justify-center sm:h-32 sm:w-32">
               <span
                 aria-hidden
-                className="absolute inset-y-0 right-0 w-screen rounded-r-full bg-lime-300"
+                className="absolute inset-y-0 right-0 w-screen rounded-r-full bg-lime-300 dark:bg-lime-700"
               />
-              <span className="relative z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-zinc-950 text-lime-300 sm:h-24 sm:w-24">
+              <span className="relative z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-zinc-950 text-lime-300 dark:bg-zinc-50 dark:text-lime-700 sm:h-24 sm:w-24">
                 <svg
                   width="24"
                   height="24"
@@ -115,7 +115,7 @@ export function CountriesMarquee() {
                 ref={(el) => {
                   chipRefs.current[i] = el;
                 }}
-                className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-50 sm:h-32 sm:w-32"
+                className="relative flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-zinc-50 dark:border-zinc-800 dark:bg-zinc-900 sm:h-32 sm:w-32"
               >
                 <Image
                   src={country.src}

@@ -61,12 +61,12 @@ const PLANS = [
 
 export function PricingSection() {
   return (
-    <section className="border-t border-zinc-200 py-16 sm:py-28">
+    <section className="border-t border-zinc-200 py-16 dark:border-zinc-800 sm:py-28">
       <div className="mx-auto max-w-6xl px-6">
-        <h2 className="mt-4 text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
+        <h2 className="mt-4 text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
           Choose your plan
         </h2>
-        <p className="mt-3 max-w-md text-zinc-600">
+        <p className="mt-3 max-w-md text-zinc-600 dark:text-zinc-400">
           A subscription unlocks the build library — everything you get is
           saved to your profile on the site.
 
@@ -83,15 +83,15 @@ export function PricingSection() {
               transition={{ delay: i * 0.1 }}
               className={plan.span}
             >
-              <div className="group flex h-full cursor-pointer flex-col justify-between rounded-3xl bg-zinc-100 p-6 transition-colors hover:bg-[#ececee] active:bg-[#ececee] sm:p-8">
+              <div className="group flex h-full cursor-pointer flex-col justify-between rounded-3xl bg-zinc-100 p-6 transition-colors hover:bg-[#ececee] active:bg-[#ececee] dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:active:bg-zinc-800 sm:p-8">
                 <div>
-                  <h3 className="text-lg font-semibold text-zinc-950">
+                  <h3 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
                     {plan.name}
                   </h3>
-                  <p className="mt-1 text-sm font-medium text-zinc-600">
+                  <p className="mt-1 text-sm font-medium text-zinc-600 dark:text-zinc-400">
                     {plan.price}
                   </p>
-                  <p className="mt-4 text-sm leading-6 text-zinc-600">
+                  <p className="mt-4 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
                     {plan.description}
                   </p>
                 </div>

@@ -22,7 +22,7 @@ type Props = {
 export function ArrowCircle({
   direction = "right",
   className = "",
-  colorClassName = "bg-zinc-950 hover:bg-zinc-800 text-white",
+  colorClassName = "bg-zinc-950 hover:bg-zinc-800 text-white dark:bg-zinc-50 dark:hover:bg-zinc-200 dark:text-zinc-950",
   label,
   variant = "circle",
 }: Props) {
@@ -55,7 +55,7 @@ export function ArrowCircle({
 
   return (
     <span className="inline-flex items-center gap-3">
-      <span className="font-semibold text-zinc-950">{label}</span>
+      <span className="font-semibold text-zinc-950 dark:text-zinc-50">{label}</span>
       {circle}
     </span>
   );

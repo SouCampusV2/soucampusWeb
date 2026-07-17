@@ -38,11 +38,11 @@ export default function PortfolioPage() {
     <main className="w-full mx-auto max-w-6xl flex-1 px-6 pb-16 sm:pb-28">
       <PortfolioHero projects={projects} />
 
-      <div className="mt-16 border-t border-zinc-200 pt-10 sm:mt-28 sm:pt-16">
-        <h2 className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl">
+      <div className="mt-16 border-t border-zinc-200 pt-10 dark:border-zinc-800 sm:mt-28 sm:pt-16">
+        <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
           More projects
         </h2>
-        <p className="mt-2 max-w-xl text-zinc-600">
+        <p className="mt-2 max-w-xl text-zinc-600 dark:text-zinc-400">
           The full portfolio. Click a build to see details, timeline and gallery.
         </p>
 
@@ -51,7 +51,7 @@ export default function PortfolioPage() {
             <Link
               key={project.slug}
               href={`/portfolio/${project.slug}`}
-              className={`group relative block overflow-hidden rounded-2xl border border-zinc-200 ${SPAN_PATTERN[i % SPAN_PATTERN.length]}`}
+              className={`group relative block overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 ${SPAN_PATTERN[i % SPAN_PATTERN.length]}`}
             >
               <div className="relative h-full min-h-[220px] w-full">
                 <Image
