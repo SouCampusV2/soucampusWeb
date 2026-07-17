@@ -14,12 +14,11 @@ const ThemeContext = createContext<{
 // this just reads the same value back into React state so the toggle
 // button renders the right icon on first paint, without a flash.
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>("light");
-
-  useEffect(() => {
-    const stored = localStorage.getItem("theme");
-    if (stored === "dark") setTheme("dark");
-  }, []);
+  const [theme, setTheme] = useState<Theme>(() =>
+    typeof window !== "undefined" && localStorage.getItem("theme") === "dark"
+      ? "dark"
+      : "light"
+  );
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");
