@@ -63,7 +63,7 @@ export function PortfolioHero({ projects: allProjects }: Props) {
           viewport's, and left-1/2 -translate-x-1/2 centers correctly. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[36rem] w-screen max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(163,230,53,0.35),transparent_70%)]"
+        className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[676px] w-screen max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(163,230,53,0.35),transparent_70%)]"
       />
 
       <div className="flex items-end justify-between gap-6">
@@ -296,7 +296,7 @@ export function PortfolioHero({ projects: allProjects }: Props) {
             href={`/portfolio/${current.slug}`}
             size="lg"
             colorClassName="rounded-full bg-lime-400 text-zinc-950 hover:bg-lime-500"
-            className="group shrink-0 gap-3 hover:!scale-100"
+            className="group shrink-0 gap-3"
           >
             Check this
             <ArrowCircle

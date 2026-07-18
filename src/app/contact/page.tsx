@@ -4,6 +4,7 @@ import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
 import { ArrowCircle } from "@/components/ArrowCircle";
 import { FaqAccordion } from "@/components/FaqAccordion";
+import { BuildEstimator } from "@/components/BuildEstimator";
 
 // Тот же дисплейный шрифт, что у Hero на главной — тут используется на
 // H1 страницы, чтобы обе "герой"-секции сайта визуально рифмовались.
@@ -68,9 +69,19 @@ export default function ContactPage() {
           bled up behind the navbar (-top-32) instead of a flat background,
           so there's no white gap above/behind the floating navbar pill. */}
       <section className="relative pb-8 pt-20 sm:pb-16">
+        {/* Fixed height (h-[42rem], same as the homepage Hero.tsx), not
+            tied to the section's own height — the gradient is
+            transparent past 70% of its radius by design, which read fine
+            stretched over the old, shorter hero, but once the calculator
+            card made this section much taller, stretching the same glow
+            to match created a visible hard edge partway down (the glow's
+            own natural falloff, just relocated somewhere more visible).
+            A fixed size keeps it doing its original job — lighting up the
+            navbar/heading area — without trying to cover the whole,
+            now-taller section. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[calc(100%+8rem)] w-full max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.35),transparent_70%)]"
+          className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[772px] w-full max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.35),transparent_70%)]"
         />
         <div className="mx-auto grid max-w-6xl items-start gap-10 px-6 sm:grid-cols-2">
           <div>
@@ -95,23 +106,26 @@ export default function ContactPage() {
                 variant="primary"
                 size="lg"
                 colorClassName="rounded-full bg-blue-400 text-zinc-950 hover:bg-blue-500"
-                className="gap-3"
+                className="group gap-3"
               >
                 Join Discord
                 <ArrowCircle
                   direction="right"
                   variant="bare"
-                  className="h-6 w-6"
+                  className="h-6 w-6 transition-transform duration-300 group-hover:-rotate-45"
                   colorClassName="text-zinc-950"
                 />
               </Button>
             </div>
           </div>
 
-          {/* TODO: replace with a real screenshot/photo */}
-          <div className="relative hidden aspect-square overflow-hidden rounded-2xl sm:block">
-            <Skeleton className="h-full w-full !bg-zinc-200 dark:!bg-zinc-800" />
-          </div>
+          {/* Instant estimate — a Wise-style "calculator" card, adapted
+              from currency conversion to map size -> price/timeline, right
+              in the Hero where the placeholder photo used to be. It's
+              genuinely useful content (unlike a stand-in photo), so unlike
+              that placeholder it's not hidden on mobile — it just becomes
+              the second stacked block instead of a side-by-side column. */}
+          <BuildEstimator />
         </div>
       </section>
 
