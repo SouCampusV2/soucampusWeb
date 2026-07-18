@@ -1,7 +1,18 @@
 "use client";
 
+import { usePathname } from "next/navigation";
 import { motion } from "motion/react";
 import { ArrowCircle } from "@/components/ArrowCircle";
+
+// PricingSection is global (rendered once in layout.tsx, right after
+// {children}, on every page), so this is the only place that can react to
+// "no divider/top padding after the last section" requests that are
+// page-specific rather than site-wide — these three pages end their own
+// content with a section that already reads as a natural full stop (Ages
+// timeline, portfolio grid, FAQ), so PricingSection's own border-t + top
+// padding on top of that looked like a redundant second seam. Every other
+// route (home, a project detail page, /shop, /terms) keeps the divider.
+const NO_TOP_DIVIDER_ROUTES = ["/about", "/portfolio", "/contact"];
 
 type Accent = "blue" | "orange" | "lime";
 
@@ -60,8 +71,21 @@ const PLANS = [
 ];
 
 export function PricingSection() {
+  const pathname = usePathname();
+  const noTopDivider = NO_TOP_DIVIDER_ROUTES.includes(pathname);
+
   return (
-    <section className="border-t border-zinc-200 py-16 dark:border-zinc-800 sm:py-28">
+    <section
+      // Top padding (pt-16 sm:pt-28, 112px on desktop) always applies —
+      // it's this section's own "white side" spacing, same amount as the
+      // gap above PricingSection on the homepage (after HowItWorks' green
+      // section). Only the divider line itself is conditional: these three
+      // pages already end their own content on a natural full stop, so a
+      // border-t on top of matching padding read as a redundant seam.
+      className={`pb-16 pt-16 dark:border-zinc-800 sm:pb-28 sm:pt-28 ${
+        noTopDivider ? "" : "border-t border-zinc-200"
+      }`}
+    >
       <div className="mx-auto max-w-6xl px-6">
         <h2 className="mt-4 text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
           Choose your plan

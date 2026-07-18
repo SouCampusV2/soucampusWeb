@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
-import { Plus, Minus } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
 import { ArrowCircle } from "@/components/ArrowCircle";
+import { FaqAccordion } from "@/components/FaqAccordion";
 
 // Тот же дисплейный шрифт, что у Hero на главной — тут используется на
 // H1 страницы, чтобы обе "герой"-секции сайта визуально рифмовались.
@@ -16,7 +16,7 @@ export const metadata: Metadata = {
   title: "Contact — SouCampus builds",
 };
 
-const DISCORD_INVITE = "https://discord.gg/ft8HVk8Cg";
+const DISCORD_INVITE = "https://discord.com/invite/EHudSpvEVV";
 
 const FAQ = [
   {
@@ -172,28 +172,15 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* FAQ */}
-      <section id="faq" className="scroll-mt-24 border-t border-zinc-200 py-10 dark:border-zinc-800 sm:py-20">
+      {/* FAQ — last section on the page, so no bottom padding/divider here;
+          PricingSection (global, right after this <main>) skips its own
+          top divider/padding on this route too, see PricingSection.tsx. */}
+      <section id="faq" className="scroll-mt-24 border-t border-zinc-200 pt-10 dark:border-zinc-800 sm:pt-20">
         <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
           Frequently asked questions
         </h2>
 
-        <div className="mt-8 divide-y divide-zinc-200 dark:divide-zinc-800">
-          {FAQ.map((item) => (
-            <details key={item.question} className="group">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-6 text-lg font-semibold text-zinc-950 dark:text-zinc-50 marker:content-none [&::-webkit-details-marker]:hidden">
-                {item.question}
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300">
-                  <Plus size={20} weight="bold" className="group-open:hidden" />
-                  <Minus size={20} weight="bold" className="hidden group-open:block" />
-                </span>
-              </summary>
-              <p className="-mt-2 pb-6 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                {item.answer}
-              </p>
-            </details>
-          ))}
-        </div>
+        <FaqAccordion items={FAQ} />
       </section>
       </main>
     </>

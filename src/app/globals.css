@@ -266,3 +266,31 @@ body {
     border-color: #1b3ba3;
   }
 }
+
+/*
+ * AuthorCta ring colors, 150 steps darker in dark mode (250->400, 350->500,
+ * etc. — a 100 shift per user request, then another 50 on top, which lands
+ * exactly on native Tailwind lime steps, hence var(--color-lime-N) instead
+ * of a hex literal here).
+ * Written unlayered (not inside @layer utilities) on purpose: the site's
+ * `dark:` variant is `:where(.dark, .dark *)`, which has zero specificity,
+ * so a Tailwind-generated `dark:bg-lime-N` utility ties with (and loses to,
+ * by source order) the manual .bg-lime-N classes above. Unlayered CSS always
+ * wins over @layer rules regardless of specificity, so this reliably
+ * overrides the light-mode ring color once .dark is on <html>.
+ */
+.dark .author-ring-0 {
+  background-color: var(--color-lime-400);
+}
+.dark .author-ring-1 {
+  background-color: var(--color-lime-500);
+}
+.dark .author-ring-2 {
+  background-color: var(--color-lime-600);
+}
+.dark .author-ring-3 {
+  background-color: var(--color-lime-700);
+}
+.dark .author-ring-4 {
+  background-color: var(--color-lime-800);
+}

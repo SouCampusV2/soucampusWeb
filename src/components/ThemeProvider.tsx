@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useLayoutEffect, useState } from "react";
 
 type Theme = "light" | "dark";
 
@@ -9,16 +9,22 @@ const ThemeContext = createContext<{
   toggleTheme: () => void;
 } | null>(null);
 
-// Blocking script injected into <head> (see layout.tsx) already set the
-// `.dark` class on <html> before hydration if localStorage had it saved —
-// this just reads the same value back into React state so the toggle
-// button renders the right icon on first paint, without a flash.
+// Always starts at "light" — the server has no access to localStorage, so
+// this must match what SSR rendered or React logs a hydration mismatch
+// (seen previously: the toggle button's Sun/Moon icon differing between
+// server and client). The blocking script injected into <head> (see
+// layout.tsx) already set the `.dark` class on <html> before hydration if
+// localStorage had it saved, so the page itself never flashes light styles;
+// only the toggle icon needs correcting, which the layout effect below does
+// synchronously before the browser paints — no visible flash there either.
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setTheme] = useState<Theme>(() =>
-    typeof window !== "undefined" && localStorage.getItem("theme") === "dark"
-      ? "dark"
-      : "light"
-  );
+  const [theme, setTheme] = useState<Theme>("light");
+
+  useLayoutEffect(() => {
+    if (document.documentElement.classList.contains("dark")) {
+      setTheme("dark");
+    }
+  }, []);
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", theme === "dark");

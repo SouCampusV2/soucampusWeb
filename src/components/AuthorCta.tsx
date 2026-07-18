@@ -26,12 +26,18 @@ const displayFont = Unbounded({
 // ring so each bigger ring's bottom edge peeks out ~30px below the smaller
 // one in front of it (was ~15px, which read as too overlapped/layered) —
 // bottom edge = radius - riseUp, so riseUp_i = riseUp_(i+1) + Δradius - 30.
+// Dark-theme colors are each one step (100) darker on the lime scale than
+// the light-theme color (e.g. 250 -> 350). Expressed via the dedicated
+// .author-ring-N classes in globals.css, not dark:bg-lime-N or an arbitrary
+// dark:bg-[#hex] utility — both tie in specificity with the manual custom-step
+// .bg-lime-N classes (this site's `dark:` variant uses :where(), which is
+// zero-specificity) and silently lose to them. See the CSS comment there.
 const RINGS = [
-  { size: 1920, growTo: 1.55, riseUp: 770, color: "bg-lime-250" },
-  { size: 1680, growTo: 1.48, riseUp: 680, color: "bg-lime-350" },
-  { size: 1440, growTo: 1.41, riseUp: 590, color: "bg-lime-450" },
-  { size: 1160, growTo: 1.34, riseUp: 480, color: "bg-lime-550" },
-  { size: 920, growTo: 1.27, riseUp: 390, color: "bg-lime-650" },
+  { size: 1920, growTo: 1.55, riseUp: 770, color: "bg-lime-250 author-ring-0" },
+  { size: 1680, growTo: 1.48, riseUp: 680, color: "bg-lime-350 author-ring-1" },
+  { size: 1440, growTo: 1.41, riseUp: 590, color: "bg-lime-450 author-ring-2" },
+  { size: 1160, growTo: 1.34, riseUp: 480, color: "bg-lime-550 author-ring-3" },
+  { size: 920, growTo: 1.27, riseUp: 390, color: "bg-lime-650 author-ring-4" },
 ];
 
 // Closing section for the homepage, built from a reference the user coded
