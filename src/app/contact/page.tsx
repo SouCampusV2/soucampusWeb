@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
-import { Plus, Minus } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
 import { ArrowCircle } from "@/components/ArrowCircle";
+import { FaqAccordion } from "@/components/FaqAccordion";
+import { BuildEstimator } from "@/components/BuildEstimator";
 
 // Тот же дисплейный шрифт, что у Hero на главной — тут используется на
 // H1 страницы, чтобы обе "герой"-секции сайта визуально рифмовались.
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
   title: "Contact — SouCampus builds",
 };
 
-const DISCORD_INVITE = "https://discord.gg/ft8HVk8Cg";
+const DISCORD_INVITE = "https://discord.com/invite/EHudSpvEVV";
 
 const FAQ = [
   {
@@ -68,9 +69,19 @@ export default function ContactPage() {
           bled up behind the navbar (-top-32) instead of a flat background,
           so there's no white gap above/behind the floating navbar pill. */}
       <section className="relative pb-8 pt-20 sm:pb-16">
+        {/* Fixed height (h-[42rem], same as the homepage Hero.tsx), not
+            tied to the section's own height — the gradient is
+            transparent past 70% of its radius by design, which read fine
+            stretched over the old, shorter hero, but once the calculator
+            card made this section much taller, stretching the same glow
+            to match created a visible hard edge partway down (the glow's
+            own natural falloff, just relocated somewhere more visible).
+            A fixed size keeps it doing its original job — lighting up the
+            navbar/heading area — without trying to cover the whole,
+            now-taller section. */}
         <div
           aria-hidden
-          className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[calc(100%+8rem)] w-full max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.35),transparent_70%)]"
+          className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[772px] w-full max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.35),transparent_70%)]"
         />
         <div className="mx-auto grid max-w-6xl items-start gap-10 px-6 sm:grid-cols-2">
           <div>
@@ -95,23 +106,26 @@ export default function ContactPage() {
                 variant="primary"
                 size="lg"
                 colorClassName="rounded-full bg-blue-400 text-zinc-950 hover:bg-blue-500"
-                className="gap-3"
+                className="group gap-3"
               >
                 Join Discord
                 <ArrowCircle
                   direction="right"
                   variant="bare"
-                  className="h-6 w-6"
+                  className="h-6 w-6 transition-transform duration-300 group-hover:-rotate-45"
                   colorClassName="text-zinc-950"
                 />
               </Button>
             </div>
           </div>
 
-          {/* TODO: replace with a real screenshot/photo */}
-          <div className="relative hidden aspect-square overflow-hidden rounded-2xl sm:block">
-            <Skeleton className="h-full w-full !bg-zinc-200 dark:!bg-zinc-800" />
-          </div>
+          {/* Instant estimate — a Wise-style "calculator" card, adapted
+              from currency conversion to map size -> price/timeline, right
+              in the Hero where the placeholder photo used to be. It's
+              genuinely useful content (unlike a stand-in photo), so unlike
+              that placeholder it's not hidden on mobile — it just becomes
+              the second stacked block instead of a side-by-side column. */}
+          <BuildEstimator />
         </div>
       </section>
 
@@ -172,28 +186,15 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* FAQ */}
-      <section id="faq" className="scroll-mt-24 border-t border-zinc-200 py-10 dark:border-zinc-800 sm:py-20">
+      {/* FAQ — last section on the page, so no bottom padding/divider here;
+          PricingSection (global, right after this <main>) skips its own
+          top divider/padding on this route too, see PricingSection.tsx. */}
+      <section id="faq" className="scroll-mt-24 border-t border-zinc-200 pt-10 dark:border-zinc-800 sm:pt-20">
         <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
           Frequently asked questions
         </h2>
 
-        <div className="mt-8 divide-y divide-zinc-200 dark:divide-zinc-800">
-          {FAQ.map((item) => (
-            <details key={item.question} className="group">
-              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 py-6 text-lg font-semibold text-zinc-950 dark:text-zinc-50 marker:content-none [&::-webkit-details-marker]:hidden">
-                {item.question}
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-blue-50 text-blue-600 dark:bg-blue-950 dark:text-blue-300">
-                  <Plus size={20} weight="bold" className="group-open:hidden" />
-                  <Minus size={20} weight="bold" className="hidden group-open:block" />
-                </span>
-              </summary>
-              <p className="-mt-2 pb-6 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                {item.answer}
-              </p>
-            </details>
-          ))}
-        </div>
+        <FaqAccordion items={FAQ} />
       </section>
       </main>
     </>

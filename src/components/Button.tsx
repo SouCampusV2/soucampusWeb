@@ -10,11 +10,14 @@ type Size = "sm" | "md" | "lg";
 // кнопки того же size — паддинг теперь только горизонтальный. На мобильном
 // (< 640px) кнопка немного компактнее (h-12/48px) — h-14 ощущается слишком
 // массивной на телефоне.
-// active:scale-95 — a distinct "pressed" state (not just the hover:scale-105
-// growing back on release), so clicking/tapping actually feels like it
-// registered instead of the button looking totally flat/unresponsive.
+// No hover:scale-105 (removed site-wide) — hover is color-only now (each
+// variant's own hover:bg-*/hover:text-* below), and buttons with an icon
+// animate the icon instead (see the `group` + `group-hover:-rotate-45`
+// pattern on ArrowCircle wherever a Button carries one). active:scale-95
+// stays — it's a distinct "pressed" click/tap feedback, not a growing
+// hover effect.
 const base =
-  "inline-flex h-12 cursor-pointer items-center justify-center font-semibold transition-transform hover:scale-105 active:scale-95 sm:h-14";
+  "inline-flex h-12 cursor-pointer items-center justify-center font-semibold transition-transform active:scale-95 sm:h-14";
 
 const variants: Record<Variant, string> = {
   primary: "rounded-full bg-orange-400 text-zinc-950 hover:bg-orange-500",

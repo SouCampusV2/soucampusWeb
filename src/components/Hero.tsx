@@ -17,7 +17,7 @@ export function Hero() {
     <section className="relative flex flex-col items-center px-6 pb-10 pt-20 text-center">
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[42rem] w-full max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(249,115,22,0.35),transparent_70%)]"
+        className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[772px] w-full max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(249,115,22,0.35),transparent_70%)]"
       />
 
       <motion.h1

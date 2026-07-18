@@ -35,7 +35,7 @@ export default function PortfolioPage() {
   const gridProjects = projects.slice(CAROUSEL_ITEMS);
 
   return (
-    <main className="w-full mx-auto max-w-6xl flex-1 px-6 pb-16 sm:pb-28">
+    <main className="w-full mx-auto max-w-6xl flex-1 px-6">
       <PortfolioHero projects={projects} />
 
       <div className="mt-16 border-t border-zinc-200 pt-10 dark:border-zinc-800 sm:mt-28 sm:pt-16">
@@ -53,7 +53,14 @@ export default function PortfolioPage() {
               href={`/portfolio/${project.slug}`}
               className={`group relative block overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 ${SPAN_PATTERN[i % SPAN_PATTERN.length]}`}
             >
-              <div className="relative h-full min-h-[220px] w-full">
+              {/* Below `lg:` the grid has no fixed row height (that's a
+                  lg:auto-rows-[220px] thing, for the bento span pattern) —
+                  h-full/min-h-[220px] alone doesn't give the box a real
+                  height there, it was resolving to a squashed sliver on
+                  mobile/tablet. aspect-video keeps it a proper ~16:9 card
+                  in the single/2-column layout; lg: swaps back to filling
+                  the bento cell's own explicit row-span height. */}
+              <div className="relative aspect-video w-full lg:aspect-auto lg:h-full lg:min-h-[220px]">
                 <Image
                   src={project.image}
                   alt={project.title}

@@ -22,18 +22,28 @@ export async function generateMetadata({
 
 export default async function ProjectPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<{ from?: string }>;
 }) {
   const { slug } = await params;
+  const { from } = await searchParams;
   const project = getProject(slug);
   if (!project) notFound();
+
+  // Cards on the homepage (RecentProjects) and the portfolio catalog both
+  // link here — the back link should return to whichever one sent the
+  // visitor, not always default to the catalog. Carried via ?from=home
+  // rather than router.back() so it also works from a fresh/shared link.
+  const backHref = from === "home" ? "/" : "/portfolio";
+  const backLabel = from === "home" ? "← Home" : "← All work";
 
   return (
     <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-16 sm:py-28">
       <div className="mx-auto max-w-3xl">
-        <Link href="/portfolio" className="text-sm font-medium text-orange-600">
-          ← All work
+        <Link href={backHref} className="text-sm font-medium text-orange-600">
+          {backLabel}
         </Link>
 
         <span className="mt-6 block text-xs font-medium uppercase tracking-wide text-orange-600">

@@ -32,7 +32,7 @@ export function RecentProjects() {
             transition={{ delay: i * 0.1 }}
           >
             <Link
-              href={`/portfolio/${project.slug}`}
+              href={`/portfolio/${project.slug}?from=home`}
               className="group block overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800"
             >
               <div className="relative aspect-[4/3] overflow-hidden">

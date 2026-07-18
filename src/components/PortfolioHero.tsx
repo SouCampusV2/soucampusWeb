@@ -63,7 +63,7 @@ export function PortfolioHero({ projects: allProjects }: Props) {
           viewport's, and left-1/2 -translate-x-1/2 centers correctly. */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[36rem] w-screen max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(163,230,53,0.35),transparent_70%)]"
+        className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[676px] w-screen max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(163,230,53,0.35),transparent_70%)]"
       />
 
       <div className="flex items-end justify-between gap-6">
@@ -209,8 +209,28 @@ export function PortfolioHero({ projects: allProjects }: Props) {
               role="link"
               tabIndex={0}
               aria-label={`View ${project.title}`}
+              // Real flexGrow animation (not `layout`'s transform-scale
+              // trick) — `layout` fakes a width change with a non-uniform
+              // scaleX/scaleY transform, and that stretches the raster
+              // <Image> underneath instead of letting it crop. Animating the
+              // actual flexGrow value reflows for real each frame, so
+              // object-cover keeps recomputing a correct crop as the box
+              // resizes — cropped, not stretched, which is what the honest
+              // "growing panel" look needs. initial={false} only guards the
+              // very first paint (skips animating in from an unset value on
+              // mount) — it doesn't reintroduce reflow-per-frame there.
+              initial={false}
               animate={{ flexGrow: isActive ? 8 : 1 }}
-              transition={{ type: "spring", stiffness: 140, damping: 26 }}
+              // A spring here (variable, physics-based duration) was ending
+              // at a different moment than the <Image>'s own CSS
+              // transition-all duration-500 below (fixed 500ms) — the photo's
+              // own scale/brightness settled and visually "locked" while the
+              // panel's width was still animating, which read as the image
+              // suddenly braking. Switched to a fixed-duration tween that
+              // matches the image's 500ms exactly (and Tailwind's default
+              // transition-timing-function), so both finish in the same
+              // frame instead of drifting apart.
+              transition={{ duration: 0.5, ease: [0.4, 0, 0.2, 1] }}
               style={{ flexBasis: 0 }}
               className="relative min-w-[64px] shrink-0 cursor-pointer overflow-hidden rounded-2xl"
             >
@@ -219,14 +239,14 @@ export function PortfolioHero({ projects: allProjects }: Props) {
                 alt={project.title}
                 fill
                 sizes="(min-width: 640px) 60vw, 100vw"
-                className={`object-cover transition-all duration-500 ${
+                className={`object-cover transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
                   isActive ? "scale-100 brightness-100" : "scale-110 brightness-[0.55]"
                 }`}
                 priority={i === 0}
               />
 
               {isActive ? (
-                <span className="absolute left-4 top-4 rounded-full bg-lime-300/90 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-950 sm:left-6 sm:top-6">
+                <span className="absolute left-4 top-4 whitespace-nowrap rounded-full bg-lime-300/90 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-950 sm:left-6 sm:top-6">
                   {project.tag}
                 </span>
               ) : (
@@ -276,7 +296,7 @@ export function PortfolioHero({ projects: allProjects }: Props) {
             href={`/portfolio/${current.slug}`}
             size="lg"
             colorClassName="rounded-full bg-lime-400 text-zinc-950 hover:bg-lime-500"
-            className="group shrink-0 gap-3 hover:!scale-100"
+            className="group shrink-0 gap-3"
           >
             Check this
             <ArrowCircle

@@ -18,7 +18,7 @@ const displayFont = Unbounded({
   subsets: ["latin"],
 });
 
-const DISCORD_INVITE = "https://discord.gg/ft8HVk8Cg";
+const DISCORD_INVITE = "https://discord.com/invite/EHudSpvEVV";
 
 const SOCIALS = [
   { label: "Discord", href: DISCORD_INVITE, icon: DiscordLogo },

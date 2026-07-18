@@ -58,7 +58,7 @@ export default function AboutPage() {
     <>
       <AuthorCta />
 
-      <main className="w-full mx-auto max-w-6xl flex-1 px-6 pb-16 sm:pb-28">
+      <main className="w-full mx-auto max-w-6xl flex-1 px-6">
       {/* No top glow here — AuthorCta right above already bleeds one in;
           a second `-top-32` gradient stacked directly under it read as a
           duplicate/second light source. Instead, a gradient anchored to
