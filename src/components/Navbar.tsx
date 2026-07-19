@@ -57,7 +57,7 @@ export function Navbar() {
             SouCampus
           </Link>
 
-          <ul className="hidden items-center gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-400 min-[760px]:flex">
+          <ul className="hidden items-center gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-300 min-[760px]:flex">
             {links.map((link) => (
               <li key={link.href}>
                 <Link

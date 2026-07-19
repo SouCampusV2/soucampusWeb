@@ -12,17 +12,17 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section className="bg-lime-300 py-16 sm:py-28">
+    <section className="bg-lime-300 py-16 dark:bg-lime-700 sm:py-28">
       <div className="mx-auto max-w-6xl px-6">
         <motion.h2
           initial={{ opacity: 0, y: 16 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-3xl font-bold tracking-tight text-zinc-950 sm:text-4xl"
+          className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl"
         >
           How an order works
         </motion.h2>
-        <p className="mt-2 max-w-xl text-zinc-700">
+        <p className="mt-2 max-w-xl text-zinc-700 dark:text-zinc-300">
           From the first message to a finished map — a transparent process in
           5 steps.
         </p>
@@ -37,13 +37,13 @@ export function HowItWorks() {
               transition={{ delay: i * 0.08 }}
               className="relative"
             >
-              <span className="text-4xl font-bold text-blue-650">
+              <span className="text-4xl font-bold text-blue-650 dark:text-blue-350">
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <h3 className="mt-2 text-lg font-semibold text-zinc-950">
+              <h3 className="mt-2 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
                 {step.title}
               </h3>
-              <p className="mt-1 text-sm text-zinc-700">{step.text}</p>
+              <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{step.text}</p>
             </motion.div>
           ))}
         </div>
