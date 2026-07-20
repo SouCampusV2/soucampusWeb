@@ -3,40 +3,24 @@
 import { useEffect, useRef, useState } from "react";
 import { animate, useInView } from "motion/react";
 
-// TODO: replace with real numbers.
-// Shape mirrors a future `stats` table (one row per stat, manually updated
-// from time to time) — same pattern as the `reviews` array in ClientReviews.
-// `updatedAt` isn't shown in the UI, it's just here so the data already
-// looks like a DB row once Supabase is wired up.
-const stats = [
-  {
-    id: "orders",
-    label: "Crafted orders and projects",
-    value: 246,
-    suffix: "+",
-    color: "text-orange-400",
-    bar: "bg-orange-400",
-    updatedAt: "2026-07-14",
-  },
-  {
-    id: "reach",
-    label: "Players who've seen the builds",
-    value: 30,
-    suffix: "K+",
-    color: "text-lime-300",
-    bar: "bg-lime-400",
-    updatedAt: "2026-07-14",
-  },
-  {
-    id: "clients",
-    label: "Really happy clients",
-    value: 81,
-    suffix: "+",
-    color: "text-blue-400",
-    bar: "bg-blue-400",
-    updatedAt: "2026-07-14",
-  },
-];
+import type { Stat } from "@/lib/stats";
+
+// Цвета живут здесь, а не в базе, и это принципиально: Tailwind собирает
+// CSS, сканируя исходники, — класс, пришедший из БД во время выполнения,
+// в собранный CSS не попадёт и цвет молча не применится. В базе лежит
+// смысловой accent ("orange"), а во что он превращается — знает компонент.
+// Тот же приём, что ACCENT_CARD в ClientReviews.tsx.
+const ACCENT_TEXT: Record<Stat["accent"], string> = {
+  orange: "text-orange-400",
+  lime: "text-lime-300",
+  blue: "text-blue-400",
+};
+
+const ACCENT_BAR: Record<Stat["accent"], string> = {
+  orange: "bg-orange-400",
+  lime: "bg-lime-400",
+  blue: "bg-blue-400",
+};
 
 function Counter({ to, suffix }: { to: number; suffix: string }) {
   const ref = useRef<HTMLSpanElement>(null);
@@ -61,27 +45,30 @@ function Counter({ to, suffix }: { to: number; suffix: string }) {
   );
 }
 
-function Divider() {
+function Divider({ stats }: { stats: Stat[] }) {
   return (
     <div className="flex h-1 w-full">
       {stats.map((stat) => (
-        <div key={stat.id} className={`h-full flex-1 ${stat.bar}`} />
+        <div key={stat.id} className={`h-full flex-1 ${ACCENT_BAR[stat.accent]}`} />
       ))}
     </div>
   );
 }
 
-export function Stats() {
+// Цифры приходят пропсом: компонент клиентский ("use client" — счётчику
+// нужна анимация подсчёта при появлении в кадре), поэтому данные грузит
+// серверная главная страница и передаёт сюда готовыми.
+export function Stats({ stats }: { stats: Stat[] }) {
   return (
     <section>
-      <Divider />
+      <Divider stats={stats} />
 
       <div className="mx-auto max-w-6xl px-6">
         <div className="my-10 grid grid-cols-1 gap-6 sm:my-16 sm:grid-cols-3 sm:gap-8">
           {stats.map((stat) => (
             <div key={stat.id} className="text-center">
               <div
-                className={`text-4xl font-extrabold tabular-nums sm:text-6xl ${stat.color}`}
+                className={`text-4xl font-extrabold tabular-nums sm:text-6xl ${ACCENT_TEXT[stat.accent]}`}
               >
                 <Counter to={stat.value} suffix={stat.suffix} />
               </div>
