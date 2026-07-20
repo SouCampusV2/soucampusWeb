@@ -2,10 +2,6 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import { Analytics } from "@vercel/analytics/next";
 import "./globals.css";
-import { Navbar } from "@/components/Navbar";
-import { PageTransition } from "@/components/PageTransition";
-import { PricingSection } from "@/components/PricingSection";
-import { ContactFooter } from "@/components/ContactFooter";
 import { ThemeProvider } from "@/components/ThemeProvider";
 
 // Runs before hydration, straight from a <head> <script> — reads the saved
@@ -38,14 +34,9 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
       </head>
       <body className="min-h-full flex flex-col">
-        <ThemeProvider>
-          <PageTransition>
-            <Navbar />
-            {children}
-            <PricingSection />
-            <ContactFooter />
-          </PageTransition>
-        </ThemeProvider>
+        {/* Навбар/тарифы/футер — не здесь, а в src/app/(site)/layout.tsx:
+            корневой layout оборачивает вообще всё, включая будущую админку. */}
+        <ThemeProvider>{children}</ThemeProvider>
         <Analytics />
       </body>
     </html>

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { Unbounded } from "next/font/google";
-import { projects } from "@/lib/projects";
+import { getAllProjects } from "@/lib/projects";
 import { PortfolioHero } from "@/components/PortfolioHero";
 
 // Same display font as the hero headings — the card title rhymes with them.
@@ -14,10 +14,6 @@ const displayFont = Unbounded({
 export const metadata: Metadata = {
   title: "Portfolio — SouCampus builds",
 };
-
-// Same cap as PortfolioHero's carousel — the grid below picks up the rest,
-// no repeats between the two.
-const CAROUSEL_ITEMS = 5;
 
 // Cycles through a varied bento pattern (big feature, small squares, wide
 // banners) so the grid stays visually interesting no matter how many
@@ -31,12 +27,22 @@ const SPAN_PATTERN = [
   "lg:col-span-3 lg:row-span-1",
 ];
 
-export default function PortfolioPage() {
-  const gridProjects = projects.slice(CAROUSEL_ITEMS);
+// async, потому что данные теперь приезжают из базы, а не лежат в файле
+// рядом. Серверные компоненты умеют быть асинхронными "из коробки":
+// Next.js дожидается ответа БД на сервере и отправляет браузеру уже
+// готовый HTML — посетитель никакой загрузки не видит.
+export default async function PortfolioPage() {
+  const projects = await getAllProjects();
+
+  // Состав карусели задаёт галочка is_featured в базе, а не "первые пять
+  // по порядку", как раньше. Теперь порядок карточек в сетке можно менять,
+  // не трогая карусель — это два независимых решения (см. STRUCTURE.md).
+  const featured = projects.filter((p) => p.isFeatured);
+  const gridProjects = projects.filter((p) => !p.isFeatured);
 
   return (
     <main className="w-full mx-auto max-w-6xl flex-1 px-6">
-      <PortfolioHero projects={projects} />
+      <PortfolioHero projects={featured} />
 
       <div className="mt-16 border-t border-zinc-200 pt-10 dark:border-zinc-800 sm:mt-28 sm:pt-16">
         <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">

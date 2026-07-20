@@ -3,9 +3,13 @@
 import { motion } from "motion/react";
 import Link from "next/link";
 import Image from "next/image";
-import { projects } from "@/lib/projects";
+import type { Project } from "@/lib/projects";
 
-export function RecentProjects() {
+// Проекты приходят пропсом, а не импортом массива: это клиентский
+// компонент ("use client"), он живёт в браузере и в базу ходить не может
+// и не должен. Данные загружает серверная страница (app/(site)/page.tsx)
+// и передаёт сюда уже готовыми — граница "сервер грузит, клиент рисует".
+export function RecentProjects({ projects }: { projects: Project[] }) {
   const recent = projects.slice(0, 3);
 
   return (

@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/Skeleton";
 import { ArrowCircle } from "@/components/ArrowCircle";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { BuildEstimator } from "@/components/BuildEstimator";
+import { DISCORD_INVITE } from "@/lib/site";
 
 // Тот же дисплейный шрифт, что у Hero на главной — тут используется на
 // H1 страницы, чтобы обе "герой"-секции сайта визуально рифмовались.
@@ -16,8 +17,6 @@ const displayFont = Unbounded({
 export const metadata: Metadata = {
   title: "Contact — SouCampus builds",
 };
-
-const DISCORD_INVITE = "https://discord.com/invite/EHudSpvEVV";
 
 const FAQ = [
   {

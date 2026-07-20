@@ -5,80 +5,15 @@ import { motion } from "motion/react";
 import { Skeleton } from "@/components/Skeleton";
 import { Button } from "@/components/Button";
 import { ArrowButton } from "@/components/ArrowButton";
+import type { Review } from "@/lib/reviews";
 
-type Accent = "orange" | "lime";
+type Accent = Review["accent"];
 
-// Real client testimonials, condensed to a similar length and a more formal
-// tone (source: Discord feedback, collected in a CSV). Country flags are
-// still placeholders — swap for real ones once countries + local icon files
-// are confirmed (see CountriesMarquee for the local-icon pattern to follow).
-// This shape (name/role/flag/text/accent) maps directly onto a future
-// `reviews` table when this section is wired up to the database.
 // Only two card accents (orange/lime) — the CTA button stays orange either
 // way (primary color per DESIGN.md), the accent only tints the card itself.
-const reviews = [
-  {
-    name: "Erik",
-    role: "Server Owner, Luckycraft",
-    flag: "🇳🇱",
-    text: "Worked with SouCampus for over a year across multiple projects — fast communication, reliably great results, and rarely needs creative direction.",
-    accent: "orange" as Accent,
-  },
-  {
-    name: "Ghost",
-    role: "Owner, GuardiumMC",
-    flag: "🇺🇸",
-    text: "Consistently impressed by his creativity and skill — every build feels like it belongs in a living world, with a soul and story behind the design.",
-    accent: "lime" as Accent,
-  },
-  {
-    name: "rambomine",
-    role: "Owner, RamboMC",
-    flag: "🇳🇱",
-    text: "Incredibly skilled and reliable — builds match the vision perfectly, deadlines are respected, and the attention to detail stands out every time.",
-    accent: "orange" as Accent,
-  },
-  {
-    name: "TheErikCZ",
-    role: "Founder, BreadBuilds",
-    flag: "🇨🇿",
-    text: "Worked with SouCampus from early commissions to now supplying builds for our shop — hugely talented, with a great eye for detail.",
-    accent: "lime" as Accent,
-  },
-  {
-    name: "Scooter",
-    role: "Owner, Stranded",
-    flag: "🇳🇱",
-    text: "Fast, responsive and easy to work with — every build has consistently exceeded expectations.",
-    accent: "orange" as Accent,
-  },
-  {
-    name: "Luke & Sven",
-    role: "Owners, AstroSMP",
-    flag: "🇳🇱",
-    text: "Fantastic results that genuinely improved the player experience on our servers — fast delivery, fair pricing, and an easy recommendation.",
-    accent: "lime" as Accent,
-  },
-  {
-    name: "Nathan",
-    role: "Owner, LunaSMP",
-    flag: "🇳🇱",
-    text: "Loved the creativity and the communication — our new spawn is a hit with players. Nothing to complain about.",
-    accent: "orange" as Accent,
-  },
-];
-
 const ACCENT_CARD: Record<Accent, string> = {
   orange: "bg-orange-100 text-zinc-950 dark:bg-orange-950 dark:text-zinc-50",
   lime: "bg-lime-100 text-zinc-950 dark:bg-lime-950 dark:text-zinc-50",
-};
-
-// Эксперимент (ветка experiment/colors): кнопка того же акцента, что и
-// карточка, вместо обычного "кнопки всегда orange" из DESIGN.md.
-const ACCENT_BUTTON: Record<Accent, string> = {
-  orange:
-    "text-orange-500 underline decoration-2 underline-offset-4 hover:text-orange-600",
-  lime: "text-lime-600 underline decoration-2 underline-offset-4 hover:text-lime-700",
 };
 
 // Card width used to be a fixed 340px, always — on a 375px phone that's
@@ -92,7 +27,19 @@ const ACCENT_BUTTON: Record<Accent, string> = {
 const CARD_GAP = 24;
 const DEFAULT_CARD_WIDTH = 340;
 
-export function ClientReviews() {
+// Same accent color as the card, underlined text link (secondary Button
+// styling) — эксперимент "кнопка того же акцента, что и карточка" вместо
+// обычного "кнопки всегда orange" из DESIGN.md, был здесь ещё до того, как
+// у ссылки "Read story" появилась настоящая цель.
+const ACCENT_BUTTON: Record<Accent, string> = {
+  orange: "text-orange-500 underline decoration-2 underline-offset-4 hover:text-orange-600",
+  lime: "text-lime-600 underline decoration-2 underline-offset-4 hover:text-lime-700",
+};
+
+// Отзывы приходят пропсом, а не импортом массива: компонент клиентский
+// ("use client"), в базу ходит серверная страница app/(site)/page.tsx и
+// передаёт сюда готовый список.
+export function ClientReviews({ reviews }: { reviews: Review[] }) {
   const [index, setIndex] = useState(0);
   const [cardWidth, setCardWidth] = useState(DEFAULT_CARD_WIDTH);
   const [visible, setVisible] = useState(3);
@@ -117,7 +64,7 @@ export function ClientReviews() {
   const maxIndex = Math.max(0, reviews.length - visible);
 
   return (
-    <section className="bg-[#fbfbff] py-16 dark:bg-zinc-950 sm:py-28">
+    <section id="reviews" className="scroll-mt-24 bg-[#fbfbff] py-16 dark:bg-zinc-950 sm:py-28">
       <div className="mx-auto max-w-6xl px-6">
         <div className="flex items-end justify-between gap-6">
           <motion.h2
@@ -189,6 +136,7 @@ export function ClientReviews() {
                   </footer>
 
                   <Button
+                    href={`/reviews/${review.slug}`}
                     variant="secondary"
                     size="sm"
                     colorClassName={ACCENT_BUTTON[review.accent]}

@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    branches: [master, dev]
   pull_request:
-    branches: [master]
+    branches: [master, dev]
 
 jobs:
   lint-and-build:
@@ -19,4 +19,17 @@ jobs:
 
       - run: npm ci
       - run: npm run lint
+
+      # Тесты специально не получают ключи: они проверяют чистые функции
+      # (rowToProject/rowToReview) и в базу не ходят. Если когда-нибудь
+      # тест здесь упадёт из-за отсутствия ключей — значит он полез в сеть,
+      # и это повод переписать тест, а не выдать ему секреты.
+      - run: npm test
+
+      # А вот сборке база нужна по-настоящему: страницы портфолио и отзывов
+      # генерируются заранее, из данных. Без этих переменных build упадёт
+      # с той же ошибкой, что и локально.
       - run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
