@@ -94,7 +94,7 @@ export function CountriesMarquee() {
             <span className="relative flex h-20 w-20 shrink-0 items-center justify-center sm:h-32 sm:w-32">
               <span
                 aria-hidden
-                className="absolute inset-y-0 right-0 w-screen rounded-r-full bg-lime-500"
+                className="absolute inset-y-0 right-0 w-screen rounded-r-full bg-lime-400"
               />
               <span className="relative z-10 flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-zinc-950 text-lime-500 dark:bg-zinc-50 sm:h-24 sm:w-24">
                 <svg
