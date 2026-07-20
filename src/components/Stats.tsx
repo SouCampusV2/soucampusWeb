@@ -11,15 +11,15 @@ import type { Stat } from "@/lib/stats";
 // смысловой accent ("orange"), а во что он превращается — знает компонент.
 // Тот же приём, что ACCENT_CARD в ClientReviews.tsx.
 const ACCENT_TEXT: Record<Stat["accent"], string> = {
-  orange: "text-orange-400",
-  lime: "text-lime-300",
-  blue: "text-blue-400",
+  orange: "text-orange-500 dark:text-orange-400",
+  lime: "text-lime-500 dark:text-lime-400",
+  blue: "text-blue-500 dark:text-blue-400",
 };
 
 const ACCENT_BAR: Record<Stat["accent"], string> = {
-  orange: "bg-orange-400",
-  lime: "bg-lime-400",
-  blue: "bg-blue-400",
+  orange: "bg-orange-500 dark:bg-orange-400",
+  lime: "bg-lime-500 dark:bg-lime-400",
+  blue: "bg-blue-500 dark:bg-blue-400",
 };
 
 function Counter({ to, suffix }: { to: number; suffix: string }) {

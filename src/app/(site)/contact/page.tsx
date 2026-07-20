@@ -104,7 +104,7 @@ export default function ContactPage() {
                 rel="noopener noreferrer"
                 variant="primary"
                 size="lg"
-                colorClassName="rounded-full bg-blue-400 text-zinc-950 hover:bg-blue-500"
+                colorClassName="rounded-full bg-blue-500 text-zinc-950 hover:bg-blue-600 dark:bg-blue-400 dark:hover:bg-blue-500"
                 className="group gap-3"
               >
                 Join Discord
@@ -150,7 +150,7 @@ export default function ContactPage() {
               rel="noopener noreferrer"
               variant="secondary"
               size="md"
-              colorClassName="text-blue-500 underline decoration-2 underline-offset-4 hover:text-blue-600"
+              colorClassName="text-blue-500 underline decoration-2 underline-offset-4 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-500"
             >
               Open Discord
             </Button>
@@ -173,7 +173,7 @@ export default function ContactPage() {
               href="#faq"
               variant="secondary"
               size="md"
-              colorClassName="text-blue-500 underline decoration-2 underline-offset-4 hover:text-blue-600"
+              colorClassName="text-blue-500 underline decoration-2 underline-offset-4 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-500"
             >
               See the questions
             </Button>

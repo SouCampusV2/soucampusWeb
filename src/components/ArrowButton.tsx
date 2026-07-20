@@ -11,7 +11,7 @@ export const ArrowButton = ({
   direction,
   onClick,
   disabled = false,
-  colorClassName = "bg-orange-400 hover:bg-orange-500 text-white",
+  colorClassName = "bg-orange-500 hover:bg-orange-600 dark:bg-orange-400 dark:hover:bg-orange-500 text-white",
 }: Props) => (
   <button
     type="button"

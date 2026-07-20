@@ -31,9 +31,15 @@ const DEFAULT_CARD_WIDTH = 340;
 // styling) — эксперимент "кнопка того же акцента, что и карточка" вместо
 // обычного "кнопки всегда orange" из DESIGN.md, был здесь ещё до того, как
 // у ссылки "Read story" появилась настоящая цель.
+// Схема кнопок сайта: светлая 500/600, тёмная 400/500 (см. Button.tsx).
+// Lime — сознательное исключение в СВЕТЛОЙ теме: это текст-ссылка, а не
+// заливка, и lime-500 на почти белом фоне даёт контраст 1.9 при пороге
+// 4.5 — надпись просто не читается. Поэтому светлая половина сдвинута на
+// шаг вниз (600/700), тёмная идёт по общему правилу.
 const ACCENT_BUTTON: Record<Accent, string> = {
-  orange: "text-orange-500 underline decoration-2 underline-offset-4 hover:text-orange-600",
-  lime: "text-lime-600 underline decoration-2 underline-offset-4 hover:text-lime-700",
+  orange:
+    "text-orange-500 underline decoration-2 underline-offset-4 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-500",
+  lime: "text-lime-600 underline decoration-2 underline-offset-4 hover:text-lime-700 dark:text-lime-400 dark:hover:text-lime-500",
 };
 
 // Отзывы приходят пропсом, а не импортом массива: компонент клиентский

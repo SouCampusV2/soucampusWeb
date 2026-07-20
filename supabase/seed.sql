@@ -1,5 +1,13 @@
 -- Данные, сгенерированные из src/lib/projects.ts и src/lib/reviews.ts
 -- (Этап 3, шаг 3). Разовый перенос: после него источник истины — БД.
+--
+-- ВНИМАНИЕ: это исторический слепок, а НЕ способ что-то поменять.
+-- Файл был выполнен один раз 2026-07-20 и повторно уже не отработает:
+-- миграция 20260720190000_stats_accent.sql удалила колонки stats.color
+-- и stats.bar, которые тут упоминаются. Править значения здесь
+-- бессмысленно — на сайт это не влияет никак.
+--   Поменять данные  -> Supabase, Table Editor.
+--   Поменять цвета   -> ACCENT_TEXT/ACCENT_BAR в src/components/Stats.tsx.
 
 insert into public.projects
   (slug, title, tag, summary, description, image_url,

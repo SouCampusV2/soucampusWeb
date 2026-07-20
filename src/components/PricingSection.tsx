@@ -22,9 +22,9 @@ type Accent = "blue" | "orange" | "lime";
 // карточка целиком кликабельна, стрелка должна реагировать на наведение
 // в любую точку карточки, не только на сам кружок.
 const ACCENT_ARROW: Record<Accent, string> = {
-  blue: "bg-blue-400 group-hover:bg-blue-500 text-white",
-  orange: "bg-orange-400 group-hover:bg-orange-500 text-white",
-  lime: "bg-lime-400 group-hover:bg-lime-500 text-white",
+  blue: "bg-blue-500 group-hover:bg-blue-600 dark:bg-blue-400 dark:group-hover:bg-blue-500 text-white",
+  orange: "bg-orange-500 group-hover:bg-orange-600 dark:bg-orange-400 dark:group-hover:bg-orange-500 text-white",
+  lime: "bg-lime-500 group-hover:bg-lime-600 dark:bg-lime-400 dark:group-hover:bg-lime-500 text-white",
 };
 
 const PLANS = [

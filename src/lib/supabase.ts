@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 // Единственное место во всём проекте, где создаётся подключение к базе.
 // Все запросы идут через этот объект — как один общий "телефон" до
@@ -22,7 +22,7 @@ import { createClient } from "@supabase/supabase-js";
 // снабжать секретами ради проверок, не касающихся сети.
 //
 // Заодно это singleton: клиент создаётся один раз и переиспользуется.
-let client: ReturnType<typeof createClient> | null = null;
+let client: SupabaseClient | null = null;
 
 export function getSupabase() {
   if (client) return client;

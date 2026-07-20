@@ -3,6 +3,9 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getAllProjects, getProject } from "@/lib/projects";
+import { getViewCounts, VIEW_PATHS } from "@/lib/views";
+import { ViewTracker } from "@/components/ViewTracker";
+import { ViewCount } from "@/components/ViewCount";
 
 // Список адресов, которые Next.js соберёт заранее, во время сборки.
 // Раньше брался из массива мгновенно, теперь — запросом в базу, поэтому
@@ -36,6 +39,8 @@ export default async function ProjectPage({
   const project = await getProject(slug);
   if (!project) notFound();
 
+  const viewCounts = await getViewCounts();
+
   // Cards on the homepage (RecentProjects) and the portfolio catalog both
   // link here — the back link should return to whichever one sent the
   // visitor, not always default to the catalog. Carried via ?from=home
@@ -45,14 +50,24 @@ export default async function ProjectPage({
 
   return (
     <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-16 sm:py-28">
+      <ViewTracker path={VIEW_PATHS.project(project.slug)} />
+
       <div className="mx-auto max-w-3xl">
         <Link href={backHref} className="text-sm font-medium text-orange-600">
           {backLabel}
         </Link>
 
-        <span className="mt-6 block text-xs font-medium uppercase tracking-wide text-orange-600">
-          {project.tag}
-        </span>
+        {/* Тег и счётчик — в одну строку: оба относятся к работе целиком,
+            но счётчик приглушён, это второстепенная информация. */}
+        <div className="mt-6 flex items-center gap-3">
+          <span className="text-xs font-medium uppercase tracking-wide text-orange-600">
+            {project.tag}
+          </span>
+          <ViewCount
+            count={viewCounts[VIEW_PATHS.project(project.slug)]}
+            className="text-zinc-500 dark:text-zinc-400"
+          />
+        </div>
         <h1 className="mt-1 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl">
           {project.title}
         </h1>

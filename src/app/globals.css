@@ -43,228 +43,43 @@ body {
    для orange/lime/blue — недостающие полутона между стоковыми шагами Tailwind
    (50/100/200/300/400/500/600/700/800/900/950). Каждое значение — усреднение
    RGB-каналов двух соседних реальных hex Tailwind v4 (не собственная выдумка).
-   Заводить через @theme не получилось (см. CLAUDE.md) — объявлены руками, тут,
-   как обычные bg-/text-/border- классы. БЕЗ модификаторов (hover:, sm: и т.п. —
-   к ним не приделать, это не настоящие сгенерированные Tailwind-утилиты). */
-@layer utilities {
-  .bg-orange-150 {
-    background-color: #ffe2bf;
-  }
-  .text-orange-150 {
-    color: #ffe2bf;
-  }
-  .border-orange-150 {
-    border-color: #ffe2bf;
-  }
-  .bg-orange-250 {
-    background-color: #ffc88b;
-  }
-  .text-orange-250 {
-    color: #ffc88b;
-  }
-  .border-orange-250 {
-    border-color: #ffc88b;
-  }
-  .bg-orange-350 {
-    background-color: #ffa244;
-  }
-  .text-orange-350 {
-    color: #ffa244;
-  }
-  .border-orange-350 {
-    border-color: #ffa244;
-  }
-  .bg-orange-450 {
-    background-color: #ff7d0d;
-  }
-  .text-orange-450 {
-    color: #ff7d0d;
-  }
-  .border-orange-450 {
-    border-color: #ff7d0d;
-  }
-  .bg-orange-550 {
-    background-color: #f76000;
-  }
-  .text-orange-550 {
-    color: #f76000;
-  }
-  .border-orange-550 {
-    border-color: #f76000;
-  }
-  .bg-orange-650 {
-    background-color: #db4700;
-  }
-  .text-orange-650 {
-    color: #db4700;
-  }
-  .border-orange-650 {
-    border-color: #db4700;
-  }
-  .bg-orange-750 {
-    background-color: #b23500;
-  }
-  .text-orange-750 {
-    color: #b23500;
-  }
-  .border-orange-750 {
-    border-color: #b23500;
-  }
-  .bg-orange-850 {
-    background-color: #8f2c06;
-  }
-  .text-orange-850 {
-    color: #8f2c06;
-  }
-  .border-orange-850 {
-    border-color: #8f2c06;
-  }
 
-  .bg-lime-150 {
-    background-color: #e2fbb2;
-  }
-  .text-lime-150 {
-    color: #e2fbb2;
-  }
-  .border-lime-150 {
-    border-color: #e2fbb2;
-  }
-  .bg-lime-250 {
-    background-color: #caf775;
-  }
-  .text-lime-250 {
-    color: #caf775;
-  }
-  .border-lime-250 {
-    border-color: #caf775;
-  }
-  .bg-lime-350 {
-    background-color: #aced29;
-  }
-  .text-lime-350 {
-    color: #aced29;
-  }
-  .border-lime-350 {
-    border-color: #aced29;
-  }
-  .bg-lime-450 {
-    background-color: #8fd900;
-  }
-  .text-lime-450 {
-    color: #8fd900;
-  }
-  .border-lime-450 {
-    border-color: #8fd900;
-  }
-  .bg-lime-550 {
-    background-color: #71b900;
-  }
-  .text-lime-550 {
-    color: #71b900;
-  }
-  .border-lime-550 {
-    border-color: #71b900;
-  }
-  .bg-lime-650 {
-    background-color: #579100;
-  }
-  .text-lime-650 {
-    color: #579100;
-  }
-  .border-lime-650 {
-    border-color: #579100;
-  }
-  .bg-lime-750 {
-    background-color: #447000;
-  }
-  .text-lime-750 {
-    color: #447000;
-  }
-  .border-lime-750 {
-    border-color: #447000;
-  }
-  .bg-lime-850 {
-    background-color: #395b07;
-  }
-  .text-lime-850 {
-    color: #395b07;
-  }
-  .border-lime-850 {
-    border-color: #395b07;
-  }
+   Одна переменная на цвет — дальше Tailwind сам порождает bg-/text-/border-
+   и все модификаторы к ним (dark:, hover:, sm: работают, проверено).
 
-  .bg-blue-150 {
-    background-color: #cde3ff;
-  }
-  .text-blue-150 {
-    color: #cde3ff;
-  }
-  .border-blue-150 {
-    border-color: #cde3ff;
-  }
-  .bg-blue-250 {
-    background-color: #a7d0ff;
-  }
-  .text-blue-250 {
-    color: #a7d0ff;
-  }
-  .border-blue-250 {
-    border-color: #a7d0ff;
-  }
-  .bg-blue-350 {
-    background-color: #72b4ff;
-  }
-  .text-blue-350 {
-    color: #72b4ff;
-  }
-  .border-blue-350 {
-    border-color: #72b4ff;
-  }
-  .bg-blue-450 {
-    background-color: #4291ff;
-  }
-  .text-blue-450 {
-    color: #4291ff;
-  }
-  .border-blue-450 {
-    border-color: #4291ff;
-  }
-  .bg-blue-550 {
-    background-color: #236ffe;
-  }
-  .text-blue-550 {
-    color: #236ffe;
-  }
-  .border-blue-550 {
-    border-color: #236ffe;
-  }
-  .bg-blue-650 {
-    background-color: #1552f1;
-  }
-  .text-blue-650 {
-    color: #1552f1;
-  }
-  .border-blue-650 {
-    border-color: #1552f1;
-  }
-  .bg-blue-750 {
-    background-color: #1742cf;
-  }
-  .text-blue-750 {
-    color: #1742cf;
-  }
-  .border-blue-750 {
-    border-color: #1742cf;
-  }
-  .bg-blue-850 {
-    background-color: #1b3ba3;
-  }
-  .text-blue-850 {
-    color: #1b3ba3;
-  }
-  .border-blue-850 {
-    border-color: #1b3ba3;
-  }
+   До 2026-07-20 эти шаги были расписаны руками как 72 обычных правила в
+   @layer utilities, потому что считалось, что @theme "не работает". Это было
+   неверно, и у рукописного варианта был неочевидный побочный эффект: вариант
+   dark: объявлен ниже как :where(.dark, .dark *), то есть имеет НУЛЕВУЮ
+   специфичность и весит столько же, сколько простой класс. При равном весе
+   решает порядок в файле — а рукописный блок шёл после сгенерированных
+   утилит и молча перебивал dark:. Тёмная тема на этих шагах не работала
+   вовсе. Через @theme Tailwind сам ставит варианты после базовых утилит. */
+@theme {
+  --color-orange-150: #ffe2bf;
+  --color-orange-250: #ffc88b;
+  --color-orange-350: #ffa244;
+  --color-orange-450: #ff7d0d;
+  --color-orange-550: #f76000;
+  --color-orange-650: #db4700;
+  --color-orange-750: #b23500;
+  --color-orange-850: #8f2c06;
+  --color-lime-150: #e2fbb2;
+  --color-lime-250: #caf775;
+  --color-lime-350: #aced29;
+  --color-lime-450: #8fd900;
+  --color-lime-550: #71b900;
+  --color-lime-650: #579100;
+  --color-lime-750: #447000;
+  --color-lime-850: #395b07;
+  --color-blue-150: #cde3ff;
+  --color-blue-250: #a7d0ff;
+  --color-blue-350: #72b4ff;
+  --color-blue-450: #4291ff;
+  --color-blue-550: #236ffe;
+  --color-blue-650: #1552f1;
+  --color-blue-750: #1742cf;
+  --color-blue-850: #1b3ba3;
 }
 
 /*

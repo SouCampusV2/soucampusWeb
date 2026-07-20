@@ -19,10 +19,18 @@ type Size = "sm" | "md" | "lg";
 const base =
   "inline-flex h-12 cursor-pointer items-center justify-center font-semibold transition-transform active:scale-95 sm:h-14";
 
+// Единая цветовая схема кнопок по всему сайту (2026-07-20):
+//   светлая тема — 500, при наведении 600
+//   тёмная тема  — 400, при наведении 500
+// В светлой теме фон почти белый, поэтому нужен насыщенный оттенок;
+// в тёмной наоборот — на чёрном тот же 500 выглядит грязным, и шкала
+// сдвигается на шаг светлее. Это та же формула отражения вокруг 500,
+// что и во всём DESIGN.md, просто применённая к кнопкам.
 const variants: Record<Variant, string> = {
-  primary: "rounded-full bg-orange-400 text-zinc-950 hover:bg-orange-500",
+  primary:
+    "rounded-full bg-orange-500 text-zinc-950 hover:bg-orange-600 dark:bg-orange-400 dark:hover:bg-orange-500",
   secondary:
-    "text-orange-500 underline decoration-2 underline-offset-4 hover:text-orange-600",
+    "text-orange-500 underline decoration-2 underline-offset-4 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-500",
 };
 
 // Точечное переопределение цвета primary-кнопки (по умолчанию — оранжевый,

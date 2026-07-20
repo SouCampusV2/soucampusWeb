@@ -12,7 +12,7 @@ const steps = [
 
 export function HowItWorks() {
   return (
-    <section className="bg-lime-300 py-16 dark:bg-lime-700 sm:py-28">
+    <section className="bg-lime-300 py-16 dark:bg-lime-950 sm:py-28">
       <div className="mx-auto max-w-6xl px-6">
         <motion.h2
           initial={{ opacity: 0, y: 16 }}
@@ -37,7 +37,7 @@ export function HowItWorks() {
               transition={{ delay: i * 0.08 }}
               className="relative"
             >
-              <span className="text-4xl font-bold text-blue-650 dark:text-blue-350">
+              <span className="text-4xl font-bold text-blue-650 dark:text-blue-400">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <h3 className="mt-2 text-lg font-semibold text-zinc-950 dark:text-zinc-50">

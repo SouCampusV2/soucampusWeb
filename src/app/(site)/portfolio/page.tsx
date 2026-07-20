@@ -3,7 +3,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { Unbounded } from "next/font/google";
 import { getAllProjects } from "@/lib/projects";
+import { getViewCounts, VIEW_PATHS } from "@/lib/views";
 import { PortfolioHero } from "@/components/PortfolioHero";
+import { ViewTracker } from "@/components/ViewTracker";
+import { ViewCount } from "@/components/ViewCount";
 
 // Same display font as the hero headings — the card title rhymes with them.
 const displayFont = Unbounded({
@@ -32,7 +35,10 @@ const SPAN_PATTERN = [
 // Next.js дожидается ответа БД на сервере и отправляет браузеру уже
 // готовый HTML — посетитель никакой загрузки не видит.
 export default async function PortfolioPage() {
-  const projects = await getAllProjects();
+  const [projects, viewCounts] = await Promise.all([
+    getAllProjects(),
+    getViewCounts(),
+  ]);
 
   // Состав карусели задаёт галочка is_featured в базе, а не "первые пять
   // по порядку", как раньше. Теперь порядок карточек в сетке можно менять,
@@ -42,6 +48,9 @@ export default async function PortfolioPage() {
 
   return (
     <main className="w-full mx-auto max-w-6xl flex-1 px-6">
+      {/* Ничего не рисует — сообщает серверу, что каталог открыли. */}
+      <ViewTracker path={VIEW_PATHS.portfolio} />
+
       <PortfolioHero projects={featured} />
 
       <div className="mt-16 border-t border-zinc-200 pt-10 dark:border-zinc-800 sm:mt-28 sm:pt-16">
@@ -79,6 +88,14 @@ export default async function PortfolioPage() {
                 <span className="absolute left-4 top-4 rounded-full bg-lime-300/90 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-950">
                   {project.tag}
                 </span>
+
+                {/* Правый верхний угол, напротив тега. Поверх фотографии,
+                    поэтому цвет светлый и с затемнённой подложкой — на
+                    случай светлого снимка. */}
+                <ViewCount
+                  count={viewCounts[VIEW_PATHS.project(project.slug)]}
+                  className="absolute right-4 top-4 rounded-full bg-zinc-950/50 px-2.5 py-1 text-zinc-50 backdrop-blur-sm"
+                />
 
                 <div className="absolute inset-x-0 bottom-0 p-5 transition-transform duration-300 group-hover:-translate-y-1">
                   <h3

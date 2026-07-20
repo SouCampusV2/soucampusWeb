@@ -112,12 +112,12 @@ export function PortfolioHero({ projects: allProjects }: Props) {
           <ArrowButton
             direction="left"
             onClick={() => goTo(active - 1)}
-            colorClassName="bg-lime-400 hover:bg-lime-500 text-zinc-950"
+            colorClassName="bg-lime-500 hover:bg-lime-600 dark:bg-lime-400 dark:hover:bg-lime-500 text-zinc-950"
           />
           <ArrowButton
             direction="right"
             onClick={() => goTo(active + 1)}
-            colorClassName="bg-lime-400 hover:bg-lime-500 text-zinc-950"
+            colorClassName="bg-lime-500 hover:bg-lime-600 dark:bg-lime-400 dark:hover:bg-lime-500 text-zinc-950"
           />
         </div>
       </div>
@@ -186,7 +186,7 @@ export function PortfolioHero({ projects: allProjects }: Props) {
               <Button
                 href={`/portfolio/${current.slug}`}
                 size="lg"
-                colorClassName="rounded-full bg-lime-400 text-zinc-950 hover:bg-lime-500"
+                colorClassName="rounded-full bg-lime-500 text-zinc-950 hover:bg-lime-600 dark:bg-lime-400 dark:hover:bg-lime-500"
                 className="group mt-5 gap-3"
               >
                 Check this
@@ -309,7 +309,7 @@ export function PortfolioHero({ projects: allProjects }: Props) {
           <Button
             href={`/portfolio/${current.slug}`}
             size="lg"
-            colorClassName="rounded-full bg-lime-400 text-zinc-950 hover:bg-lime-500"
+            colorClassName="rounded-full bg-lime-500 text-zinc-950 hover:bg-lime-600 dark:bg-lime-400 dark:hover:bg-lime-500"
             className="group shrink-0 gap-3"
           >
             Check this
