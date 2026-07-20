@@ -19,20 +19,27 @@ export function ViewCount({
   if (!count) return null;
 
   return (
+    // text-xs + leading-4 + иконка 14 — ровно та же высота строки, что у
+    // бейджа с типом работы рядом (text-xs, py-1): два значка на карточке
+    // должны стоять на одной линии и быть одного роста.
     <span
-      className={`inline-flex items-center gap-2 text-sm leading-none ${className}`}
+      className={`inline-flex items-center gap-1.5 text-xs leading-4 ${className}`}
     >
-      <Eye size={18} weight="duotone" aria-hidden className="shrink-0" />
+      {/* weight="fill", не "duotone": у duotone поверх заливки идёт ещё и
+          обводка, и на мелком размере глаз читает её как странный ореол
+          вокруг иконки. Сплошной силуэт спокойнее. */}
+      <Eye size={14} weight="fill" aria-hidden className="shrink-0" />
       {/* tabular-nums — цифры одинаковой ширины: без него счётчик
           дёргается по горизонтали, когда 999 становится 1,000. */}
       <span className="font-semibold tabular-nums">
         {count.toLocaleString("en-US")}
       </span>
-      {/* Подпись приглушена относительно числа: важна цифра, слово —
-          подсказка. opacity, а не отдельный цвет, чтобы бейдж одинаково
-          работал на любом фоне, куда его поставят. */}
+      {/* Верхний регистр с разрядкой — как у бейджа типа работы, чтобы
+          пара читалась как один набор значков, а не два чужих элемента.
+          Приглушение через opacity, а не отдельным цветом: бейдж кладут
+          на разные фоны, и прозрачность подстроится под любой. */}
       {label ? (
-        <span aria-hidden className="opacity-70">
+        <span aria-hidden className="uppercase tracking-wide opacity-60">
           {label}
         </span>
       ) : null}

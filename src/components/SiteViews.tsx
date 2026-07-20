@@ -31,21 +31,26 @@ export function SiteViews({ views }: { views: SiteViewsData }) {
 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
-      <span className="inline-flex items-center gap-2 text-sm leading-none text-zinc-500 dark:text-zinc-400">
-        <Eye size={18} weight="duotone" aria-hidden className="shrink-0" />
+      <span className="inline-flex items-center gap-1.5 text-xs leading-4 text-zinc-500 dark:text-zinc-400">
+        {/* fill, а не duotone — у duotone поверх заливки идёт обводка, и
+            на мелком размере она читается как ореол вокруг иконки. */}
+        <Eye size={14} weight="fill" aria-hidden className="shrink-0" />
         <span className="font-semibold tabular-nums">
           {views[period].toLocaleString("en-US")}
         </span>
-        <span className="opacity-70">Visitors</span>
+        <span className="uppercase tracking-wide opacity-60">Visitors</span>
       </span>
 
-      {/* Сегментированный переключатель: одна общая подложка, активная
-          кнопка — светлая "таблетка" внутри неё. Так видно, что варианты
-          взаимоисключающие, в отличие от набора отдельных кнопок. */}
+      {/* Сегментированный переключатель в стиле навбара (DESIGN.md):
+          pill-капсула, стеклянная полупрозрачная подложка с backdrop-blur
+          и очень лёгкая обводка, без тени. Одна общая подложка на все
+          варианты показывает, что они взаимоисключающие.
+          Активный — оранжевый, по правилу "акцент действия всегда orange",
+          и по общей схеме кнопок: 500 в светлой теме, 400 в тёмной. */}
       <div
         role="group"
         aria-label="Period"
-        className="inline-flex rounded-full bg-zinc-950/[0.04] p-0.5 dark:bg-zinc-50/[0.06]"
+        className="inline-flex rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/70 p-1 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/70"
       >
         {PERIODS.map((p) => {
           const active = p.key === period;
@@ -55,9 +60,9 @@ export function SiteViews({ views }: { views: SiteViewsData }) {
               type="button"
               onClick={() => setPeriod(p.key)}
               aria-pressed={active}
-              className={`cursor-pointer rounded-full px-3 py-1 text-xs font-medium transition-colors ${
+              className={`cursor-pointer rounded-full px-3 py-1 text-xs font-semibold transition-colors ${
                 active
-                  ? "bg-[#fbfbff] text-zinc-950 shadow-sm dark:bg-zinc-800 dark:text-zinc-50"
+                  ? "bg-orange-500 text-zinc-950 dark:bg-orange-400"
                   : "text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
               }`}
             >

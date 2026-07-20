@@ -94,14 +94,16 @@ export default async function PortfolioPage() {
                   {project.tag}
                 </span>
 
-                {/* Правый верхний угол, напротив тега. Лежит поверх
-                    фотографии, поэтому: тёмная полупрозрачная подложка с
-                    размытием (снимок под ней может быть любой светлоты),
-                    светлый текст и тонкая белая обводка — она отделяет
-                    бейдж от кадра, когда фон под ним почти чёрный. */}
+                {/* Правый верхний угол, напротив тега, той же высоты
+                    (px-3 py-1 text-xs — один в один как у тега выше).
+                    Светлая полупрозрачная подложка с размытием вместо
+                    прежней тёмной: счётчик — второстепенная информация,
+                    он не должен спорить за внимание с названием работы.
+                    Без dark:-вариантов — по DESIGN.md чипы поверх фото
+                    читаются одинаково в обеих темах. */}
                 <ViewCount
                   count={viewCounts[VIEW_PATHS.project(project.slug)]}
-                  className="absolute right-4 top-4 rounded-full border border-zinc-50/15 bg-zinc-950/60 px-3 py-1.5 text-zinc-50 shadow-sm backdrop-blur-md"
+                  className="absolute right-4 top-4 rounded-full bg-[#fbfbff]/80 px-3 py-1 text-zinc-700 backdrop-blur-sm"
                 />
 
                 <div className="absolute inset-x-0 bottom-0 p-5 transition-transform duration-300 group-hover:-translate-y-1">
