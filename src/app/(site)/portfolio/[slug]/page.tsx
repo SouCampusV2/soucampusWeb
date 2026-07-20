@@ -4,7 +4,6 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getAllProjects, getProject } from "@/lib/projects";
 import { getViewCounts, VIEW_PATHS } from "@/lib/views";
-import { ViewTracker } from "@/components/ViewTracker";
 import { ViewCount } from "@/components/ViewCount";
 
 // Список адресов, которые Next.js соберёт заранее, во время сборки.
@@ -50,7 +49,6 @@ export default async function ProjectPage({
 
   return (
     <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-16 sm:py-28">
-      <ViewTracker path={VIEW_PATHS.project(project.slug)} />
 
       <div className="mx-auto max-w-3xl">
         <Link href={backHref} className="text-sm font-medium text-orange-600">

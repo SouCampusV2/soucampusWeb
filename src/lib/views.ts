@@ -8,12 +8,41 @@ export const VIEW_PATHS = {
   project: (slug: string) => `/portfolio/${slug}`,
 } as const;
 
+// Статические страницы сайта. Динамические (работы и отзывы) проверяются
+// шаблоном ниже — перечислять 16 адресов вручную бессмысленно, они
+// меняются вместе с содержимым базы.
+const STATIC_PATHS = new Set([
+  "/",
+  "/portfolio",
+  "/about",
+  "/contact",
+  "/shop",
+  "/terms",
+]);
+
 // Разрешённые к подсчёту пути. Обработчик принимает только их: иначе
-// любой мог бы засорить таблицу произвольными строками ("/выдумка"),
-// и она бы бесконтрольно росла.
+// кто угодно мог бы засорить таблицу произвольными строками ("/выдумка"),
+// и она росла бы бесконтрольно. Шаблонslug'а намеренно узкий — строчные
+// латинские буквы, цифры и дефис, ровно то, что порождает БД.
 export function isTrackablePath(path: string) {
-  return path === VIEW_PATHS.portfolio || /^\/portfolio\/[a-z0-9-]+$/.test(path);
+  if (STATIC_PATHS.has(path)) return true;
+  return /^\/(portfolio|reviews)\/[a-z0-9-]{1,80}$/.test(path);
 }
+
+/** Уникальные посетители всего сайта, по периодам. */
+export type SiteViews = {
+  all_time: number;
+  today: number;
+  week: number;
+  month: number;
+};
+
+export const EMPTY_SITE_VIEWS: SiteViews = {
+  all_time: 0,
+  today: 0,
+  week: 0,
+  month: 0,
+};
 
 /**
  * Счётчики уникальных посетителей: путь -> число.
@@ -50,5 +79,39 @@ export async function getViewCounts(): Promise<Record<string, number>> {
       e instanceof Error ? e.message : e
     );
     return {};
+  }
+}
+
+/**
+ * Уникальные посетители всего сайта за четыре периода.
+ *
+ * Возвращаются все четыре числа сразу, одним запросом, хотя показывается
+ * в каждый момент одно: переключатель периода тогда работает мгновенно и
+ * без обращения к серверу. Запрашивать по клику пришлось бы заводить ещё
+ * один публичный маршрут — ради четырёх чисел, которые весят байты.
+ *
+ * ТОЛЬКО для серверных компонентов: внутри служебный ключ.
+ */
+export async function getSiteViews(): Promise<SiteViews> {
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from("site_view_counts")
+      .select("all_time, today, week, month")
+      .single();
+
+    if (error) throw new Error(error.message);
+
+    return {
+      all_time: Number(data.all_time),
+      today: Number(data.today),
+      week: Number(data.week),
+      month: Number(data.month),
+    };
+  } catch (e) {
+    console.warn(
+      "Счётчик посетителей сайта недоступен:",
+      e instanceof Error ? e.message : e
+    );
+    return EMPTY_SITE_VIEWS;
   }
 }

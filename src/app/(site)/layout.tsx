@@ -2,6 +2,7 @@ import { Navbar } from "@/components/Navbar";
 import { PageTransition } from "@/components/PageTransition";
 import { PricingSection } from "@/components/PricingSection";
 import { ContactFooter } from "@/components/ContactFooter";
+import { ViewTracker } from "@/components/ViewTracker";
 
 // Обвязка публичного сайта: навбар сверху, тарифы + футер снизу на каждой
 // странице. Живёт здесь, а не в корневом layout.tsx, именно ради группы
@@ -25,6 +26,10 @@ export default function SiteLayout({
 }>) {
   return (
     <PageTransition>
+      {/* Ничего не рисует. Стоит здесь, а не на страницах: layout при
+          переходах не пересоздаётся, а адрес компонент берёт сам — так
+          считается весь сайт и про новую страницу нельзя забыть. */}
+      <ViewTracker />
       <Navbar />
       {children}
       <PricingSection />
