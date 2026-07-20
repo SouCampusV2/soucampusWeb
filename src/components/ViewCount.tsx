@@ -5,9 +5,12 @@ import { Eye } from "@phosphor-icons/react/dist/ssr";
 // ради него JS в браузер незачем.
 export function ViewCount({
   count,
+  label = "Views",
   className = "",
 }: {
   count: number | undefined;
+  /** Подпись после числа. Передать "" чтобы показать только цифру. */
+  label?: string;
   className?: string;
 }) {
   // Пока страницу не открыл ни один человек, "0 views" выглядит хуже,
@@ -25,6 +28,9 @@ export function ViewCount({
           системы: иначе сервер и браузер посетителя могли бы отформатировать
           число по-разному, и React пожаловался бы на расхождение. */}
       {count.toLocaleString("en-US")}
+      {/* Подпись рядом с числом. Для читалок с экрана дублируем полную
+          формулировку — "1,240 Views" вслух звучит двусмысленно. */}
+      {label ? <span aria-hidden>{label}</span> : null}
       <span className="sr-only"> unique views</span>
     </span>
   );

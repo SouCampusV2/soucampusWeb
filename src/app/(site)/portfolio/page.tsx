@@ -54,9 +54,18 @@ export default async function PortfolioPage() {
       <PortfolioHero projects={featured} />
 
       <div className="mt-16 border-t border-zinc-200 pt-10 dark:border-zinc-800 sm:mt-28 sm:pt-16">
-        <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
-          More projects
-        </h2>
+        {/* Заголовок и счётчик всей страницы — в одну строку, счётчик
+            прижат вправо и выровнен по базовой линии заголовка. На узких
+            экранах переносится под заголовок (flex-wrap), а не жмёт его. */}
+        <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
+          <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
+            More projects
+          </h2>
+          <ViewCount
+            count={viewCounts[VIEW_PATHS.portfolio]}
+            className="text-zinc-500 dark:text-zinc-400"
+          />
+        </div>
         <p className="mt-2 max-w-xl text-zinc-600 dark:text-zinc-400">
           The full portfolio. Click a build to see details, timeline and gallery.
         </p>

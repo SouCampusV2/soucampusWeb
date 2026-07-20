@@ -23,23 +23,32 @@ export function isTrackablePath(path: string) {
  * таблица при этом остаётся полностью недоступной из браузера.
  */
 export async function getViewCounts(): Promise<Record<string, number>> {
-  const { data, error } = await getSupabaseAdmin()
-    .from("page_view_counts")
-    .select("path, views");
+  // Счётчик — украшение, а не содержание страницы. Что бы ни пошло не так
+  // (нет служебного ключа, недоступна база, нет таблицы) — портфолио
+  // обязано открыться, просто без чисел. Это сознательное отличие от
+  // getAllProjects, который падает громко: там без данных показывать нечего.
+  //
+  // Именно поэтому в CI нет переменной SUPABASE_SERVICE_ROLE_KEY. Задача
+  // CI — проверить, что код собирается, а не выпустить готовый сайт (это
+  // делает Vercel, и там ключ есть). Отдавать боевой ключ, который обходит
+  // RLS, ещё и в GitHub Actions — лишний носитель секрета без выгоды.
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from("page_view_counts")
+      .select("path, views");
 
-  // Счётчик — украшение, а не содержание страницы. Если он не
-  // загрузился, портфолио всё равно должно открыться: возвращаем
-  // пустой объект, и компонент просто не покажет число. Это
-  // сознательное отличие от getAllProjects, который падает громко —
-  // там без данных показывать нечего.
-  if (error) {
-    console.error("Не удалось загрузить счётчики просмотров:", error.message);
+    if (error) throw new Error(error.message);
+
+    const counts: Record<string, number> = {};
+    for (const row of data ?? []) {
+      counts[row.path as string] = Number(row.views);
+    }
+    return counts;
+  } catch (e) {
+    console.warn(
+      "Счётчики просмотров недоступны, страница соберётся без них:",
+      e instanceof Error ? e.message : e
+    );
     return {};
   }
-
-  const counts: Record<string, number> = {};
-  for (const row of data ?? []) {
-    counts[row.path as string] = Number(row.views);
-  }
-  return counts;
 }
