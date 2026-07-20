@@ -1,19 +1,22 @@
 import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
 import { FileText } from "@phosphor-icons/react/dist/ssr";
+import { BASE_RATE, HIGH_RATE, HIGH_RATE_THRESHOLD } from "@/lib/pricing";
 
 // Explains the same formula BuildEstimator.tsx (Contact page) actually
-// computes with — written out in plain text here rather than imported,
-// since this page stays a server component and only needs to describe the
-// numbers, not run the calculator's logic.
+// computes with — the rate/threshold numbers are imported from
+// src/lib/pricing.ts so this page can't silently drift out of sync with
+// what the calculator actually charges; the surrounding prose stays plain
+// text since this page is a server component and only needs to describe
+// the numbers, not run the calculator's logic.
 const PRICING_FAQ = [
   {
     q: "How is the price calculated?",
-    a: "The base rate is 1.25€ per 1×1 unit of a map's side. A 100×100 map is 100 × 1.25 = 125€, a 200×200 map is 200 × 1.25 = 250€, and so on.",
+    a: `The base rate is ${BASE_RATE}€ per 1×1 unit of a map's side. A 100×100 map is 100 × ${BASE_RATE} = ${100 * BASE_RATE}€, a 200×200 map is 200 × ${BASE_RATE} = ${200 * BASE_RATE}€, and so on.`,
   },
   {
     q: "What about really large builds?",
-    a: "Past a 400×400 footprint the rate steps up to 1.5€ per unit — large builds take proportionally more detail work, not just more area. A 400×400 map is 400 × 1.5 = 600€; a 1000×1000 map is 1000 × 1.5 = 1500€.",
+    a: `Past a ${HIGH_RATE_THRESHOLD}×${HIGH_RATE_THRESHOLD} footprint the rate steps up to ${HIGH_RATE}€ per unit — large builds take proportionally more detail work, not just more area. A ${HIGH_RATE_THRESHOLD}×${HIGH_RATE_THRESHOLD} map is ${HIGH_RATE_THRESHOLD} × ${HIGH_RATE} = ${HIGH_RATE_THRESHOLD * HIGH_RATE}€; a 1000×1000 map is 1000 × ${HIGH_RATE} = ${1000 * HIGH_RATE}€.`,
   },
   {
     q: "My map isn't square — how does that get priced?",

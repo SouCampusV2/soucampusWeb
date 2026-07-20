@@ -11,14 +11,13 @@ import {
   Moon,
 } from "@phosphor-icons/react";
 import { useTheme } from "@/components/ThemeProvider";
+import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
 
 // Same display font as the navbar brand name — the footer logo rhymes with it.
 const displayFont = Unbounded({
   weight: "800",
   subsets: ["latin"],
 });
-
-const DISCORD_INVITE = "https://discord.com/invite/EHudSpvEVV";
 
 const SOCIALS = [
   { label: "Discord", href: DISCORD_INVITE, icon: DiscordLogo },
@@ -33,14 +32,6 @@ const SOCIALS = [
     icon: TiktokLogo,
   },
   { label: "GitHub", href: "https://github.com/SouCampusV2", icon: GithubLogo },
-];
-
-const NAV_LINKS = [
-  { href: "/", label: "Home" },
-  { href: "/portfolio", label: "Portfolio" },
-  { href: "/shop", label: "Shop" },
-  { href: "/about", label: "About me" },
-  { href: "/contact", label: "Contact" },
 ];
 
 export function ContactFooter() {

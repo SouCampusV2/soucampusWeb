@@ -6,22 +6,13 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Unbounded } from "next/font/google";
 import { Button } from "@/components/Button";
+import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
 
 // Same display font as the hero headings — the navbar rhymes with them.
 const displayFont = Unbounded({
   weight: "800",
   subsets: ["latin"],
 });
-
-const DISCORD_INVITE = "https://discord.com/invite/EHudSpvEVV";
-
-const links = [
-  { href: "/", label: "Home" },
-  { href: "/portfolio", label: "Portfolio" },
-  { href: "/shop", label: "Shop" },
-  { href: "/about", label: "About me" },
-  { href: "/contact", label: "Contact" },
-];
 
 export function Navbar() {
   const [open, setOpen] = useState(false);
@@ -57,8 +48,8 @@ export function Navbar() {
             SouCampus
           </Link>
 
-          <ul className="hidden items-center gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-400 min-[760px]:flex">
-            {links.map((link) => (
+          <ul className="hidden items-center gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-300 min-[760px]:flex">
+            {NAV_LINKS.map((link) => (
               <li key={link.href}>
                 <Link
                   href={link.href}
@@ -119,7 +110,7 @@ export function Navbar() {
               // never has to flatten its corners to fit a flush dropdown.
               className="absolute inset-x-0 top-[calc(100%+8px)] overflow-hidden rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/95 min-[760px]:hidden"
             >
-              {links.map((link) => (
+              {NAV_LINKS.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}

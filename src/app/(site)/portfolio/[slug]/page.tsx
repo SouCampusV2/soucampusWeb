@@ -2,9 +2,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { projects, getProject } from "@/lib/projects";
+import { getAllProjects, getProject } from "@/lib/projects";
 
-export function generateStaticParams() {
+// Список адресов, которые Next.js соберёт заранее, во время сборки.
+// Раньше брался из массива мгновенно, теперь — запросом в базу, поэтому
+// функция стала async. Next.js это поддерживает нативно.
+export async function generateStaticParams() {
+  const projects = await getAllProjects();
   return projects.map((p) => ({ slug: p.slug }));
 }
 
@@ -14,7 +18,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const project = getProject(slug);
+  const project = await getProject(slug);
   return {
     title: project ? `${project.title} — SouCampus builds` : "Not found",
   };
@@ -29,7 +33,7 @@ export default async function ProjectPage({
 }) {
   const { slug } = await params;
   const { from } = await searchParams;
-  const project = getProject(slug);
+  const project = await getProject(slug);
   if (!project) notFound();
 
   // Cards on the homepage (RecentProjects) and the portfolio catalog both

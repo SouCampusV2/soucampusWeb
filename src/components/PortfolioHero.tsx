@@ -8,7 +8,7 @@ import { Unbounded } from "next/font/google";
 import { ArrowCircle } from "@/components/ArrowCircle";
 import { ArrowButton } from "@/components/ArrowButton";
 import { Button } from "@/components/Button";
-import type { Project } from "@/lib/projects";
+import { PORTFOLIO_HERO_SIZE, type Project } from "@/lib/projects";
 
 // Same display font as the homepage Hero — rhymes the two "hero" headings.
 const displayFont = Unbounded({
@@ -20,6 +20,24 @@ type Props = {
   projects: Project[];
 };
 
+// Size/Built in/Price — same three-line spec list shown next to the active
+// project on both the mobile carousel and the desktop panel row.
+function ProjectSpecs({ project }: { project: Project }) {
+  return (
+    <ul className="mt-3 space-y-1.5 text-sm text-zinc-700 dark:text-zinc-300">
+      <li>
+        <span className="font-semibold text-zinc-950 dark:text-zinc-50">Size:</span> {project.size}
+      </li>
+      <li>
+        <span className="font-semibold text-zinc-950 dark:text-zinc-50">Built in:</span> {project.deadline}
+      </li>
+      <li>
+        <span className="font-semibold text-zinc-950 dark:text-zinc-50">Price:</span> {project.price}
+      </li>
+    </ul>
+  );
+}
+
 // Honeyfrost-style hero: a row of panels, the active one expanded via
 // animated flexGrow. Hover expands on desktop, tap/click expands on
 // touch devices (hover doesn't exist there) — same interaction either way.
@@ -27,12 +45,12 @@ type Props = {
 // quick pass across the row doesn't fire a switch every panel it crosses.
 const HOVER_HOLD_MS = 90;
 
-// The expanding-panel layout only reads well with a handful of panels —
-// cap the carousel itself, the rest live in the grid below.
-const MAX_CAROUSEL_ITEMS = 5;
-
 export function PortfolioHero({ projects: allProjects }: Props) {
-  const projects = allProjects.slice(0, MAX_CAROUSEL_ITEMS);
+  // Отбор проектов для карусели делает portfolio/page.tsx по галочке
+  // is_featured из базы — сюда приезжают уже только они. Слайс остался
+  // страховкой: панели читаются хорошо, пока их немного, а галочку в
+  // Table Editor можно поставить хоть всем шестнадцати.
+  const projects = allProjects.slice(0, PORTFOLIO_HERO_SIZE);
   const [active, setActive] = useState(0);
   const current = projects[active];
   const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -48,6 +66,18 @@ export function PortfolioHero({ projects: allProjects }: Props) {
 
   const cancelSchedule = () => {
     if (hoverTimeout.current) clearTimeout(hoverTimeout.current);
+  };
+
+  // Shared by mouse click and Enter/Space on the focused panel (see
+  // role="link" below) — first activation expands the panel, a second one
+  // (while already active) navigates to its detail page.
+  const activatePanel = (i: number, isActive: boolean, slug: string) => {
+    cancelSchedule();
+    if (isActive) {
+      router.push(`/portfolio/${slug}`);
+    } else {
+      setActive(i);
+    }
   };
 
   return (
@@ -152,18 +182,7 @@ export function PortfolioHero({ projects: allProjects }: Props) {
                 {current.title}
               </h2>
               <p className="mt-2 text-zinc-600 dark:text-zinc-400">{current.summary}</p>
-              <ul className="mt-3 space-y-1.5 text-sm text-zinc-700 dark:text-zinc-300">
-                <li>
-                  <span className="font-semibold text-zinc-950 dark:text-zinc-50">Size:</span> {current.size}
-                </li>
-                <li>
-                  <span className="font-semibold text-zinc-950 dark:text-zinc-50">Built in:</span>{" "}
-                  {current.deadline}
-                </li>
-                <li>
-                  <span className="font-semibold text-zinc-950 dark:text-zinc-50">Price:</span> {current.price}
-                </li>
-              </ul>
+              <ProjectSpecs project={current} />
               <Button
                 href={`/portfolio/${current.slug}`}
                 size="lg"
@@ -191,7 +210,7 @@ export function PortfolioHero({ projects: allProjects }: Props) {
               key={project.slug}
               onMouseEnter={() => scheduleActive(i)}
               onMouseLeave={cancelSchedule}
-              onClick={() => {
+              onClick={() =>
                 // On touch devices there's no hover to "preview" a panel
                 // first — the old handler always navigated immediately, so
                 // tapping any inactive panel skipped the preview entirely
@@ -199,11 +218,16 @@ export function PortfolioHero({ projects: allProjects }: Props) {
                 // just activates/expands the panel (mirroring what hover
                 // does on desktop); a second tap on the already-active
                 // panel is what navigates.
-                cancelSchedule();
-                if (isActive) {
-                  router.push(`/portfolio/${project.slug}`);
-                } else {
-                  setActive(i);
+                activatePanel(i, isActive, project.slug)
+              }
+              onKeyDown={(e) => {
+                // role="link" + tabIndex make this focusable, but a plain
+                // div doesn't get native Enter/Space activation the way a
+                // real <a>/<button> would — without this, keyboard users
+                // could Tab to a panel but never actually activate it.
+                if (e.key === "Enter" || e.key === " ") {
+                  e.preventDefault();
+                  activatePanel(i, isActive, project.slug);
                 }
               }}
               role="link"
@@ -279,17 +303,7 @@ export function PortfolioHero({ projects: allProjects }: Props) {
 
           <div>
             <p className="text-zinc-600 dark:text-zinc-400">{current.summary}</p>
-            <ul className="mt-3 space-y-1.5 text-sm text-zinc-700 dark:text-zinc-300">
-              <li>
-                <span className="font-semibold text-zinc-950 dark:text-zinc-50">Size:</span> {current.size}
-              </li>
-              <li>
-                <span className="font-semibold text-zinc-950 dark:text-zinc-50">Built in:</span> {current.deadline}
-              </li>
-              <li>
-                <span className="font-semibold text-zinc-950 dark:text-zinc-50">Price:</span> {current.price}
-              </li>
-            </ul>
+            <ProjectSpecs project={current} />
           </div>
 
           <Button

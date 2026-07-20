@@ -48,7 +48,7 @@ export function FaqAccordion({ items }: { items: FaqItem[] }) {
                   transition={{ duration: 0.25, ease: "easeInOut" }}
                   className="overflow-hidden"
                 >
-                  <p className="-mt-2 pb-6 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+                  <p className="pb-6 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
                     {item.answer}
                   </p>
                 </motion.div>
