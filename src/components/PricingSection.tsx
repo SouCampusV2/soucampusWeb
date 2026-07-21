@@ -112,7 +112,7 @@ export function PricingSection() {
                   <h3 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
                     {plan.name}
                   </h3>
-                  <p className="mt-1 text-sm font-medium text-zinc-600 dark:text-zinc-400">
+                  <p className="mt-1 text-sm font-medium text-orange-600 dark:text-orange-400">
                     {plan.price}
                   </p>
                   <p className="mt-4 text-sm leading-6 text-zinc-600 dark:text-zinc-400">

@@ -49,7 +49,7 @@ export function RecentProjects({ projects }: { projects: Project[] }) {
                 />
               </div>
               <div className="p-5">
-                <span className="text-xs font-medium uppercase tracking-wide text-orange-600 dark:text-orange-400">
+                <span className="text-xs font-medium uppercase tracking-wide text-lime-600 dark:text-lime-400">
                   {project.tag}
                 </span>
                 <h3 className="mt-1 text-lg font-semibold text-zinc-950 dark:text-zinc-50">

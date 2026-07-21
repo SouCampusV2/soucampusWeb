@@ -37,7 +37,7 @@ export function HowItWorks() {
               transition={{ delay: i * 0.08 }}
               className="relative"
             >
-              <span className="text-4xl font-bold text-blue-650 dark:text-blue-400">
+              <span className="text-4xl font-bold text-blue-800 dark:text-blue-400">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <h3 className="mt-2 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
