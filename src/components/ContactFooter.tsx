@@ -7,6 +7,12 @@ import {
   InstagramLogo,
   TiktokLogo,
   GithubLogo,
+  Planet,
+  PatreonLogo,
+  Cube,
+  RedditLogo,
+  XLogo,
+  YoutubeLogo,
   Sun,
   Moon,
 } from "@phosphor-icons/react";
@@ -19,19 +25,49 @@ const displayFont = Unbounded({
   subsets: ["latin"],
 });
 
+// Порядок задаёт раскладку 5×2 в футере (grid grid-cols-5): первые пять —
+// верхний ряд, следующие пять — нижний.
+// href "#" — заглушки: аккаунт ещё не готов (X — чинится хэндл, YouTube — позже).
+// Такие в structured data (SITE_SAMEAS) НЕ попадают, только реальные ссылки.
 const SOCIALS = [
+  // Верхний ряд
   { label: "Discord", href: DISCORD_INVITE, icon: DiscordLogo },
   {
-    label: "Instagram",
-    href: "https://www.instagram.com/soucampus_builds/",
-    icon: InstagramLogo,
+    label: "Patreon",
+    href: "https://www.patreon.com/c/SouCampus",
+    icon: PatreonLogo,
   },
+  {
+    // У ChunkFactory нет фирменной иконки — берём нейтральный «блок».
+    label: "ChunkFactory",
+    href: "https://chunkfactory.com/community/members/soucampus.19017/",
+    icon: Cube,
+  },
+  {
+    label: "PlanetMinecraft",
+    href: "https://www.planetminecraft.com/member/soucampus/",
+    icon: Planet,
+  },
+  { label: "GitHub", href: "https://github.com/SouCampusV2", icon: GithubLogo },
+
+  // Нижний ряд
   {
     label: "TikTok",
     href: "https://www.tiktok.com/@soucampusmc",
     icon: TiktokLogo,
   },
-  { label: "GitHub", href: "https://github.com/SouCampusV2", icon: GithubLogo },
+  {
+    label: "Instagram",
+    href: "https://www.instagram.com/soucampus_builds/",
+    icon: InstagramLogo,
+  },
+  { label: "X", href: "#", icon: XLogo },
+  { label: "YouTube", href: "#", icon: YoutubeLogo },
+  {
+    label: "Reddit",
+    href: "https://www.reddit.com/user/SouCampus/",
+    icon: RedditLogo,
+  },
 ];
 
 export function ContactFooter() {
@@ -104,19 +140,28 @@ export function ContactFooter() {
             </div>
           </div>
 
-          <div className="flex items-center gap-4 sm:items-start">
-            {SOCIALS.map(({ label, href, icon: Icon }) => (
-              <a
-                key={label}
-                href={href}
-                target="_blank"
-                rel="noopener noreferrer"
-                aria-label={label}
-                className="cursor-pointer text-zinc-500 transition-colors hover:text-orange-500 dark:text-zinc-400 dark:hover:text-orange-400"
-              >
-                <Icon size={22} weight="fill" />
-              </a>
-            ))}
+          <div className="grid w-fit content-start self-start grid-cols-[repeat(5,auto)] gap-4">
+            {SOCIALS.map(({ label, href, icon: Icon }) => {
+              const isPlaceholder = href === "#";
+              return (
+                <a
+                  key={label}
+                  href={href}
+                  target={isPlaceholder ? undefined : "_blank"}
+                  rel={isPlaceholder ? undefined : "noopener noreferrer"}
+                  aria-label={isPlaceholder ? `${label} (coming soon)` : label}
+                  title={isPlaceholder ? "Coming soon" : label}
+                  aria-disabled={isPlaceholder || undefined}
+                  className={
+                    isPlaceholder
+                      ? "cursor-default text-zinc-300 dark:text-zinc-600"
+                      : "cursor-pointer text-zinc-500 transition-colors hover:text-orange-500 dark:text-zinc-400 dark:hover:text-orange-400"
+                  }
+                >
+                  <Icon size={22} weight="fill" />
+                </a>
+              );
+            })}
           </div>
         </div>
 

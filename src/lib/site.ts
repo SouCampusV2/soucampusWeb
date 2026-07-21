@@ -17,7 +17,17 @@ export const SITE_TAGLINE =
 // связывает сайт, Discord, YouTube, Reddit и т.п. в ОДНУ сущность «SouCampus»
 // — это усиливает брендовый ответ ИИ-поиска. Дописывать ссылки по мере того,
 // как заводятся аккаунты (часть B SEO-плана: соцсети/Reddit/PlanetMinecraft).
-export const SITE_SAMEAS: string[] = [DISCORD_INVITE];
+export const SITE_SAMEAS: string[] = [
+  DISCORD_INVITE,
+  "https://www.planetminecraft.com/member/soucampus/",
+  "https://www.instagram.com/soucampus_builds/",
+  "https://www.tiktok.com/@soucampusmc",
+  "https://www.patreon.com/c/SouCampus",
+  "https://chunkfactory.com/community/members/soucampus.19017/",
+  "https://www.reddit.com/user/SouCampus/",
+  // Дописать по мере готовности: YouTube, X (после починки хэндла на SouCampus).
+  // См. часть B SEO-плана.
+];
 
 export const NAV_LINKS = [
   { href: "/", label: "Home" },
