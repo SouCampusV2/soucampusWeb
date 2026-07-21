@@ -21,8 +21,33 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const project = await getProject(slug);
+  if (!project) return { title: "Not found" };
+
+  // Сниппет для выдачи и соцсетей собираем из готовых полей работы:
+  // "<summary> Size 250×250, delivered in 1 week." — размер и срок это как раз
+  // то, что ищет заказчик.
+  const description = `${project.summary} Size ${project.size}, delivered in ${project.deadline}.`;
+
+  // og:image — САМО ФОТО постройки (абсолютный URL), а не брендовая заглушка:
+  // ссылка на работу в Discord показывает реальный билд. metadataBase делает
+  // путь абсолютным, но для og картинку принято указывать полным адресом.
   return {
-    title: project ? `${project.title} — SouCampus builds` : "Not found",
+    title: project.title,
+    description,
+    alternates: { canonical: `/portfolio/${project.slug}` },
+    openGraph: {
+      type: "article",
+      title: project.title,
+      description,
+      url: `/portfolio/${project.slug}`,
+      images: [{ url: project.image, alt: project.title }],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: project.title,
+      description,
+      images: [project.image],
+    },
   };
 }
 

@@ -35,7 +35,10 @@ const displayFont = Unbounded({
 });
 
 export const metadata: Metadata = {
-  title: "Terms of Service — SouCampus builds",
+  title: "Terms of Service",
+  // В основном заглушка (живой только раздел #pricing) — прячем от индексации
+  // до полноценного ToS (Этап 4), чтобы неготовая страница не шла в выдачу.
+  robots: { index: false, follow: true },
 };
 
 const SECTIONS = [

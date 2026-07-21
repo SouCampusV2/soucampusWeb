@@ -16,8 +16,18 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const review = await getReview(slug);
+  if (!review) return { title: "Not found" };
+
   return {
-    title: review ? `${review.name} — SouCampus builds` : "Not found",
+    title: `${review.name} — client review`,
+    description: review.text,
+    alternates: { canonical: `/reviews/${review.slug}` },
+    openGraph: {
+      type: "article",
+      title: `${review.name} — client review`,
+      description: review.text,
+      url: `/reviews/${review.slug}`,
+    },
   };
 }
 

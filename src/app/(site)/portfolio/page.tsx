@@ -15,7 +15,12 @@ const displayFont = Unbounded({
 });
 
 export const metadata: Metadata = {
-  title: "Portfolio — SouCampus builds",
+  // Короткий title — к нему шаблон из корневого layout сам добавит
+  // " — SouCampus builds".
+  title: "Portfolio",
+  description:
+    "A portfolio of custom Minecraft builds by SouCampus — spawns, castles, cities and RPG maps, with sizes and delivery times.",
+  alternates: { canonical: "/portfolio" },
 };
 
 // Cycles through a varied bento pattern (big feature, small squares, wide

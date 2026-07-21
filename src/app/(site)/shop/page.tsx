@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Shop — SouCampus builds",
+  title: "Shop",
+  // Заглушка, ещё не наполнена — прячем от индексации, чтобы пустая страница
+  // не попадала в выдачу. Снять noindex, когда магазин заработает (Этап 4).
+  robots: { index: false, follow: true },
 };
 
 export default function ShopPage() {

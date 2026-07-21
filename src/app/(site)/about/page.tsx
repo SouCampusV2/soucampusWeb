@@ -2,6 +2,22 @@ import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
 import { Skeleton } from "@/components/Skeleton";
 import { AuthorCta } from "@/components/AuthorCta";
+import { JsonLd } from "@/components/JsonLd";
+import { SITE_SAMEAS, SITE_TAGLINE, SITE_URL } from "@/lib/site";
+
+// Person-разметка автора: имя, род занятий, описание. Связана с Organization
+// с главной (worksFor по тому же @id), чтобы поиск видел, что сайт и человек —
+// одна сущность «SouCampus».
+const ABOUT_JSON_LD = {
+  "@context": "https://schema.org",
+  "@type": "Person",
+  name: "SouCampus",
+  jobTitle: "Minecraft Builder",
+  description: SITE_TAGLINE,
+  url: `${SITE_URL}/about`,
+  sameAs: SITE_SAMEAS,
+  worksFor: { "@id": `${SITE_URL}/#organization` },
+};
 
 // Same display font as the homepage Hero — rhymes the site's hero headings.
 const displayFont = Unbounded({
@@ -10,7 +26,10 @@ const displayFont = Unbounded({
 });
 
 export const metadata: Metadata = {
-  title: "About me — SouCampus builds",
+  title: "About me",
+  description:
+    "Who is SouCampus — a professional Minecraft builder with years of experience across servers and studios, building custom maps and worlds on order.",
+  alternates: { canonical: "/about" },
 };
 
 // Milestones of the story, oldest first. Shaped as a flat array (age/title/text)
@@ -56,6 +75,7 @@ const TIMELINE = [
 export default function AboutPage() {
   return (
     <>
+      <JsonLd data={ABOUT_JSON_LD} />
       <AuthorCta />
 
       <main className="w-full mx-auto max-w-6xl flex-1 px-6">
@@ -76,7 +96,7 @@ export default function AboutPage() {
             Building Worlds Since Childhood
           </h1>
           <p className="mt-6 leading-7 text-zinc-600 dark:text-zinc-400">
-            For 8 years I&apos;ve been building in Minecraft professionally
+            <b>For 8 years I&apos;ve been building in Minecraft professionally</b>
             — from childhood sandcastles to large-scale architectural
             projects for clients. My goal is to turn clients&apos; ideas
             into vivid, detailed worlds and keep growing as a builder.
