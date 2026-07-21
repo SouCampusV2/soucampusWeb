@@ -5,6 +5,7 @@ import { motion } from "motion/react";
 import { Skeleton } from "@/components/Skeleton";
 import { Button } from "@/components/Button";
 import { ArrowButton } from "@/components/ArrowButton";
+import { Flag } from "@/components/Flag";
 import type { Review } from "@/lib/reviews";
 
 type Accent = Review["accent"];
@@ -123,11 +124,8 @@ export function ClientReviews({ reviews }: { reviews: Review[] }) {
               >
                 <div>
                   {/* TODO: replace with real client photo */}
-                  <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full">
                     <Skeleton className="h-full w-full" />
-                    <span className="absolute -bottom-0.5 -right-0.5 flex h-6 w-6 items-center justify-center rounded-full border-2 border-[#fbfbff] bg-[#fbfbff] text-xs dark:border-zinc-950 dark:bg-zinc-950">
-                      {review.flag}
-                    </span>
                   </div>
 
                   <p className="mt-6 text-base font-medium leading-6 text-zinc-950 dark:text-zinc-50">
@@ -137,14 +135,17 @@ export function ClientReviews({ reviews }: { reviews: Review[] }) {
 
                 <div className="mt-8">
                   <footer>
-                    <p className="font-semibold">{review.name}</p>
+                    <p className="font-semibold">
+                      {review.name}
+                      {review.flag && <Flag emoji={review.flag} className="ml-1.5" />}
+                    </p>
                     <p className="text-sm text-zinc-700 dark:text-zinc-300">{review.role}</p>
                   </footer>
 
                   <Button
                     href={`/reviews/${review.slug}`}
-                    variant="secondary"
-                    size="sm"
+                    variant="tertiary"
+                    size="lg"
                     colorClassName={ACCENT_BUTTON[review.accent]}
                     className="mt-6"
                   >

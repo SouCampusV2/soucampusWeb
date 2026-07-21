@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-type Variant = "primary" | "secondary";
+type Variant = "primary" | "secondary" | "tertiary";
 type Size = "sm" | "md" | "lg";
 
 // h-14 (56px) на sm:+ — фиксированная высота ВСЕХ кнопок независимо от
@@ -26,10 +26,22 @@ const base =
 // в тёмной наоборот — на чёрном тот же 500 выглядит грязным, и шкала
 // сдвигается на шаг светлее. Это та же формула отражения вокруг 500,
 // что и во всём DESIGN.md, просто применённая к кнопкам.
+//
+// Три варианта:
+//   primary   — заливка (главное действие).
+//   secondary — та же таблетка, что и primary (форма/высота/паддинг),
+//               но без заливки: прозрачный фон + обводка того же акцента.
+//               Текст акцентного цвета (на заливке его нет, поэтому не
+//               zinc-950, как у primary, а сам оранжевый). Hover — тот же
+//               сдвиг 500→600 / 400→500, но по цвету обводки и текста.
+//   tertiary  — текст-ссылка с подчёркиванием, без формы и паддинга
+//               (бывший secondary; переименован, когда появилась обводка).
 const variants: Record<Variant, string> = {
   primary:
     "rounded-full bg-orange-500 text-zinc-950 hover:bg-orange-600 dark:bg-orange-400 dark:hover:bg-orange-500",
   secondary:
+    "rounded-full border-2 border-orange-500 text-orange-500 hover:border-orange-600 hover:text-orange-600 dark:border-orange-400 dark:text-orange-400 dark:hover:border-orange-500 dark:hover:text-orange-500",
+  tertiary:
     "text-orange-500 underline decoration-2 underline-offset-4 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-500",
 };
 
@@ -74,7 +86,9 @@ export function Button({
   onClick,
   colorClassName,
 }: ButtonProps) {
-  const padding = variant === "primary" ? paddingBySize[size] : "";
+  // primary и secondary — «таблетки» с горизонтальным паддингом; tertiary
+  // это текст-ссылка, ей паддинг не нужен.
+  const padding = variant === "tertiary" ? "" : paddingBySize[size];
   const color = colorClassName ?? variants[variant];
   const classes = `${base} ${color} ${padding} ${textBySize[size]} ${className}`;
 

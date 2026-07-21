@@ -15,7 +15,10 @@ const displayFont = Unbounded({
 });
 
 export const metadata: Metadata = {
-  title: "Contact — SouCampus builds",
+  title: "Contact",
+  description:
+    "Order a custom Minecraft build from SouCampus. Describe your idea on Discord and get an instant price and timeline estimate.",
+  alternates: { canonical: "/contact" },
 };
 
 const FAQ = [
@@ -148,11 +151,18 @@ export default function ContactPage() {
               href={DISCORD_INVITE}
               target="_blank"
               rel="noopener noreferrer"
-              variant="secondary"
-              size="md"
-              colorClassName="text-blue-500 underline decoration-2 underline-offset-4 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-500"
+              variant="tertiary"
+              size="lg"
+              colorClassName="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-500"
+              className="group gap-2"
             >
-              Open Discord
+              <span className="underline decoration-2 underline-offset-4">Open Discord</span>
+              <ArrowCircle
+                direction="right"
+                variant="bare"
+                className="h-6 w-6 transition-transform duration-300 group-hover:-rotate-45"
+                colorClassName="text-blue-500 dark:text-blue-400"
+              />
             </Button>
           </div>
         </div>
@@ -171,8 +181,8 @@ export default function ContactPage() {
           <div className="mt-6">
             <Button
               href="#faq"
-              variant="secondary"
-              size="md"
+              variant="tertiary"
+              size="lg"
               colorClassName="text-blue-500 underline decoration-2 underline-offset-4 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-500"
             >
               See the questions
