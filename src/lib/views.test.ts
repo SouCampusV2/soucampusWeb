@@ -12,9 +12,10 @@ describe("isTrackablePath", () => {
     }
   });
 
-  it("пропускает страницы работ и отзывов", () => {
+  it("пропускает страницы работ, отзывов и товаров", () => {
     expect(isTrackablePath(VIEW_PATHS.project("bluespawn"))).toBe(true);
     expect(isTrackablePath("/reviews/luke-and-sven")).toBe(true);
+    expect(isTrackablePath("/shop/medieval-spawn")).toBe(true);
   });
 
   it("отбивает выдуманные адреса", () => {
