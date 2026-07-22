@@ -290,7 +290,7 @@ export function BuildEstimator() {
         size="lg"
         className="group mt-6 w-full gap-3"
       >
-        Get an exact quote on Discord
+        Get an exact quote
         <ArrowCircle
           direction="right"
           variant="bare"
