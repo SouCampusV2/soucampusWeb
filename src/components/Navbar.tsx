@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Unbounded } from "next/font/google";
-import { ShoppingCart } from "@phosphor-icons/react";
+import { ShoppingCart, ChatCircleDots, Bell, UserCircle } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
 import { useCart } from "@/lib/cart-context";
@@ -16,18 +16,23 @@ const displayFont = Unbounded({
   subsets: ["latin"],
 });
 
+// Категории-заглушки в режиме магазина. Реально работает только "All
+// Map" (ссылка на /shop) — остальное требует колонки категории в
+// products, которой пока нет. Не спрятаны, а честно показаны
+// неактивными (cursor-not-allowed + title), до готовности функционала.
+const SHOP_CATEGORIES = ["Assets", "Landscape", "Free"];
+
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const [prevPathname, setPrevPathname] = useState(pathname);
   const { count } = useCart();
 
-  // Shop, пока активен (каталог или страница товара), получает капсулу
-  // акцентного цвета вместо обычной текстовой ссылки — единственная
-  // разница с остальными пунктами, форма/высота/стекло навбара не
-  // меняются (первая версия перекрашивала весь навбар целиком и
-  // подменяла ссылки на категории/поиск — откатили, см. CHANGELOG,
-  // 2026-07-23).
+  // Внутри /shop (каталог или страница товара) содержимое навбара
+  // ЗАМЕНЯЕТСЯ целиком: обычные ссылки и "Order now" уступают место
+  // магазинным кнопкам. Форма/высота/стекло самой пилюли не меняются —
+  // только то, что внутри неё. Вернуться на сайт — через лого SouCampus
+  // (оно всегда ведёт на "/"), отдельной ссылки назад в магазине нет.
   const isShopActive = pathname === "/shop" || pathname.startsWith("/shop/");
 
   // PageTransition intercepts nav-link clicks in the capture phase and
@@ -59,74 +64,163 @@ export function Navbar() {
             SouCampus
           </Link>
 
-          <ul className="hidden items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 min-[760px]:flex">
-            {NAV_LINKS.map((link) => {
-              const isActiveShopLink = link.href === "/shop" && isShopActive;
-              return (
+          {isShopActive ? (
+            <div className="hidden min-w-0 flex-1 items-center justify-between gap-4 min-[760px]:flex">
+              <div className="flex items-center gap-1 text-sm font-medium text-zinc-600 dark:text-zinc-300">
+                <Link
+                  href="/shop"
+                  className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                  data-page-transition="true"
+                >
+                  All Map
+                </Link>
+                {SHOP_CATEGORIES.map((category) => (
+                  <span
+                    key={category}
+                    title="Categories are coming soon"
+                    className="cursor-not-allowed select-none px-2 py-1.5 text-zinc-400 dark:text-zinc-600"
+                  >
+                    {category}
+                  </span>
+                ))}
+                <Link
+                  href="/contact"
+                  className="ml-3 px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                  data-page-transition="true"
+                >
+                  Support
+                </Link>
+              </div>
+
+              <div className="flex shrink-0 items-center gap-5 text-zinc-600 dark:text-zinc-300">
+                <button
+                  type="button"
+                  disabled
+                  title="Messages are coming soon"
+                  className="cursor-not-allowed opacity-50"
+                >
+                  <ChatCircleDots size={20} />
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  title="Notifications are coming soon"
+                  className="cursor-not-allowed opacity-50"
+                >
+                  <Bell size={20} />
+                </button>
+                <Link
+                  href="/cart"
+                  data-page-transition="true"
+                  aria-label="Cart"
+                  className="relative transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                >
+                  <ShoppingCart size={20} />
+                  {count > 0 && (
+                    <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
+                      {count}
+                    </span>
+                  )}
+                </Link>
+                <button
+                  type="button"
+                  disabled
+                  title="Sign in is coming soon (Stage 4D)"
+                  className="flex cursor-not-allowed items-center gap-1.5 opacity-50"
+                >
+                  <UserCircle size={20} />
+                  <span className="text-sm font-medium">Login</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <ul className="hidden items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 min-[760px]:flex">
+              {NAV_LINKS.map((link) => (
                 <li key={link.href}>
                   <Link
                     href={link.href}
-                    className={
-                      isActiveShopLink
-                        ? "rounded-full bg-orange-500 px-4 py-1.5 font-semibold text-zinc-950"
-                        : "px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                    }
+                    className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
                     data-page-transition="true"
                   >
                     {link.label}
                   </Link>
                 </li>
-              );
-            })}
-          </ul>
+              ))}
+            </ul>
+          )}
 
-          <div className="hidden items-center gap-5 min-[760px]:flex">
+          {!isShopActive && (
+            <div className="hidden items-center gap-5 min-[760px]:flex">
+              <Link
+                href="/cart"
+                data-page-transition="true"
+                aria-label="Cart"
+                className="relative text-zinc-600 transition-colors hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50"
+              >
+                <ShoppingCart size={20} />
+                {count > 0 && (
+                  <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
+                    {count}
+                  </span>
+                )}
+              </Link>
+              <Button
+                href={DISCORD_INVITE}
+                target="_blank"
+                rel="noopener noreferrer"
+                variant="primary"
+                size="sm"
+              >
+                Order now
+              </Button>
+            </div>
+          )}
+
+          {/* Гамбургер — только вне магазина: показывать в мобильном
+              дропдауне в режиме магазина нечего (обычных ссылок нет). */}
+          {!isShopActive && (
+            <button
+              onClick={() => setOpen((v) => !v)}
+              className="flex h-9 w-9 cursor-pointer flex-col items-center justify-center gap-1.5 min-[760px]:hidden"
+              aria-label="Toggle menu"
+            >
+              <motion.span
+                animate={{ rotate: open ? 45 : 0, y: open ? 6 : 0 }}
+                className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
+              />
+              <motion.span
+                animate={{ opacity: open ? 0 : 1 }}
+                className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
+              />
+              <motion.span
+                animate={{ rotate: open ? -45 : 0, y: open ? -6 : 0 }}
+                className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
+              />
+            </button>
+          )}
+
+          {/* Мобильно, в режиме магазина: только рабочая иконка корзины —
+              компактный набор без гамбургера (категории/иконки-заглушки
+              на узком экране пока не показываем, это первая итерация). */}
+          {isShopActive && (
             <Link
               href="/cart"
               data-page-transition="true"
               aria-label="Cart"
-              className="relative text-zinc-600 transition-colors hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50"
+              className="relative text-zinc-600 dark:text-zinc-300 min-[760px]:hidden"
             >
-              <ShoppingCart size={20} />
+              <ShoppingCart size={22} />
               {count > 0 && (
                 <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
                   {count}
                 </span>
               )}
             </Link>
-            <Button
-              href={DISCORD_INVITE}
-              target="_blank"
-              rel="noopener noreferrer"
-              variant="primary"
-              size="sm"
-            >
-              Order now
-            </Button>
-          </div>
-
-          <button
-            onClick={() => setOpen((v) => !v)}
-            className="flex h-9 w-9 cursor-pointer flex-col items-center justify-center gap-1.5 min-[760px]:hidden"
-            aria-label="Toggle menu"
-          >
-            <motion.span
-              animate={{ rotate: open ? 45 : 0, y: open ? 6 : 0 }}
-              className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
-            />
-            <motion.span
-              animate={{ opacity: open ? 0 : 1 }}
-              className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
-            />
-            <motion.span
-              animate={{ rotate: open ? -45 : 0, y: open ? -6 : 0 }}
-              className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
-            />
-          </button>
+          )}
         </nav>
 
         <AnimatePresence>
-          {open && (
+          {open && !isShopActive && (
             <motion.ul
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
