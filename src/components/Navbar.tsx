@@ -108,7 +108,7 @@ export function Navbar() {
                   type="button"
                   disabled
                   title="Messages are coming soon"
-                  className="cursor-not-allowed opacity-50"
+                  className="cursor-not-allowed text-zinc-700 dark:text-zinc-200"
                 >
                   <ChatCircleDots size={20} />
                 </button>
@@ -116,7 +116,7 @@ export function Navbar() {
                   type="button"
                   disabled
                   title="Notifications are coming soon"
-                  className="cursor-not-allowed opacity-50"
+                  className="cursor-not-allowed text-zinc-700 dark:text-zinc-200"
                 >
                   <Bell size={20} />
                 </button>
@@ -137,7 +137,7 @@ export function Navbar() {
                   type="button"
                   disabled
                   title="Sign in is coming soon (Stage 4D)"
-                  className="flex cursor-not-allowed items-center gap-1.5 opacity-50"
+                  className="flex cursor-not-allowed items-center gap-1.5 text-zinc-700 dark:text-zinc-200"
                 >
                   <UserCircle size={20} />
                   <span className="text-sm font-medium">Login</span>
