@@ -7,54 +7,39 @@ import { SITE_URL } from "@/lib/site";
 // сессия персональная, кэшировать нечего.
 export const dynamic = "force-dynamic";
 
-// Главное правило маршрута: из браузера принимаются ТОЛЬКО slug + quantity.
+// Главное правило маршрута: из браузера принимается ТОЛЬКО slug.
 // Цена, название, валюта — всегда из нашей БД. Принимать цену из тела
 // запроса значило бы дать любому посетителю открыть DevTools и купить
 // карту за €0.01 — самая известная дыра самодельных чекаутов.
+//
+// Количества нет вовсе: карту покупаешь один раз (не расходник), каждая
+// позиция в Stripe-сессии всегда quantity: 1 — см. lineItems ниже.
 const SLUG_PATTERN = /^[a-z0-9-]{1,80}$/;
 
-// Независимый от клиентского MAX_QUANTITY_PER_ITEM (cart-context.tsx)
-// потолок: сервер не доверяет тому, что прислал браузер, даже если это
-// число, а не цена — проверяет свой предел заново.
-const MAX_QUANTITY_PER_ITEM = 5;
 // Разных позиций в одном заказе. Не про размер корзины пользователя
 // (это его дело), а про то, что line_items у Stripe не резиновый —
 // разумный потолок, чтобы один запрос не собирал сессию из тысячи строк.
 const MAX_DISTINCT_ITEMS = 20;
 
-type CartItemRequest = { slug: string; quantity: number };
-
-function parseItems(body: unknown): CartItemRequest[] | null {
+function parseSlugs(body: unknown): string[] | null {
   if (!body || typeof body !== "object" || !("items" in body)) return null;
   const { items } = body as { items: unknown };
   if (!Array.isArray(items) || items.length === 0 || items.length > MAX_DISTINCT_ITEMS) {
     return null;
   }
 
-  const parsed: CartItemRequest[] = [];
+  const slugs: string[] = [];
   for (const raw of items) {
     if (!raw || typeof raw !== "object") return null;
-    const { slug, quantity } = raw as { slug?: unknown; quantity?: unknown };
+    const { slug } = raw as { slug?: unknown };
     if (typeof slug !== "string" || !SLUG_PATTERN.test(slug)) return null;
-    if (
-      typeof quantity !== "number" ||
-      !Number.isInteger(quantity) ||
-      quantity < 1 ||
-      quantity > MAX_QUANTITY_PER_ITEM
-    ) {
-      return null;
-    }
-    parsed.push({ slug, quantity });
+    slugs.push(slug);
   }
 
-  // На случай дублей slug'а в присланном массиве (не должно случаться при
-  // нормальной работе корзины, но сервер не полагается на аккуратность
-  // клиента) — схлопываем в одну позицию, сложив количество.
-  const bySlug = new Map<string, number>();
-  for (const item of parsed) {
-    bySlug.set(item.slug, Math.min((bySlug.get(item.slug) ?? 0) + item.quantity, MAX_QUANTITY_PER_ITEM));
-  }
-  return Array.from(bySlug, ([slug, quantity]) => ({ slug, quantity }));
+  // Дубли slug'а в присланном массиве (не должно случаться при обычной
+  // работе корзины, но сервер не полагается на аккуратность клиента) —
+  // одна и та же карта не может быть двумя позициями заказа.
+  return Array.from(new Set(slugs));
 }
 
 // Куда Stripe вернёт покупателя. На проде — SITE_URL, на localhost и
@@ -79,8 +64,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "bad json" }, { status: 400 });
   }
 
-  const requested = parseItems(body);
-  if (!requested) {
+  const slugs = parseSlugs(body);
+  if (!slugs) {
     return NextResponse.json({ error: "bad items" }, { status: 400 });
   }
 
@@ -88,15 +73,12 @@ export async function POST(request: Request) {
   // товар отсюда не виден и купить его нельзя, даже зная slug. Продукты,
   // которых нет (удалённый slug, опечатка), просто выпадают — покупатель
   // не должен потерять всю корзину из-за одной неверной позиции.
-  const products = await Promise.all(requested.map((r) => getProduct(r.slug)));
+  const products = await Promise.all(slugs.map((slug) => getProduct(slug)));
 
-  const lineItems = requested
-    .map((r, i) => ({ request: r, product: products[i] }))
-    .filter((x): x is { request: CartItemRequest; product: NonNullable<(typeof products)[number]> } =>
-      x.product !== null
-    )
-    .map(({ request: r, product }) => ({
-      quantity: r.quantity,
+  const lineItems = products
+    .filter((product): product is NonNullable<(typeof products)[number]> => product !== null)
+    .map((product) => ({
+      quantity: 1,
       price_data: {
         currency: product.currency.toLowerCase(),
         unit_amount: product.priceCents,

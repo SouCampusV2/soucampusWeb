@@ -3,8 +3,8 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
-import { Trash, Plus, Minus } from "@phosphor-icons/react";
-import { useCart, MAX_QUANTITY_PER_ITEM } from "@/lib/cart-context";
+import { Trash } from "@phosphor-icons/react";
+import { useCart } from "@/lib/cart-context";
 import { Button } from "@/components/Button";
 
 // Клиентская страница целиком (нужен localStorage через useCart) — как
@@ -16,7 +16,7 @@ function formatCents(cents: number, currency = "EUR") {
 }
 
 export default function CartPage() {
-  const { items, removeItem, setQuantity, totalCents } = useCart();
+  const { items, removeItem, totalCents } = useCart();
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
 
   async function checkout() {
@@ -26,11 +26,9 @@ export default function CartPage() {
       const res = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // Наружу уходят только slug + quantity, как и с одиночной покупкой
-        // (см. BuyButton) — цену сервер снова берёт из БД, не отсюда.
-        body: JSON.stringify({
-          items: items.map((i) => ({ slug: i.slug, quantity: i.quantity })),
-        }),
+        // Наружу уходят только slug'и — цену сервер снова берёт из БД, не
+        // отсюда (см. AddToCartButton).
+        body: JSON.stringify({ items: items.map((i) => ({ slug: i.slug })) }),
       });
       if (!res.ok) throw new Error(`checkout failed: ${res.status}`);
       const { url } = await res.json();
@@ -79,36 +77,10 @@ export default function CartPage() {
                   >
                     {item.title}
                   </Link>
-                  <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-                    {item.price} each
-                  </p>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setQuantity(item.slug, item.quantity - 1)}
-                    aria-label={`Decrease quantity of ${item.title}`}
-                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-zinc-300 text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                  >
-                    <Minus size={14} />
-                  </button>
-                  <span className="w-6 text-center font-medium text-zinc-950 dark:text-zinc-50">
-                    {item.quantity}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => setQuantity(item.slug, item.quantity + 1)}
-                    disabled={item.quantity >= MAX_QUANTITY_PER_ITEM}
-                    aria-label={`Increase quantity of ${item.title}`}
-                    className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-zinc-300 text-zinc-700 hover:bg-zinc-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800"
-                  >
-                    <Plus size={14} />
-                  </button>
                 </div>
 
                 <p className="w-20 shrink-0 text-right font-semibold text-zinc-950 dark:text-zinc-50">
-                  {formatCents(item.priceCents * item.quantity)}
+                  {formatCents(item.priceCents)}
                 </p>
 
                 <button

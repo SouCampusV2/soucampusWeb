@@ -5,7 +5,13 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Unbounded } from "next/font/google";
-import { ShoppingCart, ChatCircleDots, Bell, UserCircle } from "@phosphor-icons/react";
+import {
+  ShoppingCart,
+  ChatCircleDots,
+  Bell,
+  UserCircle,
+  MagnifyingGlass,
+} from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
 import { useCart } from "@/lib/cart-context";
@@ -102,6 +108,22 @@ export function Navbar() {
                     {category}
                   </span>
                 ))}
+              </div>
+
+              {/* Заглушка: поиск по товарам — отдельная фича, не готова.
+                  disabled + title честно сообщают об этом, а не прячут
+                  элемент вовсе — форма будущей панели видна уже сейчас. */}
+              <div className="relative min-w-0 max-w-[200px] flex-1">
+                <MagnifyingGlass
+                  size={16}
+                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-600"
+                />
+                <input
+                  disabled
+                  title="Search is coming soon"
+                  placeholder="Search"
+                  className="w-full cursor-not-allowed rounded-full border border-zinc-950/[0.08] bg-transparent py-1.5 pl-9 pr-3 text-sm text-zinc-600 placeholder:text-zinc-400 dark:border-zinc-50/[0.08] dark:text-zinc-300 dark:placeholder:text-zinc-600"
+                />
               </div>
 
               {/* Support в одной группе с иконками, тот же gap-5, что и

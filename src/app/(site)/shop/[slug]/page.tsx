@@ -55,53 +55,87 @@ export default async function ProductPage({
 
   return (
     <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-16 sm:py-28">
-      <div className="mx-auto max-w-3xl">
-        <Link href="/shop" className="text-sm font-medium text-orange-600">
-          ← All products
-        </Link>
+      <Link href="/shop" className="text-sm font-medium text-orange-600">
+        ← All products
+      </Link>
 
-        <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl">
-          {product.title}
-        </h1>
+      <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl">
+        {product.title}
+      </h1>
+      <p className="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400">{product.summary}</p>
 
-        <dl className="mt-6 flex flex-wrap gap-8 border-y border-zinc-200 py-4 text-sm dark:border-zinc-800">
-          <div>
-            <dt className="text-zinc-500 dark:text-zinc-400">Price</dt>
-            <dd className="font-semibold text-zinc-950 dark:text-zinc-50">{product.price}</dd>
+      {/* Двухколоночная разметка в духе торговых площадок (BuiltByBit и
+          подобные): фото + описание — основной контент слева, цена и
+          покупка — небольшая липкая карточка справа, всегда на виду,
+          пока листаешь длинное описание. На мобильном — просто друг под
+          другом (карточка покупки выше, description ниже), сайдбар не
+          нужен на узком экране, где и так всё в одну колонку. */}
+      <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <div className="relative aspect-video overflow-hidden rounded-2xl">
+            <Image
+              src={product.image}
+              alt={product.title}
+              fill
+              sizes="(min-width: 1024px) 640px, 100vw"
+              className="object-cover"
+              priority
+            />
           </div>
-          <div>
-            <dt className="text-zinc-500 dark:text-zinc-400">Delivery</dt>
-            <dd className="font-semibold text-zinc-950 dark:text-zinc-50">Instant download</dd>
-          </div>
-        </dl>
 
-        <p className="mt-8 leading-7 text-zinc-700 dark:text-zinc-300">{product.description}</p>
-
-        <div className="relative mt-10 aspect-video overflow-hidden rounded-2xl">
-          <Image
-            src={product.image}
-            alt={product.title}
-            fill
-            sizes="(min-width: 1024px) 768px, 100vw"
-            className="object-cover"
-            priority
-          />
+          <h2 className="mt-10 text-xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
+            Description
+          </h2>
+          <p className="mt-4 leading-7 text-zinc-700 dark:text-zinc-300">
+            {product.description}
+          </p>
         </div>
 
-        {/* Корзина (подэтап C): кладём товар в localStorage, оформление
-            заказа — на /cart, даже для одной позиции (один путь чекаута,
-            не два). Клиентский островок — только кнопка. */}
-        <div className="mt-10">
-          <AddToCartButton
-            product={{
-              slug: product.slug,
-              title: product.title,
-              price: product.price,
-              priceCents: product.priceCents,
-              image: product.image,
-            }}
-          />
-        </div>
+        {/* top-24: чуть ниже навбара (sticky top-4 + его высота), не
+            вплотную к нему при скролле. */}
+        <aside className="lg:sticky lg:top-24 lg:self-start">
+          <div className="rounded-2xl border border-zinc-200 p-6 dark:border-zinc-800">
+            <p className="text-3xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
+              {product.price}
+            </p>
+
+            <div className="mt-6">
+              <AddToCartButton
+                product={{
+                  slug: product.slug,
+                  title: product.title,
+                  price: product.price,
+                  priceCents: product.priceCents,
+                  image: product.image,
+                }}
+              />
+            </div>
+
+            <dl className="mt-6 space-y-3 border-t border-zinc-200 pt-6 text-sm dark:border-zinc-800">
+              <div className="flex items-center justify-between">
+                <dt className="text-zinc-500 dark:text-zinc-400">Delivery</dt>
+                <dd className="font-medium text-zinc-950 dark:text-zinc-50">
+                  Instant download
+                </dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-zinc-500 dark:text-zinc-400">Format</dt>
+                <dd className="font-medium text-zinc-950 dark:text-zinc-50">World file</dd>
+              </div>
+              <div className="flex items-center justify-between">
+                <dt className="text-zinc-500 dark:text-zinc-400">Need help?</dt>
+                <dd>
+                  <Link
+                    href="/support"
+                    className="font-medium text-orange-600 hover:underline dark:text-orange-400"
+                  >
+                    Support
+                  </Link>
+                </dd>
+              </div>
+            </dl>
+          </div>
+        </aside>
       </div>
     </main>
   );
