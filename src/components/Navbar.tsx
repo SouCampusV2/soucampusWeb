@@ -30,9 +30,11 @@ export function Navbar() {
 
   // Внутри /shop (каталог или страница товара) содержимое навбара
   // ЗАМЕНЯЕТСЯ целиком: обычные ссылки и "Order now" уступают место
-  // магазинным кнопкам. Форма/высота/стекло самой пилюли не меняются —
-  // только то, что внутри неё. Вернуться на сайт — через лого SouCampus
-  // (оно всегда ведёт на "/"), отдельной ссылки назад в магазине нет.
+  // магазинным кнопкам. Форма/стекло самой пилюли не меняются —
+  // высоту держит min-h на <nav> (см. ниже), не кнопка Order now,
+  // именно поэтому переход между режимами не дёргает высоту.
+  // Вернуться на сайт — через лого SouCampus (оно всегда ведёт на "/"),
+  // отдельной ссылки "назад" в магазине нет.
   const isShopActive = pathname === "/shop" || pathname.startsWith("/shop/");
 
   // PageTransition intercepts nav-link clicks in the capture phase and
@@ -55,21 +57,28 @@ export function Navbar() {
   return (
     <div className="sticky top-4 z-50 px-4">
       <header className="relative mx-auto max-w-6xl rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/60 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/60">
-        <nav className="flex items-center justify-between px-6 py-3">
+        {/* min-h вместо высоты "по содержимому": раньше высоту пилюли
+            задавала кнопка Order now (h-12/h-14) — без неё, в режиме
+            магазина, ряд становился короче и пилюля дёргалась при
+            переходе. Явный min-h держит высоту одинаковой всегда. */}
+        <nav className="flex min-h-12 items-center justify-between gap-4 px-6 py-3 sm:min-h-14">
           <Link
             href="/"
-            className={`${displayFont.className} text-lg tracking-tight text-orange-500`}
+            className={`${displayFont.className} shrink-0 text-lg tracking-tight text-orange-500`}
             data-page-transition="true"
           >
             SouCampus
           </Link>
 
           {isShopActive ? (
-            <div className="hidden min-w-0 flex-1 items-center justify-between gap-4 min-[760px]:flex">
+            <div className="ml-6 hidden min-w-0 flex-1 items-center justify-between gap-4 min-[760px]:flex">
               <div className="flex items-center gap-1 text-sm font-medium text-zinc-600 dark:text-zinc-300">
+                {/* Активная вкладка — та же капсула, что раньше была у
+                    пункта Shop в обычном навбаре: сплошной мягкий фон +
+                    жирный текст, а не просто hover-подсветка. */}
                 <Link
                   href="/shop"
-                  className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                  className="rounded-full bg-zinc-950/10 px-3 py-1.5 font-semibold text-zinc-950 dark:bg-zinc-50/10 dark:text-zinc-50"
                   data-page-transition="true"
                 >
                   All Map
@@ -83,16 +92,18 @@ export function Navbar() {
                     {category}
                   </span>
                 ))}
+              </div>
+
+              {/* Support в одной группе с иконками, тот же gap-5, что и
+                  между самими иконками — не пришит к категориям слева. */}
+              <div className="flex shrink-0 items-center gap-5 text-zinc-600 dark:text-zinc-300">
                 <Link
                   href="/contact"
-                  className="ml-3 px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                  className="text-sm font-medium transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
                   data-page-transition="true"
                 >
                   Support
                 </Link>
-              </div>
-
-              <div className="flex shrink-0 items-center gap-5 text-zinc-600 dark:text-zinc-300">
                 <button
                   type="button"
                   disabled
@@ -134,7 +145,7 @@ export function Navbar() {
               </div>
             </div>
           ) : (
-            <ul className="hidden items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 min-[760px]:flex">
+            <ul className="ml-6 hidden items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 min-[760px]:flex">
               {NAV_LINKS.map((link) => (
                 <li key={link.href}>
                   <Link
@@ -149,21 +160,12 @@ export function Navbar() {
             </ul>
           )}
 
+          {/* Корзина — ТОЛЬКО в режиме магазина (см. правую группу выше).
+              Обычный навбар её не показывает: магазин и портфолио-сайт
+              рекламируются раздельно, корзина не должна маячить, пока
+              посетитель просто листает портфолио. */}
           {!isShopActive && (
-            <div className="hidden items-center gap-5 min-[760px]:flex">
-              <Link
-                href="/cart"
-                data-page-transition="true"
-                aria-label="Cart"
-                className="relative text-zinc-600 transition-colors hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50"
-              >
-                <ShoppingCart size={20} />
-                {count > 0 && (
-                  <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
-                    {count}
-                  </span>
-                )}
-              </Link>
+            <div className="hidden min-[760px]:block">
               <Button
                 href={DISCORD_INVITE}
                 target="_blank"
@@ -247,28 +249,14 @@ export function Navbar() {
                   </Link>
                 </li>
               ))}
-              <li className="flex items-center justify-between gap-4 px-6 py-3">
-                <Link
-                  href="/cart"
-                  onClick={() => setOpen(false)}
-                  data-page-transition="true"
-                  className="relative text-zinc-700 dark:text-zinc-300"
-                  aria-label="Cart"
-                >
-                  <ShoppingCart size={20} />
-                  {count > 0 && (
-                    <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
-                      {count}
-                    </span>
-                  )}
-                </Link>
+              <li className="px-6 py-3">
                 <Button
                   href={DISCORD_INVITE}
                   target="_blank"
                   rel="noopener noreferrer"
                   variant="primary"
                   size="sm"
-                  className="flex-1"
+                  className="w-full"
                 >
                   Order now
                 </Button>
