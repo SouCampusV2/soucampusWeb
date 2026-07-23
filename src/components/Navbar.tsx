@@ -28,14 +28,18 @@ export function Navbar() {
   const [prevPathname, setPrevPathname] = useState(pathname);
   const { count } = useCart();
 
-  // Внутри /shop (каталог или страница товара) содержимое навбара
-  // ЗАМЕНЯЕТСЯ целиком: обычные ссылки и "Order now" уступают место
-  // магазинным кнопкам. Форма/стекло самой пилюли не меняются —
-  // высоту держит min-h на <nav> (см. ниже), не кнопка Order now,
-  // именно поэтому переход между режимами не дёргает высоту.
+  // Внутри магазина (каталог, страница товара, корзина) содержимое
+  // навбара ЗАМЕНЯЕТСЯ целиком: обычные ссылки и "Order now" уступают
+  // место магазинным кнопкам. /cart считается частью магазина — тот же
+  // навбар, что на /shop, а не первоначальный: посетитель не должен
+  // видеть портфолио-навигацию посреди оформления заказа.
+  // Форма/стекло самой пилюли не меняются — высоту держит фиксированная
+  // h-[…] на <nav> (см. ниже), не кнопка Order now, именно поэтому
+  // переход между режимами не дёргает высоту.
   // Вернуться на сайт — через лого SouCampus (оно всегда ведёт на "/"),
   // отдельной ссылки "назад" в магазине нет.
-  const isShopActive = pathname === "/shop" || pathname.startsWith("/shop/");
+  const isShopActive =
+    pathname === "/shop" || pathname.startsWith("/shop/") || pathname === "/cart";
 
   // PageTransition intercepts nav-link clicks in the capture phase and
   // calls stopPropagation (see PageTransition.tsx) so its own delayed
@@ -57,11 +61,15 @@ export function Navbar() {
   return (
     <div className="sticky top-4 z-50 px-4">
       <header className="relative mx-auto max-w-6xl rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/60 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/60">
-        {/* min-h вместо высоты "по содержимому": раньше высоту пилюли
-            задавала кнопка Order now (h-12/h-14) — без неё, в режиме
-            магазина, ряд становился короче и пилюля дёргалась при
-            переходе. Явный min-h держит высоту одинаковой всегда. */}
-        <nav className="flex min-h-12 items-center justify-between gap-4 px-6 py-3 sm:min-h-14">
+        {/* Фиксированная высота, не "по содержимому": раньше высоту пилюли
+            задавала кнопка Order now (h-12/h-14) + вертикальный паддинг
+            (py-3, ещё 24px) — без кнопки, в режиме магазина, содержимое
+            занимало меньше места, и min-h (без учёта паддинга) этого не
+            перекрывал: сама кнопка "72px = py-3 24px + h-12 48px" всегда
+            была выше, чем формальный минимум. Точное число — то, что
+            раньше получалось само: 4.5rem (72px) мобильный, 5rem (80px)
+            от sm — навбар всегда одной высоты, чем бы ни было заполнено. */}
+        <nav className="flex h-[4.5rem] items-center justify-between gap-4 px-6 sm:h-20">
           <Link
             href="/"
             className={`${displayFont.className} shrink-0 text-lg tracking-tight text-orange-500`}
@@ -76,10 +84,12 @@ export function Navbar() {
                 {/* Активная вкладка — та же капсула, что раньше была у
                     пункта Shop в обычном навбаре: сплошной мягкий фон +
                     жирный текст, а не просто hover-подсветка. */}
+                {/* Без data-page-transition: навигация ВНУТРИ магазина не
+                    анимируется — волна квадратиков только на переходах
+                    обратно на сайт (клик по лого SouCampus). */}
                 <Link
                   href="/shop"
                   className="rounded-full bg-zinc-950/10 px-3 py-1.5 font-semibold text-zinc-950 dark:bg-zinc-50/10 dark:text-zinc-50"
-                  data-page-transition="true"
                 >
                   All Map
                 </Link>
@@ -98,9 +108,8 @@ export function Navbar() {
                   между самими иконками — не пришит к категориям слева. */}
               <div className="flex shrink-0 items-center gap-5 text-zinc-600 dark:text-zinc-300">
                 <Link
-                  href="/contact"
+                  href="/support"
                   className="text-sm font-medium transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                  data-page-transition="true"
                 >
                   Support
                 </Link>
@@ -122,7 +131,6 @@ export function Navbar() {
                 </button>
                 <Link
                   href="/cart"
-                  data-page-transition="true"
                   aria-label="Cart"
                   className="relative transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
                 >
@@ -207,7 +215,6 @@ export function Navbar() {
           {isShopActive && (
             <Link
               href="/cart"
-              data-page-transition="true"
               aria-label="Cart"
               className="relative text-zinc-600 dark:text-zinc-300 min-[760px]:hidden"
             >
