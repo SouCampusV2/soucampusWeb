@@ -47,8 +47,16 @@ function subscribe(callback: () => void) {
 // каждый рендер приносит новые данные, и зацикливается. Кэшируем
 // последний разобранный массив и пересобираем его из строки, только
 // когда сама строка в localStorage реально изменилась (см. writeCart).
+// Пустой массив-константа: и для "корзины ещё нет" в getSnapshot, и для
+// getServerSnapshot. Второе — не просто аккуратность: на сервере
+// localStorage нет вовсе, и НОВЫЙ литерал [] при каждом вызове нарушает
+// то самое правило ссылочной стабильности из комментария выше — React
+// значения "не равны" и перерендеривает снова, и снова, до бесконечности
+// (ровно та ошибка, которую эта функция и была призвана предотвратить).
+const EMPTY_ITEMS: CartItem[] = [];
+
 let cachedRaw: string | null = null;
-let cachedItems: CartItem[] = [];
+let cachedItems: CartItem[] = EMPTY_ITEMS;
 
 function getSnapshot(): CartItem[] {
   const raw = localStorage.getItem(STORAGE_KEY);
@@ -56,18 +64,18 @@ function getSnapshot(): CartItem[] {
 
   cachedRaw = raw;
   try {
-    const parsed = raw ? JSON.parse(raw) : [];
-    cachedItems = Array.isArray(parsed) ? parsed : [];
+    const parsed = raw ? JSON.parse(raw) : EMPTY_ITEMS;
+    cachedItems = Array.isArray(parsed) ? parsed : EMPTY_ITEMS;
   } catch {
     // Испорченный JSON (ручная правка, старый формат) — не повод ронять
     // сайт, просто считаем корзину пустой.
-    cachedItems = [];
+    cachedItems = EMPTY_ITEMS;
   }
   return cachedItems;
 }
 
 function getServerSnapshot(): CartItem[] {
-  return [];
+  return EMPTY_ITEMS;
 }
 
 function writeCart(items: CartItem[]) {
