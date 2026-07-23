@@ -34,18 +34,22 @@ export function Navbar() {
   const [prevPathname, setPrevPathname] = useState(pathname);
   const { count } = useCart();
 
-  // Внутри магазина (каталог, страница товара, корзина) содержимое
-  // навбара ЗАМЕНЯЕТСЯ целиком: обычные ссылки и "Order now" уступают
-  // место магазинным кнопкам. /cart считается частью магазина — тот же
-  // навбар, что на /shop, а не первоначальный: посетитель не должен
-  // видеть портфолио-навигацию посреди оформления заказа.
+  // Внутри магазина (каталог, страница товара, корзина, поддержка)
+  // содержимое навбара ЗАМЕНЯЕТСЯ целиком: обычные ссылки и "Order now"
+  // уступают место магазинным кнопкам. /cart и /support считаются частью
+  // магазина — тот же навбар, что на /shop, а не первоначальный:
+  // посетитель не должен видеть портфолио-навигацию посреди оформления
+  // заказа или обращения в поддержку по купленному товару.
   // Форма/стекло самой пилюли не меняются — высоту держит фиксированная
   // h-[…] на <nav> (см. ниже), не кнопка Order now, именно поэтому
   // переход между режимами не дёргает высоту.
   // Вернуться на сайт — через лого SouCampus (оно всегда ведёт на "/"),
   // отдельной ссылки "назад" в магазине нет.
   const isShopActive =
-    pathname === "/shop" || pathname.startsWith("/shop/") || pathname === "/cart";
+    pathname === "/shop" ||
+    pathname.startsWith("/shop/") ||
+    pathname === "/cart" ||
+    pathname === "/support";
 
   // PageTransition intercepts nav-link clicks in the capture phase and
   // calls stopPropagation (see PageTransition.tsx) so its own delayed
@@ -87,15 +91,13 @@ export function Navbar() {
           {isShopActive ? (
             <div className="ml-6 hidden min-w-0 flex-1 items-center justify-between gap-4 min-[760px]:flex">
               <div className="flex items-center gap-1 text-sm font-medium text-zinc-600 dark:text-zinc-300">
-                {/* Активная вкладка — та же капсула, что раньше была у
-                    пункта Shop в обычном навбаре: сплошной мягкий фон +
-                    жирный текст, а не просто hover-подсветка. */}
                 {/* Без data-page-transition: навигация ВНУТРИ магазина не
                     анимируется — волна квадратиков только на переходах
-                    обратно на сайт (клик по лого SouCampus). */}
+                    обратно на сайт (клик по лого SouCampus). Без
+                    выделения "активной вкладки" — сознательно убрано. */}
                 <Link
                   href="/shop"
-                  className="rounded-full bg-zinc-950/10 px-3 py-1.5 font-semibold text-zinc-950 dark:bg-zinc-50/10 dark:text-zinc-50"
+                  className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
                 >
                   All Map
                 </Link>
