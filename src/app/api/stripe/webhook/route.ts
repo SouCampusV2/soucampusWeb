@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
-import { orderInputFromSession, recordPaidOrder } from "@/lib/orders";
+import { buildPaidOrderFromSession, recordPaidOrder } from "@/lib/orders";
 import type Stripe from "stripe";
 
 export const dynamic = "force-dynamic";
@@ -47,7 +47,9 @@ export async function POST(request: Request) {
   }
 
   if (event.type === "checkout.session.completed") {
-    const input = orderInputFromSession(event.data.object);
+    // Само событие не несёт строк заказа (Stripe их не кладёт в тело
+    // вебхука) — buildPaidOrderFromSession сама сходит за ними в Stripe.
+    const input = await buildPaidOrderFromSession(event.data.object.id);
     if (input) {
       // Про повторную доставку того же события заботится recordPaidOrder
       // (unique на stripe_session_id) — здесь просто пишем.

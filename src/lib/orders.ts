@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { getStripe } from "@/lib/stripe";
 
-// Слой заказов (Этап 4, подэтап B). Всё здесь работает ТОЛЬКО на сервере:
+// Слой заказов (Этап 4, подэтапы B/C). Всё здесь работает ТОЛЬКО на сервере:
 // таблицы orders/order_items закрыты для анонима полностью (см. миграцию
 // 20260723120000_orders.sql), читает и пишет их service_role.
 //
@@ -33,26 +34,43 @@ export type SessionLike = {
   customer_details?: { email?: string | null } | null;
   amount_total?: number | null;
   currency?: string | null;
-  metadata?: Record<string, string> | null;
+};
+
+// Одна строка Checkout Session — товар + сколько штук. unitAmountCents,
+// а не сумма по строке: order_items.price_cents хранит цену ЗА ШТУКУ
+// (снимок на момент покупки), quantity — отдельно, как и в самой строке
+// Stripe. Это единица работы этого модуля с корзиной из нескольких
+// разных товаров (подэтап C) — раньше, с одним товаром за раз, сумма
+// сессии совпадала с ценой позиции, теперь так только у корзины из 1 шт.
+export type LineItemLike = {
+  productId: string;
+  title: string;
+  unitAmountCents: number;
+  quantity: number;
 };
 
 /**
- * Переводит оплаченную Checkout Session в заказ для записи в БД.
- * Возвращает null, если сессия не годится: не оплачена или в metadata
- * нет нашего товара (сессию создавал не наш /api/checkout).
+ * Переводит оплаченную сессию + её позиции в заказ для записи в БД.
+ * Возвращает null, если сессия не годится: не оплачена, сумма нулевая
+ * или в ней нет ни одной нашей позиции (сессию создавал не наш
+ * /api/checkout — метаданных product_id тогда бы не нашлось при сборке
+ * lineItems, см. buildPaidOrderFromSession).
  *
  * Чистая функция — граница "мир Stripe -> наш домен", как rowToProduct
  * у товаров. Именно здесь решается, чему из ответа Stripe мы верим.
+ * Сетевой поход за строками сессии (Stripe не присылает их в самом
+ * событии вебхука) — отдельно, в buildPaidOrderFromSession ниже, чтобы
+ * эта функция оставалась чистой и её можно было тестировать без Stripe.
  */
-export function orderInputFromSession(session: SessionLike): PaidOrderInput | null {
+export function orderInputFromLineItems(
+  session: SessionLike,
+  lineItems: LineItemLike[]
+): PaidOrderInput | null {
   // Событие checkout.session.completed приходит и для отложенных методов
   // оплаты, когда деньги ещё не списаны. Мы включаем только карты, но
   // проверка обязана быть здесь, а не в настройках: настройки меняются.
   if (session.payment_status !== "paid") return null;
-
-  const productId = session.metadata?.product_id;
-  const title = session.metadata?.product_title;
-  if (!productId || !title) return null;
+  if (lineItems.length === 0) return null;
 
   const totalCents = session.amount_total;
   if (typeof totalCents !== "number" || totalCents <= 0) return null;
@@ -64,10 +82,62 @@ export function orderInputFromSession(session: SessionLike): PaidOrderInput | nu
     customerEmail: session.customer_details?.email ?? "unknown",
     totalCents,
     currency: (session.currency ?? "eur").toUpperCase(),
-    // Подэтап B — один товар за раз (корзина — подэтап C), поэтому
-    // сумма сессии и есть цена позиции.
-    items: [{ productId, title, priceCents: totalCents, quantity: 1 }],
+    items: lineItems.map((li) => ({
+      productId: li.productId,
+      title: li.title,
+      priceCents: li.unitAmountCents,
+      quantity: li.quantity,
+    })),
   };
+}
+
+/**
+ * Собирает заказ по id Checkout Session: спрашивает Stripe саму сессию
+ * (payment_status, сумма, email) и её строки (line_items — вебхук не
+ * присылает их в теле события, это отдельный запрос), затем сводит всё
+ * через orderInputFromLineItems. Вызывают её и вебхук, и страница
+ * успеха (см. её комментарий про гонку с вебхуком) — один код похода в
+ * Stripe на оба случая.
+ *
+ * Каждую строку Stripe создаёт с ad-hoc товаром (price_data.product_data
+ * в /api/checkout) — у такого товара, как и у обычного, есть metadata:
+ * туда мы кладём наш product_id при создании сессии, а здесь читаем его
+ * обратно через expand: "data.price.product".
+ */
+export async function buildPaidOrderFromSession(
+  sessionId: string
+): Promise<PaidOrderInput | null> {
+  const stripe = getStripe();
+
+  const session = await stripe.checkout.sessions.retrieve(sessionId);
+  if (session.payment_status !== "paid") return null;
+
+  const { data: rawLineItems } = await stripe.checkout.sessions.listLineItems(sessionId, {
+    expand: ["data.price.product"],
+    limit: 100,
+  });
+
+  const lineItems: LineItemLike[] = [];
+  for (const li of rawLineItems) {
+    const product = li.price?.product;
+    // string — товар не расширен (не должно случиться при expand выше);
+    // DeletedProduct — товар удалён из Stripe. Оба случая пропускаем:
+    // это не наша позиция, доверять ей нельзя.
+    if (!product || typeof product === "string" || "deleted" in product) continue;
+
+    const productId = product.metadata?.product_id;
+    const unitAmountCents = li.price?.unit_amount;
+    if (!productId || typeof unitAmountCents !== "number" || unitAmountCents <= 0) continue;
+
+    lineItems.push({
+      productId,
+      title: product.name,
+      unitAmountCents,
+      quantity: li.quantity ?? 1,
+    });
+  }
+
+  return orderInputFromLineItems(session, lineItems);
 }
 
 /**
@@ -76,51 +146,32 @@ export function orderInputFromSession(session: SessionLike): PaidOrderInput | nu
  * плюс страница успеха может записать заказ раньше вебхука (или
  * наоборот). Кто пришёл вторым, тихо выходит.
  *
- * Защиту от дубля держит unique-индекс на stripe_session_id, а не
- * проверка "а есть ли уже такой заказ": вебхук и страница успеха могут
- * прийти одновременно, проверку двумя запросами они бы обошли — ровно
- * та же гонка, что у двух вкладок в счётчике просмотров.
+ * Сам заказ и его позиции пишет ОДНА функция в Postgres
+ * (`record_paid_order`, см. миграцию `20260723130000_record_paid_order_fn.sql`)
+ * внутри одной транзакции — не два отдельных запроса из кода. Раньше
+ * здесь было именно два запроса подряд (insert в orders, затем insert в
+ * order_items), и между ними было окно в несколько миллисекунд, где
+ * читатель (getPaidOrder на странице успеха) видел уже созданный заказ
+ * без единой позиции — "Thank you" с суммой, но без товаров для
+ * скачивания. Атомарная запись эту гонку убирает: снаружи заказ либо не
+ * существует ещё вовсе, либо существует сразу целиком, вместе со всеми
+ * order_items.
  */
 export async function recordPaidOrder(input: PaidOrderInput): Promise<void> {
-  const db = getSupabaseAdmin();
-
-  const { data, error } = await db
-    .from("orders")
-    .upsert(
-      {
-        stripe_session_id: input.stripeSessionId,
-        customer_email: input.customerEmail,
-        status: "paid",
-        total_cents: input.totalCents,
-        currency: input.currency,
-      },
-      { onConflict: "stripe_session_id", ignoreDuplicates: true }
-    )
-    .select("id");
-
-  if (error) throw new Error(`Не удалось записать заказ: ${error.message}`);
-
-  // Пустой ответ = конфликт, заказ уже записан (вместе с позициями,
-  // потому что записывает их тот же вызов, который создал заказ).
-  const orderId = data?.[0]?.id;
-  if (!orderId) return;
-
-  const { error: itemsError } = await db.from("order_items").insert(
-    input.items.map((item) => ({
-      order_id: orderId,
+  const { error } = await getSupabaseAdmin().rpc("record_paid_order", {
+    p_stripe_session_id: input.stripeSessionId,
+    p_customer_email: input.customerEmail,
+    p_total_cents: input.totalCents,
+    p_currency: input.currency,
+    p_items: input.items.map((item) => ({
       product_id: item.productId,
       title: item.title,
       price_cents: item.priceCents,
       quantity: item.quantity,
-    }))
-  );
+    })),
+  });
 
-  if (itemsError) {
-    // Заказ есть, позиций нет — это надо чинить руками, поэтому громко.
-    throw new Error(
-      `Заказ ${orderId} записан, но позиции — нет: ${itemsError.message}`
-    );
-  }
+  if (error) throw new Error(`Не удалось записать заказ: ${error.message}`);
 }
 
 // Приватный бакет Supabase Storage с файлами карт. Приватный — значит

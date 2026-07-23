@@ -3,6 +3,7 @@ import { PageTransition } from "@/components/PageTransition";
 import { PricingSection } from "@/components/PricingSection";
 import { ContactFooter } from "@/components/ContactFooter";
 import { ViewTracker } from "@/components/ViewTracker";
+import { CartProvider } from "@/lib/cart-context";
 
 // Обвязка публичного сайта: навбар сверху, тарифы + футер снизу на каждой
 // странице. Живёт здесь, а не в корневом layout.tsx, именно ради группы
@@ -25,15 +26,21 @@ export default function SiteLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <PageTransition>
-      {/* Ничего не рисует. Стоит здесь, а не на страницах: layout при
-          переходах не пересоздаётся, а адрес компонент берёт сам — так
-          считается весь сайт и про новую страницу нельзя забыть. */}
-      <ViewTracker />
-      <Navbar />
-      {children}
-      <PricingSection />
-      <ContactFooter />
-    </PageTransition>
+    // CartProvider снаружи: и Navbar (бейдж с числом товаров), и страница
+    // товара (кнопка "Add to cart"), и /cart читают одну и ту же корзину.
+    // Сама обёртка — клиентский компонент, но children (серверные страницы)
+    // это не трогает: их можно передавать в клиентский компонент как есть.
+    <CartProvider>
+      <PageTransition>
+        {/* Ничего не рисует. Стоит здесь, а не на страницах: layout при
+            переходах не пересоздаётся, а адрес компонент берёт сам — так
+            считается весь сайт и про новую страницу нельзя забыть. */}
+        <ViewTracker />
+        <Navbar />
+        {children}
+        <PricingSection />
+        <ContactFooter />
+      </PageTransition>
+    </CartProvider>
   );
 }

@@ -1,14 +1,14 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getStripe } from "@/lib/stripe";
 import {
   getPaidOrder,
-  orderInputFromSession,
+  buildPaidOrderFromSession,
   recordPaidOrder,
   signedDownloadUrl,
   type PaidOrder,
 } from "@/lib/orders";
 import { Button } from "@/components/Button";
+import { ClearCartOnSuccess } from "@/components/ClearCartOnSuccess";
 import { DISCORD_INVITE } from "@/lib/site";
 
 // Страница персональная (у каждого свой session_id в адресе) — кэшировать
@@ -39,16 +39,14 @@ async function findOrRecordOrder(sessionId: string): Promise<PaidOrder | null> {
   const existing = await getPaidOrder(sessionId);
   if (existing) return existing;
 
-  let session;
+  let input;
   try {
-    session = await getStripe().checkout.sessions.retrieve(sessionId);
+    input = await buildPaidOrderFromSession(sessionId);
   } catch {
-    // Несуществующий session_id — Stripe отвечает ошибкой. Для нас это
-    // просто "заказа нет", а не авария.
+    // Несуществующий session_id — Stripe отвечает ошибкой при retrieve.
+    // Для нас это просто "заказа нет", а не авария.
     return null;
   }
-
-  const input = orderInputFromSession(session);
   if (!input) return null;
 
   await recordPaidOrder(input);
@@ -103,6 +101,7 @@ export default async function SuccessPage({
 
   return (
     <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-16 sm:py-28">
+      <ClearCartOnSuccess />
       <div className="mx-auto max-w-2xl">
         <h1 className="text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
           Thank you! 🎉

@@ -3,7 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getAllProducts, getProduct } from "@/lib/products";
-import { BuyButton } from "@/components/BuyButton";
+import { AddToCartButton } from "@/components/AddToCartButton";
 
 // Страницы товаров собираются заранее, как и работы портфолио.
 export async function generateStaticParams() {
@@ -88,11 +88,19 @@ export default async function ProductPage({
           />
         </div>
 
-        {/* Stripe Checkout (подэтап B): клиентский островок — только
-            кнопка, страница остаётся серверной. Цена в label — косметика,
-            сумму платежа сервер берёт из БД (см. /api/checkout). */}
+        {/* Корзина (подэтап C): кладём товар в localStorage, оформление
+            заказа — на /cart, даже для одной позиции (один путь чекаута,
+            не два). Клиентский островок — только кнопка. */}
         <div className="mt-10">
-          <BuyButton slug={product.slug} label={`Buy now — ${product.price}`} />
+          <AddToCartButton
+            product={{
+              slug: product.slug,
+              title: product.title,
+              price: product.price,
+              priceCents: product.priceCents,
+              image: product.image,
+            }}
+          />
         </div>
       </div>
     </main>

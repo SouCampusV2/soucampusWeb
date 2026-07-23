@@ -32,7 +32,7 @@ export const SITE_SAMEAS: string[] = [
 export const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/portfolio", label: "Portfolio" },
-  { href: "/shop", label: "Shop" },
   { href: "/about", label: "About me" },
   { href: "/contact", label: "Contact" },
+  { href: "/shop", label: "Shop" },
 ];

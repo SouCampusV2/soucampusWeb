@@ -5,8 +5,10 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Unbounded } from "next/font/google";
+import { ShoppingCart } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
+import { useCart } from "@/lib/cart-context";
 
 // Same display font as the hero headings — the navbar rhymes with them.
 const displayFont = Unbounded({
@@ -18,6 +20,15 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const [prevPathname, setPrevPathname] = useState(pathname);
+  const { count } = useCart();
+
+  // Shop, пока активен (каталог или страница товара), получает капсулу
+  // акцентного цвета вместо обычной текстовой ссылки — единственная
+  // разница с остальными пунктами, форма/высота/стекло навбара не
+  // меняются (первая версия перекрашивала весь навбар целиком и
+  // подменяла ссылки на категории/поиск — откатили, см. CHANGELOG,
+  // 2026-07-23).
+  const isShopActive = pathname === "/shop" || pathname.startsWith("/shop/");
 
   // PageTransition intercepts nav-link clicks in the capture phase and
   // calls stopPropagation (see PageTransition.tsx) so its own delayed
@@ -48,21 +59,41 @@ export function Navbar() {
             SouCampus
           </Link>
 
-          <ul className="hidden items-center gap-8 text-sm font-medium text-zinc-600 dark:text-zinc-300 min-[760px]:flex">
-            {NAV_LINKS.map((link) => (
-              <li key={link.href}>
-                <Link
-                  href={link.href}
-                  className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                  data-page-transition="true"
-                >
-                  {link.label}
-                </Link>
-              </li>
-            ))}
+          <ul className="hidden items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 min-[760px]:flex">
+            {NAV_LINKS.map((link) => {
+              const isActiveShopLink = link.href === "/shop" && isShopActive;
+              return (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    className={
+                      isActiveShopLink
+                        ? "rounded-full bg-orange-500 px-4 py-1.5 font-semibold text-zinc-950"
+                        : "px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                    }
+                    data-page-transition="true"
+                  >
+                    {link.label}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
 
-          <div className="hidden min-[760px]:block">
+          <div className="hidden items-center gap-5 min-[760px]:flex">
+            <Link
+              href="/cart"
+              data-page-transition="true"
+              aria-label="Cart"
+              className="relative text-zinc-600 transition-colors hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50"
+            >
+              <ShoppingCart size={20} />
+              {count > 0 && (
+                <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
+                  {count}
+                </span>
+              )}
+            </Link>
             <Button
               href={DISCORD_INVITE}
               target="_blank"
@@ -122,14 +153,28 @@ export function Navbar() {
                   </Link>
                 </li>
               ))}
-              <li className="px-6 py-3">
+              <li className="flex items-center justify-between gap-4 px-6 py-3">
+                <Link
+                  href="/cart"
+                  onClick={() => setOpen(false)}
+                  data-page-transition="true"
+                  className="relative text-zinc-700 dark:text-zinc-300"
+                  aria-label="Cart"
+                >
+                  <ShoppingCart size={20} />
+                  {count > 0 && (
+                    <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
+                      {count}
+                    </span>
+                  )}
+                </Link>
                 <Button
                   href={DISCORD_INVITE}
                   target="_blank"
                   rel="noopener noreferrer"
                   variant="primary"
                   size="sm"
-                  className="w-full"
+                  className="flex-1"
                 >
                   Order now
                 </Button>
