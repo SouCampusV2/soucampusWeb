@@ -3,8 +3,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getAllProducts, getProduct } from "@/lib/products";
-import { Button } from "@/components/Button";
-import { DISCORD_INVITE } from "@/lib/site";
+import { BuyButton } from "@/components/BuyButton";
 
 // Страницы товаров собираются заранее, как и работы портфолио.
 export async function generateStaticParams() {
@@ -89,17 +88,11 @@ export default async function ProductPage({
           />
         </div>
 
-        {/* Покупка на сайте (Stripe Checkout) — подэтап B. До него кнопка
-            честно ведёт в Discord: заказ работает уже сейчас, просто
-            руками. Когда появится чекаут, здесь встанет кнопка Buy с
-            Server Action — разметка вокруг не изменится. */}
-        <div className="mt-10 flex flex-wrap items-center gap-4">
-          <Button href={DISCORD_INVITE} size="lg" target="_blank" rel="noopener noreferrer">
-            Buy via Discord — {product.price}
-          </Button>
-          <p className="text-sm text-zinc-500 dark:text-zinc-400">
-            On-site checkout is coming soon.
-          </p>
+        {/* Stripe Checkout (подэтап B): клиентский островок — только
+            кнопка, страница остаётся серверной. Цена в label — косметика,
+            сумму платежа сервер берёт из БД (см. /api/checkout). */}
+        <div className="mt-10">
+          <BuyButton slug={product.slug} label={`Buy now — ${product.price}`} />
         </div>
       </div>
     </main>

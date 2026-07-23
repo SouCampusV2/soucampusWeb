@@ -8,6 +8,7 @@ import { rowToProduct } from "./products";
 
 describe("rowToProduct", () => {
   const row = {
+    id: "3f2c8a10-0000-4000-8000-000000000001",
     slug: "medieval-spawn",
     title: "Medieval Spawn",
     summary: "Ready-to-use 300×300 spawn.",
@@ -20,6 +21,7 @@ describe("rowToProduct", () => {
 
   it("переводит колонки БД в форму сайта", () => {
     expect(rowToProduct(row)).toEqual({
+      id: "3f2c8a10-0000-4000-8000-000000000001",
       slug: "medieval-spawn",
       title: "Medieval Spawn",
       summary: "Ready-to-use 300×300 spawn.",

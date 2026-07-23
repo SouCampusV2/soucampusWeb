@@ -35,7 +35,10 @@
       "Bash(taskkill //F //PID 17508)",
       "Bash(tail -60 /tmp/dev5.log)",
       "Bash(python3 -)",
-      "Bash(curl -s *)"
+      "Bash(curl -s *)",
+      "Bash(npm ls *)",
+      "Bash(npm test *)",
+      "Bash(node \"C:/Users/super/AppData/Local/Temp/claude/c--Users-super-OneDrive--------------Claude-FirstTry/c8cd0c95-ac36-45f9-879d-a1fe8fd2f62b/scratchpad/seed-products.mjs\")"
     ]
   }
 }

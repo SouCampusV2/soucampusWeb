@@ -5,6 +5,8 @@ import { getSupabase } from "@/lib/supabase";
 // строка), внутри — устройство БД (price_label/price_cents). Перевод
 // одного в другое — rowToProduct ниже, чистая функция под тест.
 export type Product = {
+  /** uuid — нужен как внешний ключ order_items.product_id (подэтап B). */
+  id: string;
   slug: string;
   title: string;
   summary: string;
@@ -21,6 +23,7 @@ export type Product = {
 };
 
 type ProductRow = {
+  id: string;
   slug: string;
   title: string;
   summary: string;
@@ -33,6 +36,7 @@ type ProductRow = {
 
 export function rowToProduct(row: ProductRow): Product {
   return {
+    id: row.id,
     slug: row.slug,
     title: row.title,
     summary: row.summary,
@@ -47,7 +51,7 @@ export function rowToProduct(row: ProductRow): Product {
 // Одна строка с колонками на оба запроса — getAllProducts и getProduct
 // не разъедутся между собой (тот же приём, что PROJECT_FIELDS).
 const PRODUCT_FIELDS =
-  "slug, title, summary, description, image_url, price_label, price_cents, price_currency";
+  "id, slug, title, summary, description, image_url, price_label, price_cents, price_currency";
 
 // Фильтр is_published здесь — для ясности намерения; настоящая защита —
 // RLS-политика "public read published": анониму база неопубликованные
