@@ -15,8 +15,9 @@ It's also my hands-on way of learning modern web development — going from "I k
 - [Next.js](https://nextjs.org) (App Router) + TypeScript
 - [Tailwind CSS v4](https://tailwindcss.com)
 - [Motion](https://motion.dev) (`motion/react`) for animation
-- [Supabase](https://supabase.com) (Postgres) — all site content lives here: projects, reviews, stats, plus a first-party visitor counter
-- [Vitest](https://vitest.dev) — unit tests for the pure logic (pricing formula, DB-row mapping, cookie signing, path allowlist)
+- [Supabase](https://supabase.com) (Postgres) — all site content lives here: projects, reviews, stats, products, orders, plus a first-party visitor counter. A second project mirrors the schema for local/preview work, so migrations and payment testing never touch production data
+- [Stripe](https://stripe.com) — Checkout for the digital build shop (`/shop`, `/cart`), webhook-verified, signed downloads from a private Storage bucket
+- [Vitest](https://vitest.dev) — unit tests for the pure logic (pricing formula, DB-row mapping, cookie signing, path allowlist, Stripe session → order mapping)
 - [Vercel Analytics](https://vercel.com/analytics) — traffic/page views
 - Deployed on [Vercel](https://vercel.com) at [soucampus.online](https://soucampus.online) — `master` auto-deploys to production on every push, `dev` gets its own Preview URL
 - CI via GitHub Actions — lint + tests + build on every push/PR to `master` and `dev`
@@ -24,8 +25,7 @@ It's also my hands-on way of learning modern web development — going from "I k
 
 **Planned, not wired up yet:**
 
-- Supabase Auth + a mini content admin (content is edited through the Supabase Table Editor for now)
-- [Stripe](https://stripe.com) — payments for the digital build shop
+- Supabase Auth + a mini content admin (content is edited through the Supabase Table Editor for now) + a "my purchases" profile page for the shop
 - Docker, once there's an actual reason for it
 
 ## Getting started
@@ -41,8 +41,9 @@ Day-to-day work happens on the `dev` branch (Vercel gives it its own Preview URL
 
 ## Project structure
 
-- `src/app/(site)/` — public pages (Next.js App Router): home, `/portfolio`, `/portfolio/[slug]`, `/reviews/[slug]`, `/about`, `/contact`, `/shop`, `/terms`. The `(site)` group exists so these share a layout the future admin will not inherit
+- `src/app/(site)/` — public pages (Next.js App Router): home, `/portfolio`, `/portfolio/[slug]`, `/reviews/[slug]`, `/about`, `/contact`, `/support`, `/shop`, `/shop/[slug]`, `/shop/success`, `/cart`, `/terms`. The `(site)` group exists so these share a layout the future admin will not inherit
 - `src/app/api/view/` — the visitor-counter endpoint
+- `src/app/api/checkout/`, `src/app/api/stripe/webhook/` — Stripe Checkout session creation and the payment webhook (signature-verified, records orders atomically via a Postgres function)
 - `src/components/` — landing sections and shared UI (`Button`, `ArrowCircle`, `Navbar`, `PageTransition`, ...)
 - `src/lib/` — data access and pure logic: Supabase clients, `projects`/`reviews`/`stats` (each with a `rowTo*` mapper that keeps DB column names out of the components), the pricing formula, cookie signing
 - `supabase/` — `migrations/` (the schema, in git so it is reproducible rather than living only in the cloud) and `seed.sql` (the one-off content transfer, kept as a record)
@@ -62,5 +63,5 @@ Day-to-day work happens on the `dev` branch (Vercel gives it its own Preview URL
 3. ~~Real content everywhere~~ — done (Discord invite, portfolio, reviews, About me, FAQ, stats, pricing); only the author's photo is still a placeholder
 4. ~~Mobile/tablet responsive pass~~ — done (see `RESPONSIVE_PLAN.md` for the full breakdown; rules still need porting into `DESIGN.md`)
 5. Mini content admin backed by Supabase — **in progress**: the site now reads everything from Postgres and content is edited in the Supabase Table Editor. A custom `/admin` comes after a stretch of living with the Table Editor, so the requirements are observed rather than guessed
-6. Shop: catalog, cart, checkout, Stripe
+6. Shop: ~~catalog~~, ~~cart~~, ~~Stripe checkout~~ — done; next up is Supabase Auth + a "my purchases" page, then the admin (guest checkout stays either way)
 7. Docker, ~~tests~~ (unit suite in CI since 2026-07-20), deeper analytics (e.g. PostHog)
