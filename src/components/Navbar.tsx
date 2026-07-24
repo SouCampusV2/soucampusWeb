@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/Button";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
 import { useCart } from "@/lib/cart-context";
+import { useUser } from "@/lib/useUser";
 
 // Same display font as the hero headings — the navbar rhymes with them.
 const displayFont = Unbounded({
@@ -33,8 +34,16 @@ export function Navbar() {
   const pathname = usePathname();
   const [prevPathname, setPrevPathname] = useState(pathname);
   const { count } = useCart();
+  const { user } = useUser();
 
-  // Внутри магазина (каталог, страница товара, корзина, поддержка)
+  // Ник и аватар — из user_metadata (их синхронизирует ProfileEditForm),
+  // чтобы навбар не ходил в БД на каждой странице.
+  const displayName =
+    (user?.user_metadata?.display_name as string | undefined) ?? user?.email;
+  const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+
+  // Внутри магазина (каталог, страница товара, корзина, поддержка, а также
+  // вход/регистрация — покупка требует аккаунта, это часть флоу магазина)
   // содержимое навбара ЗАМЕНЯЕТСЯ целиком: обычные ссылки и "Order now"
   // уступают место магазинным кнопкам. /cart и /support считаются частью
   // магазина — тот же навбар, что на /shop, а не первоначальный:
@@ -49,7 +58,12 @@ export function Navbar() {
     pathname === "/shop" ||
     pathname.startsWith("/shop/") ||
     pathname === "/cart" ||
-    pathname === "/support";
+    pathname === "/support" ||
+    // Вход/регистрация/профиль — часть флоу магазина (покупка требует
+    // аккаунта), поэтому на них тоже магазинный навбар, а не портфолио.
+    pathname === "/login" ||
+    pathname === "/signup" ||
+    pathname.startsWith("/profile");
 
   // PageTransition intercepts nav-link clicks in the capture phase and
   // calls stopPropagation (see PageTransition.tsx) so its own delayed
@@ -128,12 +142,14 @@ export function Navbar() {
                 />
               </div>
 
-              {/* Support в одной группе с иконками, тот же gap-5, что и
-                  между самими иконками — не пришит к категориям слева. */}
-              <div className="flex shrink-0 items-center gap-5 text-zinc-600 dark:text-zinc-300">
+              {/* Support + иконки. gap-1: сами иконки получили p-2 (крупная
+                  зона нажатия), поэтому визуальный зазор даёт padding, а не
+                  большой gap — иначе группа расползлась бы. Иконки 22px,
+                  каждая обёрнута в круглую кликабельную область с hover-фоном. */}
+              <div className="flex shrink-0 items-center gap-1 text-zinc-600 dark:text-zinc-300">
                 <Link
                   href="/support"
-                  className="text-sm font-medium transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                  className="rounded-full px-3 py-2 text-sm font-medium transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
                 >
                   Support
                 </Link>
@@ -141,39 +157,61 @@ export function Navbar() {
                   type="button"
                   disabled
                   title="Messages are coming soon"
-                  className="cursor-not-allowed text-zinc-700 dark:text-zinc-200"
+                  className="flex cursor-not-allowed items-center justify-center rounded-full p-2 text-zinc-700 dark:text-zinc-200"
                 >
-                  <ChatCircleDots size={20} />
+                  <ChatCircleDots size={22} />
                 </button>
                 <button
                   type="button"
                   disabled
                   title="Notifications are coming soon"
-                  className="cursor-not-allowed text-zinc-700 dark:text-zinc-200"
+                  className="flex cursor-not-allowed items-center justify-center rounded-full p-2 text-zinc-700 dark:text-zinc-200"
                 >
-                  <Bell size={20} />
+                  <Bell size={22} />
                 </button>
                 <Link
                   href="/cart"
                   aria-label="Cart"
-                  className="relative transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                  className="relative flex items-center justify-center rounded-full p-2 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
                 >
-                  <ShoppingCart size={20} />
+                  <ShoppingCart size={22} />
                   {count > 0 && (
-                    <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
+                    <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
                       {count}
                     </span>
                   )}
                 </Link>
-                <button
-                  type="button"
-                  disabled
-                  title="Sign in is coming soon (Stage 4D)"
-                  className="flex cursor-not-allowed items-center gap-1.5 text-zinc-700 dark:text-zinc-200"
-                >
-                  <UserCircle size={20} />
-                  <span className="text-sm font-medium">Login</span>
-                </button>
+                {user ? (
+                  <Link
+                    href="/profile"
+                    aria-label="Profile"
+                    title={displayName}
+                    className="flex max-w-[11rem] items-center gap-2 rounded-full px-2.5 py-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+                  >
+                    {avatarUrl ? (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img
+                        src={avatarUrl}
+                        alt=""
+                        className="h-6 w-6 shrink-0 rounded-full object-cover"
+                      />
+                    ) : (
+                      <UserCircle size={22} className="shrink-0" />
+                    )}
+                    <span className="truncate text-sm font-medium">
+                      {displayName}
+                    </span>
+                  </Link>
+                ) : (
+                  <Link
+                    href="/login"
+                    aria-label="Sign in"
+                    title="Sign in"
+                    className="flex items-center justify-center rounded-full p-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+                  >
+                    <UserCircle size={22} />
+                  </Link>
+                )}
               </div>
             </div>
           ) : (

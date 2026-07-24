@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getProduct } from "@/lib/products";
 import { getStripe } from "@/lib/stripe";
 import { SITE_URL } from "@/lib/site";
+import { createSupabaseServer } from "@/lib/supabase-server";
 
 // Создание Stripe Checkout Session. Выполняется на каждый запрос —
 // сессия персональная, кэшировать нечего.
@@ -57,6 +58,17 @@ function returnBase(request: Request): string {
 }
 
 export async function POST(request: Request) {
+  // Гейт: покупка только с аккаунтом (решено 2026-07-24). Серверная
+  // проверка — настоящая защита; клиент лишь заранее уводит на /login
+  // для удобства, но обойти этот 401 из браузера нельзя.
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "auth required" }, { status: 401 });
+  }
+
   let body: unknown;
   try {
     body = await request.json();
@@ -104,6 +116,14 @@ export async function POST(request: Request) {
   const session = await getStripe().checkout.sessions.create({
     mode: "payment",
     line_items: lineItems,
+    // Личность покупателя. Заказ пока пишется в orders как раньше (по
+    // email), но эти поля кладём уже сейчас, чтобы связать заказ с
+    // аккаунтом, когда будем делать "My purchases": customer_email
+    // предзаполняет форму Stripe и направляет чек; client_reference_id и
+    // metadata.user_id несут id аккаунта в вебхук.
+    customer_email: user.email,
+    client_reference_id: user.id,
+    metadata: { user_id: user.id },
     // {CHECKOUT_SESSION_ID} подставляет сам Stripe при редиректе — так
     // страница успеха получает ключ к заказу, не полагаясь на cookie.
     success_url: `${base}/shop/success?session_id={CHECKOUT_SESSION_ID}`,

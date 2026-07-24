@@ -3,8 +3,10 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Trash } from "@phosphor-icons/react";
 import { useCart } from "@/lib/cart-context";
+import { useUser } from "@/lib/useUser";
 import { Button } from "@/components/Button";
 
 // Клиентская страница целиком (нужен localStorage через useCart) — как
@@ -17,10 +19,19 @@ function formatCents(cents: number, currency = "EUR") {
 
 export default function CartPage() {
   const { items, removeItem, totalCents } = useCart();
+  const { user } = useUser();
+  const router = useRouter();
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
 
   async function checkout() {
     if (state === "loading" || items.length === 0) return;
+    // Покупка требует аккаунта. Не залогинен — уводим на вход, а после
+    // него обратно в корзину (?next=/cart). Сервер всё равно проверяет
+    // это сам (401), тут — только удобство.
+    if (!user) {
+      router.push("/login?next=/cart");
+      return;
+    }
     setState("loading");
     try {
       const res = await fetch("/api/checkout", {
@@ -30,6 +41,11 @@ export default function CartPage() {
         // отсюда (см. AddToCartButton).
         body: JSON.stringify({ items: items.map((i) => ({ slug: i.slug })) }),
       });
+      // Сессия истекла между загрузкой страницы и оплатой — на вход.
+      if (res.status === 401) {
+        router.push("/login?next=/cart");
+        return;
+      }
       if (!res.ok) throw new Error(`checkout failed: ${res.status}`);
       const { url } = await res.json();
       if (typeof url !== "string" || !url.startsWith("https://")) {
@@ -101,7 +117,11 @@ export default function CartPage() {
             </p>
             <div>
               <Button size="lg" onClick={checkout}>
-                {state === "loading" ? "Redirecting…" : "Checkout"}
+                {state === "loading"
+                  ? "Redirecting…"
+                  : user
+                    ? "Checkout"
+                    : "Sign in to checkout"}
               </Button>
               {state === "error" && (
                 <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">

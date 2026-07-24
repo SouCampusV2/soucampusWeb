@@ -21,6 +21,9 @@ export type OrderItemInput = {
 export type PaidOrderInput = {
   stripeSessionId: string;
   customerEmail: string;
+  /** id аккаунта покупателя (Stripe client_reference_id). null у старых
+   *  гостевых заказов до Auth. */
+  userId: string | null;
   totalCents: number;
   currency: string;
   items: OrderItemInput[];
@@ -32,6 +35,10 @@ export type SessionLike = {
   id: string;
   payment_status: string;
   customer_details?: { email?: string | null } | null;
+  // id аккаунта покупателя — его кладёт /api/checkout при создании
+  // сессии (гейт покупки, подэтап D). У сессий, созданных до этого,
+  // поля нет — тогда заказ остаётся привязан только к email.
+  client_reference_id?: string | null;
   amount_total?: number | null;
   currency?: string | null;
 };
@@ -80,6 +87,7 @@ export function orderInputFromLineItems(
     // Email Stripe собирает сам на своей странице оплаты. Пустым он для
     // оплаченной сессии не бывает, но колонка not null — подстрахуемся.
     customerEmail: session.customer_details?.email ?? "unknown",
+    userId: session.client_reference_id ?? null,
     totalCents,
     currency: (session.currency ?? "eur").toUpperCase(),
     items: lineItems.map((li) => ({
@@ -161,6 +169,7 @@ export async function recordPaidOrder(input: PaidOrderInput): Promise<void> {
   const { error } = await getSupabaseAdmin().rpc("record_paid_order", {
     p_stripe_session_id: input.stripeSessionId,
     p_customer_email: input.customerEmail,
+    p_user_id: input.userId,
     p_total_cents: input.totalCents,
     p_currency: input.currency,
     p_items: input.items.map((item) => ({
@@ -269,4 +278,76 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
       };
     }),
   };
+}
+
+// Одна купленная карта в списке "My purchases": название — снимок на
+// момент покупки (order_items.title), slug — ссылка на страницу товара,
+// filePath — путь к файлу для подписанной ссылки на скачивание.
+export type PurchasedItem = {
+  productId: string;
+  title: string;
+  slug: string | null;
+  filePath: string | null;
+};
+
+/**
+ * Все купленные пользователем карты — для страницы профиля. Берём
+ * заказы двумя способами и объединяем:
+ *   1) по user_id — заказы, сделанные уже под аккаунтом;
+ *   2) по email среди ГОСТЕВЫХ заказов (user_id null) — покупки до
+ *      регистрации на ту же почту «подтягиваются» в профиль (решение
+ *      2026-07-24: связывать гостевые заказы по email).
+ * Дубли по товару схлопываем: карта покупается один раз, в списке она
+ * одна, даже если попала в несколько заказов.
+ *
+ * Только сервер: orders/order_items закрыты RLS, читает service_role.
+ */
+export async function getPurchasesForUser(
+  userId: string,
+  email: string
+): Promise<PurchasedItem[]> {
+  const db = getSupabaseAdmin();
+  const select = "order_items(product_id, title, products(slug, file_path))";
+
+  const [byUser, byEmail] = await Promise.all([
+    db.from("orders").select(select).eq("status", "paid").eq("user_id", userId),
+    db
+      .from("orders")
+      .select(select)
+      .eq("status", "paid")
+      .is("user_id", null)
+      .eq("customer_email", email),
+  ]);
+
+  if (byUser.error) throw new Error(`Не удалось загрузить покупки: ${byUser.error.message}`);
+  if (byEmail.error) throw new Error(`Не удалось загрузить покупки: ${byEmail.error.message}`);
+
+  type OrderRow = {
+    order_items:
+      | {
+          product_id: string;
+          title: string;
+          products:
+            | { slug: string | null; file_path: string | null }
+            | { slug: string | null; file_path: string | null }[]
+            | null;
+        }[]
+      | null;
+  };
+
+  const byProduct = new Map<string, PurchasedItem>();
+  for (const order of [...(byUser.data ?? []), ...(byEmail.data ?? [])] as OrderRow[]) {
+    for (const item of order.order_items ?? []) {
+      if (byProduct.has(item.product_id)) continue;
+      const product = Array.isArray(item.products) ? item.products[0] : item.products;
+      byProduct.set(item.product_id, {
+        productId: item.product_id,
+        title: item.title,
+        slug: product?.slug ?? null,
+        filePath: product?.file_path ?? null,
+      });
+    }
+  }
+
+  return Array.from(byProduct.values());
 }

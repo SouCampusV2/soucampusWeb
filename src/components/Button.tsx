@@ -72,6 +72,10 @@ type ButtonProps = {
   rel?: string;
   onClick?: () => void;
   colorClassName?: string;
+  // Только для варианта-<button> (без href): тип для отправки формы и
+  // блокировка на время запроса. У ссылки (href) этих понятий нет.
+  type?: "button" | "submit";
+  disabled?: boolean;
 };
 
 export function Button({
@@ -85,6 +89,8 @@ export function Button({
   rel,
   onClick,
   colorClassName,
+  type = "button",
+  disabled = false,
 }: ButtonProps) {
   // primary и secondary — «таблетки» с горизонтальным паддингом; tertiary
   // это текст-ссылка, ей паддинг не нужен.
@@ -108,7 +114,12 @@ export function Button({
   }
 
   return (
-    <button type="button" className={classes} onClick={onClick}>
+    <button
+      type={type}
+      className={`${classes} disabled:cursor-not-allowed disabled:opacity-60`}
+      onClick={onClick}
+      disabled={disabled}
+    >
       {children}
     </button>
   );

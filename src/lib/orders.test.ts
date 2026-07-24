@@ -38,6 +38,7 @@ describe("orderInputFromLineItems", () => {
     expect(orderInputFromLineItems({ ...paidSession, amount_total: 1500 }, oneItem)).toEqual({
       stripeSessionId: "cs_test_a1b2c3",
       customerEmail: "buyer@example.com",
+      userId: null,
       totalCents: 1500,
       currency: "EUR",
       items: [
@@ -99,6 +100,13 @@ describe("orderInputFromLineItems", () => {
   it("подставляет запасной email, если Stripe его не отдал", () => {
     const noEmail = { ...paidSession, customer_details: null };
     expect(orderInputFromLineItems(noEmail, oneItem)?.customerEmail).toBe("unknown");
+  });
+
+  it("берёт userId из client_reference_id (id аккаунта покупателя)", () => {
+    const withUser = { ...paidSession, client_reference_id: "user-123" };
+    expect(orderInputFromLineItems(withUser, oneItem)?.userId).toBe("user-123");
+    // Без поля (старые сессии/гость) — null, заказ привязан только к email.
+    expect(orderInputFromLineItems(paidSession, oneItem)?.userId).toBeNull();
   });
 
   it("нормализует валюту к верхнему регистру", () => {
