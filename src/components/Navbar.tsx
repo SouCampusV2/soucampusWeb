@@ -104,11 +104,11 @@ export function Navbar() {
 
           {isShopActive ? (
             <div className="ml-6 hidden min-w-0 flex-1 items-center justify-between gap-4 min-[760px]:flex">
-              <div className="flex items-center gap-1 text-sm font-medium text-zinc-600 dark:text-zinc-300">
-                {/* Без data-page-transition: навигация ВНУТРИ магазина не
-                    анимируется — волна квадратиков только на переходах
-                    обратно на сайт (клик по лого SouCampus). Без
-                    выделения "активной вкладки" — сознательно убрано. */}
+              {/* Категории + Support — навигация магазина. Без
+                  data-page-transition: внутри магазина без анимации-волны
+                  (только на выходе через лого SouCampus). Support — после
+                  Free, тем же стилем, что All Map (по просьбе владельца). */}
+              <div className="flex shrink-0 items-center gap-1 text-sm font-medium text-zinc-600 dark:text-zinc-300">
                 <Link
                   href="/shop"
                   className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
@@ -124,94 +124,93 @@ export function Navbar() {
                     {category}
                   </span>
                 ))}
-              </div>
-
-              {/* Заглушка: поиск по товарам — отдельная фича, не готова.
-                  disabled + title честно сообщают об этом, а не прячут
-                  элемент вовсе — форма будущей панели видна уже сейчас. */}
-              <div className="relative min-w-0 max-w-[200px] flex-1">
-                <MagnifyingGlass
-                  size={16}
-                  className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-600"
-                />
-                <input
-                  disabled
-                  title="Search is coming soon"
-                  placeholder="Search"
-                  className="w-full cursor-not-allowed rounded-full border border-zinc-950/[0.08] bg-transparent py-1.5 pl-9 pr-3 text-sm text-zinc-600 placeholder:text-zinc-400 dark:border-zinc-50/[0.08] dark:text-zinc-300 dark:placeholder:text-zinc-600"
-                />
-              </div>
-
-              {/* Support + иконки. gap-1: сами иконки получили p-2 (крупная
-                  зона нажатия), поэтому визуальный зазор даёт padding, а не
-                  большой gap — иначе группа расползлась бы. Иконки 22px,
-                  каждая обёрнута в круглую кликабельную область с hover-фоном. */}
-              <div className="flex shrink-0 items-center gap-1 text-zinc-600 dark:text-zinc-300">
                 <Link
                   href="/support"
-                  className="rounded-full px-3 py-2 text-sm font-medium transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+                  className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
                 >
                   Support
                 </Link>
-                <button
-                  type="button"
-                  disabled
-                  title="Messages are coming soon"
-                  className="flex cursor-not-allowed items-center justify-center rounded-full p-2 text-zinc-700 dark:text-zinc-200"
-                >
-                  <ChatCircleDots size={22} />
-                </button>
-                <button
-                  type="button"
-                  disabled
-                  title="Notifications are coming soon"
-                  className="flex cursor-not-allowed items-center justify-center rounded-full p-2 text-zinc-700 dark:text-zinc-200"
-                >
-                  <Bell size={22} />
-                </button>
-                <Link
-                  href="/cart"
-                  aria-label="Cart"
-                  className="relative flex items-center justify-center rounded-full p-2 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
-                >
-                  <ShoppingCart size={22} />
-                  {count > 0 && (
-                    <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
-                      {count}
-                    </span>
-                  )}
-                </Link>
-                {user ? (
-                  <Link
-                    href="/profile"
-                    aria-label="Profile"
-                    title={displayName}
-                    className="flex max-w-[11rem] items-center gap-2 rounded-full px-2.5 py-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+              </div>
+
+              {/* Поиск + иконки — вместе справа. */}
+              <div className="flex min-w-0 items-center gap-3 text-zinc-600 dark:text-zinc-300">
+                {/* Поиск-заглушка: disabled + title честно сообщают, что
+                    фича не готова, а не прячут элемент. */}
+                <div className="relative min-w-0 max-w-[240px] flex-1">
+                  <MagnifyingGlass
+                    size={16}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-600"
+                  />
+                  <input
+                    disabled
+                    title="Search is coming soon"
+                    placeholder="Search"
+                    className="w-full cursor-not-allowed rounded-full border border-zinc-950/[0.08] bg-transparent py-1.5 pl-9 pr-3 text-sm text-zinc-600 placeholder:text-zinc-400 dark:border-zinc-50/[0.08] dark:text-zinc-300 dark:placeholder:text-zinc-600"
+                  />
+                </div>
+
+                {/* Иконки: gap-1 + p-2 на каждой — крупная зона нажатия. */}
+                <div className="flex shrink-0 items-center gap-1">
+                  <button
+                    type="button"
+                    disabled
+                    title="Messages are coming soon"
+                    className="flex cursor-not-allowed items-center justify-center rounded-full p-2 text-zinc-700 dark:text-zinc-200"
                   >
-                    {avatarUrl ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={avatarUrl}
-                        alt=""
-                        className="h-6 w-6 shrink-0 rounded-full object-cover"
-                      />
-                    ) : (
-                      <UserCircle size={22} className="shrink-0" />
+                    <ChatCircleDots size={22} />
+                  </button>
+                  <button
+                    type="button"
+                    disabled
+                    title="Notifications are coming soon"
+                    className="flex cursor-not-allowed items-center justify-center rounded-full p-2 text-zinc-700 dark:text-zinc-200"
+                  >
+                    <Bell size={22} />
+                  </button>
+                  <Link
+                    href="/cart"
+                    aria-label="Cart"
+                    className="relative flex items-center justify-center rounded-full p-2 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+                  >
+                    <ShoppingCart size={22} />
+                    {count > 0 && (
+                      <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
+                        {count}
+                      </span>
                     )}
-                    <span className="truncate text-sm font-medium">
-                      {displayName}
-                    </span>
                   </Link>
-                ) : (
-                  <Link
-                    href="/login"
-                    aria-label="Sign in"
-                    title="Sign in"
-                    className="flex items-center justify-center rounded-full p-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
-                  >
-                    <UserCircle size={22} />
-                  </Link>
-                )}
+                  {user ? (
+                    <Link
+                      href="/profile"
+                      aria-label="Profile"
+                      title={displayName}
+                      className="flex max-w-[11rem] items-center gap-2 rounded-full px-2.5 py-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+                    >
+                      {avatarUrl ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={avatarUrl}
+                          alt=""
+                          className="h-6 w-6 shrink-0 rounded-full object-cover"
+                        />
+                      ) : (
+                        <UserCircle size={22} className="shrink-0" />
+                      )}
+                      <span className="truncate text-sm font-medium">
+                        {displayName}
+                      </span>
+                    </Link>
+                  ) : (
+                    <Link
+                      href="/login"
+                      aria-label="Sign in"
+                      title="Sign in"
+                      className="flex items-center justify-center rounded-full p-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+                    >
+                      <UserCircle size={22} />
+                    </Link>
+                  )}
+                </div>
               </div>
             </div>
           ) : (

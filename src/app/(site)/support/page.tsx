@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
+import { EnvelopeSimple } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/components/Button";
-import { DISCORD_INVITE } from "@/lib/site";
+import { DISCORD_INVITE, SUPPORT_EMAIL } from "@/lib/site";
 
 // Same display font as every other page hero.
 const displayFont = Unbounded({
@@ -33,13 +34,20 @@ export default function SupportPage() {
         </h1>
         <p className="mt-4 leading-7 text-zinc-600 dark:text-zinc-400">
           Question about an order, a missing download link, or something not
-          working as expected? For now, the fastest way to reach us is
-          Discord — a proper support form is on the way.
+          working as expected? Reach us on Discord for the fastest reply, or
+          email us — a proper support form is on the way.
         </p>
-        <div className="mt-8">
+        <div className="mt-8 flex flex-wrap items-center gap-4">
           <Button href={DISCORD_INVITE} target="_blank" rel="noopener noreferrer">
             Contact on Discord
           </Button>
+          <a
+            href={`mailto:${SUPPORT_EMAIL}`}
+            className="inline-flex items-center gap-2 text-sm font-semibold text-orange-500 underline decoration-2 underline-offset-4 transition-colors hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-500"
+          >
+            <EnvelopeSimple size={18} weight="bold" />
+            {SUPPORT_EMAIL}
+          </a>
         </div>
       </div>
     </main>

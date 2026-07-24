@@ -1,5 +1,9 @@
 export const DISCORD_INVITE = "https://discord.com/invite/EHudSpvEVV";
 
+// Почта поддержки (Hostinger-ящик на своём домене). Показываем на /support
+// и используем как отправителя в письмах (см. docs/SHOP.md → «Почта»).
+export const SUPPORT_EMAIL = "support@soucampus.online";
+
 // Публичный адрес прода. Нужен метаданным (metadataBase), sitemap, robots и
 // JSON-LD, чтобы строить АБСОЛЮТНЫЕ ссылки (og:image, canonical) — соцсети и
 // поисковики относительный путь не понимают. Одно место на весь сайт.

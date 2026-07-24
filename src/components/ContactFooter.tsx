@@ -124,6 +124,44 @@ export function ContactFooter() {
 
             <div>
               <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+                Shop
+              </h3>
+              <ul className="mt-3 space-y-2 text-sm text-zinc-500 dark:text-zinc-400">
+                <li>
+                  <Link
+                    href="/shop"
+                    className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                    data-page-transition="true"
+                  >
+                    All Map
+                  </Link>
+                </li>
+                {/* Категории-заглушки — как в навбаре: пока нет колонки
+                    категории в products, показываем неактивными. */}
+                {["Assets", "Landscape", "Free"].map((category) => (
+                  <li key={category}>
+                    <span
+                      title="Coming soon"
+                      className="cursor-not-allowed select-none text-zinc-400 dark:text-zinc-600"
+                    >
+                      {category}
+                    </span>
+                  </li>
+                ))}
+                <li>
+                  <Link
+                    href="/support"
+                    className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                    data-page-transition="true"
+                  >
+                    Support
+                  </Link>
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
                 Legal
               </h3>
               <ul className="mt-3 space-y-2 text-sm text-zinc-500 dark:text-zinc-400">
