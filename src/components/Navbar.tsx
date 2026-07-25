@@ -13,6 +13,7 @@ import {
   MagnifyingGlass,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
+import { Skeleton } from "@/components/Skeleton";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
 import { useCart } from "@/lib/cart-context";
 import { useUser } from "@/lib/useUser";
@@ -34,7 +35,7 @@ export function Navbar() {
   const pathname = usePathname();
   const [prevPathname, setPrevPathname] = useState(pathname);
   const { count } = useCart();
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
 
   // Ник и аватар — из user_metadata (их синхронизирует ProfileEditForm),
   // чтобы навбар не ходил в БД на каждой странице.
@@ -179,7 +180,17 @@ export function Navbar() {
                       </span>
                     )}
                   </Link>
-                  {user ? (
+                  {/* Пока не знаем, кто залогинен (сессия читается на
+                      клиенте — статический HTML её не содержит), показываем
+                      нейтральную заглушку-кружок вместо заведомо неверной
+                      иконки «войти». Так нет мелькания «войти → аватар».
+                      Размер совпадает с иконкой (p-2 + h-6/w-6), поэтому
+                      подмена не дёргает вёрстку. */}
+                  {userLoading ? (
+                    <div className="flex items-center justify-center p-2" aria-hidden>
+                      <Skeleton className="h-6 w-6 rounded-full" />
+                    </div>
+                  ) : user ? (
                     <Link
                       href="/profile"
                       aria-label="Profile"
