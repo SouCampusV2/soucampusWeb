@@ -42,3 +42,6 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# Тяжёлые оригиналы картинок портфолио — бэкап, в деплой не идут
+assets/portfolio-originals/
