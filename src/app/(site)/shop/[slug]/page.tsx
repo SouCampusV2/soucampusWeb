@@ -2,7 +2,8 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { getAllProducts, getProduct } from "@/lib/products";
+import { Star } from "@phosphor-icons/react/dist/ssr";
+import { getAllProducts, getProduct, getProductStats } from "@/lib/products";
 import { AddToCartButton } from "@/components/AddToCartButton";
 
 // Страницы товаров собираются заранее, как и работы портфолио.
@@ -53,6 +54,14 @@ export default async function ProductPage({
   const product = await getProduct(slug);
   if (!product) notFound();
 
+  // Агрегаты для этого товара (оценки/покупки). Устойчиво: если статистика
+  // недоступна — нули, страница не падает.
+  const stats = (await getProductStats()).get(product.id);
+  const rating = stats?.rating ?? 0;
+  const ratingCount = stats?.ratingCount ?? 0;
+  const salesCount = stats?.salesCount ?? 0;
+  const filledStars = Math.round(rating);
+
   return (
     <main className="w-full mx-auto max-w-[120rem] flex-1 px-6 py-16 sm:px-10 sm:py-28 lg:px-16 xl:px-24 2xl:px-[120px]">
       <Link href="/shop" className="text-sm font-medium text-orange-600">
@@ -63,6 +72,38 @@ export default async function ProductPage({
         {product.title}
       </h1>
       <p className="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400">{product.summary}</p>
+
+      {/* Рейтинг + покупки — под заголовком, как на витрине. */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
+        <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-0.5">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <Star
+                key={i}
+                size={16}
+                weight={i < filledStars ? "fill" : "regular"}
+                aria-hidden
+                className={
+                  i < filledStars
+                    ? "text-orange-400"
+                    : "text-zinc-300 dark:text-zinc-600"
+                }
+              />
+            ))}
+          </div>
+          <span className="text-zinc-500 dark:text-zinc-400">
+            {ratingCount
+              ? `${rating.toFixed(1)} (${ratingCount} rating${ratingCount === 1 ? "" : "s"})`
+              : "Not yet rated"}
+          </span>
+        </div>
+        <span className="text-zinc-400 dark:text-zinc-600" aria-hidden>
+          ·
+        </span>
+        <span className="text-zinc-500 dark:text-zinc-400">
+          {salesCount} {salesCount === 1 ? "purchase" : "purchases"}
+        </span>
+      </div>
 
       {/* Двухколоночная разметка в духе торговых площадок (BuiltByBit и
           подобные): фото + описание — основной контент слева, цена и
