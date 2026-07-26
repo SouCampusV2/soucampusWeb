@@ -96,11 +96,9 @@ export function ProductCard({
             </span>
           </div>
 
-          {typeof salesCount === "number" && salesCount > 0 && (
-            <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
-              {salesCount} {salesCount === 1 ? "purchase" : "purchases"}
-            </span>
-          )}
+          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
+            {salesCount ?? 0} {(salesCount ?? 0) === 1 ? "purchase" : "purchases"}
+          </span>
         </div>
       </div>
     </Link>
