@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import Image from "next/image";
 import { Unbounded } from "next/font/google";
 import { getAllProducts } from "@/lib/products";
+import { ProductCard } from "@/components/ProductCard";
+import { ShopShowcaseRow } from "@/components/ShopShowcaseRow";
 
 // Тот же дисплейный шрифт, что у hero-заголовков остальных страниц
 // (см. DESIGN.md, "Hero-секции страниц").
@@ -29,14 +30,21 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function ShopPage() {
   const products = await getAllProducts();
 
+  // Магазин шире портфолио (тест, по просьбе владельца): контейнер растёт
+  // до 1920px, по бокам паддинг доходит до 120px на широких экранах; дальше
+  // 1920px не расширяется. Портфолио остаётся max-w-6xl.
   return (
-    <main className="w-full mx-auto max-w-6xl flex-1 px-6 pb-16 sm:pb-28">
+    <main className="w-full mx-auto max-w-[120rem] flex-1 overflow-x-clip px-6 pb-16 sm:px-10 sm:pb-28 lg:px-16 xl:px-24 2xl:px-[120px]">
       {/* Hero по общему паттерну: pt-20 от навбара, Unbounded, радиальная
           подсветка акцентом страницы (orange — это витрина, то есть CTA). */}
       <section className="relative pt-20">
+        {/* Центрируем через inset-x-0 + mx-auto, а НЕ left-1/2 + -translate-x-1/2:
+            связка translate+w-full на мобиле давала субпиксельное переполнение
+            по горизонтали (горизонтальный скролл). max-w-full — чтобы декор
+            никогда не был шире контейнера. */}
         <div
           aria-hidden
-          className="absolute left-1/2 -top-32 -z-10 h-[36rem] w-full max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(251,146,60,0.35),transparent_70%)]"
+          className="absolute inset-x-0 -top-32 -z-10 mx-auto h-[36rem] w-full max-w-[90rem] bg-[radial-gradient(circle_at_50%_0%,rgba(251,146,60,0.35),transparent_70%)]"
         />
         <h1
           className={`${displayFont.className} text-4xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
@@ -60,41 +68,32 @@ export default async function ShopPage() {
           or order a custom build.
         </p>
       ) : (
-        <div className="mt-12 grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3">
-          {products.map((product) => (
-            <Link
-              key={product.slug}
-              href={`/shop/${product.slug}`}
-              className="group relative block overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800"
+        <>
+          {/* Витрина-подборка. Пока сортировки по популярности нет —
+              показываем первые товары по sort_order; когда появятся
+              покупки/оценки (подэтапы маркетплейса, docs/SHOP.md), сюда
+              ляжет реальный «топ». «View all» ведёт к полной сетке ниже. */}
+          <ShopShowcaseRow
+            title="Most popular"
+            products={products.slice(0, 8)}
+            viewAllHref="#all-maps"
+            viewAllLabel="View all"
+          />
+
+          {/* Полный каталог — те же карточки, сеткой. */}
+          <section id="all-maps" className="mt-16 scroll-mt-28">
+            <h2
+              className={`${displayFont.className} text-2xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-3xl`}
             >
-              <div className="relative aspect-video w-full">
-                <Image
-                  src={product.image}
-                  alt={product.title}
-                  fill
-                  sizes="(min-width: 1024px) 33vw, (min-width: 640px) 50vw, 100vw"
-                  className="object-cover transition-transform duration-300 group-hover:scale-105"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950/80 via-zinc-950/10 to-transparent" />
-
-                {/* Цена — чип поверх фото, как теги в портфолио: без
-                    dark:-вариантов, по DESIGN.md чипы на фото читаются
-                    одинаково в обеих темах. */}
-                <span className="absolute right-4 top-4 rounded-full bg-[#fbfbff]/90 px-3 py-1 text-xs font-semibold text-zinc-950 backdrop-blur-sm">
-                  {product.price}
-                </span>
-
-                <div className="absolute inset-x-0 bottom-0 p-5 transition-transform duration-300 group-hover:-translate-y-1">
-                  <h3
-                    className={`${displayFont.className} text-lg leading-tight text-orange-400`}
-                  >
-                    {product.title}
-                  </h3>
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+              All maps
+            </h2>
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {products.map((product) => (
+                <ProductCard key={product.slug} product={product} className="h-full" />
+              ))}
+            </div>
+          </section>
+        </>
       )}
     </main>
   );

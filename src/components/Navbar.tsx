@@ -258,8 +258,10 @@ export function Navbar() {
             </div>
           )}
 
-          {/* Гамбургер — только вне магазина: показывать в мобильном
-              дропдауне в режиме магазина нечего (обычных ссылок нет). */}
+          {/* Мобильный гамбургер. В обоих режимах: вне магазина открывает
+              обычную навигацию, в магазине — магазинные вкладки (All Map,
+              категории, Support, поиск). Сами дропдауны — ниже, каждый под
+              свой режим. */}
           {!isShopActive && (
             <button
               onClick={() => setOpen((v) => !v)}
@@ -281,22 +283,76 @@ export function Navbar() {
             </button>
           )}
 
-          {/* Мобильно, в режиме магазина: только рабочая иконка корзины —
-              компактный набор без гамбургера (категории/иконки-заглушки
-              на узком экране пока не показываем, это первая итерация). */}
+          {/* Мобильно, в режиме магазина: корзина + аккаунт (профиль или
+              вход) + гамбургер с магазинной навигацией. Иконки крупнее с
+              зоной нажатия p-2, как на десктопе. */}
           {isShopActive && (
-            <Link
-              href="/cart"
-              aria-label="Cart"
-              className="relative text-zinc-600 dark:text-zinc-300 min-[760px]:hidden"
-            >
-              <ShoppingCart size={22} />
-              {count > 0 && (
-                <span className="absolute -right-2 -top-2 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
-                  {count}
-                </span>
+            <div className="flex items-center gap-1 text-zinc-700 dark:text-zinc-200 min-[760px]:hidden">
+              <Link
+                href="/cart"
+                aria-label="Cart"
+                className="relative flex items-center justify-center rounded-full p-2"
+              >
+                <ShoppingCart size={24} />
+                {count > 0 && (
+                  <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
+                    {count}
+                  </span>
+                )}
+              </Link>
+
+              {userLoading ? (
+                <div className="flex items-center justify-center p-2" aria-hidden>
+                  <Skeleton className="h-6 w-6 rounded-full" />
+                </div>
+              ) : user ? (
+                <Link
+                  href="/profile"
+                  aria-label="Profile"
+                  title={displayName}
+                  className="flex items-center justify-center rounded-full p-2"
+                >
+                  {avatarUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={avatarUrl}
+                      alt=""
+                      className="h-6 w-6 rounded-full object-cover"
+                    />
+                  ) : (
+                    <UserCircle size={24} />
+                  )}
+                </Link>
+              ) : (
+                <Link
+                  href="/login"
+                  aria-label="Sign in"
+                  title="Sign in"
+                  className="flex items-center justify-center rounded-full p-2"
+                >
+                  <UserCircle size={24} />
+                </Link>
               )}
-            </Link>
+
+              <button
+                onClick={() => setOpen((v) => !v)}
+                className="ml-0.5 flex h-9 w-9 cursor-pointer flex-col items-center justify-center gap-1.5"
+                aria-label="Toggle menu"
+              >
+                <motion.span
+                  animate={{ rotate: open ? 45 : 0, y: open ? 6 : 0 }}
+                  className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
+                />
+                <motion.span
+                  animate={{ opacity: open ? 0 : 1 }}
+                  className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
+                />
+                <motion.span
+                  animate={{ rotate: open ? -45 : 0, y: open ? -6 : 0 }}
+                  className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
+                />
+              </button>
+            </div>
           )}
         </nav>
 
@@ -341,6 +397,65 @@ export function Navbar() {
                 </Button>
               </li>
             </motion.ul>
+          )}
+
+          {/* Магазинная выпадашка: те же вкладки, что в пилюле на десктопе
+              (All Map — рабочая ссылка, категории — заглушки «coming soon»,
+              Support — ссылка) плюс поиск-заглушка. Карта/аккаунт уже в
+              верхней строке, поэтому здесь их нет — только навигация. */}
+          {open && isShopActive && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: "auto", opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              className="absolute inset-x-0 top-[calc(100%+8px)] overflow-hidden rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/95 min-[760px]:hidden"
+            >
+              <div className="p-3">
+                <div className="relative">
+                  <MagnifyingGlass
+                    size={16}
+                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-600"
+                  />
+                  <input
+                    disabled
+                    title="Search is coming soon"
+                    placeholder="Search"
+                    className="w-full cursor-not-allowed rounded-full border border-zinc-950/[0.08] bg-transparent py-2 pl-9 pr-3 text-sm text-zinc-600 placeholder:text-zinc-400 dark:border-zinc-50/[0.08] dark:text-zinc-300 dark:placeholder:text-zinc-600"
+                  />
+                </div>
+              </div>
+
+              <ul className="pb-2">
+                <li>
+                  <Link
+                    href="/shop"
+                    onClick={() => setOpen(false)}
+                    className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                  >
+                    All Map
+                  </Link>
+                </li>
+                {SHOP_CATEGORIES.map((category) => (
+                  <li key={category}>
+                    <span
+                      title="Categories are coming soon"
+                      className="block cursor-not-allowed select-none px-6 py-3 text-sm font-medium text-zinc-400 dark:text-zinc-600"
+                    >
+                      {category}
+                    </span>
+                  </li>
+                ))}
+                <li>
+                  <Link
+                    href="/support"
+                    onClick={() => setOpen(false)}
+                    className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                  >
+                    Support
+                  </Link>
+                </li>
+              </ul>
+            </motion.div>
           )}
         </AnimatePresence>
       </header>

@@ -54,7 +54,7 @@ export default async function ProductPage({
   if (!product) notFound();
 
   return (
-    <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-16 sm:py-28">
+    <main className="w-full mx-auto max-w-[120rem] flex-1 px-6 py-16 sm:px-10 sm:py-28 lg:px-16 xl:px-24 2xl:px-[120px]">
       <Link href="/shop" className="text-sm font-medium text-orange-600">
         ← All products
       </Link>

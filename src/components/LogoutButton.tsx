@@ -23,8 +23,8 @@ export function LogoutButton() {
       onClick={handleLogout}
       className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-full border-2 border-orange-500 px-7 text-sm font-semibold text-orange-500 transition-colors hover:border-orange-600 hover:text-orange-600 active:scale-95 dark:border-orange-400 dark:text-orange-400 dark:hover:border-orange-500 dark:hover:text-orange-500 sm:h-14"
     >
-      <SignOut size={18} />
       Log out
+      <SignOut size={18} />
     </button>
   );
 }
