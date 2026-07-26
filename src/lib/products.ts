@@ -1,5 +1,19 @@
 import { getSupabase } from "@/lib/supabase";
 
+// Категории витрины. ВРЕМЕННО: пока в БД нет колонки category, категорию
+// выводим детерминированно из slug (deriveCategory ниже) — «случайно, но
+// стабильно»: у товара всегда одна и та же категория, между рендерами не
+// прыгает. Когда появится реальная колонка (подэтап маркетплейса), заменить
+// derive на row.category — тип Product и фильтрация на витрине не изменятся.
+// «Free» — не тег, а факт цены: цена 0 (см. filterByCategory).
+export type ProductCategory = "assets" | "landscape" | "free";
+
+export const SHOP_CATEGORIES: { slug: ProductCategory; label: string }[] = [
+  { slug: "assets", label: "Assets" },
+  { slug: "landscape", label: "Landscape" },
+  { slug: "free", label: "Free" },
+];
+
 // Товар, каким его видит сайт. Тот же паттерн границы, что у
 // projects.ts/reviews.ts: снаружи — домен сайта (price как готовая
 // строка), внутри — устройство БД (price_label/price_cents). Перевод
@@ -20,7 +34,34 @@ export type Product = {
    */
   priceCents: number;
   currency: string;
+  /** Категория витрины (пока производная от slug, см. deriveCategory). */
+  category: ProductCategory;
 };
+
+// «Случайная, но стабильная» категория из slug: маленький хеш → одна из
+// нехалявных категорий. «free» сюда не попадает — бесплатность определяется
+// ценой, а не тегом (см. filterByCategory), иначе платный товар мог бы
+// оказаться в «Free».
+const TAGGABLE: ProductCategory[] = ["assets", "landscape"];
+
+export function deriveCategory(slug: string): ProductCategory {
+  let hash = 0;
+  for (let i = 0; i < slug.length; i++) {
+    hash = (hash * 31 + slug.charCodeAt(i)) >>> 0;
+  }
+  return TAGGABLE[hash % TAGGABLE.length];
+}
+
+// Фильтр витрины по вкладке навбара. «free» — по цене (0), остальные — по
+// производной категории. Вынесено отдельной чистой функцией, чтобы
+// одинаково работало и на клиенте (ShopCatalog), и в тесте.
+export function filterByCategory(
+  products: Product[],
+  category: ProductCategory,
+): Product[] {
+  if (category === "free") return products.filter((p) => p.priceCents === 0);
+  return products.filter((p) => p.category === category);
+}
 
 type ProductRow = {
   id: string;
@@ -45,6 +86,9 @@ export function rowToProduct(row: ProductRow): Product {
     price: row.price_label,
     priceCents: Number(row.price_cents),
     currency: row.price_currency,
+    // Пока производная от slug; заменить на row.category, когда появится
+    // колонка (тогда добавить category в PRODUCT_FIELDS и ProductRow).
+    category: deriveCategory(row.slug),
   };
 }
 

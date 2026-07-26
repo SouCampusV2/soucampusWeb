@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Unbounded } from "next/font/google";
@@ -17,6 +17,7 @@ import { Skeleton } from "@/components/Skeleton";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
 import { useCart } from "@/lib/cart-context";
 import { useUser } from "@/lib/useUser";
+import { SHOP_CATEGORIES } from "@/lib/products";
 
 // Same display font as the hero headings — the navbar rhymes with them.
 const displayFont = Unbounded({
@@ -24,18 +25,23 @@ const displayFont = Unbounded({
   subsets: ["latin"],
 });
 
-// Категории-заглушки в режиме магазина. Реально работает только "All
-// Map" (ссылка на /shop) — остальное требует колонки категории в
-// products, которой пока нет. Не спрятаны, а честно показаны
-// неактивными (cursor-not-allowed + title), до готовности функционала.
-const SHOP_CATEGORIES = ["Assets", "Landscape", "Free"];
-
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
+  const router = useRouter();
   const [prevPathname, setPrevPathname] = useState(pathname);
+  const [search, setSearch] = useState("");
   const { count } = useCart();
   const { user, loading: userLoading } = useUser();
+
+  // Поиск: уводим на /shop?q=… (каталог там клиентски фильтрует по q).
+  // Пустой запрос — просто на /shop. Меню закрываем (мобильная выпадашка).
+  function submitSearch(e: React.FormEvent) {
+    e.preventDefault();
+    const q = search.trim();
+    router.push(q ? `/shop?q=${encodeURIComponent(q)}` : "/shop");
+    setOpen(false);
+  }
 
   // Ник и аватар — из user_metadata (их синхронизирует ProfileEditForm),
   // чтобы навбар не ходил в БД на каждой странице.
@@ -117,13 +123,13 @@ export function Navbar() {
                   All Map
                 </Link>
                 {SHOP_CATEGORIES.map((category) => (
-                  <span
-                    key={category}
-                    title="Categories are coming soon"
-                    className="cursor-not-allowed select-none px-2 py-1.5 text-zinc-400 dark:text-zinc-600"
+                  <Link
+                    key={category.slug}
+                    href={`/shop?category=${category.slug}`}
+                    className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
                   >
-                    {category}
-                  </span>
+                    {category.label}
+                  </Link>
                 ))}
                 <Link
                   href="/support"
@@ -135,20 +141,22 @@ export function Navbar() {
 
               {/* Поиск + иконки — вместе справа. */}
               <div className="flex min-w-0 items-center gap-3 text-zinc-600 dark:text-zinc-300">
-                {/* Поиск-заглушка: disabled + title честно сообщают, что
-                    фича не готова, а не прячут элемент. */}
-                <div className="relative min-w-0 max-w-[240px] flex-1">
+                {/* Поиск: сабмит уводит на /shop?q=… (см. submitSearch). */}
+                <form onSubmit={submitSearch} className="relative min-w-0 max-w-[240px] flex-1">
                   <MagnifyingGlass
                     size={16}
                     className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-600"
                   />
                   <input
-                    disabled
-                    title="Search is coming soon"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    type="search"
+                    name="q"
+                    aria-label="Search maps"
                     placeholder="Search"
-                    className="w-full cursor-not-allowed rounded-full border border-zinc-950/[0.08] bg-transparent py-1.5 pl-9 pr-3 text-sm text-zinc-600 placeholder:text-zinc-400 dark:border-zinc-50/[0.08] dark:text-zinc-300 dark:placeholder:text-zinc-600"
+                    className="w-full rounded-full border border-zinc-950/[0.08] bg-transparent py-1.5 pl-9 pr-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-400 focus:outline-none dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-600"
                   />
-                </div>
+                </form>
 
                 {/* Иконки: gap-1 + p-2 на каждой — крупная зона нажатия. */}
                 <div className="flex shrink-0 items-center gap-1">
@@ -400,9 +408,8 @@ export function Navbar() {
           )}
 
           {/* Магазинная выпадашка: те же вкладки, что в пилюле на десктопе
-              (All Map — рабочая ссылка, категории — заглушки «coming soon»,
-              Support — ссылка) плюс поиск-заглушка. Карта/аккаунт уже в
-              верхней строке, поэтому здесь их нет — только навигация. */}
+              (All Map + категории + Support) плюс рабочий поиск. Карта и
+              аккаунт уже в верхней строке — здесь только навигация. */}
           {open && isShopActive && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
@@ -411,18 +418,21 @@ export function Navbar() {
               className="absolute inset-x-0 top-[calc(100%+8px)] overflow-hidden rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/95 min-[760px]:hidden"
             >
               <div className="p-3">
-                <div className="relative">
+                <form onSubmit={submitSearch} className="relative">
                   <MagnifyingGlass
                     size={16}
                     className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-600"
                   />
                   <input
-                    disabled
-                    title="Search is coming soon"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    type="search"
+                    name="q"
+                    aria-label="Search maps"
                     placeholder="Search"
-                    className="w-full cursor-not-allowed rounded-full border border-zinc-950/[0.08] bg-transparent py-2 pl-9 pr-3 text-sm text-zinc-600 placeholder:text-zinc-400 dark:border-zinc-50/[0.08] dark:text-zinc-300 dark:placeholder:text-zinc-600"
+                    className="w-full rounded-full border border-zinc-950/[0.08] bg-transparent py-2 pl-9 pr-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-400 focus:outline-none dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-600"
                   />
-                </div>
+                </form>
               </div>
 
               <ul className="pb-2">
@@ -436,13 +446,14 @@ export function Navbar() {
                   </Link>
                 </li>
                 {SHOP_CATEGORIES.map((category) => (
-                  <li key={category}>
-                    <span
-                      title="Categories are coming soon"
-                      className="block cursor-not-allowed select-none px-6 py-3 text-sm font-medium text-zinc-400 dark:text-zinc-600"
+                  <li key={category.slug}>
+                    <Link
+                      href={`/shop?category=${category.slug}`}
+                      onClick={() => setOpen(false)}
+                      className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
                     >
-                      {category}
-                    </span>
+                      {category.label}
+                    </Link>
                   </li>
                 ))}
                 <li>

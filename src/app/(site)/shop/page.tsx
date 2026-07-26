@@ -1,9 +1,9 @@
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Unbounded } from "next/font/google";
 import { getAllProducts } from "@/lib/products";
-import { ProductCard } from "@/components/ProductCard";
-import { ShopShowcaseRow } from "@/components/ShopShowcaseRow";
+import { ShopCatalog } from "@/components/ShopCatalog";
 
 // Тот же дисплейный шрифт, что у hero-заголовков остальных страниц
 // (см. DESIGN.md, "Hero-секции страниц").
@@ -68,32 +68,12 @@ export default async function ShopPage() {
           or order a custom build.
         </p>
       ) : (
-        <>
-          {/* Витрина-подборка. Пока сортировки по популярности нет —
-              показываем первые товары по sort_order; когда появятся
-              покупки/оценки (подэтапы маркетплейса, docs/SHOP.md), сюда
-              ляжет реальный «топ». «View all» ведёт к полной сетке ниже. */}
-          <ShopShowcaseRow
-            title="Most popular"
-            products={products.slice(0, 8)}
-            viewAllHref="#all-maps"
-            viewAllLabel="View all"
-          />
-
-          {/* Полный каталог — те же карточки, сеткой. */}
-          <section id="all-maps" className="mt-16 scroll-mt-28">
-            <h2
-              className={`${displayFont.className} text-2xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-3xl`}
-            >
-              All maps
-            </h2>
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {products.map((product) => (
-                <ProductCard key={product.slug} product={product} className="h-full" />
-              ))}
-            </div>
-          </section>
-        </>
+        // Каталог — клиентский: фильтрует по вкладке (?category) и поиску
+        // (?q) из адреса. Suspense обязателен вокруг useSearchParams, иначе
+        // статическая /shop свалилась бы целиком в client-render.
+        <Suspense>
+          <ShopCatalog products={products} />
+        </Suspense>
       )}
     </main>
   );
