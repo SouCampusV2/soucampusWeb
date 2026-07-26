@@ -41,7 +41,7 @@ Day-to-day work happens on the `dev` branch (Vercel gives it its own Preview URL
 
 ## Project structure
 
-- `src/app/(site)/` — public pages (Next.js App Router): home, `/portfolio`, `/portfolio/[slug]`, `/reviews/[slug]`, `/about`, `/contact`, `/support`, `/shop`, `/shop/[slug]`, `/shop/success`, `/cart`, `/terms`. The `(site)` group exists so these share a layout the future admin will not inherit
+- `src/app/(site)/` — public pages (Next.js App Router): home, `/portfolio`, `/portfolio/[slug]`, `/reviews/[slug]`, `/about`, `/contact`, `/support`, `/shop`, `/shop/[slug]`, `/shop/success`, `/cart`, `/creator/[username]` (public seller profile), `/terms`. The `(site)` group exists so these share a layout the future admin will not inherit
 - `src/app/api/view/` — the visitor-counter endpoint
 - `src/app/api/checkout/`, `src/app/api/stripe/webhook/` — Stripe Checkout session creation and the payment webhook (signature-verified, records orders atomically via a Postgres function)
 - `src/components/` — landing sections and shared UI (`Button`, `ArrowCircle`, `Navbar`, `PageTransition`, ...)
