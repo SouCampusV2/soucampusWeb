@@ -36,6 +36,15 @@ export type Product = {
   currency: string;
   /** Категория витрины (пока производная от slug, см. deriveCategory). */
   category: ProductCategory;
+  // Агрегаты витрины (оценки/покупки). Опциональны: приезжают отдельным
+  // запросом get_product_stats() и подмешиваются в getAllProductsWithStats.
+  // Без них (детальная страница, тесты) карточка просто их не показывает.
+  /** Средний балл 0–5 (0, если оценок нет). */
+  rating?: number;
+  /** Сколько оценок. */
+  ratingCount?: number;
+  /** Сколько раз куплен (оплаченные заказы). */
+  salesCount?: number;
 };
 
 // «Случайная, но стабильная» категория из slug: маленький хеш → одна из
@@ -110,6 +119,57 @@ export async function getAllProducts(): Promise<Product[]> {
   if (error) throw new Error(`Не удалось загрузить товары: ${error.message}`);
 
   return (data ?? []).map(rowToProduct);
+}
+
+export type ProductStats = {
+  rating: number;
+  ratingCount: number;
+  salesCount: number;
+};
+
+// Агрегаты (средний балл, число оценок, число покупок) по всем товарам —
+// одним вызовом security-definer функции get_product_stats() (см. миграцию
+// 20260726120000). Возвращаем Map по product_id для быстрого подмешивания.
+export async function getProductStats(): Promise<Map<string, ProductStats>> {
+  const { data, error } = await getSupabase().rpc("get_product_stats");
+  // Не роняем витрину из-за агрегатов: если функции ещё нет (миграция не
+  // прогнана) или запрос упал — просто отдаём пустую карту, карточки
+  // покажутся без оценок/покупок. Так деплой кода не завязан на тайминг
+  // миграции, а магазин не падает.
+  if (error) {
+    console.warn(`get_product_stats недоступна: ${error.message}`);
+    return new Map();
+  }
+
+  const map = new Map<string, ProductStats>();
+  for (const row of (data ?? []) as {
+    product_id: string;
+    rating_avg: number | string;
+    rating_count: number | string;
+    sales_count: number | string;
+  }[]) {
+    map.set(row.product_id, {
+      rating: Number(row.rating_avg),
+      ratingCount: Number(row.rating_count),
+      salesCount: Number(row.sales_count),
+    });
+  }
+  return map;
+}
+
+// Товары витрины вместе с агрегатами. Для /shop: карточки показывают
+// оценки/покупки, «Most popular» сортируется по продажам.
+export async function getAllProductsWithStats(): Promise<Product[]> {
+  const [products, stats] = await Promise.all([
+    getAllProducts(),
+    getProductStats(),
+  ]);
+  return products.map((p) => {
+    const s = stats.get(p.id);
+    return s
+      ? { ...p, rating: s.rating, ratingCount: s.ratingCount, salesCount: s.salesCount }
+      : p;
+  });
 }
 
 export async function getProduct(slug: string): Promise<Product | null> {

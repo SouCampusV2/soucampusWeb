@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Unbounded } from "next/font/google";
-import { getAllProducts } from "@/lib/products";
+import { getAllProducts, getAllProductsWithStats } from "@/lib/products";
 import { ShopCatalog } from "@/components/ShopCatalog";
 
 // Тот же дисплейный шрифт, что у hero-заголовков остальных страниц
@@ -28,7 +28,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ShopPage() {
-  const products = await getAllProducts();
+  // Со статистикой: карточки показывают оценки/покупки, «Most popular»
+  // сортируется по продажам (см. ShopCatalog).
+  const products = await getAllProductsWithStats();
 
   // Магазин шире портфолио (тест, по просьбе владельца): контейнер растёт
   // до 1920px, по бокам паддинг доходит до 120px на широких экранах; дальше

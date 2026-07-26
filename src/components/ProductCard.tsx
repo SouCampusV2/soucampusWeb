@@ -14,26 +14,20 @@ const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 // (DESIGN.md): `rounded-2xl`, обводка zinc, hover — оранжевая рамка +
 // лёгкий зум фото, без scale самой карточки.
 //
-// rating/ratingCount/salesCount — задел под подэтапы маркетплейса (оценки
-// и покупки, см. docs/SHOP.md). В БД их пока нет, поэтому они опциональны:
-// без данных показываем честные нейтральные состояния (пустые звёзды +
-// «Not yet rated», покупки скрыты) — расположение то же, выдуманных цифр
-// нет. Когда колонки появятся, значения просто начнут прокидываться сюда.
+// Оценки/покупки берутся из самого product (подмешиваются в
+// getAllProductsWithStats через get_product_stats). Без данных — честные
+// нейтральные состояния: пустые звёзды + «Not yet rated», покупки скрыты,
+// пока их нет. Никаких выдуманных цифр.
 export function ProductCard({
   product,
   creator = { name: "SouCampus" },
-  rating,
-  ratingCount,
-  salesCount,
   className = "",
 }: {
   product: Product;
   creator?: { name: string; href?: string };
-  rating?: number;
-  ratingCount?: number;
-  salesCount?: number;
   className?: string;
 }) {
+  const { rating, ratingCount, salesCount } = product;
   const filledStars = Math.round(rating ?? 0);
 
   return (
@@ -102,7 +96,7 @@ export function ProductCard({
             </span>
           </div>
 
-          {typeof salesCount === "number" && (
+          {typeof salesCount === "number" && salesCount > 0 && (
             <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
               {salesCount} {salesCount === 1 ? "purchase" : "purchases"}
             </span>

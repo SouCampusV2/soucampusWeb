@@ -32,11 +32,17 @@ export function ShopCatalog({ products }: { products: Product[] }) {
   const isFiltering = category !== null || query.length > 0;
 
   if (!isFiltering) {
+    // «Most popular» — по числу покупок (salesCount), при равенстве держим
+    // исходный порядок (sort_order из БД). Пока продаж нет — это просто
+    // первые по sort_order.
+    const popular = [...products]
+      .sort((a, b) => (b.salesCount ?? 0) - (a.salesCount ?? 0))
+      .slice(0, 8);
     return (
       <>
         <ShopShowcaseRow
           title="Most popular"
-          products={products.slice(0, 8)}
+          products={popular}
           viewAllHref="#all-maps"
           viewAllLabel="View all"
         />

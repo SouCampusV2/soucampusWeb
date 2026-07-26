@@ -12,7 +12,9 @@ import {
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getPurchasesForUser, signedDownloadUrl } from "@/lib/orders";
 import { readProfile } from "@/lib/profiles";
+import { readUserRatings } from "@/lib/ratings";
 import { LogoutButton } from "@/components/LogoutButton";
+import { RatingStars } from "@/components/RatingStars";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -52,6 +54,9 @@ export default async function ProfilePage() {
       url: p.filePath ? await signedDownloadUrl(p.filePath) : null,
     }))
   );
+
+  // Свои оценки — чтобы подсветить уже выставленные звёзды у покупок.
+  const userRatings = await readUserRatings(supabase, user.id);
 
   return (
     <main className="mx-auto w-full max-w-6xl px-6">
@@ -157,6 +162,17 @@ export default async function ProfilePage() {
                           {item.title}
                         </span>
                       )}
+
+                      {/* Оценка купленной карты — своя, интерактивная. */}
+                      <div className="mt-1.5 flex items-center gap-2">
+                        <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                          Your rating
+                        </span>
+                        <RatingStars
+                          productId={item.productId}
+                          initialStars={userRatings.get(item.productId) ?? 0}
+                        />
+                      </div>
                     </div>
 
                     {item.url ? (
