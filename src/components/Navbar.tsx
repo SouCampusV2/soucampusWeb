@@ -18,6 +18,12 @@ import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
 import { useCart } from "@/lib/cart-context";
 import { useUser } from "@/lib/useUser";
 import { SHOP_CATEGORIES } from "@/lib/products";
+import { createSupabaseBrowser } from "@/lib/supabase-browser";
+
+// Публичная страница текущего продавца. Пока продавец один (SouCampus),
+// поэтому и «мой профиль», и «мои ресурсы» ведут на его витрину. Когда
+// появятся creator_id у товаров и хэндлы профилей, тут будет свой на юзера.
+const CREATOR_HREF = "/creator/soucampus";
 
 // Same display font as the hero headings — the navbar rhymes with them.
 const displayFont = Unbounded({
@@ -40,6 +46,14 @@ export function Navbar() {
     e.preventDefault();
     const q = search.trim();
     router.push(q ? `/shop?q=${encodeURIComponent(q)}` : "/shop");
+    setOpen(false);
+  }
+
+  async function handleLogout() {
+    const supabase = createSupabaseBrowser();
+    await supabase.auth.signOut();
+    router.refresh();
+    router.push("/shop");
     setOpen(false);
   }
 
@@ -201,26 +215,57 @@ export function Navbar() {
                       <Skeleton className="h-6 w-6 rounded-full" />
                     </div>
                   ) : user ? (
-                    <Link
-                      href="/profile"
-                      aria-label="Profile"
-                      title={displayName}
-                      className="flex max-w-[11rem] items-center gap-2 rounded-full px-2.5 py-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
-                    >
-                      {avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={avatarUrl}
-                          alt=""
-                          className="h-6 w-6 shrink-0 rounded-full object-cover"
-                        />
-                      ) : (
-                        <UserCircle size={22} className="shrink-0" />
-                      )}
-                      <span className="truncate text-sm font-medium">
-                        {displayName}
-                      </span>
-                    </Link>
+                    // Наведение раскрывает меню (Settings / Your resources /
+                    // Log out); клик по самому профилю ведёт на публичную
+                    // страницу продавца. group + group-hover — без JS-стейта;
+                    // focus-within — чтобы открывалось и с клавиатуры. pt-2 на
+                    // обёртке меню — прозрачный «мостик», чтобы курсор не терял
+                    // hover в зазоре между профилем и карточкой.
+                    <div className="group relative">
+                      <Link
+                        href={CREATOR_HREF}
+                        title={displayName}
+                        className="flex max-w-[11rem] items-center gap-2 rounded-full px-2.5 py-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+                      >
+                        {avatarUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={avatarUrl}
+                            alt=""
+                            className="h-6 w-6 shrink-0 rounded-full object-cover"
+                          />
+                        ) : (
+                          <UserCircle size={22} className="shrink-0" />
+                        )}
+                        <span className="truncate text-sm font-medium">
+                          {displayName}
+                        </span>
+                      </Link>
+
+                      <div className="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                        <div className="w-48 overflow-hidden rounded-2xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 py-1 shadow-lg backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/95">
+                          <Link
+                            href="/profile"
+                            className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+                          >
+                            Settings
+                          </Link>
+                          <Link
+                            href={CREATOR_HREF}
+                            className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+                          >
+                            Your resources
+                          </Link>
+                          <button
+                            type="button"
+                            onClick={handleLogout}
+                            className="block w-full cursor-pointer px-4 py-2.5 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+                          >
+                            Log out
+                          </button>
+                        </div>
+                      </div>
+                    </div>
                   ) : (
                     <Link
                       href="/login"
