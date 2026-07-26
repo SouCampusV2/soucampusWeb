@@ -70,7 +70,9 @@ export function Navbar() {
     // аккаунта), поэтому на них тоже магазинный навбар, а не портфолио.
     pathname === "/login" ||
     pathname === "/signup" ||
-    pathname.startsWith("/profile");
+    pathname.startsWith("/profile") ||
+    // Профиль продавца — часть магазина (его витрина), тот же навбар.
+    pathname.startsWith("/creator");
 
   // PageTransition intercepts nav-link clicks in the capture phase and
   // calls stopPropagation (see PageTransition.tsx) so its own delayed

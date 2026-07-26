@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import { Star } from "@phosphor-icons/react/dist/ssr";
+import { Star, SealCheck } from "@phosphor-icons/react/dist/ssr";
 import { getAllProducts, getProduct, getProductStats } from "@/lib/products";
 import { AddToCartButton } from "@/components/AddToCartButton";
 
@@ -71,6 +71,16 @@ export default async function ProductPage({
       <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl">
         {product.title}
       </h1>
+      <p className="mt-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+        by{" "}
+        <Link
+          href="/creator/soucampus"
+          className="inline-flex items-center gap-1 text-orange-600 hover:underline dark:text-orange-400"
+        >
+          SouCampus
+          <SealCheck size={13} weight="fill" aria-hidden />
+        </Link>
+      </p>
       <p className="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400">{product.summary}</p>
 
       {/* Рейтинг + покупки — под заголовком, как на витрине. */}
@@ -142,6 +152,7 @@ export default async function ProductPage({
 
             <div className="mt-6">
               <AddToCartButton
+                productId={product.id}
                 product={{
                   slug: product.slug,
                   title: product.title,
