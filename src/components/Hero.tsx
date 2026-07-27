@@ -3,6 +3,7 @@
 import { motion } from "motion/react";
 import { Unbounded } from "next/font/google";
 import { Button } from "@/components/Button";
+import { PageGlow } from "@/components/PageGlow";
 
 // KUniforma (как у HoneyFrost) — проприетарный шрифт, файла нет.
 // Unbounded — крупный геометричный шрифт, похожий по духу, используем
@@ -14,11 +15,8 @@ const displayFont = Unbounded({
 
 export function Hero() {
   return (
-    <section className="relative flex flex-col items-center px-6 pb-10 pt-20 text-center">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[772px] w-full max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(249,115,22,0.35),transparent_70%)]"
-      />
+    <section className="relative flex flex-col items-center overflow-x-clip px-6 pb-10 pt-20 text-center">
+      <PageGlow color="rgba(249,115,22,0.35)" />
 
       <motion.h1
         initial={{ opacity: 0, y: 16 }}

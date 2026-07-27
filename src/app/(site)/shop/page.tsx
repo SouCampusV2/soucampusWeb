@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Unbounded } from "next/font/google";
 import { getAllProducts, getAllProductsWithStats } from "@/lib/products";
 import { ShopCatalog } from "@/components/ShopCatalog";
+import { PageGlow } from "@/components/PageGlow";
 
 // Тот же дисплейный шрифт, что у hero-заголовков остальных страниц
 // (см. DESIGN.md, "Hero-секции страниц").
@@ -36,18 +37,16 @@ export default async function ShopPage() {
   // до 1920px, по бокам паддинг доходит до 120px на широких экранах; дальше
   // 1920px не расширяется. Портфолио остаётся max-w-6xl.
   return (
-    <main className="w-full mx-auto max-w-[120rem] flex-1 overflow-x-clip px-6 pb-16 sm:px-10 sm:pb-28 lg:px-16 xl:px-24 2xl:px-[120px]">
-      {/* Hero по общему паттерну: pt-20 от навбара, Unbounded, радиальная
-          подсветка акцентом страницы (orange — это витрина, то есть CTA). */}
+    // Клип живёт на полноширинном <main>, а ограничение ширины — на
+    // обёртке контента внутри: на одном элементе они конфликтуют, и
+    // max-w отрезал бы свечение по бокам (разбор — в PageGlow).
+    <main className="relative w-full flex-1 overflow-x-clip">
+      {/* Подсветка акцентом страницы (orange — это витрина, то есть CTA). */}
+      <PageGlow color="rgba(251,146,60,0.35)" />
+
+      <div className="mx-auto max-w-[120rem] px-6 pb-16 sm:px-10 sm:pb-28 lg:px-16 xl:px-24 2xl:px-[120px]">
+      {/* Hero по общему паттерну: pt-20 от навбара, Unbounded. */}
       <section className="relative pt-20">
-        {/* Центрируем через inset-x-0 + mx-auto, а НЕ left-1/2 + -translate-x-1/2:
-            связка translate+w-full на мобиле давала субпиксельное переполнение
-            по горизонтали (горизонтальный скролл). max-w-full — чтобы декор
-            никогда не был шире контейнера. */}
-        <div
-          aria-hidden
-          className="absolute inset-x-0 -top-32 -z-10 mx-auto h-[36rem] w-full max-w-[90rem] bg-[radial-gradient(circle_at_50%_0%,rgba(251,146,60,0.35),transparent_70%)]"
-        />
         <h1
           className={`${displayFont.className} text-4xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
         >
@@ -77,6 +76,7 @@ export default async function ShopPage() {
           <ShopCatalog products={products} />
         </Suspense>
       )}
+      </div>
     </main>
   );
 }

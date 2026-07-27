@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
 import { FileText } from "@phosphor-icons/react/dist/ssr";
 import { BASE_RATE, HIGH_RATE, HIGH_RATE_THRESHOLD } from "@/lib/pricing";
+import { PageGlow } from "@/components/PageGlow";
 
 // Explains the same formula BuildEstimator.tsx (Contact page) actually
 // computes with — the rate/threshold numbers are imported from
@@ -52,14 +53,13 @@ const SECTIONS = [
 
 export default function TermsPage() {
   return (
-    <main className="w-full mx-auto max-w-6xl px-6">
-      {/* Hero — same radial-glow pattern as every other page (orange, the
-          site's primary accent, since this page isn't tied to one section). */}
-      <section className="relative pb-8 pt-20 sm:pb-16">
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[772px] w-full max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(251,146,60,0.35),transparent_70%)]"
-        />
+    // Клип — на полноширинном <main>, ограничение ширины уехало на секции
+    // внутри: иначе max-w-6xl отрезал бы свечение по бокам (см. PageGlow).
+    <main className="relative w-full overflow-x-clip px-6">
+      {/* Hero — общее свечение сайта (orange, основной акцент: страница не
+          привязана к одной секции). */}
+      <section className="relative mx-auto max-w-6xl pb-8 pt-20 sm:pb-16">
+        <PageGlow color="rgba(251,146,60,0.35)" />
         <span className="text-sm font-semibold text-orange-500">Legal</span>
         <h1
           className={`${displayFont.className} mt-3 text-4xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
@@ -75,7 +75,7 @@ export default function TermsPage() {
       {/* Real content, not a placeholder like the section below — linked
           directly from the "How the price is calculated" badge on the
           Contact page's instant estimator (BuildEstimator.tsx). */}
-      <section id="pricing" className="scroll-mt-24 py-10 sm:py-16">
+      <section id="pricing" className="mx-auto max-w-6xl scroll-mt-24 py-10 sm:py-16">
         <span className="text-sm font-semibold text-orange-500">Pricing</span>
         <h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
           How pricing works
@@ -102,7 +102,7 @@ export default function TermsPage() {
         </div>
       </section>
 
-      <section className="py-16 sm:py-28">
+      <section className="mx-auto max-w-6xl py-16 sm:py-28">
         <div className="mx-auto max-w-2xl rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-900 sm:p-12">
           <FileText size={32} className="text-orange-400" weight="duotone" />
           <h2 className="mt-4 text-lg font-semibold text-zinc-950 dark:text-zinc-50">

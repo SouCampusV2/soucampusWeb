@@ -8,6 +8,7 @@ import { Unbounded } from "next/font/google";
 import { ArrowCircle } from "@/components/ArrowCircle";
 import { ArrowButton } from "@/components/ArrowButton";
 import { Button } from "@/components/Button";
+import { PageGlow } from "@/components/PageGlow";
 import { PORTFOLIO_HERO_SIZE, type Project } from "@/lib/projects";
 
 // Same display font as the homepage Hero — rhymes the two "hero" headings.
@@ -81,20 +82,8 @@ export function PortfolioHero({ projects: allProjects }: Props) {
   };
 
   return (
-    <section className="relative pt-20">
-      {/* w-screen, not w-full: this section (unlike Hero.tsx/Contact's hero)
-          lives nested inside /portfolio's own padded <main className="px-6">,
-          so a percentage width here would resolve against the section's own
-          (narrower-than-viewport) box instead of the real viewport — on
-          mobile, where <main>'s max-w-6xl cap doesn't kick in, that shortfall
-          (~48px, main's own left+right px-6) was visible as the gradient
-          not quite reaching the screen edges. main's padding is symmetric,
-          so the section's horizontal center still lines up with the
-          viewport's, and left-1/2 -translate-x-1/2 centers correctly. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[676px] w-screen max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(163,230,53,0.35),transparent_70%)]"
-      />
+    <section className="relative overflow-x-clip pt-20">
+      <PageGlow color="rgba(163,230,53,0.35)" />
 
       <div className="flex items-end justify-between gap-6">
         <div>

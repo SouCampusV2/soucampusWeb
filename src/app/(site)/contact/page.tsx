@@ -5,6 +5,7 @@ import { Skeleton } from "@/components/Skeleton";
 import { ArrowCircle } from "@/components/ArrowCircle";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { BuildEstimator } from "@/components/BuildEstimator";
+import { PageGlow } from "@/components/PageGlow";
 import { DISCORD_INVITE } from "@/lib/site";
 
 // Тот же дисплейный шрифт, что у Hero на главной — тут используется на
@@ -70,21 +71,13 @@ export default function ContactPage() {
       {/* Hero — same glow technique as the homepage Hero: a radial gradient
           bled up behind the navbar (-top-32) instead of a flat background,
           so there's no white gap above/behind the floating navbar pill. */}
-      <section className="relative pb-8 pt-20 sm:pb-16">
-        {/* Fixed height (h-[42rem], same as the homepage Hero.tsx), not
-            tied to the section's own height — the gradient is
-            transparent past 70% of its radius by design, which read fine
-            stretched over the old, shorter hero, but once the calculator
-            card made this section much taller, stretching the same glow
-            to match created a visible hard edge partway down (the glow's
-            own natural falloff, just relocated somewhere more visible).
-            A fixed size keeps it doing its original job — lighting up the
-            navbar/heading area — without trying to cover the whole,
-            now-taller section. */}
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -top-32 left-1/2 -z-10 h-[772px] w-full max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(59,130,246,0.35),transparent_70%)]"
-        />
+      {/* Высота свечения фиксированная и НЕ тянется за высотой секции: у
+          градиента спад к прозрачности на 70% радиуса, и растянутый на
+          высокую секцию (её сильно удлинил калькулятор) он давал видимую
+          жёсткую грань посередине. Его работа — подсветить навбар и
+          заголовок, а не закрыть секцию целиком. */}
+      <section className="relative overflow-x-clip pb-8 pt-20 sm:pb-16">
+        <PageGlow color="rgba(59,130,246,0.35)" />
         <div className="mx-auto grid max-w-6xl items-start gap-10 px-6 sm:grid-cols-2">
           <div>
             <span className="text-sm font-semibold text-blue-500">

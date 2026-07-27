@@ -10,10 +10,14 @@ const COLS_DESKTOP = 16;
 // phone gets ~23px cells, which reads as fussy confetti rather than the
 // bold blocky wave this effect is going for on desktop.
 const COLS_MOBILE = 8;
-const ROW_DELAY = 0.02;
-const JITTER = 0.14;
-const CELL_DURATION = 0.22;
-const HOLD_MS = 100;
+// Темп волны. Крутились вниз дважды (2026-07-27): переход ощущался
+// медленным, а он стоит на пути КАЖДОЙ навигации по навбару — то есть
+// его длительность пользователь платит чаще всего остального на сайте.
+// Полная волна = (rows-1)·ROW_DELAY + JITTER + CELL_DURATION.
+const ROW_DELAY = 0.014;
+const JITTER = 0.1;
+const CELL_DURATION = 0.16;
+const HOLD_MS = 60;
 const EMPTY_RATIO = 0.3; // доля клеток, которые остаются "пустыми" (еле видны)
 
 // Акцентные клетки — не один плоский orange-400, а вразнобой из нескольких

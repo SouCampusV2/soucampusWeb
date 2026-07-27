@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
 import { AuthForm } from "@/components/AuthForm";
+import { PageGlow } from "@/components/PageGlow";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -16,10 +17,11 @@ export default async function SignupPage({
   searchParams: Promise<{ next?: string }>;
 }) {
   const { next } = await searchParams;
+  // Ширину держит контент внутри (max-w-md) — см. комментарий в /profile.
   return (
-    <main className="mx-auto w-full max-w-6xl px-6">
+    <main className="relative w-full overflow-x-clip px-6">
+      <PageGlow color="rgba(249,115,22,0.28)" />
       <section className="relative pb-28 pt-20">
-        <div className="absolute -top-32 left-1/2 -z-10 h-[36rem] w-full max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(249,115,22,0.28),transparent_70%)]" />
 
         <div className="mx-auto max-w-md text-center">
           <h1

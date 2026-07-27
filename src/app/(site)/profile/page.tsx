@@ -15,6 +15,7 @@ import { readProfile } from "@/lib/profiles";
 import { readUserRatings } from "@/lib/ratings";
 import { LogoutButton } from "@/components/LogoutButton";
 import { RatingStars } from "@/components/RatingStars";
+import { PageGlow } from "@/components/PageGlow";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -58,10 +59,13 @@ export default async function ProfilePage() {
   // Свои оценки — чтобы подсветить уже выставленные звёзды у покупок.
   const userRatings = await readUserRatings(supabase, user.id);
 
+  // Ширину ограничивает контент внутри (max-w-md), а НЕ <main>: клип
+  // горизонтального вылета обязан жить на полноширинном элементе, иначе он
+  // же и обрежет w-screen-свечение по бокам (разбор — в PageGlow).
   return (
-    <main className="mx-auto w-full max-w-6xl px-6">
+    <main className="relative w-full overflow-x-clip px-6">
+      <PageGlow color="rgba(249,115,22,0.28)" />
       <section className="relative pb-28 pt-20">
-        <div className="absolute -top-32 left-1/2 -z-10 h-[36rem] w-full max-w-[90rem] -translate-x-1/2 bg-[radial-gradient(circle_at_50%_0%,rgba(249,115,22,0.28),transparent_70%)]" />
 
         <div className="mx-auto max-w-md">
           <h1
