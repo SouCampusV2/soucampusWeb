@@ -25,7 +25,8 @@ It's also my hands-on way of learning modern web development — going from "I k
 
 **Planned, not wired up yet:**
 
-- Supabase Auth + a mini content admin (content is edited through the Supabase Table Editor for now) + a "my purchases" profile page for the shop
+- A mini content admin (content is edited through the Supabase Table Editor for now)
+- Creator upload flow — every user already has a public profile, but new maps still go through me
 - Docker, once there's an actual reason for it
 
 ## Getting started
@@ -67,5 +68,5 @@ Day-to-day work happens on the `dev` branch (Vercel gives it its own Preview URL
 3. ~~Real content everywhere~~ — done (Discord invite, portfolio, reviews, About me, FAQ, stats, pricing); only the author's photo is still a placeholder
 4. ~~Mobile/tablet responsive pass~~ — done (see `docs/RESPONSIVE_PLAN.md` for the full breakdown; rules still need porting into `docs/DESIGN.md`)
 5. Mini content admin backed by Supabase — **in progress**: the site now reads everything from Postgres and content is edited in the Supabase Table Editor. A custom `/admin` comes after a stretch of living with the Table Editor, so the requirements are observed rather than guessed
-6. Shop: ~~catalog~~, ~~cart~~, ~~Stripe checkout~~, ~~Supabase Auth + accounts~~, ~~"my purchases" + downloads in the profile~~, ~~marketplace storefront (Most popular row, redesigned cards, working categories + search, real ratings & purchase counts)~~ — done and live in production; buying requires an account. Next: creator uploads → creators → subscription, then the content admin
+6. Shop: ~~catalog~~, ~~cart~~, ~~Stripe checkout~~, ~~Supabase Auth + accounts~~, ~~"my purchases" + downloads in the profile~~, ~~marketplace storefront (Most popular row, redesigned cards, working categories + search, real ratings & purchase counts)~~, ~~multi-creator profiles + product galleries~~ — done and live in production; buying requires an account, and every user has a public creator profile. Next: creator uploads → subscription, then the content admin
 7. Docker, ~~tests~~ (unit suite in CI since 2026-07-20), deeper analytics (e.g. PostHog)

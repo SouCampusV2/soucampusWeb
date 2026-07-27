@@ -255,7 +255,23 @@ export function Navbar() {
                             скруглённых краёв — сверху/снизу оставалась
                             белая полоска. overflow-hidden и так вписывает
                             прямоугольную подсветку в радиус карточки. */}
-                        <div className="w-48 overflow-hidden rounded-2xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 shadow-lg backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/95">
+                        {/* Стекло по тому же рецепту, что карточка
+                            калькулятора (BuildEstimator): сильный блюр по
+                            фону + очень слабая заливка + светлая грань.
+                            Прежние bg/95 давали почти непрозрачную
+                            подложку — «матовый пластик», а не стекло:
+                            сквозь неё ничего не просвечивало, и блюру
+                            нечего было размывать. Блик в левом верхнем
+                            углу — потому что ровная заливка читается как
+                            пластик, настоящее стекло ловит свет
+                            неравномерно. */}
+                        <div className="relative w-48 overflow-hidden rounded-2xl border border-white/50 bg-white/20 shadow-lg shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-zinc-900/30">
+                          <div
+                            aria-hidden
+                            // -z-10: блик позиционирован, пункты меню — нет,
+                            // поэтому без этого он бы рисовался ПОВЕРХ текста.
+                            className="pointer-events-none absolute -left-1/4 -top-1/3 -z-10 h-2/3 w-2/3 rounded-full bg-white/40 blur-3xl dark:bg-white/10"
+                          />
                           <Link
                             href="/profile/edit"
                             className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
