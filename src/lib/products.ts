@@ -1,4 +1,5 @@
 import { getSupabase } from "@/lib/supabase";
+import { getCreatorsById } from "@/lib/creators";
 
 // Категории витрины. ВРЕМЕННО: пока в БД нет колонки category, категорию
 // выводим детерминированно из slug (deriveCategory ниже) — «случайно, но
@@ -25,7 +26,17 @@ export type Product = {
   title: string;
   summary: string;
   description: string;
+  /** Обложка: превью карточки и og:image. */
   image: string;
+  /**
+   * Галерея: обложка + дополнительные скриншоты из product_images, уже
+   * отсортированные по position. Всегда непустой массив — первый элемент
+   * это image. Так и странице товара, и карточке витрины не нужно
+   * склеивать обложку со списком у себя.
+   */
+  images: string[];
+  /** ISO-дата добавления — по ней строится подборка «Recently added». */
+  createdAt: string;
   /** Готовая строка для показа: "€15". */
   price: string;
   /**
@@ -36,6 +47,14 @@ export type Product = {
   currency: string;
   /** Категория витрины (пока производная от slug, см. deriveCategory). */
   category: ProductCategory;
+  /** Автор карты — profiles.id. null у карт, чей автор удалил аккаунт. */
+  creatorId: string | null;
+  /**
+   * Профиль автора для показа на карточке. Опционален: приезжает
+   * отдельным запросом (см. getCreatorsById — связать вложенной выборкой
+   * нельзя, profiles закрыта RLS) и подмешивается только там, где нужен.
+   */
+  creator?: { displayName: string; handle: string; isVerified: boolean };
   // Агрегаты витрины (оценки/покупки). Опциональны: приезжают отдельным
   // запросом get_product_stats() и подмешиваются в getAllProductsWithStats.
   // Без них (детальная страница, тесты) карточка просто их не показывает.
@@ -82,9 +101,27 @@ type ProductRow = {
   price_label: string;
   price_cents: number;
   price_currency: string;
+  created_at: string;
+  /** Появилась вместе с мульти-креатором; у старых баз колонки нет. */
+  creator_id?: string | null;
+  /**
+   * Вложенная выборка PostgREST по внешнему ключу (product_images).
+   * Опциональна: если миграции галереи ещё нет, Supabase вернёт строки
+   * без этого поля — товар всё равно соберётся, просто с одной обложкой.
+   */
+  product_images?: { url: string; position: number }[] | null;
 };
 
 export function rowToProduct(row: ProductRow): Product {
+  // Порядок галереи задаём здесь, а не в запросе: сортировка вложенной
+  // выборки в PostgREST многословна, а список из пары-тройки картинок
+  // дешевле упорядочить на месте. Обложка всегда первая — она уже
+  // выбрана владельцем как главный кадр.
+  const extra = [...(row.product_images ?? [])]
+    .sort((a, b) => a.position - b.position)
+    .map((i) => i.url)
+    .filter((url) => url !== row.image_url);
+
   return {
     id: row.id,
     slug: row.slug,
@@ -92,33 +129,59 @@ export function rowToProduct(row: ProductRow): Product {
     summary: row.summary,
     description: row.description,
     image: row.image_url,
+    images: [row.image_url, ...extra],
+    createdAt: row.created_at,
     price: row.price_label,
     priceCents: Number(row.price_cents),
     currency: row.price_currency,
     // Пока производная от slug; заменить на row.category, когда появится
     // колонка (тогда добавить category в PRODUCT_FIELDS и ProductRow).
     category: deriveCategory(row.slug),
+    creatorId: row.creator_id ?? null,
   };
 }
 
-// Одна строка с колонками на оба запроса — getAllProducts и getProduct
-// не разъедутся между собой (тот же приём, что PROJECT_FIELDS).
-const PRODUCT_FIELDS =
-  "id, slug, title, summary, description, image_url, price_label, price_cents, price_currency";
+// Общие списки колонок на оба запроса — getAllProducts и getProduct не
+// разъедутся между собой (тот же приём, что PROJECT_FIELDS).
+// Колонки, которые есть в products с самого начала.
+const PRODUCT_FIELDS_NO_IMAGES =
+  "id, slug, title, summary, description, image_url, price_label, price_cents, price_currency, created_at";
+
+// Полный набор: то же плюс автор (creator_id) и вложенная выборка
+// галереи. product_images(...) — PostgREST сам подтягивает связанные
+// строки по внешнему ключу одним запросом, без второго похода в базу и
+// без ручного join'а на нашей стороне.
+const PRODUCT_FIELDS = `${PRODUCT_FIELDS_NO_IMAGES}, creator_id, product_images(url, position)`;
+
+// Запасной путь на случай, когда миграции галереи/автора в этой базе ещё
+// не прогнаны. PostgREST на незнакомую колонку или связь отвечает
+// ошибкой и НЕ отдаёт строки вовсе — то есть магазин лёг бы целиком
+// из-за необязательного поля. Деплой кода не должен зависеть от тайминга
+// миграции: тот же принцип, что у get_product_stats и public_profiles.
+function isMissingOptional(message: string): boolean {
+  return message.includes("product_images") || message.includes("creator_id");
+}
 
 // Фильтр is_published здесь — для ясности намерения; настоящая защита —
 // RLS-политика "public read published": анониму база неопубликованные
 // строки не отдаст, даже если этот фильтр однажды забудут.
 export async function getAllProducts(): Promise<Product[]> {
-  const { data, error } = await getSupabase()
-    .from("products")
-    .select(PRODUCT_FIELDS)
-    .eq("is_published", true)
-    .order("sort_order", { ascending: true });
+  const query = (fields: string) =>
+    getSupabase()
+      .from("products")
+      .select(fields)
+      .eq("is_published", true)
+      .order("sort_order", { ascending: true });
+
+  let { data, error } = await query(PRODUCT_FIELDS);
+  if (error && isMissingOptional(error.message)) {
+    console.warn(`Необязательные поля товара недоступны: ${error.message}`);
+    ({ data, error } = await query(PRODUCT_FIELDS_NO_IMAGES));
+  }
 
   if (error) throw new Error(`Не удалось загрузить товары: ${error.message}`);
 
-  return (data ?? []).map(rowToProduct);
+  return ((data ?? []) as unknown as ProductRow[]).map(rowToProduct);
 }
 
 export type ProductStats = {
@@ -157,31 +220,55 @@ export async function getProductStats(): Promise<Map<string, ProductStats>> {
   return map;
 }
 
-// Товары витрины вместе с агрегатами. Для /shop: карточки показывают
-// оценки/покупки, «Most popular» сортируется по продажам.
+// Товары витрины вместе с агрегатами и профилями авторов. Для /shop:
+// карточки показывают оценки/покупки и кликабельное имя креатора,
+// «Most popular» сортируется по продажам.
+//
+// Три запроса параллельно, а не по цепочке: они друг от друга не
+// зависят, и общее время равно самому медленному из них.
 export async function getAllProductsWithStats(): Promise<Product[]> {
-  const [products, stats] = await Promise.all([
+  const [products, stats, creators] = await Promise.all([
     getAllProducts(),
     getProductStats(),
+    getCreatorsById(),
   ]);
   return products.map((p) => {
     const s = stats.get(p.id);
-    return s
-      ? { ...p, rating: s.rating, ratingCount: s.ratingCount, salesCount: s.salesCount }
-      : p;
+    const c = p.creatorId ? creators.get(p.creatorId) : undefined;
+    return {
+      ...p,
+      ...(s
+        ? { rating: s.rating, ratingCount: s.ratingCount, salesCount: s.salesCount }
+        : {}),
+      ...(c
+        ? {
+            creator: {
+              displayName: c.displayName,
+              handle: c.handle,
+              isVerified: c.isVerified,
+            },
+          }
+        : {}),
+    };
   });
 }
 
 export async function getProduct(slug: string): Promise<Product | null> {
-  const { data, error } = await getSupabase()
-    .from("products")
-    .select(PRODUCT_FIELDS)
-    .eq("slug", slug)
-    .eq("is_published", true)
-    // maybeSingle: нет строки — это 404 страницы, а не ошибка запроса.
-    .maybeSingle();
+  const query = (fields: string) =>
+    getSupabase()
+      .from("products")
+      .select(fields)
+      .eq("slug", slug)
+      .eq("is_published", true)
+      // maybeSingle: нет строки — это 404 страницы, а не ошибка запроса.
+      .maybeSingle();
+
+  let { data, error } = await query(PRODUCT_FIELDS);
+  if (error && isMissingOptional(error.message)) {
+    ({ data, error } = await query(PRODUCT_FIELDS_NO_IMAGES));
+  }
 
   if (error) throw new Error(`Не удалось загрузить товар "${slug}": ${error.message}`);
 
-  return data ? rowToProduct(data) : null;
+  return data ? rowToProduct(data as unknown as ProductRow) : null;
 }

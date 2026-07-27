@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Image from "next/image";
 import { motion } from "motion/react";
 import { Unbounded } from "next/font/google";
 
@@ -215,27 +216,37 @@ export function AuthorCta() {
         </div>
 
         <div className="relative z-10 flex flex-col items-center px-6">
-        {/* TODO: replace with a real photo — silhouette placeholder for now */}
-        <motion.svg
+        {/* Рендер minecraft-скина автора вместо прежней силуэт-заглушки
+            (просьба владельца 2026-07-27). Появляется тем же движением,
+            что было у силуэта.
+            TODO (качество): исходник 276×368 — меньше, чем место под него
+            на десктопе, отсюда мягкость. Нужен рендер шире ~800px, тогда
+            хватит и на экраны с плотностью 2x; менять только сам файл,
+            разметку трогать не придётся. priority: это первое, что видно на /about
+            и в закрывающей секции главной — грузить лениво нечего.
+            Пропорции исходника (276×368) сохраняем через h-auto. */}
+        <motion.div
           initial={{ opacity: 0, y: 80, scale: 1.08 }}
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 1 }}
           className="mb-2 w-64 max-w-[65vw] sm:w-80"
-          viewBox="0 0 320 420"
         >
-          <defs>
-            <linearGradient id="authorCtaPersonGradient" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" stopColor="#d4d4d8" />
-              <stop offset="1" stopColor="#52525b" />
-            </linearGradient>
-          </defs>
-          <circle cx="160" cy="95" r="70" fill="url(#authorCtaPersonGradient)" />
-          <path
-            d="M60 420 C60 260 100 210 160 210 C220 210 260 260 260 420 Z"
-            fill="url(#authorCtaPersonGradient)"
+          <Image
+            src="/aboutme/soucampusModel.png"
+            alt="SouCampus — my Minecraft skin"
+            width={276}
+            height={368}
+            priority
+            // quality=100 — исходник МЕНЬШЕ, чем место под него (276px при
+            // 320 CSS-px, а на экране с плотностью 2x это и вовсе 640
+            // физических), поэтому картинка растягивается и сжимать её
+            // сверху ещё и качеством нельзя. По-настоящему резкость
+            // вернёт только более крупный рендер скина — см. TODO.
+            quality={100}
+            className="h-auto w-full drop-shadow-xl"
           />
-        </motion.svg>
+        </motion.div>
 
         <motion.span
           {...fadeUp}

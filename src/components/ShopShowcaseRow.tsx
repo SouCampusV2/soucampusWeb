@@ -1,11 +1,11 @@
 "use client";
 
-import { useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Unbounded } from "next/font/google";
 import type { Product } from "@/lib/products";
 import { ProductCard } from "@/components/ProductCard";
-import { ArrowCircle } from "@/components/ArrowCircle";
+import { ArrowButton } from "@/components/ArrowButton";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -27,6 +27,35 @@ export function ShopShowcaseRow({
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
 
+  // Куда ещё можно ехать. Тот же смысл, что index/maxIndex в карусели
+  // отзывов (ClientReviews), только там позиция считается в карточках, а
+  // здесь ряд листается нативной прокруткой — значит и границы надо брать
+  // у неё же: слева упёрлись при scrollLeft = 0, справа — когда
+  // scrollLeft + видимая ширина дошли до полной ширины содержимого.
+  const [canLeft, setCanLeft] = useState(false);
+  const [canRight, setCanRight] = useState(false);
+
+  const measure = useCallback(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    // Допуск в 1px: дробные ширины после вычислений в calc() дают
+    // scrollLeft вроде 431.6 при максимуме 432 — без допуска правая
+    // стрелка так и осталась бы активной в самом конце.
+    setCanLeft(el.scrollLeft > 1);
+    setCanRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  }, []);
+
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    measure();
+    // ResizeObserver, а не только window resize: ширина ряда меняется и
+    // без изменения окна (например, когда подгрузились карточки).
+    const observer = new ResizeObserver(measure);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [measure, products.length]);
+
   const scrollByCards = (direction: 1 | -1) => {
     const el = scrollerRef.current;
     if (!el) return;
@@ -36,8 +65,9 @@ export function ShopShowcaseRow({
 
   if (products.length === 0) return null;
 
-  const arrowColor =
-    "bg-orange-400 hover:bg-orange-500 text-white dark:bg-orange-400 dark:hover:bg-orange-500";
+  // Если ряд помещается целиком, листать нечего — стрелок нет вовсе, а не
+  // две неактивные (они бы только предлагали действие, которого нет).
+  const scrollable = canLeft || canRight;
 
   return (
     <section className="mt-14">
@@ -58,16 +88,23 @@ export function ShopShowcaseRow({
             </Link>
           )}
           {/* Стрелки — только на десктопе: на мобильном ряд листается
-              свайпом. Через ArrowCircle (DESIGN.md — не пересобирать SVG),
-              оранжевый кружок, как у карусели отзывов. */}
-          <div className="hidden items-center gap-2 sm:flex">
-            <button type="button" aria-label="Scroll left" onClick={() => scrollByCards(-1)}>
-              <ArrowCircle direction="left" className="h-10 w-10" colorClassName={arrowColor} />
-            </button>
-            <button type="button" aria-label="Scroll right" onClick={() => scrollByCards(1)}>
-              <ArrowCircle direction="right" className="h-10 w-10" colorClassName={arrowColor} />
-            </button>
-          </div>
+              свайпом. Через ArrowButton — тот же компонент и то же
+              поведение, что у карусели отзывов: на краю кнопка не просто
+              «ничего не делает», а гаснет (disabled:opacity-30). */}
+          {scrollable && (
+            <div className="hidden items-center gap-2 sm:flex">
+              <ArrowButton
+                direction="left"
+                onClick={() => scrollByCards(-1)}
+                disabled={!canLeft}
+              />
+              <ArrowButton
+                direction="right"
+                onClick={() => scrollByCards(1)}
+                disabled={!canRight}
+              />
+            </div>
+          )}
         </div>
       </div>
 
@@ -76,12 +113,18 @@ export function ShopShowcaseRow({
           посередине. */}
       <div
         ref={scrollerRef}
+        onScroll={measure}
         className="mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
         {products.map((product) => (
+          // Ширина карточки повторяет колонку сетки «All maps» на каждой
+          // контрольной точке (1/2/3/4 колонки, gap-4 = 1rem): вычитаем из
+          // 100% суммарные промежутки и делим на число колонок. Раньше
+          // здесь стояли фиксированные w-64/w-72, из-за чего одни и те же
+          // карточки в витрине и в сетке были разного размера.
           <div
             key={product.slug}
-            className="w-64 shrink-0 snap-start sm:w-72"
+            className="w-full shrink-0 snap-start sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-2rem)/3)] xl:w-[calc((100%-3rem)/4)]"
           >
             <ProductCard product={product} className="h-full" />
           </div>

@@ -21,6 +21,7 @@ export function ProfileEditForm({
   const [displayName, setDisplayName] = useState(initial.displayName);
   const [firstName, setFirstName] = useState(initial.firstName ?? "");
   const [lastName, setLastName] = useState(initial.lastName ?? "");
+  const [bio, setBio] = useState(initial.bio ?? "");
 
   // Аватар: текущий URL из БД + опционально выбранный новый файл и его
   // локальный превью (object URL, живёт до сохранения).
@@ -102,6 +103,10 @@ export function ProfileEditForm({
         display_name: displayName,
         first_name: firstName.trim() || null,
         last_name: lastName.trim() || null,
+        // Пустое поле — это null, а не пустая строка: «биографии нет» и
+        // «биография из нуля символов» на странице выглядели бы одинаково,
+        // а в БД были бы разными состояниями.
+        bio: bio.trim() || null,
         avatar_url: nextAvatarUrl,
       })
       .eq("id", userId);
@@ -180,6 +185,34 @@ export function ProfileEditForm({
         <div className="grid grid-cols-2 gap-3">
           <Field id="firstName" label="First name" value={firstName} onChange={setFirstName} />
           <Field id="lastName" label="Last name" value={lastName} onChange={setLastName} />
+        </div>
+
+        {/* Bio — единственное публичное поле формы: оно показывается всем
+            на /creator/<ник>, в отличие от имени/фамилии. Отдельная
+            подпись об этом, чтобы никто не написал сюда личное по
+            привычке. */}
+        <div>
+          <label
+            htmlFor="bio"
+            className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+          >
+            About you{" "}
+            <span className="font-normal text-zinc-500 dark:text-zinc-400">
+              — shown publicly on your creator page
+            </span>
+          </label>
+          <textarea
+            id="bio"
+            value={bio}
+            onChange={(e) => setBio(e.target.value)}
+            rows={4}
+            maxLength={500}
+            placeholder="What you build, what you're into…"
+            className="w-full resize-y rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500"
+          />
+          <p className="mt-1 text-right text-xs text-zinc-500 dark:text-zinc-400">
+            {bio.length}/500
+          </p>
         </div>
       </div>
 

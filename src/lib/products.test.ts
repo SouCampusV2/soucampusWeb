@@ -20,6 +20,7 @@ describe("rowToProduct", () => {
     price_label: "€15",
     price_cents: 1500,
     price_currency: "EUR",
+    created_at: "2026-07-22T12:00:00.000Z",
   };
 
   it("переводит колонки БД в форму сайта", () => {
@@ -30,9 +31,14 @@ describe("rowToProduct", () => {
       summary: "Ready-to-use 300×300 spawn.",
       description: "Long description.",
       image: "/shop/medieval-spawn.jpg",
+      // Без product_images галерея — это одна обложка.
+      images: ["/shop/medieval-spawn.jpg"],
+      createdAt: "2026-07-22T12:00:00.000Z",
       price: "€15",
       priceCents: 1500,
       currency: "EUR",
+      // creator_id в строке нет — карта без автора.
+      creatorId: null,
       // category — производная от slug (пока нет колонки в БД).
       category: deriveCategory("medieval-spawn"),
     });
@@ -43,6 +49,25 @@ describe("rowToProduct", () => {
     // rowToProduct страхует от "1500" + наценка = "1500x" в будущем коде.
     const stringy = { ...row, price_cents: "1500" as unknown as number };
     expect(rowToProduct(stringy).priceCents).toBe(1500);
+  });
+
+  it("галерея: обложка первая, остальные по position, без дублей", () => {
+    const withGallery = {
+      ...row,
+      // Нарочно вперемешку и с повтором обложки: PostgREST порядок
+      // вложенной выборки не гарантирует, а обложку легко случайно
+      // продублировать в product_images при заливке контента.
+      product_images: [
+        { url: "/shop/medieval-spawn-3.jpg", position: 2 },
+        { url: "/shop/medieval-spawn.jpg", position: 0 },
+        { url: "/shop/medieval-spawn-2.jpg", position: 1 },
+      ],
+    };
+    expect(rowToProduct(withGallery).images).toEqual([
+      "/shop/medieval-spawn.jpg",
+      "/shop/medieval-spawn-2.jpg",
+      "/shop/medieval-spawn-3.jpg",
+    ]);
   });
 });
 
@@ -69,6 +94,7 @@ describe("filterByCategory", () => {
     image_url: "/x.png",
     price_label: "€20",
     price_currency: "EUR",
+    created_at: "2026-07-22T12:00:00.000Z",
   };
   const make = (slug: string, priceCents: number): Product =>
     rowToProduct({ ...base, slug, price_cents: priceCents });

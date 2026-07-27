@@ -1,10 +1,10 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { Star, SealCheck } from "@phosphor-icons/react/dist/ssr";
 import { getAllProducts, getProduct, getProductStats } from "@/lib/products";
 import { AddToCartButton } from "@/components/AddToCartButton";
+import { ProductGallery } from "@/components/ProductGallery";
 
 // Страницы товаров собираются заранее, как и работы портфолио.
 export async function generateStaticParams() {
@@ -123,16 +123,12 @@ export default async function ProductPage({
           нужен на узком экране, где и так всё в одну колонку. */}
       <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <div className="relative aspect-video overflow-hidden rounded-2xl">
-            <Image
-              src={product.image}
-              alt={product.title}
-              fill
-              sizes="(min-width: 1024px) 640px, 100vw"
-              className="object-cover"
-              priority
-            />
-          </div>
+          {/* Обложка + скриншоты работы одной галереей: большой кадр и
+              лента миниатюр под ним (см. ProductGallery). */}
+          <ProductGallery
+            images={product.images?.length ? product.images : [product.image]}
+            title={product.title}
+          />
 
           <h2 className="mt-10 text-xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
             Description

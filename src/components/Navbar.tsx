@@ -18,12 +18,8 @@ import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
 import { useCart } from "@/lib/cart-context";
 import { useUser } from "@/lib/useUser";
 import { SHOP_CATEGORIES } from "@/lib/products";
+import { creatorHref } from "@/lib/creators";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
-
-// Публичная страница текущего продавца. Пока продавец один (SouCampus),
-// поэтому и «мой профиль», и «мои ресурсы» ведут на его витрину. Когда
-// появятся creator_id у товаров и хэндлы профилей, тут будет свой на юзера.
-const CREATOR_HREF = "/creator/soucampus";
 
 // Same display font as the hero headings — the navbar rhymes with them.
 const displayFont = Unbounded({
@@ -62,6 +58,16 @@ export function Navbar() {
   const displayName =
     (user?.user_metadata?.display_name as string | undefined) ?? user?.email;
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+
+  // Ссылка на СВОЙ публичный профиль — /creator/<ник в нижнем регистре>
+  // (см. creatorHref). Раньше здесь стоял захардкоженный
+  // /creator/soucampus, из-за чего любой залогиненный уходил на витрину
+  // бренда вместо своей страницы (баг, найденный владельцем 2026-07-27).
+  // Если ника в метаданных нет (старый аккаунт, где их ещё не
+  // синхронизировали), вести некуда — падаем на /profile, это в любом
+  // случае своя страница.
+  const nickname = user?.user_metadata?.display_name as string | undefined;
+  const ownProfileHref = nickname ? creatorHref(nickname) : "/profile";
 
   // Внутри магазина (каталог, страница товара, корзина, поддержка, а также
   // вход/регистрация — покупка требует аккаунта, это часть флоу магазина)
@@ -223,7 +229,7 @@ export function Navbar() {
                     // hover в зазоре между профилем и карточкой.
                     <div className="group relative">
                       <Link
-                        href={CREATOR_HREF}
+                        href={ownProfileHref}
                         title={displayName}
                         className="flex max-w-[11rem] items-center gap-2 rounded-full px-2.5 py-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
                       >
@@ -243,18 +249,33 @@ export function Navbar() {
                       </Link>
 
                       <div className="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
-                        <div className="w-48 overflow-hidden rounded-2xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 py-1 shadow-lg backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/95">
+                        {/* Без вертикального паддинга: py-1 оставлял 4px
+                            фона над первым и под последним пунктом, из-за
+                            чего их подсветка при наведении не доходила до
+                            скруглённых краёв — сверху/снизу оставалась
+                            белая полоска. overflow-hidden и так вписывает
+                            прямоугольную подсветку в радиус карточки. */}
+                        <div className="w-48 overflow-hidden rounded-2xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 shadow-lg backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/95">
                           <Link
-                            href="/profile"
+                            href="/profile/edit"
                             className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
                           >
                             Settings
                           </Link>
                           <Link
-                            href={CREATOR_HREF}
+                            href={ownProfileHref}
                             className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
                           >
                             Your resources
+                          </Link>
+                          {/* Покупки — отдельным пунктом (просьба владельца
+                              2026-07-27): раньше они прятались за
+                              «Settings», хотя это разные вещи. */}
+                          <Link
+                            href="/profile"
+                            className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+                          >
+                            My purchases
                           </Link>
                           <button
                             type="button"

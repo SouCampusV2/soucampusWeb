@@ -32,12 +32,38 @@ export function ShopCatalog({ products }: { products: Product[] }) {
   const isFiltering = category !== null || query.length > 0;
 
   if (!isFiltering) {
+    // Подборки главной витрины. Все считаются из одного уже загруженного
+    // массива — ни одного лишнего запроса. Каждая ряд-подборка сама
+    // исчезает, если в ней нечего показать (ShopShowcaseRow возвращает
+    // null на пустом списке), поэтому «Free» не висит пустым заголовком,
+    // пока бесплатных карт нет.
+    const take = 8;
+
     // «Most popular» — по числу покупок (salesCount), при равенстве держим
     // исходный порядок (sort_order из БД). Пока продаж нет — это просто
     // первые по sort_order.
     const popular = [...products]
       .sort((a, b) => (b.salesCount ?? 0) - (a.salesCount ?? 0))
-      .slice(0, 8);
+      .slice(0, take);
+
+    // «Recently added» — по дате добавления в БД, новые сверху.
+    const recent = [...products]
+      .sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))
+      .slice(0, take);
+
+    // «Top rated» — только у кого оценки реально есть: карта без единой
+    // оценки не может стоять в «лучших по рейтингу».
+    const topRated = products
+      .filter((p) => (p.ratingCount ?? 0) > 0)
+      .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
+      .slice(0, take);
+
+    // Рядов по Assets/Landscape на витрине сознательно НЕТ (решение
+    // владельца 2026-07-27): эти две категории уже есть отдельными
+    // вкладками в навбаре, и дублировать их ещё и рядами — лишний шум.
+    // Ряды остаются только под подборки, которых вкладками не выразить.
+    const free = filterByCategory(products, "free").slice(0, take);
+
     return (
       <>
         <ShopShowcaseRow
@@ -45,6 +71,13 @@ export function ShopCatalog({ products }: { products: Product[] }) {
           products={popular}
           viewAllHref="#all-maps"
           viewAllLabel="View all"
+        />
+        <ShopShowcaseRow title="Recently added" products={recent} />
+        <ShopShowcaseRow title="Top rated" products={topRated} />
+        <ShopShowcaseRow
+          title="Free to download"
+          products={free}
+          viewAllHref="/shop?category=free"
         />
         <section id="all-maps" className="mt-16 scroll-mt-28">
           <h2

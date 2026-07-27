@@ -7,6 +7,8 @@ export type Profile = {
   firstName: string | null;
   lastName: string | null;
   avatarUrl: string | null;
+  /** Текст «о себе» на публичной странице /creator/<ник>. */
+  bio: string | null;
 };
 
 // Читает строку profiles текущего пользователя. Клиент передаётся снаружи
@@ -18,7 +20,7 @@ export async function readProfile(
 ): Promise<Profile | null> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("display_name, first_name, last_name, avatar_url")
+    .select("display_name, first_name, last_name, avatar_url, bio")
     .eq("id", userId)
     .maybeSingle();
 
@@ -30,5 +32,6 @@ export async function readProfile(
     firstName: data.first_name,
     lastName: data.last_name,
     avatarUrl: data.avatar_url,
+    bio: data.bio ?? null,
   };
 }
