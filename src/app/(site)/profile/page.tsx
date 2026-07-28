@@ -16,6 +16,7 @@ import { readUserRatings } from "@/lib/ratings";
 import { LogoutButton } from "@/components/LogoutButton";
 import { RatingStars } from "@/components/RatingStars";
 import { PageGlow } from "@/components/PageGlow";
+import { BUTTON_COLORS } from "@/components/Button";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -95,7 +96,7 @@ export default async function ProfilePage() {
               </div>
               <Link
                 href="/profile/edit"
-                className="inline-flex items-center gap-1.5 rounded-full border-2 border-orange-500 px-4 py-2 text-sm font-semibold text-orange-500 transition-colors hover:border-orange-600 hover:text-orange-600 dark:border-orange-400 dark:text-orange-400 dark:hover:border-orange-500 dark:hover:text-orange-500"
+                className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold transition-colors ${BUTTON_COLORS.secondary}`}
               >
                 <PencilSimple size={16} weight="bold" />
                 Edit
@@ -182,7 +183,7 @@ export default async function ProfilePage() {
                     {item.url ? (
                       <a
                         href={item.url}
-                        className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-orange-500 px-4 py-2 text-sm font-semibold text-zinc-950 transition-colors hover:bg-orange-600 dark:bg-orange-400 dark:hover:bg-orange-500"
+                        className={`inline-flex shrink-0 items-center gap-1.5 px-4 py-2 text-sm font-semibold transition-colors ${BUTTON_COLORS.primary}`}
                       >
                         <DownloadSimple size={16} weight="bold" />
                         Download

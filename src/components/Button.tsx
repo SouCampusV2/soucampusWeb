@@ -36,7 +36,13 @@ const base =
 //               сдвиг 500→600 / 400→500, но по цвету обводки и текста.
 //   tertiary  — текст-ссылка с подчёркиванием, без формы и паддинга
 //               (бывший secondary; переименован, когда появилась обводка).
-const variants: Record<Variant, string> = {
+//
+// Экспортируется (BUTTON_COLORS) для мест, где нужна кнопочная РАСКРАСКА, но
+// не кнопочная ГЕОМЕТРИЯ: маленькие пилюли (py-2) на /profile не влезают в
+// фиксированную высоту h-12/h-14 из base, а цвета обязаны совпадать с
+// остальными кнопками. Раньше эти классы копировались туда руками и
+// разъезжались — теперь источник один.
+export const BUTTON_COLORS: Record<Variant, string> = {
   primary:
     "rounded-full bg-orange-500 text-zinc-950 hover:bg-orange-600 dark:bg-orange-400 dark:hover:bg-orange-500",
   secondary:
@@ -95,7 +101,7 @@ export function Button({
   // primary и secondary — «таблетки» с горизонтальным паддингом; tertiary
   // это текст-ссылка, ей паддинг не нужен.
   const padding = variant === "tertiary" ? "" : paddingBySize[size];
-  const color = colorClassName ?? variants[variant];
+  const color = colorClassName ?? BUTTON_COLORS[variant];
   const classes = `${base} ${color} ${padding} ${textBySize[size]} ${className}`;
 
   if (href) {

@@ -17,7 +17,7 @@ import { Skeleton } from "@/components/Skeleton";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
 import { useCart } from "@/lib/cart-context";
 import { useUser } from "@/lib/useUser";
-import { SHOP_CATEGORIES } from "@/lib/products";
+import { SHOP_NAV_LINKS } from "@/lib/products";
 import { creatorHref } from "@/lib/creators";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
@@ -138,27 +138,15 @@ export function Navbar() {
                   (только на выходе через лого SouCampus). Support — после
                   Free, тем же стилем, что All Map (по просьбе владельца). */}
               <div className="flex shrink-0 items-center gap-1 text-sm font-medium text-zinc-600 dark:text-zinc-300">
-                <Link
-                  href="/shop"
-                  className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                >
-                  All Map
-                </Link>
-                {SHOP_CATEGORIES.map((category) => (
+                {SHOP_NAV_LINKS.map((link) => (
                   <Link
-                    key={category.slug}
-                    href={`/shop?category=${category.slug}`}
+                    key={link.href}
+                    href={link.href}
                     className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
                   >
-                    {category.label}
+                    {link.label}
                   </Link>
                 ))}
-                <Link
-                  href="/support"
-                  className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                >
-                  Support
-                </Link>
               </div>
 
               {/* Поиск + иконки — вместе справа. */}
@@ -198,18 +186,11 @@ export function Navbar() {
                   >
                     <Bell size={22} />
                   </button>
-                  <Link
-                    href="/cart"
-                    aria-label="Cart"
-                    className="relative flex items-center justify-center rounded-full p-2 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
-                  >
-                    <ShoppingCart size={22} />
-                    {count > 0 && (
-                      <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
-                        {count}
-                      </span>
-                    )}
-                  </Link>
+                  <CartLink
+                    count={count}
+                    size={22}
+                    className="transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+                  />
                   {/* Пока не знаем, кто залогинен (сессия читается на
                       клиенте — статический HTML её не содержит), показываем
                       нейтральную заглушку-кружок вместо заведомо неверной
@@ -233,16 +214,7 @@ export function Navbar() {
                         title={displayName}
                         className="flex max-w-[11rem] items-center gap-2 rounded-full px-2.5 py-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
                       >
-                        {avatarUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={avatarUrl}
-                            alt=""
-                            className="h-6 w-6 shrink-0 rounded-full object-cover"
-                          />
-                        ) : (
-                          <UserCircle size={22} className="shrink-0" />
-                        )}
+                        <AccountAvatar avatarUrl={avatarUrl ?? null} size={22} />
                         <span className="truncate text-sm font-medium">
                           {displayName}
                         </span>
@@ -360,18 +332,7 @@ export function Navbar() {
               className="flex h-9 w-9 cursor-pointer flex-col items-center justify-center gap-1.5 min-[760px]:hidden"
               aria-label="Toggle menu"
             >
-              <motion.span
-                animate={{ rotate: open ? 45 : 0, y: open ? 6 : 0 }}
-                className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
-              />
-              <motion.span
-                animate={{ opacity: open ? 0 : 1 }}
-                className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
-              />
-              <motion.span
-                animate={{ rotate: open ? -45 : 0, y: open ? -6 : 0 }}
-                className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
-              />
+              <HamburgerIcon open={open} />
             </button>
           )}
 
@@ -380,18 +341,7 @@ export function Navbar() {
               зоной нажатия p-2, как на десктопе. */}
           {isShopActive && (
             <div className="flex items-center gap-1 text-zinc-700 dark:text-zinc-200 min-[760px]:hidden">
-              <Link
-                href="/cart"
-                aria-label="Cart"
-                className="relative flex items-center justify-center rounded-full p-2"
-              >
-                <ShoppingCart size={24} />
-                {count > 0 && (
-                  <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
-                    {count}
-                  </span>
-                )}
-              </Link>
+              <CartLink count={count} size={24} />
 
               {userLoading ? (
                 <div className="flex items-center justify-center p-2" aria-hidden>
@@ -404,16 +354,7 @@ export function Navbar() {
                   title={displayName}
                   className="flex items-center justify-center rounded-full p-2"
                 >
-                  {avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={avatarUrl}
-                      alt=""
-                      className="h-6 w-6 rounded-full object-cover"
-                    />
-                  ) : (
-                    <UserCircle size={24} />
-                  )}
+                  <AccountAvatar avatarUrl={avatarUrl ?? null} size={24} />
                 </Link>
               ) : (
                 <Link
@@ -431,18 +372,7 @@ export function Navbar() {
                 className="ml-0.5 flex h-9 w-9 cursor-pointer flex-col items-center justify-center gap-1.5"
                 aria-label="Toggle menu"
               >
-                <motion.span
-                  animate={{ rotate: open ? 45 : 0, y: open ? 6 : 0 }}
-                  className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
-                />
-                <motion.span
-                  animate={{ opacity: open ? 0 : 1 }}
-                  className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
-                />
-                <motion.span
-                  animate={{ rotate: open ? -45 : 0, y: open ? -6 : 0 }}
-                  className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
-                />
+                <HamburgerIcon open={open} />
               </button>
             </div>
           )}
@@ -520,40 +450,95 @@ export function Navbar() {
               </div>
 
               <ul className="pb-2">
-                <li>
-                  <Link
-                    href="/shop"
-                    onClick={() => setOpen(false)}
-                    className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                  >
-                    All Map
-                  </Link>
-                </li>
-                {SHOP_CATEGORIES.map((category) => (
-                  <li key={category.slug}>
+                {SHOP_NAV_LINKS.map((link) => (
+                  <li key={link.href}>
                     <Link
-                      href={`/shop?category=${category.slug}`}
+                      href={link.href}
                       onClick={() => setOpen(false)}
                       className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
                     >
-                      {category.label}
+                      {link.label}
                     </Link>
                   </li>
                 ))}
-                <li>
-                  <Link
-                    href="/support"
-                    onClick={() => setOpen(false)}
-                    className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                  >
-                    Support
-                  </Link>
-                </li>
               </ul>
             </motion.div>
           )}
         </AnimatePresence>
       </header>
     </div>
+  );
+}
+
+// ── Мелкие детали навбара, которые нужны И на десктопе, И на мобильном ──
+// Раньше каждая существовала в двух дословных копиях, отличаясь только
+// размером иконки: любую правку приходилось делать дважды, и однажды это
+// уже разошлось. Компоненты локальные (не в отдельных файлах) — за
+// пределами навбара они не нужны.
+
+// Три полоски гамбургера, складывающиеся в крестик при open.
+function HamburgerIcon({ open }: { open: boolean }) {
+  return (
+    <>
+      <motion.span
+        animate={{ rotate: open ? 45 : 0, y: open ? 6 : 0 }}
+        className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
+      />
+      <motion.span
+        animate={{ opacity: open ? 0 : 1 }}
+        className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
+      />
+      <motion.span
+        animate={{ rotate: open ? -45 : 0, y: open ? -6 : 0 }}
+        className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
+      />
+    </>
+  );
+}
+
+// Корзина с бейджем-счётчиком. Бейдж прячется при count === 0.
+function CartLink({
+  count,
+  size,
+  className = "",
+}: {
+  count: number;
+  size: number;
+  className?: string;
+}) {
+  return (
+    <Link
+      href="/cart"
+      aria-label="Cart"
+      className={`relative flex items-center justify-center rounded-full p-2 ${className}`}
+    >
+      <ShoppingCart size={size} />
+      {count > 0 && (
+        <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
+          {count}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+// Аватар пользователя: настоящая картинка, если она загружена, иначе
+// иконка-заглушка того же размера.
+function AccountAvatar({
+  avatarUrl,
+  size,
+}: {
+  avatarUrl: string | null;
+  size: number;
+}) {
+  if (!avatarUrl) return <UserCircle size={size} className="shrink-0" />;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={avatarUrl}
+      alt=""
+      style={{ height: size - 2, width: size - 2 }}
+      className="shrink-0 rounded-full object-cover"
+    />
   );
 }

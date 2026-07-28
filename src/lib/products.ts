@@ -15,6 +15,20 @@ export const SHOP_CATEGORIES: { slug: ProductCategory; label: string }[] = [
   { slug: "free", label: "Free" },
 ];
 
+// Готовая навигация магазина: «All Map» + категории + «Support». Ровно этот
+// список показывают ТРИ места (пилюля навбара на десктопе, мобильная
+// выпадашка магазина, колонка Shop в футере) — раньше каждое собирало его
+// само, и футер успел отстать: там категории годами висели неактивными
+// «Coming soon», хотя в навбаре уже работали. Один источник — не разъедутся.
+export const SHOP_NAV_LINKS: { href: string; label: string }[] = [
+  { href: "/shop", label: "All Map" },
+  ...SHOP_CATEGORIES.map((category) => ({
+    href: `/shop?category=${category.slug}`,
+    label: category.label,
+  })),
+  { href: "/support", label: "Support" },
+];
+
 // Товар, каким его видит сайт. Тот же паттерн границы, что у
 // projects.ts/reviews.ts: снаружи — домен сайта (price как готовая
 // строка), внутри — устройство БД (price_label/price_cents). Перевод

@@ -10,6 +10,15 @@ import { getStripe } from "@/lib/stripe";
 // Stripe (вебхук). Браузер сообщает только slug товара и session_id,
 // оба — идентификаторы, а не данные.
 
+// supabase-js типизирует ЛЮБОЙ вложенный select как массив, хотя по связи
+// "many-to-one" (order_items → products) объект приходит ровно один. Эта
+// нормализация нужна в каждом таком месте — держим её одним хелпером, чтобы
+// не разъезжалась по копиям.
+function unwrapOne<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
 export type OrderItemInput = {
   productId: string;
   /** Снимок на момент покупки — см. шапку миграции orders. */
@@ -257,8 +266,6 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
     title: string;
     price_cents: number;
     quantity: number;
-    // supabase-js типизирует вложенный select как массив, но по связи
-    // "many-to-one" объект приходит один — нормализуем ниже.
     products: { file_path: string | null } | { file_path: string | null }[] | null;
   };
 
@@ -267,9 +274,7 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
     totalCents: Number(data.total_cents),
     currency: data.currency,
     items: ((data.order_items ?? []) as ItemRow[]).map((item) => {
-      const product = Array.isArray(item.products)
-        ? item.products[0]
-        : item.products;
+      const product = unwrapOne(item.products);
       return {
         title: item.title,
         priceCents: Number(item.price_cents),
@@ -339,7 +344,7 @@ export async function getPurchasesForUser(
   for (const order of [...(byUser.data ?? []), ...(byEmail.data ?? [])] as OrderRow[]) {
     for (const item of order.order_items ?? []) {
       if (byProduct.has(item.product_id)) continue;
-      const product = Array.isArray(item.products) ? item.products[0] : item.products;
+      const product = unwrapOne(item.products);
       byProduct.set(item.product_id, {
         productId: item.product_id,
         title: item.title,

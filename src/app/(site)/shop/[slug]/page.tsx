@@ -130,7 +130,9 @@ export default async function ProductPage({
             title={product.title}
           />
 
-          <h2 className="mt-10 text-xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
+          {/* Подзаголовок секции, а не заголовок страницы — стандартный H3
+              из DESIGN.md (был придуманный на глаз text-xl). */}
+          <h2 className="mt-10 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
             Description
           </h2>
           <p className="mt-4 leading-7 text-zinc-700 dark:text-zinc-300">
