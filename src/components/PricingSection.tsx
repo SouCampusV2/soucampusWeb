@@ -1,7 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { motion } from "motion/react";
+import { FadeIn } from "@/components/FadeIn";
 import { ArrowCircle } from "@/components/ArrowCircle";
 
 // PricingSection is global (rendered once in layout.tsx, right after
@@ -99,14 +99,7 @@ export function PricingSection() {
 
         <div className="mt-10 grid gap-3 sm:gap-4 md:grid-cols-6">
           {PLANS.map((plan, i) => (
-            <motion.div
-              key={plan.name}
-              initial={{ opacity: 0, y: 16 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: i * 0.1 }}
-              className={plan.span}
-            >
+            <FadeIn key={plan.name} delay={i * 100} className={plan.span}>
               <div className="group flex h-full cursor-pointer flex-col justify-between rounded-3xl bg-zinc-100 p-6 transition-colors hover:bg-[#ececee] active:bg-[#ececee] dark:bg-zinc-900 dark:hover:bg-zinc-800 dark:active:bg-zinc-800 sm:p-8">
                 <div>
                   <h3 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
@@ -128,7 +121,7 @@ export function PricingSection() {
                   />
                 </div>
               </div>
-            </motion.div>
+            </FadeIn>
           ))}
         </div>
       </div>

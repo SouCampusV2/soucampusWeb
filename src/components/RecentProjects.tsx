@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "motion/react";
+import { FadeIn } from "@/components/FadeIn";
 import Link from "next/link";
 import Image from "next/image";
 import type { Project } from "@/lib/projects";
@@ -14,27 +14,18 @@ export function RecentProjects({ projects }: { projects: Project[] }) {
 
   return (
     <section className="mx-auto max-w-6xl px-6 py-16 sm:py-28">
-      <motion.h2
-        initial={{ opacity: 0, y: 16 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl"
-      >
-        Recent projects
-      </motion.h2>
+      <FadeIn>
+        <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
+          Recent projects
+        </h2>
+      </FadeIn>
       <p className="mt-2 max-w-xl text-zinc-600 dark:text-zinc-400">
         A few recent projects. See the full catalog in Portfolio.
       </p>
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {recent.map((project, i) => (
-          <motion.div
-            key={project.slug}
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ delay: i * 0.1 }}
-          >
+          <FadeIn key={project.slug} y={24} delay={i * 100}>
             <Link
               href={`/portfolio/${project.slug}?from=home`}
               className="group block overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800"
@@ -60,7 +51,7 @@ export function RecentProjects({ projects }: { projects: Project[] }) {
                 </p>
               </div>
             </Link>
-          </motion.div>
+          </FadeIn>
         ))}
       </div>
     </section>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { animate, useInView } from "motion/react";
 
 import type { Stat } from "@/lib/stats";
 
@@ -22,20 +21,40 @@ const ACCENT_BAR: Record<Stat["accent"], string> = {
   blue: "bg-blue-500 dark:bg-blue-400",
 };
 
+const COUNT_DURATION_MS = 1500;
+
+// Ease-out cubic — matches the feel of Motion's default "easeOut" closely
+// enough for a number counter that only runs once per page view.
+function easeOutCubic(t: number) {
+  return 1 - Math.pow(1 - t, 3);
+}
+
 function Counter({ to, suffix }: { to: number; suffix: string }) {
   const ref = useRef<HTMLSpanElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-100px" });
   const [value, setValue] = useState(0);
 
   useEffect(() => {
-    if (!inView) return;
-    const controls = animate(0, to, {
-      duration: 1.5,
-      ease: "easeOut",
-      onUpdate: (v) => setValue(Math.round(v)),
-    });
-    return () => controls.stop();
-  }, [inView, to]);
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry.isIntersecting) return;
+        observer.disconnect();
+        const start = performance.now();
+        let frame: number;
+        const tick = (now: number) => {
+          const progress = Math.min((now - start) / COUNT_DURATION_MS, 1);
+          setValue(Math.round(to * easeOutCubic(progress)));
+          if (progress < 1) frame = requestAnimationFrame(tick);
+        };
+        frame = requestAnimationFrame(tick);
+        return () => cancelAnimationFrame(frame);
+      },
+      { rootMargin: "-100px" }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [to]);
 
   return (
     <span ref={ref}>

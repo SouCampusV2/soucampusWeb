@@ -220,7 +220,7 @@ export function Navbar() {
                         </span>
                       </Link>
 
-                      <div className="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                      <div className="invisible absolute inset-x-0 top-[calc(100%+8px)] z-50 opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
                         {/* Без вертикального паддинга: py-1 оставлял 4px
                             фона над первым и под последним пунктом, из-за
                             чего их подсветка при наведении не доходила до
@@ -237,7 +237,7 @@ export function Navbar() {
                             углу — потому что ровная заливка читается как
                             пластик, настоящее стекло ловит свет
                             неравномерно. */}
-                        <div className="relative w-48 overflow-hidden rounded-2xl border border-white/50 bg-white/20 shadow-lg shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-zinc-900/30">
+                        <div className="relative w-full min-w-[11rem] overflow-hidden rounded-2xl border border-white/50 bg-white/20 shadow-lg shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-zinc-900/30">
                           <div
                             aria-hidden
                             // -z-10: блик позиционирован, пункты меню — нет,
