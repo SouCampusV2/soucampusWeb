@@ -1,0 +1,79 @@
+name: Send weekly report to Telegram
+
+# Еженедельный отчёт собирает облачная routine и коммитит его в reports/.
+# Отправлять его в Telegram она НЕ МОЖЕТ: в её окружении `api.telegram.org`
+# закрыт сетевой политикой — прокси отвечает 403 на CONNECT (выяснено
+# 2026-07-30, до этого отправка молча падала месяцами, а отчёты при этом
+# исправно коммитились).
+#
+# Раннеры GitHub Actions в интернет ходят свободно, поэтому доставку берёт
+# на себя этот workflow: routine кладёт файл в репозиторий, коммит запускает
+# отправку. Заодно токен переезжает из открытого текста в промпте routine в
+# секреты репозитория.
+on:
+  push:
+    branches: [master]
+    paths:
+      - "reports/**"
+  # Ручной запуск — проверить настройку, не дожидаясь понедельника.
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  send:
+    runs-on: ubuntu-latest
+    steps:
+      # Нужны два коммита, а не один: чтобы понять, какой файл отчёта
+      # добавил последний коммит, надо с чем-то сравнить.
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Find the newest report
+        id: report
+        run: |
+          # Берём самый свежий файл в reports/ по имени: они называются
+          # по дате (2026-07-30.md), поэтому сортировка по имени и есть
+          # сортировка по времени. Надёжнее mtime — у свежего клона время
+          # файлов не отражает историю.
+          file=$(ls reports/*.md 2>/dev/null | sort | tail -1)
+          if [ -z "$file" ]; then
+            echo "В reports/ нет ни одного отчёта — отправлять нечего."
+            echo "found=" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          echo "Отправляем: $file"
+          echo "found=$file" >> "$GITHUB_OUTPUT"
+
+      - name: Send to Telegram
+        if: steps.report.outputs.found != ''
+        env:
+          TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          FILE: ${{ steps.report.outputs.found }}
+        run: |
+          if [ -z "$TOKEN" ] || [ -z "$CHAT_ID" ]; then
+            echo "::error::Не заданы секреты TELEGRAM_BOT_TOKEN / TELEGRAM_CHAT_ID."
+            echo "Settings → Secrets and variables → Actions → New repository secret."
+            exit 1
+          fi
+
+          # Файлом, а не текстом: отчёт длинный, а у sendMessage лимит
+          # 4096 символов. Подпись к документу тоже ограничена (1024),
+          # поэтому в ней только имя файла.
+          response=$(curl -s -w '\nHTTP_CODE=%{http_code}' \
+            -X POST "https://api.telegram.org/bot${TOKEN}/sendDocument" \
+            -F chat_id="${CHAT_ID}" \
+            -F document=@"${FILE}" \
+            -F caption="Weekly report — $(basename "$FILE" .md)")
+
+          echo "$response"
+
+          # Telegram отвечает 200 и на успех, и на некоторые отказы, но в
+          # теле тогда стоит "ok":false — проверяем именно его.
+          case "$response" in
+            *'"ok":true'*) echo "Отчёт отправлен." ;;
+            *) echo "::error::Telegram отклонил отправку — см. ответ выше."; exit 1 ;;
+          esac
