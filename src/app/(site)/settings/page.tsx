@@ -9,18 +9,18 @@ import { PageGlow } from "@/components/PageGlow";
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Edit profile",
+  title: "Settings",
   robots: { index: false },
 };
 
-export default async function ProfileEditPage() {
+export default async function SettingsPage() {
   const supabase = await createSupabaseServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();
 
   if (!user) {
-    redirect("/login");
+    redirect("/login?next=/settings");
   }
 
   // Обычно строка profiles есть (триггер создаёт её при регистрации).
@@ -45,7 +45,7 @@ export default async function ProfileEditPage() {
           <h1
             className={`${displayFont.className} text-center text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
           >
-            Edit profile
+            Settings
           </h1>
 
           <div className="mt-10">

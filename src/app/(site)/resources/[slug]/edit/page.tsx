@@ -1,0 +1,75 @@
+import type { Metadata } from "next";
+import { notFound, redirect } from "next/navigation";
+import Link from "next/link";
+import { Unbounded } from "next/font/google";
+import { createSupabaseServer } from "@/lib/supabase-server";
+import { getOwnProduct } from "@/lib/moderation";
+import { EditMapForm } from "@/components/EditMapForm";
+import { PageGlow } from "@/components/PageGlow";
+
+const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Edit map",
+  robots: { index: false },
+};
+
+// Правка своей карты. Владение проверяет не код, а RLS: getOwnProduct
+// ищет строку с creator_id = текущий пользователь, поэтому чужой slug
+// просто не найдётся и страница отдаст 404. Отдельной проверки «а моё
+// ли это» здесь намеренно нет — она была бы вторым источником правды
+// рядом с политикой БД.
+export default async function EditResourcePage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    redirect(`/login?next=/resources/${slug}/edit`);
+  }
+
+  const product = await getOwnProduct(supabase, user.id, slug);
+  if (!product) notFound();
+
+  return (
+    <main className="relative w-full overflow-x-clip px-6">
+      <PageGlow color="rgba(249,115,22,0.28)" />
+      <section className="relative pb-28 pt-20">
+        <div className="mx-auto max-w-2xl">
+          <Link
+            href="/resources"
+            className="text-sm font-medium text-orange-600 dark:text-orange-400"
+          >
+            ← Your resources
+          </Link>
+
+          <h1
+            className={`${displayFont.className} mt-6 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
+          >
+            Edit map
+          </h1>
+
+          {/* Причина отказа — на самом верху формы: человек пришёл сюда
+              именно чтобы её исправить, и искать её на другой странице
+              он не должен. */}
+          {product.status === "rejected" && product.rejectionReason && (
+            <p className="mt-6 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+              <span className="font-semibold">Why it was rejected: </span>
+              {product.rejectionReason}
+            </p>
+          )}
+
+          <div className="mt-8">
+            <EditMapForm product={product} userId={user.id} />
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}

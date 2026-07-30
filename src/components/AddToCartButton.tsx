@@ -109,7 +109,7 @@ export function AddToCartButton({
       setNotice({
         tone: "info",
         text: "You already own this map.",
-        href: "/profile",
+        href: "/purchases",
         linkLabel: "Download it",
       });
       return;

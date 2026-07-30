@@ -88,9 +88,17 @@ export function Navbar() {
     pathname === "/support" ||
     // Вход/регистрация/профиль — часть флоу магазина (покупка требует
     // аккаунта), поэтому на них тоже магазинный навбар, а не портфолио.
+    // Сюда же обе страницы сброса пароля: попадают на них с формы входа,
+    // и переключение навбара посреди «войти → забыл → задать новый»
+    // выглядело бы так, будто человека выкинуло на другой сайт.
     pathname === "/login" ||
     pathname === "/signup" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password" ||
     pathname.startsWith("/profile") ||
+    pathname === "/settings" ||
+    pathname === "/purchases" ||
+    pathname.startsWith("/resources") ||
     // Профиль продавца — часть магазина (его витрина), тот же навбар.
     pathname.startsWith("/creator");
 
@@ -208,7 +216,7 @@ export function Navbar() {
                     // focus-within — чтобы открывалось и с клавиатуры. pt-2 на
                     // обёртке меню — прозрачный «мостик», чтобы курсор не терял
                     // hover в зазоре между профилем и карточкой.
-                    <div className="group relative">
+                    <div className="group relative flex h-full items-center self-stretch">
                       <Link
                         href={ownProfileHref}
                         title={displayName}
@@ -220,7 +228,7 @@ export function Navbar() {
                         </span>
                       </Link>
 
-                      <div className="invisible absolute inset-x-0 top-[calc(100%+8px)] z-50 opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                      <div className="invisible absolute left-0 top-full z-50 w-max opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
                         {/* Без вертикального паддинга: py-1 оставлял 4px
                             фона над первым и под последним пунктом, из-за
                             чего их подсветка при наведении не доходила до
@@ -237,7 +245,13 @@ export function Navbar() {
                             углу — потому что ровная заливка читается как
                             пластик, настоящее стекло ловит свет
                             неравномерно. */}
-                        <div className="relative w-full min-w-[11rem] overflow-hidden rounded-2xl border border-white/50 bg-white/20 shadow-lg shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-zinc-900/30">
+                        {/* Заливка плотнее (было /20 и /30): при почти
+                            прозрачном фоне сквозь пункты меню просвечивал
+                            контент страницы, и текст становился нечитаемым —
+                            блюр размывает, но не гасит контраст. Плюс
+                            backdrop-brightness приглушает то, что осталось
+                            позади, отдельно в светлой и тёмной теме. */}
+                        <div className="relative min-w-[11rem] overflow-hidden rounded-2xl border border-white/60 bg-white/80 shadow-xl shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-110 dark:border-white/10 dark:bg-zinc-900/85 dark:backdrop-brightness-75">
                           <div
                             aria-hidden
                             // -z-10: блик позиционирован, пункты меню — нет,
@@ -245,13 +259,16 @@ export function Navbar() {
                             className="pointer-events-none absolute -left-1/4 -top-1/3 -z-10 h-2/3 w-2/3 rounded-full bg-white/40 blur-3xl dark:bg-white/10"
                           />
                           <Link
-                            href="/profile/edit"
+                            href="/settings"
                             className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
                           >
                             Settings
                           </Link>
+                          {/* Свои карты — управление, а не публичная
+                              витрина: раньше пункт вёл на /creator/<ник>,
+                              где ничего нельзя было отредактировать. */}
                           <Link
-                            href={ownProfileHref}
+                            href="/resources"
                             className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
                           >
                             Your resources
@@ -260,7 +277,7 @@ export function Navbar() {
                               2026-07-27): раньше они прятались за
                               «Settings», хотя это разные вещи. */}
                           <Link
-                            href="/profile"
+                            href="/purchases"
                             className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
                           >
                             My purchases
@@ -349,7 +366,7 @@ export function Navbar() {
                 </div>
               ) : user ? (
                 <Link
-                  href="/profile"
+                  href="/settings"
                   aria-label="Profile"
                   title={displayName}
                   className="flex items-center justify-center rounded-full p-2"
