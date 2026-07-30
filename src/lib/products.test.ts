@@ -3,6 +3,7 @@ import {
   deriveCategory,
   filterByCategory,
   rowToProduct,
+  SHOP_CATEGORIES,
   type Product,
 } from "./products";
 
@@ -39,8 +40,12 @@ describe("rowToProduct", () => {
       currency: "EUR",
       // creator_id в строке нет — карта без автора.
       creatorId: null,
-      // category — производная от slug (пока нет колонки в БД).
+      // category — производная от slug: в строке колонки нет (старые
+      // товары, заведённые до миграции 20260730120000).
       category: deriveCategory("medieval-spawn"),
+      // status в строке нет — считаем опубликованным: колонка появилась
+      // вместе с модерацией, у всего, что было раньше, её нет.
+      status: "published",
     });
   });
 
@@ -112,14 +117,24 @@ describe("filterByCategory", () => {
     expect(free[0].slug).toBe("free-pack");
   });
 
-  it("assets/landscape — по производной категории", () => {
-    const assets = filterByCategory(products, "assets");
-    const landscape = filterByCategory(products, "landscape");
-    expect(assets.every((p) => p.category === "assets")).toBe(true);
-    expect(landscape.every((p) => p.category === "landscape")).toBe(true);
-    // каждый товар имеет производную категорию (в т.ч. бесплатный — он
-    // может быть и Free, и Assets/Landscape одновременно), поэтому две
-    // вкладки вместе покрывают все 4 товара.
-    expect(assets.length + landscape.length).toBe(4);
+  it("обычная категория — только товары ровно этой категории", () => {
+    for (const { slug } of SHOP_CATEGORIES) {
+      if (slug === "free") continue; // free — по цене, проверен выше
+      const found = filterByCategory(products, slug);
+      expect(found.every((p) => p.category === slug)).toBe(true);
+    }
+  });
+
+  it("категории вместе покрывают все товары ровно по разу", () => {
+    // Производная категория есть у КАЖДОГО товара (включая бесплатный —
+    // он одновременно и Free, и своя категория), и она ровно одна.
+    // Раньше здесь была жёсткая проверка «assets + landscape = 4»: она
+    // сломалась, когда категорий стало восемь вместо двух. Считаем сумму
+    // по всем категориям — тогда тест не зависит от их числа.
+    const total = SHOP_CATEGORIES.filter((c) => c.slug !== "free").reduce(
+      (sum, c) => sum + filterByCategory(products, c.slug).length,
+      0,
+    );
+    expect(total).toBe(products.length);
   });
 });
