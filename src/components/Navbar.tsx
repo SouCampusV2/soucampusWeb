@@ -10,7 +10,6 @@ import {
   ChatCircleDots,
   Bell,
   UserCircle,
-  MagnifyingGlass,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
@@ -32,18 +31,8 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [prevPathname, setPrevPathname] = useState(pathname);
-  const [search, setSearch] = useState("");
   const { count } = useCart();
   const { user, loading: userLoading } = useUser();
-
-  // Поиск: уводим на /shop?q=… (каталог там клиентски фильтрует по q).
-  // Пустой запрос — просто на /shop. Меню закрываем (мобильная выпадашка).
-  function submitSearch(e: React.FormEvent) {
-    e.preventDefault();
-    const q = search.trim();
-    router.push(q ? `/shop?q=${encodeURIComponent(q)}` : "/shop");
-    setOpen(false);
-  }
 
   async function handleLogout() {
     const supabase = createSupabaseBrowser();
@@ -76,6 +65,10 @@ export function Navbar() {
   // магазина — тот же навбар, что на /shop, а не первоначальный:
   // посетитель не должен видеть портфолио-навигацию посреди оформления
   // заказа или обращения в поддержку по купленному товару.
+  // Поиска в пилюле НЕТ (убран 2026-07-30): он переехал на саму витрину
+  // (CategoryFilter), где поле показывает текущий запрос. В навбаре это
+  // было невозможно без того, чтобы утянуть все статические страницы
+  // сайта в клиентский рендер — навбар живёт в layout.
   // Форма/стекло самой пилюли не меняются — высоту держит фиксированная
   // h-[…] на <nav> (см. ниже), не кнопка Order now, именно поэтому
   // переход между режимами не дёргает высоту.
@@ -159,23 +152,6 @@ export function Navbar() {
 
               {/* Поиск + иконки — вместе справа. */}
               <div className="flex min-w-0 items-center gap-3 text-zinc-600 dark:text-zinc-300">
-                {/* Поиск: сабмит уводит на /shop?q=… (см. submitSearch). */}
-                <form onSubmit={submitSearch} className="relative min-w-0 max-w-[240px] flex-1">
-                  <MagnifyingGlass
-                    size={16}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-600"
-                  />
-                  <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    type="search"
-                    name="q"
-                    aria-label="Search maps"
-                    placeholder="Search"
-                    className="w-full rounded-full border border-zinc-950/[0.08] bg-transparent py-1.5 pl-9 pr-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-400 focus:outline-none dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-600"
-                  />
-                </form>
-
                 {/* Иконки: gap-1 + p-2 на каждой — крупная зона нажатия. */}
                 <div className="flex shrink-0 items-center gap-1">
                   <button
@@ -448,24 +424,6 @@ export function Navbar() {
               exit={{ height: 0, opacity: 0 }}
               className="absolute inset-x-0 top-[calc(100%+8px)] overflow-hidden rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/95 min-[760px]:hidden"
             >
-              <div className="p-3">
-                <form onSubmit={submitSearch} className="relative">
-                  <MagnifyingGlass
-                    size={16}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-600"
-                  />
-                  <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    type="search"
-                    name="q"
-                    aria-label="Search maps"
-                    placeholder="Search"
-                    className="w-full rounded-full border border-zinc-950/[0.08] bg-transparent py-2 pl-9 pr-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-400 focus:outline-none dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-600"
-                  />
-                </form>
-              </div>
-
               <ul className="pb-2">
                 {SHOP_NAV_LINKS.map((link) => (
                   <li key={link.href}>
