@@ -37,6 +37,7 @@ import {
   checkMapFile,
   formatBytes,
   safeExtension,
+  MAP_FILE_ACCEPT,
 } from "@/lib/upload-limits";
 
 
@@ -449,7 +450,7 @@ export function UploadMapForm({ userId }: { userId: string }) {
       {/* Map file */}
       <div>
         <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Map file <span className="font-normal text-zinc-500 dark:text-zinc-400">— .zip or .schematic, up to 15 MB</span>
+          Map file <span className="font-normal text-zinc-500 dark:text-zinc-400">— .zip, .schem or .schematic, up to 15 MB</span>
         </span>
         <button
           type="button"
@@ -463,7 +464,13 @@ export function UploadMapForm({ userId }: { userId: string }) {
             "Click to choose a file"
           )}
         </button>
-        <input ref={fileInput} type="file" onChange={pickMapFile} className="hidden" />
+        <input
+          ref={fileInput}
+          type="file"
+          accept={MAP_FILE_ACCEPT}
+          onChange={pickMapFile}
+          className="hidden"
+        />
       </div>
 
       {error && (

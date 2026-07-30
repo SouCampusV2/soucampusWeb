@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import {
   filterByCategory,
+  filterBySearch,
   SHOP_CATEGORIES,
   type Product,
   type ProductCategory,
@@ -92,17 +93,11 @@ export function ShopCatalog({ products }: { products: Product[] }) {
     );
   }
 
-  // Фильтрация: сперва по категории (если выбрана), затем по тексту поиска
-  // (по названию и краткому описанию, регистронезависимо).
+  // Фильтрация: сперва по категории (если выбрана), затем по тексту
+  // поиска — он смотрит название, оба описания и имя автора
+  // (см. filterBySearch).
   let result = category ? filterByCategory(products, category) : products;
-  if (query) {
-    const q = query.toLowerCase();
-    result = result.filter(
-      (p) =>
-        p.title.toLowerCase().includes(q) ||
-        p.summary.toLowerCase().includes(q),
-    );
-  }
+  result = filterBySearch(result, query);
 
   const heading = query
     ? `Results for “${query}”`

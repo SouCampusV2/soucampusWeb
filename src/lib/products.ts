@@ -130,6 +130,36 @@ export function deriveCategory(slug: string): ProductCategory {
   return TAGGABLE[hash % TAGGABLE.length];
 }
 
+// Текст без HTML-разметки — для поиска по описанию. Описание пишется
+// редактором и хранится как HTML, поэтому поиск по сырой строке находил
+// бы совпадения в именах тегов и адресах картинок («img», «span»,
+// «https»), а слово, разорванное тегом на середине, наоборот пропускал.
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, " ");
+}
+
+/**
+ * Поиск по каталогу. Совпадение ищется в названии, кратком описании,
+ * полном описании и **имени автора** — по нику креатора искали и не
+ * находили, потому что раньше смотрели только на название и summary.
+ *
+ * Чистая функция рядом с filterByCategory: одинаково работает на
+ * клиенте (ShopCatalog) и в тесте.
+ */
+export function filterBySearch(products: Product[], query: string): Product[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return products;
+
+  return products.filter((p) =>
+    [
+      p.title,
+      p.summary,
+      stripHtml(p.description),
+      p.creator?.displayName ?? "",
+    ].some((field) => field.toLowerCase().includes(q)),
+  );
+}
+
 // Фильтр витрины по вкладке навбара. «free» — по цене (0), остальные — по
 // производной категории. Вынесено отдельной чистой функцией, чтобы
 // одинаково работало и на клиенте (ShopCatalog), и в тесте.

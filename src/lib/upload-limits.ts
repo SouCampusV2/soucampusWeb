@@ -6,8 +6,8 @@
 // мир, а не то, что реально нужно покупателю.
 
 export const MAP_FILE_MAX_BYTES = 15 * 1024 * 1024; // 15 МБ на схематику/мир
-export const IMAGE_MAX_BYTES = 2 * 1024 * 1024; // 2 МБ на одну картинку
-export const IMAGES_TOTAL_MAX_BYTES = 10 * 1024 * 1024; // 10 МБ на всю галерею
+export const IMAGE_MAX_BYTES = 5 * 1024 * 1024; // 5 МБ на одну картинку
+export const IMAGES_TOTAL_MAX_BYTES = 30 * 1024 * 1024; // 30 МБ на всю галерею
 export const MAX_IMAGES = 8;
 
 export function formatBytes(bytes: number): string {
@@ -27,16 +27,25 @@ export function formatBytes(bytes: number): string {
 // нормального сканирования — см. docs/IDEAS.md, «Проверка файлов».
 // ------------------------------------------------------------
 
-/** Разрешённые контейнеры карт. Всё остальное — отказ. */
-const MAP_SIGNATURES: { label: string; bytes: number[] }[] = [
-  // ZIP (и всё, что на нём основано). Пустой архив — 50 4B 05 06,
-  // многотомный — 50 4B 07 08; принимаем все три варианта.
-  { label: "zip", bytes: [0x50, 0x4b, 0x03, 0x04] },
-  { label: "zip", bytes: [0x50, 0x4b, 0x05, 0x06] },
-  { label: "zip", bytes: [0x50, 0x4b, 0x07, 0x08] },
-  // GZIP — .schematic обычно это сжатый NBT.
-  { label: "gzip", bytes: [0x1f, 0x8b] },
+/** Что принимаем от креатора — для атрибута accept у поля файла. */
+export const MAP_FILE_ACCEPT = ".zip,.schem,.schematic";
+
+// ZIP: обычный архив, пустой (50 4B 05 06) и многотомный (50 4B 07 08).
+const ZIP_SIGNATURES = [
+  [0x50, 0x4b, 0x03, 0x04],
+  [0x50, 0x4b, 0x05, 0x06],
+  [0x50, 0x4b, 0x07, 0x08],
 ];
+
+// GZIP — в него завёрнуто большинство схематик.
+const GZIP_SIGNATURE = [0x1f, 0x8b];
+
+// Голый NBT начинается с TAG_Compound (0x0A). Признак слабый — это
+// просто перевод строки, и текстовый файл может начаться с него же.
+// Поэтому принимаем его ТОЛЬКО у файлов с расширением .schem/.schematic:
+// само по себе расширение ничего не доказывает, но в паре с нужным
+// первым байтом отсекает случайно переименованный .exe или картинку.
+const NBT_SIGNATURE = [0x0a];
 
 /** Сигнатуры настоящих картинок. */
 const IMAGE_SIGNATURES: { label: string; bytes: number[] }[] = [
@@ -64,12 +73,20 @@ export async function checkMapFile(file: File): Promise<string | null> {
     return `The map file must be ${formatBytes(MAP_FILE_MAX_BYTES)} or smaller — yours is ${formatBytes(file.size)}.`;
   }
 
+  const name = file.name.toLowerCase();
+  const isSchematic = name.endsWith(".schem") || name.endsWith(".schematic");
   const head = await readHead(file);
-  const ok = MAP_SIGNATURES.some((sig) => startsWith(head, sig.bytes));
-  if (!ok) {
-    return "That doesn't look like a .zip or .schematic file. Pack the world or schematic into a zip archive first.";
-  }
-  return null;
+
+  const looksZip = ZIP_SIGNATURES.some((sig) => startsWith(head, sig));
+  const looksGzip = startsWith(head, GZIP_SIGNATURE);
+  // Голый NBT засчитываем только схематикам — см. NBT_SIGNATURE выше.
+  const looksNbt = isSchematic && startsWith(head, NBT_SIGNATURE);
+
+  if (looksZip || looksGzip || looksNbt) return null;
+
+  return isSchematic
+    ? `“${file.name}” doesn't look like a valid schematic — the file may be corrupted.`
+    : "That doesn't look like a .zip, .schem or .schematic file. Pack a world folder into a zip archive first.";
 }
 
 /** null — картинка годится; строка — причина отказа. */

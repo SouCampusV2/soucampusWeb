@@ -27,6 +27,7 @@ import {
   checkMapFile,
   formatBytes,
   safeExtension,
+  MAP_FILE_ACCEPT,
 } from "@/lib/upload-limits";
 
 const FORM_CATEGORIES = SHOP_CATEGORIES.filter((c) => c.slug !== "free");
@@ -530,7 +531,13 @@ export function EditMapForm({
             "Click to choose a file"
           )}
         </button>
-        <input ref={fileInput} type="file" onChange={pickMapFile} className="hidden" />
+        <input
+          ref={fileInput}
+          type="file"
+          accept={MAP_FILE_ACCEPT}
+          onChange={pickMapFile}
+          className="hidden"
+        />
       </div>
 
       {error && (
