@@ -8,7 +8,7 @@
 export const MAP_FILE_MAX_BYTES = 15 * 1024 * 1024; // 15 МБ на схематику/мир
 export const IMAGE_MAX_BYTES = 5 * 1024 * 1024; // 5 МБ на одну картинку
 export const IMAGES_TOTAL_MAX_BYTES = 30 * 1024 * 1024; // 30 МБ на всю галерею
-export const MAX_IMAGES = 8;
+export const MAX_IMAGES = 15;
 
 export function formatBytes(bytes: number): string {
   const mb = bytes / (1024 * 1024);

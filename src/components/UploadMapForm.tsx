@@ -133,7 +133,7 @@ export function UploadMapForm({ userId }: { userId: string }) {
       }
     }
 
-    // Общий вес галереи: восемь картинок по 2 МБ — это уже 16 МБ на один
+    // Общий вес галереи: пятнадцать картинок по 5 МБ — это 75 МБ на один
     // товар, поэтому потолок есть и у суммы, не только у каждой отдельно.
     const already = images.reduce((sum, i) => sum + i.file.size, 0);
     const adding = files.reduce((sum, f) => sum + f.size, 0);
