@@ -17,6 +17,8 @@ It's also my hands-on way of learning modern web development — going from "I k
 - [Motion](https://motion.dev) (`motion/react`) for animation
 - [Supabase](https://supabase.com) (Postgres + Auth + Storage) — all site content lives here: projects, reviews, stats, products, orders, user profiles, plus a first-party visitor counter. Email+password auth gates the shop (purchase requires an account); avatars live in a public Storage bucket. A second project mirrors the schema for local/preview work, so migrations and payment testing never touch production data
 - [Stripe](https://stripe.com) — Checkout for the digital build shop (`/shop`, `/cart`), webhook-verified, signed downloads from a private Storage bucket
+- [Tiptap](https://tiptap.dev) — the rich-text editor creators write map descriptions in (images and tables inline, not a bare textarea)
+- [DOMPurify](https://github.com/cure53/DOMPurify) — descriptions are creator-authored HTML, so they go through an explicit tag allowlist before they reach a visitor's browser
 - [Vitest](https://vitest.dev) — unit tests for the pure logic (pricing formula, DB-row mapping, cookie signing, path allowlist, Stripe session → order mapping)
 - [Vercel Analytics](https://vercel.com/analytics) — traffic/page views
 - Deployed on [Vercel](https://vercel.com) at [soucampus.online](https://soucampus.online) — `master` auto-deploys to production on every push, `dev` gets its own Preview URL
@@ -25,8 +27,9 @@ It's also my hands-on way of learning modern web development — going from "I k
 
 **Planned, not wired up yet:**
 
-- A mini content admin (content is edited through the Supabase Table Editor for now)
-- Creator upload flow — every user already has a public profile, but new maps still go through me
+- A full content admin — `/admin/moderation` exists for reviewing submitted maps, but portfolio, reviews and stats are still edited through the Supabase Table Editor
+- Malware scanning for uploaded files — signatures are checked, contents aren't, and those files go to buyers
+- Upload quotas, subscriptions, Google sign-in
 - Docker, once there's an actual reason for it
 
 ## Getting started
@@ -42,8 +45,10 @@ Day-to-day work happens on the `dev` branch (Vercel gives it its own Preview URL
 
 ## Project structure
 
-- `src/app/(site)/` — public pages (Next.js App Router): home, `/portfolio`, `/portfolio/[slug]`, `/reviews/[slug]`, `/about`, `/contact`, `/support`, `/shop`, `/shop/[slug]`, `/shop/success`, `/cart`, `/creator/[username]` (public seller profile), `/terms`. The `(site)` group exists so these share a layout the future admin will not inherit
+- `src/app/(site)/` — public pages (Next.js App Router): home, `/portfolio`, `/portfolio/[slug]`, `/reviews/[slug]`, `/about`, `/contact`, `/support`, `/shop`, `/shop/[slug]`, `/shop/success`, `/cart`, `/creator/[username]` (public seller profile), `/creator/upload`, `/settings`, `/purchases`, `/resources` (a creator's own maps, including ones awaiting review), `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/terms`. The `(site)` group exists so these share a layout the future admin will not inherit
+- `src/app/admin/` — owner-only area, deliberately outside the `(site)` group so it inherits no navbar, pricing block or footer. `/admin/moderation` is the review queue for submitted maps
 - `src/app/api/view/` — the visitor-counter endpoint
+- `src/app/api/admin/moderation/`, `src/app/api/creator/cleanup-storage/` — approve/reject a submission, and collect Storage objects nothing references any more. Both run under the service key on the server; the cleanup one accepts no path from the browser and works out what's in use from the database
 - `src/app/api/checkout/`, `src/app/api/stripe/webhook/` — Stripe Checkout session creation and the payment webhook (signature-verified, records orders atomically via a Postgres function)
 - `src/components/` — landing sections and shared UI (`Button`, `ArrowCircle`, `Navbar`, `PageTransition`, ...)
 - `src/lib/` — data access and pure logic: Supabase clients, `projects`/`reviews`/`stats` (each with a `rowTo*` mapper that keeps DB column names out of the components), the pricing formula, cookie signing
@@ -67,6 +72,6 @@ Day-to-day work happens on the `dev` branch (Vercel gives it its own Preview URL
 2. ~~Deploy on Vercel~~ — done
 3. ~~Real content everywhere~~ — done (Discord invite, portfolio, reviews, About me, FAQ, stats, pricing); only the author's photo is still a placeholder
 4. ~~Mobile/tablet responsive pass~~ — done (see `docs/RESPONSIVE_PLAN.md` for the full breakdown; rules still need porting into `docs/DESIGN.md`)
-5. Mini content admin backed by Supabase — **in progress**: the site now reads everything from Postgres and content is edited in the Supabase Table Editor. A custom `/admin` comes after a stretch of living with the Table Editor, so the requirements are observed rather than guessed
-6. Shop: ~~catalog~~, ~~cart~~, ~~Stripe checkout~~, ~~Supabase Auth + accounts~~, ~~"my purchases" + downloads~~, ~~marketplace storefront (Most popular row, redesigned cards, categories, real ratings & purchase counts)~~, ~~multi-creator profiles + product galleries~~, ~~creator self-serve uploads + moderation queue~~ — done and live in production; buying requires an account, every user has a public creator profile, and creators upload their own maps for review. Search is deliberately still basic: it matches map titles and summaries only — not descriptions, not creator names. Next: subscription, then the content admin
+5. Mini content admin backed by Supabase — **in progress**: the site reads everything from Postgres. `/admin/moderation` is the first real admin screen (reviewing creator submissions, where the Table Editor genuinely could not do the job — you cannot judge a map from a table row). Portfolio, reviews and stats are still edited in the Table Editor on purpose, so the requirements are observed rather than guessed
+6. Shop: ~~catalog~~, ~~cart~~, ~~Stripe checkout~~, ~~Supabase Auth + accounts~~, ~~"my purchases" + downloads~~, ~~marketplace storefront (Most popular row, redesigned cards, categories, real ratings & purchase counts)~~, ~~multi-creator profiles + product galleries~~ — everything up to multi-creator profiles is live in production; buying requires an account and every user has a public creator profile. **Creator self-serve uploads and the moderation queue are built but still on `dev`** — not merged, not yet verified on Preview. Search covers titles, descriptions and creator names. Next: subscription, then the rest of the content admin
 7. Docker, ~~tests~~ (unit suite in CI since 2026-07-20), deeper analytics (e.g. PostHog)
