@@ -13,7 +13,6 @@ import { SelectField } from "@/components/SelectField";
 import { EditorToolbar, EDITOR_CONTENT_CLASS, TextField } from "@/components/MapFormParts";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import {
-  addProductImages,
   PRODUCT_IMAGES_BUCKET,
   SHOP_CATEGORIES,
   type ProductCategory,
@@ -295,11 +294,40 @@ export function EditMapForm({
 
       if (updateError) throw new Error(`Couldn't save: ${updateError.message}`);
 
-      // 4) Галерея перезаписывается целиком: порядок и состав могли
-      // измениться как угодно, а сверять построчно ради экономии пары
-      // запросов — лишняя сложность на списке из восьми строк.
-      await supabase.from("product_images").delete().eq("product_id", product.id);
-      await addProductImages(supabase, product.id, galleryUrls);
+      // 4) Галерея. Два отдельных решения, оба по делу.
+      //
+      // Первое: если состав и порядок не изменились, не трогаем её
+      // вообще. Раньше каждое сохранение переписывало все строки, даже
+      // когда правили одну запятую в описании, — а вместе с ними
+      // менялись id и created_at, то есть история переписывалась на
+      // ровном месте.
+      //
+      // Второе: когда писать всё же нужно, это ОДИН вызов функции в
+      // транзакции, а не delete + insert подряд. У двух запросов между
+      // ними есть окно, в котором у товара ноль картинок: оборвалась
+      // связь после delete — и галерея потеряна целиком. Ровно эту
+      // болезнь уже лечили у заказов (record_paid_order), лечим и здесь.
+      const previousGallery = product.images.slice(1);
+      const galleryUnchanged =
+        product.image === coverUrl &&
+        previousGallery.length === galleryUrls.length &&
+        previousGallery.every((url, i) => url === galleryUrls[i]);
+
+      if (!galleryUnchanged) {
+        const { error: galleryError } = await supabase.rpc("replace_product_images", {
+          p_product_id: product.id,
+          p_urls: galleryUrls,
+        });
+        if (galleryError) {
+          throw new Error(`Couldn't save the gallery: ${galleryError.message}`);
+        }
+      }
+
+      // 5) Уборка мусора в Storage — старые файл и картинки, на которые
+      // больше никто не ссылается. Намеренно НЕ ждём результата и не
+      // показываем ошибку: сохранение уже прошло, и упавшая уборка не
+      // повод пугать человека — мусор подберётся при следующем разе.
+      fetch("/api/creator/cleanup-storage", { method: "POST" }).catch(() => {});
 
       router.push("/resources");
       router.refresh();
