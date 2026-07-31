@@ -29,15 +29,20 @@ export default async function UploadMapPage() {
     redirect("/login?next=/creator/upload");
   }
 
-  // Карты, которые ждут разбора или отклонены. Показываем их здесь не
-  // ради красоты: после отказа человек естественно идёт «загрузить
-  // заново» — и создаёт ВТОРУЮ строку вместо исправления первой (slug
-  // при совпадении получает случайный суффикс, ничто дубликат не
-  // останавливает). Ссылка на правку прямо здесь закрывает этот путь.
+  // Два РАЗНЫХ случая, и путать их нельзя.
+  //
+  // Отклонённая карта — единственный, где предупреждать уместно: после
+  // отказа человек естественно идёт «загрузить заново» и создаёт ВТОРУЮ
+  // строку вместо исправления первой (slug при совпадении получает
+  // случайный суффикс, ничто дубликат не останавливает).
+  //
+  // Карта на ревью — обычное состояние, а не проблема: отправил одну,
+  // спокойно делаешь вторую. Сначала предупреждение показывалось на обе,
+  // и человек, добавляя ВТОРУЮ карту, получал тревожную плашку про
+  // дубликаты на ровном месте.
   const own = await getOwnProducts(supabase, user.id);
-  const unfinished = own.filter(
-    (p) => p.status === "pending" || p.status === "rejected"
-  );
+  const rejected = own.filter((p) => p.status === "rejected");
+  const pending = own.filter((p) => p.status === "pending");
 
   return (
     <main className="relative w-full overflow-x-clip px-6">
@@ -54,20 +59,20 @@ export default async function UploadMapPage() {
             you&apos;ll see it on your profile once it&apos;s approved.
           </p>
 
-          {unfinished.length > 0 && (
+          {/* Отказ — здесь предупреждение оправдано. */}
+          {rejected.length > 0 && (
             <div className="mt-8 rounded-2xl border border-orange-200 bg-orange-50 p-4 dark:border-orange-900 dark:bg-orange-950/30">
               <p className="flex gap-2.5 text-sm text-orange-900 dark:text-orange-100">
                 <Warning size={18} weight="fill" className="mt-0.5 shrink-0" />
                 <span>
-                  You already have{" "}
-                  {unfinished.length === 1 ? "a map" : `${unfinished.length} maps`}{" "}
-                  waiting. If you&apos;re fixing something after a rejection,
-                  <strong> edit the existing one</strong> instead of uploading
-                  it again — otherwise you&apos;ll end up with duplicates.
+                  Fixing something after a rejection?{" "}
+                  <strong>Edit the existing map</strong> instead of uploading it
+                  again — a re-upload creates a second listing rather than
+                  replacing the first.
                 </span>
               </p>
               <ul className="mt-3 space-y-1.5">
-                {unfinished.map((product) => (
+                {rejected.map((product) => (
                   <li key={product.id}>
                     <Link
                       href={`/resources/${product.slug}/edit`}
@@ -76,12 +81,36 @@ export default async function UploadMapPage() {
                       {product.title}
                     </Link>{" "}
                     <span className="text-xs text-orange-800/70 dark:text-orange-200/70">
-                      — {product.status === "pending" ? "in review" : "rejected"}
+                      — needs changes
                     </span>
                   </li>
                 ))}
               </ul>
             </div>
+          )}
+
+          {/* Карты на проверке — просто справка, без тревоги: ни рамки,
+              ни значка предупреждения, приглушённый текст. Добавлять
+              вторую карту, пока первая на ревью, совершенно нормально. */}
+          {pending.length > 0 && rejected.length === 0 && (
+            <p className="mt-8 text-center text-sm text-zinc-500 dark:text-zinc-400">
+              {pending.length === 1
+                ? "One of your maps is in review"
+                : `${pending.length} of your maps are in review`}
+              :{" "}
+              {pending.map((product, i) => (
+                <span key={product.id}>
+                  {i > 0 && ", "}
+                  <Link
+                    href={`/resources/${product.slug}/edit`}
+                    className="font-medium text-zinc-700 underline decoration-zinc-300 underline-offset-4 hover:text-orange-600 dark:text-zinc-300 dark:decoration-zinc-600 dark:hover:text-orange-400"
+                  >
+                    {product.title}
+                  </Link>
+                </span>
+              ))}
+              . Adding another one is fine.
+            </p>
           )}
 
           <div className="mt-10">
