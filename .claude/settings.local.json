@@ -8,7 +8,10 @@
       "Bash(mv FirstTry firsttryclaude)",
       "Bash(npx --yes create-next-app@latest firsttryclaude --typescript --tailwind --app --eslint --src-dir --import-alias \"@/*\" --use-npm)",
       "Bash(git config *)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "Bash(grep -n -A 2 '`/admin/products`' CLAUDE.md)",
+      "Bash(cat)",
+      "Bash(git commit -q -m 'Spell out the admin catalogue and analytics ideas *)"
     ]
   }
 }
