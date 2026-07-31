@@ -1,6 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import { signedDownloadUrl } from "@/lib/orders";
+import { signedDownloadUrl, downloadFileName } from "@/lib/orders";
 import type { ProductCategory, ProductStatus } from "@/lib/products";
 
 // Очередь модерации и «мои заявки» креатора.
@@ -90,7 +90,12 @@ export async function getPendingProducts(): Promise<PendingProduct[]> {
         price: row.price_label,
         category: row.category,
         createdAt: row.created_at,
-        fileUrl: row.file_path ? await signedDownloadUrl(row.file_path) : null,
+        fileUrl: row.file_path
+          ? await signedDownloadUrl(
+              row.file_path,
+              downloadFileName(row.title, row.file_path)
+            )
+          : null,
         creator: row.creator_id
           ? { id: row.creator_id, displayName: names.get(row.creator_id) ?? "—" }
           : null,

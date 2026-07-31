@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import { DownloadSimple } from "@phosphor-icons/react/dist/ssr";
 import { createSupabaseServer } from "@/lib/supabase-server";
-import { getPurchasesForUser, signedDownloadUrl } from "@/lib/orders";
+import { getPurchasesForUser, signedDownloadUrl, downloadFileName } from "@/lib/orders";
 import { readUserRatings } from "@/lib/ratings";
 import { RatingStars } from "@/components/RatingStars";
 import { PageGlow } from "@/components/PageGlow";
@@ -38,7 +38,9 @@ export default async function PurchasesPage() {
   const downloads = await Promise.all(
     purchases.map(async (p) => ({
       ...p,
-      url: p.filePath ? await signedDownloadUrl(p.filePath) : null,
+      url: p.filePath
+        ? await signedDownloadUrl(p.filePath, downloadFileName(p.title, p.filePath))
+        : null,
     }))
   );
 

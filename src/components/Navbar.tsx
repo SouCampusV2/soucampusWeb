@@ -88,6 +88,7 @@ export function Navbar() {
     pathname === "/signup" ||
     pathname === "/forgot-password" ||
     pathname === "/reset-password" ||
+    pathname === "/link-expired" ||
     pathname.startsWith("/profile") ||
     pathname === "/settings" ||
     pathname === "/purchases" ||

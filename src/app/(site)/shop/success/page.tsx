@@ -5,6 +5,7 @@ import {
   buildPaidOrderFromSession,
   recordPaidOrder,
   signedDownloadUrl,
+  downloadFileName,
   type PaidOrder,
 } from "@/lib/orders";
 import { Button } from "@/components/Button";
@@ -95,7 +96,12 @@ export default async function SuccessPage({
   const items = await Promise.all(
     order.items.map(async (item) => ({
       ...item,
-      downloadUrl: item.filePath ? await signedDownloadUrl(item.filePath) : null,
+      downloadUrl: item.filePath
+        ? await signedDownloadUrl(
+            item.filePath,
+            downloadFileName(item.title, item.filePath)
+          )
+        : null,
     }))
   );
 

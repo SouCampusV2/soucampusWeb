@@ -29,6 +29,7 @@ import {
   EditorToolbar,
   EDITOR_CONTENT_CLASS,
   TextField,
+  PriceField,
 } from "@/components/MapFormParts";
 import {
   MAX_IMAGES,
@@ -405,21 +406,7 @@ export function UploadMapForm({ userId }: { userId: string }) {
           required
         />
 
-        <div>
-          <label htmlFor="price" className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Price (EUR) <span className="font-normal text-zinc-500 dark:text-zinc-400">— 0 for free</span>
-          </label>
-          <input
-            id="price"
-            type="text"
-            inputMode="decimal"
-            value={priceInput}
-            onChange={(e) => setPriceInput(e.target.value)}
-            placeholder="15"
-            required
-            className="w-full rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500"
-          />
-        </div>
+        <PriceField value={priceInput} onChange={setPriceInput} />
       </div>
 
       {/* Description — Tiptap WYSIWYG */}

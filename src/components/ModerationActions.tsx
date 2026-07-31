@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Check, X } from "@phosphor-icons/react";
-import { BUTTON_COLORS } from "@/components/Button";
+import { BUTTON_COLORS, BUTTON_PILL } from "@/components/Button";
 import { REJECTION_TEMPLATES, buildRejectionMessage } from "@/lib/rejection";
 
 // Кнопки разбора одной заявки. Клиентский компонент — потому что здесь
@@ -151,7 +151,7 @@ export function ModerationActions({ productId }: { productId: string }) {
             type="button"
             onClick={() => send("reject")}
             disabled={pending || !canSubmit}
-            className="rounded-full bg-red-600 px-5 py-2 text-sm font-semibold text-white transition-colors hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+            className={`${BUTTON_PILL} bg-red-600 text-white hover:bg-red-700`}
           >
             {pending ? "Rejecting…" : "Send rejection"}
           </button>
@@ -163,7 +163,7 @@ export function ModerationActions({ productId }: { productId: string }) {
               setNote("");
               setError(null);
             }}
-            className="rounded-full px-5 py-2 text-sm font-semibold text-zinc-600 transition-colors hover:bg-zinc-950/[0.05] dark:text-zinc-400 dark:hover:bg-zinc-50/[0.06]"
+            className={`${BUTTON_PILL} text-zinc-600 hover:bg-zinc-950/[0.05] dark:text-zinc-400 dark:hover:bg-zinc-50/[0.06]`}
           >
             Cancel
           </button>
@@ -182,7 +182,7 @@ export function ModerationActions({ productId }: { productId: string }) {
           type="button"
           onClick={() => send("approve")}
           disabled={pending}
-          className={`inline-flex items-center gap-1.5 px-5 py-2 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${BUTTON_COLORS.primary}`}
+          className={`${BUTTON_PILL} ${BUTTON_COLORS.primary}`}
         >
           <Check size={16} weight="bold" />
           {pending ? "Publishing…" : "Approve & publish"}
@@ -191,7 +191,7 @@ export function ModerationActions({ productId }: { productId: string }) {
           type="button"
           onClick={() => setRejecting(true)}
           disabled={pending}
-          className="inline-flex items-center gap-1.5 rounded-full border-2 border-red-600 px-5 py-2 text-sm font-semibold text-red-600 transition-colors hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-60 dark:hover:bg-red-950/30"
+          className={`${BUTTON_PILL} border-2 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30`}
         >
           <X size={16} weight="bold" />
           Reject

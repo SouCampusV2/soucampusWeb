@@ -103,6 +103,11 @@ export function CategoryFilter() {
           aria-hidden
           className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
         />
+        {/* [&::-webkit-search-cancel-button]:hidden — у type="search"
+            браузер рисует СВОЙ крестик очистки поверх нашего: два разных
+            крестика в одном поле, оба рабочие, чужой ещё и не в наших
+            цветах. Прячем браузерный, оставляем свой — он один умеет
+            заодно убрать ?q из адреса. */}
         <input
           key={activeQuery}
           type="search"
@@ -110,7 +115,7 @@ export function CategoryFilter() {
           defaultValue={activeQuery}
           aria-label="Search maps and creators"
           placeholder="Search maps or creators"
-          className="w-full rounded-full border border-zinc-950/[0.08] bg-transparent py-2.5 pl-10 pr-9 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500"
+          className="w-full rounded-full border border-zinc-950/[0.08] bg-transparent py-2.5 pl-10 pr-9 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
         />
         {activeQuery && (
           <button

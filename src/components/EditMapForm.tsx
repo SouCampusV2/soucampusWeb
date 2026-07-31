@@ -10,7 +10,12 @@ import { TableKit } from "@tiptap/extension-table/kit";
 import { Star, X, FileArrowUp, Warning } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { SelectField } from "@/components/SelectField";
-import { EditorToolbar, EDITOR_CONTENT_CLASS, TextField } from "@/components/MapFormParts";
+import {
+  EditorToolbar,
+  EDITOR_CONTENT_CLASS,
+  TextField,
+  PriceField,
+} from "@/components/MapFormParts";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import {
   PRODUCT_IMAGES_BUCKET,
@@ -480,14 +485,7 @@ export function EditMapForm({
           options={FORM_CATEGORIES.map((c) => ({ value: c.slug, label: c.label }))}
           required
         />
-        <TextField
-          id="price"
-          label="Price (EUR)"
-          hint="— 0 for free"
-          value={priceInput}
-          onChange={setPriceInput}
-          required
-        />
+        <PriceField value={priceInput} onChange={setPriceInput} />
       </div>
 
       <div>

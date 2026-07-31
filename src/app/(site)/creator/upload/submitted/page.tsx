@@ -27,10 +27,10 @@ export default function UploadSubmittedPage() {
           profile and the shop once it&apos;s approved.
         </p>
         <div className="mt-8 flex gap-3">
-          <Button href="/resources" variant="secondary">
-            Your resources
+          <Button href="/resources">Your resources</Button>
+          <Button href="/shop" variant="secondary">
+            Back to shop
           </Button>
-          <Button href="/shop">Back to shop</Button>
         </div>
       </section>
     </main>

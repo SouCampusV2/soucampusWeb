@@ -3,8 +3,9 @@ import DOMPurify from "isomorphic-dompurify";
 import { DownloadSimple, Clock } from "@phosphor-icons/react/dist/ssr";
 import { getPendingProducts } from "@/lib/moderation";
 import { ModerationActions } from "@/components/ModerationActions";
+import { ModerationGallery } from "@/components/ModerationGallery";
 import { RICH_TEXT_CLASS } from "@/lib/rich-text";
-import { BUTTON_COLORS } from "@/components/Button";
+import { BUTTON_COLORS, BUTTON_PILL } from "@/components/Button";
 import { creatorHref } from "@/lib/creators";
 
 // Очередь всегда свежая: список меняется от каждого решения, кэшировать
@@ -74,7 +75,7 @@ export default async function ModerationPage() {
                 {product.fileUrl ? (
                   <a
                     href={product.fileUrl}
-                    className={`inline-flex shrink-0 items-center gap-1.5 px-4 py-2 text-sm font-semibold transition-colors ${BUTTON_COLORS.secondary}`}
+                    className={`${BUTTON_PILL} ${BUTTON_COLORS.secondary}`}
                   >
                     <DownloadSimple size={16} weight="bold" />
                     Download file
@@ -86,24 +87,9 @@ export default async function ModerationPage() {
                 )}
               </div>
 
-              {/* Галерея — обложка первой, как её увидит витрина. */}
-              <div className="mt-5 flex gap-3 overflow-x-auto pb-1">
-                {product.images.map((src, i) => (
-                  <div key={src} className="relative shrink-0">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={src}
-                      alt=""
-                      className="h-28 w-48 rounded-xl object-cover"
-                    />
-                    {i === 0 && (
-                      <span className="absolute bottom-1.5 left-1.5 rounded-full bg-orange-500 px-2 py-0.5 text-[11px] font-medium text-zinc-950">
-                        Cover
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
+              {/* Галерея — обложка первой, как её увидит витрина;
+                  по клику разворачивается на весь экран с листанием. */}
+              <ModerationGallery images={product.images} title={product.title} />
 
               {/* Описание — ровно в том виде, в каком его увидит
                   покупатель (те же классы, тот же санитайзер, что на

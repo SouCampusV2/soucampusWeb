@@ -130,23 +130,36 @@ export function ResetPasswordForm() {
       onSubmit={handleSubmit}
       className="mx-auto max-w-md rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-950"
     >
-      {/* Скрытое поле с логином — обязательный приём для менеджеров
-          паролей (и Chrome, и Safari, и 1Password): без него страница
-          выглядит как форма «просто с двумя паролями», и новый пароль
-          не привязывается к аккаунту — предложения сохранить не будет,
-          либо запись создастся без имени пользователя. */}
-      <input
-        type="text"
-        name="username"
-        autoComplete="username"
-        value={email}
-        readOnly
-        aria-hidden
-        tabIndex={-1}
-        className="hidden"
-      />
-
       <div className="space-y-4">
+        {/* Поле с логином — обязательный приём для менеджеров паролей (и
+            Chrome, и Safari, и 1Password): без него страница выглядит как
+            форма «просто с двумя паролями», новый пароль не привязывается
+            к аккаунту, и предложения сохранить не будет.
+
+            Раньше оно было тут же, но с className="hidden", и это ровно
+            та ошибка, из-за которой Chrome показывал только ключик в
+            адресной строке вместо выпадающего «Сохранить пароль?»:
+            display:none поля менеджеры паролей ИГНОРИРУЮТ — специально,
+            потому что этим приёмом злоупотребляли. Поле обязано быть
+            настоящим, видимым и заполненным.
+
+            Заодно это честнее: человек видит, пароль КАКОГО аккаунта он
+            меняет. По ссылке из письма можно прийти и с другого
+            устройства, где вошёл кто-то ещё. */}
+        <div>
+          <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Account
+          </span>
+          <input
+            type="text"
+            name="username"
+            autoComplete="username"
+            value={email}
+            readOnly
+            className="w-full cursor-default rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-3 text-sm text-zinc-500 focus:outline-none dark:border-zinc-50/[0.08] dark:text-zinc-400"
+          />
+        </div>
+
         <div>
           <AuthField
             id="password"

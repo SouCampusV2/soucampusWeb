@@ -51,6 +51,16 @@ export const BUTTON_COLORS: Record<Variant, string> = {
     "text-orange-500 underline decoration-2 underline-offset-4 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-500",
 };
 
+// Геометрия «маленькой пилюли» — того самого исключения, ради которого
+// существует BUTTON_COLORS. Раньше каждое такое место писало
+// `px-5 py-2` руками, и высоты разъезжались ровно по той же причине, по
+// которой в base появилась h-12: паддинг задаёт ОТСТУП, а не высоту, и
+// кнопка с обводкой (border-2) выходит на 4px выше соседней с заливкой,
+// а кнопка с иконкой — выше кнопки без неё. Поэтому здесь тоже
+// фиксированная высота, а паддинг только горизонтальный.
+export const BUTTON_PILL =
+  "inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60";
+
 // Точечное переопределение цвета primary-кнопки (по умолчанию — оранжевый,
 // см. правило "кнопки всегда orange" в DESIGN.md). Использовать только для
 // осознанных экспериментов/исключений, не как обычный способ красить кнопки.

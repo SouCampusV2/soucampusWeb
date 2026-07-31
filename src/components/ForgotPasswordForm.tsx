@@ -14,8 +14,18 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 // против «такого пользователя нет») превратил бы форму в проверялку
 // чужих адресов — можно было бы перебором выяснить, кто зарегистрирован
 // на сайте. Supabase по той же причине и сам не сообщает об этом.
-export function ForgotPasswordForm() {
-  const [email, setEmail] = useState("");
+//
+// signedInEmail — адрес вошедшего пользователя, если он есть (страница
+// определяет это по сессии). У вошедшего это уже не «забыл», а «сменить»:
+// адрес не выбирается, а ссылки на вход не должно быть вовсе — иначе со
+// своей же страницы смены пароля можно молча войти в чужой аккаунт.
+export function ForgotPasswordForm({
+  signedInEmail = null,
+}: {
+  signedInEmail?: string | null;
+}) {
+  const isSignedIn = Boolean(signedInEmail);
+  const [email, setEmail] = useState(signedInEmail ?? "");
   const [pending, setPending] = useState(false);
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -59,16 +69,33 @@ export function ForgotPasswordForm() {
           Check your inbox
         </h2>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          If{" "}
-          <span className="font-medium text-zinc-950 dark:text-zinc-50">
-            {email}
-          </span>{" "}
-          has an account, a reset link is on its way. The link works once and
-          expires within the hour.
+          {isSignedIn ? (
+            <>
+              A link is on its way to{" "}
+              <span className="font-medium text-zinc-950 dark:text-zinc-50">
+                {email}
+              </span>
+              . It works once and expires within the hour.
+            </>
+          ) : (
+            <>
+              If{" "}
+              <span className="font-medium text-zinc-950 dark:text-zinc-50">
+                {email}
+              </span>{" "}
+              has an account, a reset link is on its way. The link works once
+              and expires within the hour.
+            </>
+          )}
         </p>
         <div className="mt-6">
-          <Button href="/login" variant="secondary" size="sm" className="w-full">
-            Back to sign in
+          <Button
+            href={isSignedIn ? "/settings" : "/login"}
+            variant="secondary"
+            size="sm"
+            className="w-full"
+          >
+            {isSignedIn ? "Back to settings" : "Back to sign in"}
           </Button>
         </div>
       </div>
@@ -80,17 +107,31 @@ export function ForgotPasswordForm() {
       onSubmit={handleSubmit}
       className="mx-auto max-w-md rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-950"
     >
-      <AuthField
-        id="email"
-        label="Email"
-        icon={<EnvelopeSimple size={18} />}
-        value={email}
-        onChange={setEmail}
-        type="email"
-        placeholder="you@example.com"
-        autoComplete="email"
-        required
-      />
+      {/* Вошедшему адрес не даём менять: письмо всё равно уйдёт на почту
+          аккаунта, а поле ввода намекало бы, что можно сбросить пароль
+          кому-то ещё. */}
+      {isSignedIn ? (
+        <div>
+          <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Your account
+          </span>
+          <p className="rounded-2xl border border-zinc-950/[0.08] px-4 py-3 text-sm text-zinc-600 dark:border-zinc-50/[0.08] dark:text-zinc-400">
+            {signedInEmail}
+          </p>
+        </div>
+      ) : (
+        <AuthField
+          id="email"
+          label="Email"
+          icon={<EnvelopeSimple size={18} />}
+          value={email}
+          onChange={setEmail}
+          type="email"
+          placeholder="you@example.com"
+          autoComplete="email"
+          required
+        />
+      )}
 
       {error && (
         <p className="mt-4 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
@@ -100,18 +141,30 @@ export function ForgotPasswordForm() {
 
       <div className="mt-6">
         <Button type="submit" variant="primary" disabled={pending} className="w-full">
-          {pending ? "Sending…" : "Send reset link"}
+          {pending ? "Sending…" : isSignedIn ? "Email me a link" : "Send reset link"}
         </Button>
       </div>
 
+      {/* Ссылки на вход у вошедшего быть не должно — см. шапку файла. */}
       <p className="mt-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
-        Remembered it?{" "}
-        <Link
-          href="/login"
-          className="font-semibold text-orange-500 underline decoration-2 underline-offset-4 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-500"
-        >
-          Sign in
-        </Link>
+        {isSignedIn ? (
+          <Link
+            href="/settings"
+            className="font-semibold text-orange-500 underline decoration-2 underline-offset-4 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-500"
+          >
+            Back to settings
+          </Link>
+        ) : (
+          <>
+            Remembered it?{" "}
+            <Link
+              href="/login"
+              className="font-semibold text-orange-500 underline decoration-2 underline-offset-4 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-500"
+            >
+              Sign in
+            </Link>
+          </>
+        )}
       </p>
     </form>
   );

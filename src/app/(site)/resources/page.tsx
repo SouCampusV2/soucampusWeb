@@ -6,7 +6,8 @@ import { PencilSimple, Plus, Eye } from "@phosphor-icons/react/dist/ssr";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getOwnProducts, type OwnProduct } from "@/lib/moderation";
 import { PageGlow } from "@/components/PageGlow";
-import { Button, BUTTON_COLORS } from "@/components/Button";
+import { Button, BUTTON_COLORS, BUTTON_PILL } from "@/components/Button";
+import { ResourceActions } from "@/components/ResourceActions";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -117,7 +118,7 @@ function ResourceRow({ product }: { product: OwnProduct }) {
           {product.isPublished && (
             <Link
               href={`/shop/${product.slug}`}
-              className="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-medium text-zinc-600 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+              className={`${BUTTON_PILL} text-zinc-600 hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50`}
             >
               <Eye size={16} />
               View
@@ -125,11 +126,17 @@ function ResourceRow({ product }: { product: OwnProduct }) {
           )}
           <Link
             href={`/resources/${product.slug}/edit`}
-            className={`inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold transition-colors ${BUTTON_COLORS.secondary}`}
+            className={`${BUTTON_PILL} ${BUTTON_COLORS.secondary}`}
           >
             <PencilSimple size={16} weight="bold" />
             Edit
           </Link>
+          <ResourceActions
+            productId={product.id}
+            title={product.title}
+            status={product.status}
+            isPublished={product.isPublished}
+          />
         </div>
       </div>
 

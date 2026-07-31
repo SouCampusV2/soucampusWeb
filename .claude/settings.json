@@ -41,7 +41,8 @@
       "Bash(node \"C:/Users/super/AppData/Local/Temp/claude/c--Users-super-OneDrive--------------Claude-FirstTry/c8cd0c95-ac36-45f9-879d-a1fe8fd2f62b/scratchpad/seed-products.mjs\")",
       "Bash(node -e \"console.log\\(require\\('./node_modules/@tiptap/react/package.json'\\).version\\); console.log\\(require\\('./node_modules/@tiptap/starter-kit/package.json'\\).version\\); console.log\\(require\\('./node_modules/react/package.json'\\).version\\)\")",
       "Bash(ls \"C:/Users/super/.claude/projects/c--Users-super-OneDrive--------------Claude-FirstTry/memory/\" 2>/dev/null; echo \"--- mcp config ---\"; cat \"C:/Users/super/.claude/settings.json\" 2>/dev/null | head -40; echo \"--- project mcp ---\"; cat \"c:/Users/super/OneDrive/Рабочий стол/Claude/FirstTry/.mcp.json\" 2>/dev/null)",
-      "Read(//c/Users/super/.claude/**)"
+      "Read(//c/Users/super/.claude/**)",
+      "PowerShell(npm test -- --run 2>&1)"
     ]
   }
 }

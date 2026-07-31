@@ -11,7 +11,11 @@
       "Bash(npm run *)",
       "Bash(grep -n -A 2 '`/admin/products`' CLAUDE.md)",
       "Bash(cat)",
-      "Bash(git commit -q -m 'Spell out the admin catalogue and analytics ideas *)"
+      "Bash(git commit -q -m 'Spell out the admin catalogue and analytics ideas *)",
+      "PowerShell(npx tsc --noEmit 2>&1)",
+      "PowerShell(npm run lint 2>&1)",
+      "PowerShell(npm run build 2>&1)",
+      "PowerShell(npm test -- --run 2>&1)"
     ]
   }
 }

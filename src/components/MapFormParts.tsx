@@ -120,6 +120,61 @@ export function EditorToolbar({
   );
 }
 
+// Цена. Отдельным полем, а не TextField с проверкой на отправке: буквы и
+// минус в поле цены — не ошибка пользователя, которую надо объяснять, а
+// нажатие, которого просто не должно случиться. Поэтому фильтруем на вводе,
+// и до сообщения «enter a valid price» дело не доходит.
+//
+// `type="number"` не годится: он пропускает минус и `e` (научная запись),
+// рисует свои стрелки поверх нашей рамки и в разных браузерах по-разному
+// относится к запятой. Отсюда текстовое поле с `inputMode="decimal"` —
+// цифровая клавиатура на телефоне — и своя фильтрация.
+export function sanitizePriceInput(next: string): string | null {
+  if (next === "") return "";
+  // Запятая как разделитель привычна половине Европы — принимаем, но
+  // приводим к точке сразу, чтобы дальше по форме жило одно представление.
+  const unified = next.replace(",", ".");
+  // Цифры, максимум одна точка, максимум два знака после неё.
+  if (!/^\d*\.?\d{0,2}$/.test(unified)) return null;
+  return unified;
+}
+
+export function PriceField({
+  id = "price",
+  value,
+  onChange,
+}: {
+  id?: string;
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div>
+      <label
+        htmlFor={id}
+        className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+      >
+        Price (EUR){" "}
+        <span className="font-normal text-zinc-500 dark:text-zinc-400">— 0 for free</span>
+      </label>
+      <input
+        id={id}
+        name={id}
+        type="text"
+        inputMode="decimal"
+        value={value}
+        onChange={(e) => {
+          const cleaned = sanitizePriceInput(e.target.value);
+          if (cleaned !== null) onChange(cleaned);
+        }}
+        placeholder="15"
+        required
+        className="w-full rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500"
+      />
+    </div>
+  );
+}
+
 export function TextField({
   id,
   label,

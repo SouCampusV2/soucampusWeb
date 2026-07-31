@@ -202,16 +202,50 @@ export const PRODUCT_FILES_BUCKET = "product-files";
 const DOWNLOAD_URL_TTL_SECONDS = 60 * 60;
 
 /**
+ * Имя, под которым файл карты ложится на диск: название карты + то
+ * расширение, с которым его загрузил креатор.
+ *
+ * Расширение берём из пути в Storage, а не из названия: `.zip`,
+ * `.schem` и `.schematic` — разные вещи, и подменять их нельзя.
+ * Название чистим до безопасного набора символов — в имя файла едет
+ * произвольный пользовательский текст, а в нём бывают и слэши, и
+ * кавычки, и всё то, что ломает Content-Disposition.
+ */
+export function downloadFileName(title: string, filePath: string): string {
+  const dot = filePath.lastIndexOf(".");
+  const extension = dot > -1 ? filePath.slice(dot).toLowerCase() : "";
+  const safeTitle =
+    title
+      .normalize("NFKD")
+      .replace(/[^\w\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .slice(0, 80) || "map";
+  return `${safeTitle}${extension}`;
+}
+
+/**
  * Временная ссылка на файл из приватного бакета. null — файл не найден
  * (не загружен или путь в products.file_path указывает мимо).
  *
  * Вызывать ТОЛЬКО после проверки оплаты (getPaidOrder): сама функция
  * прав не проверяет, она просто подписывает путь служебным ключом.
+ *
+ * downloadAs — имя, под которым файл ляжет на диск. В Storage объекты
+ * зовутся по сгенерированному пути (uuid и время загрузки), и без этого
+ * человек получает papka с именем вида `a3f9…-1753.zip` и не понимает,
+ * какая из десяти скачанных карт какая. Supabase кладёт имя в
+ * Content-Disposition подписанной ссылки.
  */
-export async function signedDownloadUrl(filePath: string): Promise<string | null> {
+export async function signedDownloadUrl(
+  filePath: string,
+  downloadAs?: string
+): Promise<string | null> {
   const { data, error } = await getSupabaseAdmin()
     .storage.from(PRODUCT_FILES_BUCKET)
-    .createSignedUrl(filePath, DOWNLOAD_URL_TTL_SECONDS);
+    .createSignedUrl(filePath, DOWNLOAD_URL_TTL_SECONDS, {
+      download: downloadAs ?? true,
+    });
 
   if (error) {
     // Оплата уже прошла — ронять страницу успеха нельзя. Показываем
