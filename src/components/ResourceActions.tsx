@@ -37,13 +37,32 @@ export function ResourceActions({
   // Клик мимо закрывает меню. Без этого оно остаётся висеть, пока не
   // ткнёшь ровно в ту же кнопку, — и на странице с десятком карт легко
   // открыть второе, не закрыв первое.
+  //
+  // pointerdown на document в ФАЗЕ ПЕРЕХВАТА, а не mousedown на window
+  // (как было, и оно не срабатывало):
+  //   • перехват — событие достаётся нам ПЕРВЫМИ, до всплытия, поэтому
+  //     любой stopPropagation по дороге (а на странице живёт перехватчик
+  //     ссылок из PageTransition) больше не может нас отключить;
+  //   • pointer вместо mouse — одно событие и на мышь, и на тач: на
+  //     телефоне mousedown приходит с задержкой, а то и не приходит вовсе;
+  //   • меню закрывается на нажатии, поэтому последующий click спокойно
+  //     доходит до того, во что целились, — раньше промах по меню
+  //     ощущался как «клик не сработал».
+  // Esc — то же самое с клавиатуры, обязательное для всплывающего меню.
   useEffect(() => {
     if (!open) return;
-    function onDown(event: MouseEvent) {
+    function onPointerDown(event: PointerEvent) {
       if (!wrapRef.current?.contains(event.target as Node)) setOpen(false);
     }
-    window.addEventListener("mousedown", onDown);
-    return () => window.removeEventListener("mousedown", onDown);
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("pointerdown", onPointerDown, true);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown, true);
+      document.removeEventListener("keydown", onKeyDown);
+    };
   }, [open]);
 
   async function send(action: "hide" | "unhide" | "delete") {

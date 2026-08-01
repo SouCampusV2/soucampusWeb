@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MagnifyingGlass, X } from "@phosphor-icons/react";
 import { SHOP_CATEGORIES, type ProductCategory } from "@/lib/products";
@@ -32,20 +33,23 @@ export function CategoryFilter() {
   // ВСЕ статические страницы сайта. Здесь мы уже внутри <Suspense> на
   // клиентской витрине, так что запрос читается бесплатно.
   //
-  // Поле НЕконтролируемое, и это осознанно. Правда о запросе — в адресе;
-  // держать её ещё и в useState значит синхронизировать две копии
-  // эффектом, а setState в эффекте в этом проекте запрещён линтером (и
-  // правильно: лишний рендер плюс мигание). key={activeQuery} решает то
-  // же самое силами React — сменился адрес, поле пересоздалось с новым
-  // значением, и синхронизировать нечего.
-  function submitSearch(event: React.FormEvent) {
-    event.preventDefault();
-    const form = event.currentTarget as HTMLFormElement;
-    const value = new FormData(form).get("q");
+  // Правда о запросе — в адресе; SearchField (внизу файла) держит лишь
+  // то, что человек НАБРАЛ, но ещё не отправил, и пересоздаётся по
+  // key={activeQuery}, когда адрес меняется. Так две копии не приходится
+  // синхронизировать эффектом — setState в эффекте в этом проекте
+  // запрещён линтером (и правильно: лишний рендер плюс мигание).
+  function submitSearch(value: string) {
     const next = new URLSearchParams(params.toString());
-    const trimmed = typeof value === "string" ? value.trim() : "";
+    const trimmed = value.trim();
     if (trimmed) next.set("q", trimmed);
     else next.delete("q");
+    const query = next.toString();
+    router.push(query ? `/shop?${query}` : "/shop", { scroll: false });
+  }
+
+  function clearSearch() {
+    const next = new URLSearchParams(params.toString());
+    next.delete("q");
     const query = next.toString();
     router.push(query ? `/shop?${query}` : "/shop", { scroll: false });
   }
@@ -97,44 +101,82 @@ export function CategoryFilter() {
     <div className="mt-8 flex flex-col gap-3 sm:flex-row-reverse sm:items-start sm:justify-between sm:gap-6">
       {/* Поиск справа на широком экране, сверху на узком: на телефоне
           набирать удобнее сразу, а не после прокрутки списка категорий. */}
-      <form onSubmit={submitSearch} className="relative w-full sm:max-w-xs">
-        <MagnifyingGlass
-          size={16}
-          aria-hidden
-          className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
-        />
-        {/* [&::-webkit-search-cancel-button]:hidden — у type="search"
-            браузер рисует СВОЙ крестик очистки поверх нашего: два разных
-            крестика в одном поле, оба рабочие, чужой ещё и не в наших
-            цветах. Прячем браузерный, оставляем свой — он один умеет
-            заодно убрать ?q из адреса. */}
-        <input
-          key={activeQuery}
-          type="search"
-          name="q"
-          defaultValue={activeQuery}
-          aria-label="Search maps and creators"
-          placeholder="Search maps or creators"
-          className="w-full rounded-full border border-zinc-950/[0.08] bg-transparent py-2.5 pl-10 pr-9 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
-        />
-        {activeQuery && (
-          <button
-            type="button"
-            onClick={() => {
-              const next = new URLSearchParams(params.toString());
-              next.delete("q");
-              const query = next.toString();
-              router.push(query ? `/shop?${query}` : "/shop", { scroll: false });
-            }}
-            aria-label="Clear search"
-            className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-zinc-400 transition-colors hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"
-          >
-            <X size={15} weight="bold" />
-          </button>
-        )}
-      </form>
+      <SearchField
+        key={activeQuery}
+        initialQuery={activeQuery}
+        onSubmit={submitSearch}
+        onClear={clearSearch}
+      />
 
       {pills}
     </div>
+  );
+}
+
+// Строка поиска. Отдельный компонент, потому что ей нужно СВОЁ состояние:
+// крестик очистки обязан появляться, как только человек начал печатать, а
+// не после отправки запроса (замечание владельца 2026-07-31). Раньше он
+// висел на activeQuery — то есть на адресе, — и набранный, но не
+// отправленный текст стереть было нечем.
+//
+// Пересоздаётся из CategoryFilter по key={activeQuery}: сменился адрес
+// (выбрали категорию, нажали «назад», пришли по ссылке) — поле рождается
+// заново с актуальным значением. Это и есть синхронизация с адресом,
+// только силами React, без setState в эффекте.
+function SearchField({
+  initialQuery,
+  onSubmit,
+  onClear,
+}: {
+  initialQuery: string;
+  onSubmit: (value: string) => void;
+  onClear: () => void;
+}) {
+  const [value, setValue] = useState(initialQuery);
+
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        onSubmit(value);
+      }}
+      className="relative w-full sm:max-w-xs"
+    >
+      <MagnifyingGlass
+        size={16}
+        aria-hidden
+        className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-500"
+      />
+      {/* [&::-webkit-search-cancel-button]:hidden — у type="search"
+          браузер рисует СВОЙ крестик очистки поверх нашего: два разных
+          крестика в одном поле, оба рабочие, чужой ещё и не в наших
+          цветах. Прячем браузерный, оставляем свой — он один умеет
+          заодно убрать ?q из адреса. */}
+      <input
+        type="search"
+        name="q"
+        value={value}
+        onChange={(event) => setValue(event.target.value)}
+        aria-label="Search maps and creators"
+        placeholder="Search maps or creators"
+        className="w-full rounded-full border border-zinc-950/[0.08] bg-transparent py-2.5 pl-10 pr-9 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
+      />
+      {value && (
+        <button
+          type="button"
+          onClick={() => {
+            // Чистим и поле, и адрес. Второе — только если в адресе
+            // действительно что-то было: иначе крестик на ненайденном
+            // черновике запроса дёргал бы навигацию впустую.
+            setValue("");
+            if (initialQuery) onClear();
+          }}
+          aria-label="Clear search"
+          className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-zinc-400 transition-colors hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"
+        >
+          <X size={15} weight="bold" />
+        </button>
+      )}
+    </form>
   );
 }

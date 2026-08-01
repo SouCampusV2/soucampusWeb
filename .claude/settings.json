@@ -42,7 +42,13 @@
       "Bash(node -e \"console.log\\(require\\('./node_modules/@tiptap/react/package.json'\\).version\\); console.log\\(require\\('./node_modules/@tiptap/starter-kit/package.json'\\).version\\); console.log\\(require\\('./node_modules/react/package.json'\\).version\\)\")",
       "Bash(ls \"C:/Users/super/.claude/projects/c--Users-super-OneDrive--------------Claude-FirstTry/memory/\" 2>/dev/null; echo \"--- mcp config ---\"; cat \"C:/Users/super/.claude/settings.json\" 2>/dev/null | head -40; echo \"--- project mcp ---\"; cat \"c:/Users/super/OneDrive/Рабочий стол/Claude/FirstTry/.mcp.json\" 2>/dev/null)",
       "Read(//c/Users/super/.claude/**)",
-      "PowerShell(npm test -- --run 2>&1)"
+      "PowerShell(npm test -- --run 2>&1)",
+      "PowerShell(npx tsc --noEmit 2>&1)",
+      "PowerShell(npx eslint \"src/app/\\(site\\)/cart/page.tsx\")",
+      "PowerShell(npm run build 2>&1)",
+      "PowerShell(npx eslint src/app/layout.tsx src/components/CategoryFilter.tsx src/components/ResourceActions.tsx)",
+      "PowerShell(npm test --silent 2>&1)",
+      "PowerShell(git add -A)"
     ]
   }
 }
