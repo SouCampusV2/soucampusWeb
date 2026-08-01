@@ -36,7 +36,13 @@ const base =
 //               сдвиг 500→600 / 400→500, но по цвету обводки и текста.
 //   tertiary  — текст-ссылка с подчёркиванием, без формы и паддинга
 //               (бывший secondary; переименован, когда появилась обводка).
-const variants: Record<Variant, string> = {
+//
+// Экспортируется (BUTTON_COLORS) для мест, где нужна кнопочная РАСКРАСКА, но
+// не кнопочная ГЕОМЕТРИЯ: маленькие пилюли (py-2) на /profile не влезают в
+// фиксированную высоту h-12/h-14 из base, а цвета обязаны совпадать с
+// остальными кнопками. Раньше эти классы копировались туда руками и
+// разъезжались — теперь источник один.
+export const BUTTON_COLORS: Record<Variant, string> = {
   primary:
     "rounded-full bg-orange-500 text-zinc-950 hover:bg-orange-600 dark:bg-orange-400 dark:hover:bg-orange-500",
   secondary:
@@ -44,6 +50,16 @@ const variants: Record<Variant, string> = {
   tertiary:
     "text-orange-500 underline decoration-2 underline-offset-4 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-500",
 };
+
+// Геометрия «маленькой пилюли» — того самого исключения, ради которого
+// существует BUTTON_COLORS. Раньше каждое такое место писало
+// `px-5 py-2` руками, и высоты разъезжались ровно по той же причине, по
+// которой в base появилась h-12: паддинг задаёт ОТСТУП, а не высоту, и
+// кнопка с обводкой (border-2) выходит на 4px выше соседней с заливкой,
+// а кнопка с иконкой — выше кнопки без неё. Поэтому здесь тоже
+// фиксированная высота, а паддинг только горизонтальный.
+export const BUTTON_PILL =
+  "inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60";
 
 // Точечное переопределение цвета primary-кнопки (по умолчанию — оранжевый,
 // см. правило "кнопки всегда orange" в DESIGN.md). Использовать только для
@@ -95,7 +111,7 @@ export function Button({
   // primary и secondary — «таблетки» с горизонтальным паддингом; tertiary
   // это текст-ссылка, ей паддинг не нужен.
   const padding = variant === "tertiary" ? "" : paddingBySize[size];
-  const color = colorClassName ?? variants[variant];
+  const color = colorClassName ?? BUTTON_COLORS[variant];
   const classes = `${base} ${color} ${padding} ${textBySize[size]} ${className}`;
 
   if (href) {

@@ -18,7 +18,7 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 //
 // Это НЕ защита: любой может подделать у себя в браузере что угодно.
 // Кнопки ведут на страницы, которые сами проверяют пользователя на
-// сервере (/profile, /profile/edit — за редиректом на /login), поэтому
+// сервере (/settings, /resources — за редиректом на /login), поэтому
 // показ лишней кнопки ничего не открывает.
 export function CreatorOwnerActions({
   creatorId,
@@ -50,12 +50,11 @@ export function CreatorOwnerActions({
   if (variant === "empty") {
     return (
       <div className="mt-6">
-        <Button href="/support" size="md">
+        <Button href="/creator/upload" size="md">
           Add your first map
         </Button>
         <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
-          Self-serve uploading is coming — for now, send the files through
-          support and they&apos;ll be published for you.
+          Submitted maps are reviewed before they go live on the shop.
         </p>
       </div>
     );
@@ -63,10 +62,10 @@ export function CreatorOwnerActions({
 
   return (
     <div className="mt-4 flex flex-wrap justify-center gap-3 sm:justify-start">
-      <Button href="/profile/edit" size="sm" variant="secondary" pageTransition>
+      <Button href="/settings" size="sm" variant="secondary" pageTransition>
         Edit profile
       </Button>
-      <Button href="/support" size="sm" variant="secondary">
+      <Button href="/creator/upload" size="sm" variant="secondary">
         Add a map
       </Button>
     </div>

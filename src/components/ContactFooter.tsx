@@ -18,6 +18,7 @@ import {
 } from "@phosphor-icons/react";
 import { useTheme } from "@/components/ThemeProvider";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
+import { SHOP_NAV_LINKS } from "@/lib/products";
 
 // Same display font as the navbar brand name — the footer logo rhymes with it.
 const displayFont = Unbounded({
@@ -27,8 +28,9 @@ const displayFont = Unbounded({
 
 // Порядок задаёт раскладку 5×2 в футере (grid grid-cols-5): первые пять —
 // верхний ряд, следующие пять — нижний.
-// href "#" — заглушки: аккаунт ещё не готов (X — чинится хэндл, YouTube — позже).
-// Такие в structured data (SITE_SAMEAS) НЕ попадают, только реальные ссылки.
+// href "#" — заглушки для аккаунтов, которых ещё нет. Такие в structured data
+// (SITE_SAMEAS) НЕ попадают, только реальные ссылки. Сейчас заглушек нет —
+// все десять ведут на живые профили.
 const SOCIALS = [
   // Верхний ряд
   { label: "Discord", href: DISCORD_INVITE, icon: DiscordLogo },
@@ -61,8 +63,14 @@ const SOCIALS = [
     href: "https://www.instagram.com/soucampus_builds/",
     icon: InstagramLogo,
   },
-  { label: "X", href: "#", icon: XLogo },
-  { label: "YouTube", href: "#", icon: YoutubeLogo },
+  // ⚠ Хэндл в X — CouSampus (слоги переставлены относительно бренда), сменить
+  // его нельзя. Ссылка настоящая, поэтому пусть работает.
+  { label: "X", href: "https://x.com/CouSampus", icon: XLogo },
+  {
+    label: "YouTube",
+    href: "https://www.youtube.com/@SouCampus",
+    icon: YoutubeLogo,
+  },
   {
     label: "Reddit",
     href: "https://www.reddit.com/user/SouCampus/",
@@ -127,36 +135,20 @@ export function ContactFooter() {
                 Shop
               </h3>
               <ul className="mt-3 space-y-2 text-sm text-zinc-500 dark:text-zinc-400">
-                <li>
-                  <Link
-                    href="/shop"
-                    className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                    data-page-transition="true"
-                  >
-                    All Map
-                  </Link>
-                </li>
-                {/* Категории-заглушки — как в навбаре: пока нет колонки
-                    категории в products, показываем неактивными. */}
-                {["Assets", "Landscape", "Free"].map((category) => (
-                  <li key={category}>
-                    <span
-                      title="Coming soon"
-                      className="cursor-not-allowed select-none text-zinc-400 dark:text-zinc-600"
+                {/* Тот же список, что в навбаре (SHOP_NAV_LINKS) — раньше
+                    категории здесь были неактивными заглушками «Coming soon»
+                    и отстали от навбара, где давно работают. */}
+                {SHOP_NAV_LINKS.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                      data-page-transition="true"
                     >
-                      {category}
-                    </span>
+                      {link.label}
+                    </Link>
                   </li>
                 ))}
-                <li>
-                  <Link
-                    href="/support"
-                    className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                    data-page-transition="true"
-                  >
-                    Support
-                  </Link>
-                </li>
               </ul>
             </div>
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useRef, useState, useSyncExternalStore } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "motion/react";
@@ -46,6 +46,12 @@ function ProjectSpecs({ project }: { project: Project }) {
 // quick pass across the row doesn't fire a switch every panel it crosses.
 const HOVER_HOLD_MS = 90;
 
+function subscribeToDesktopBreakpoint(onChange: () => void) {
+  const mql = window.matchMedia("(min-width: 640px)");
+  mql.addEventListener("change", onChange);
+  return () => mql.removeEventListener("change", onChange);
+}
+
 export function PortfolioHero({ projects: allProjects }: Props) {
   // Отбор проектов для карусели делает portfolio/page.tsx по галочке
   // is_featured из базы — сюда приезжают уже только они. Слайс остался
@@ -56,6 +62,21 @@ export function PortfolioHero({ projects: allProjects }: Props) {
   const current = projects[active];
   const hoverTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const router = useRouter();
+
+  // Both the mobile carousel and the desktop panel row render into the DOM
+  // at all times — only CSS (`sm:hidden` / `hidden sm:flex`) decides which
+  // is visible. Next's `priority` preloads regardless of visibility, so
+  // hardcoding it on both branches doubled the LCP-critical image request
+  // (one of them always invisible). Tracking the actual breakpoint via
+  // matchMedia lets only the branch that will actually paint get `priority`.
+  // useSyncExternalStore (not setState-in-effect, see useHydrated.ts) —
+  // getServerSnapshot returns false, so SSR/hydration always assumes mobile
+  // first, then re-syncs to the real breakpoint right after.
+  const isDesktop = useSyncExternalStore(
+    subscribeToDesktopBreakpoint,
+    () => window.matchMedia("(min-width: 640px)").matches,
+    () => false,
+  );
 
   const goTo = (i: number) =>
     setActive(((i % projects.length) + projects.length) % projects.length);
@@ -146,7 +167,7 @@ export function PortfolioHero({ projects: allProjects }: Props) {
                 fill
                 sizes="100vw"
                 className="pointer-events-none object-cover"
-                priority
+                priority={!isDesktop}
               />
               <span className="pointer-events-none absolute left-4 top-4 rounded-full bg-lime-300/90 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-950">
                 {current.tag}
@@ -255,7 +276,7 @@ export function PortfolioHero({ projects: allProjects }: Props) {
                 className={`object-cover transition-all duration-500 ease-[cubic-bezier(0.4,0,0.2,1)] ${
                   isActive ? "scale-100 brightness-100" : "scale-110 brightness-[0.55]"
                 }`}
-                priority={i === 0}
+                priority={isDesktop && i === 0}
               />
 
               {isActive ? (

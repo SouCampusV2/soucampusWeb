@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Unbounded } from "next/font/google";
 import { getAllProducts, getAllProductsWithStats } from "@/lib/products";
 import { ShopCatalog } from "@/components/ShopCatalog";
+import { CategoryFilter } from "@/components/CategoryFilter";
 import { PageGlow } from "@/components/PageGlow";
 
 // Тот же дисплейный шрифт, что у hero-заголовков остальных страниц
@@ -69,10 +70,13 @@ export default async function ShopPage() {
           or order a custom build.
         </p>
       ) : (
-        // Каталог — клиентский: фильтрует по вкладке (?category) и поиску
-        // (?q) из адреса. Suspense обязателен вокруг useSearchParams, иначе
-        // статическая /shop свалилась бы целиком в client-render.
+        // Оба компонента клиентские и оба читают адрес: CategoryFilter
+        // ставит ?category, ShopCatalog по нему (и по ?q) отбирает. Общее
+        // состояние — сам адрес, а не проп между ними. Suspense обязателен
+        // вокруг useSearchParams, иначе статическая /shop свалилась бы
+        // целиком в client-render.
         <Suspense>
+          <CategoryFilter />
           <ShopCatalog products={products} />
         </Suspense>
       )}

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
 import { AuthForm } from "@/components/AuthForm";
 import { PageGlow } from "@/components/PageGlow";
+import { AuthErrorRedirect } from "@/components/AuthErrorRedirect";
 
 // Тот же дисплейный шрифт, что у всех hero-заголовков сайта (см. DESIGN.md).
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
@@ -23,6 +24,10 @@ export default async function LoginPage({
   // Ширину держит контент внутри (max-w-md) — см. комментарий в /profile.
   return (
     <main className="relative w-full overflow-x-clip px-6">
+      {/* Протухшую ссылку из письма Supabase высаживает именно сюда, и
+          причину кладёт в хэш — на сервер он не приходит. Компонент
+          ловит её в браузере и уводит на /link-expired. */}
+      <AuthErrorRedirect />
       <PageGlow color="rgba(249,115,22,0.28)" />
       <section className="relative pb-28 pt-20">
         {/* Радиальная подсветка позади навбара — общий приём hero-секций,

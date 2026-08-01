@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import { getCreatorsById } from "@/lib/creators";
 
@@ -7,18 +8,53 @@ import { getCreatorsById } from "@/lib/creators";
 // прыгает. Когда появится реальная колонка (подэтап маркетплейса), заменить
 // derive на row.category — тип Product и фильтрация на витрине не изменятся.
 // «Free» — не тег, а факт цены: цена 0 (см. filterByCategory).
-export type ProductCategory = "assets" | "landscape" | "free";
+export type ProductCategory =
+  | "spawn"
+  | "adventure"
+  | "minigame"
+  | "building"
+  | "interior"
+  | "landscape"
+  | "assets"
+  | "free";
 
 export const SHOP_CATEGORIES: { slug: ProductCategory; label: string }[] = [
-  { slug: "assets", label: "Assets" },
+  { slug: "spawn", label: "Spawns & hubs" },
+  { slug: "adventure", label: "Adventure & RPG" },
+  { slug: "minigame", label: "Minigames & PvP" },
+  { slug: "building", label: "Buildings" },
+  { slug: "interior", label: "Interiors" },
   { slug: "landscape", label: "Landscape" },
+  { slug: "assets", label: "Assets" },
   { slug: "free", label: "Free" },
+];
+
+// Готовая навигация магазина. Ровно этот список показывают ТРИ места
+// (пилюля навбара на десктопе, мобильная выпадашка магазина, колонка Shop
+// в футере) — раньше каждое собирало его само, и футер успел отстать:
+// там категории годами висели неактивными «Coming soon», хотя в навбаре
+// уже работали. Один источник — не разъедутся.
+//
+// Категорий здесь БОЛЬШЕ НЕТ (решение владельца 2026-07-30). Пока их было
+// две, они помещались вкладками; с восемью пилюля навбара превратилась бы
+// в свалку, а на мобильном — в простыню. Место категорий — фильтр на
+// самой витрине (CategoryFilter), где есть куда развернуться и где рядом
+// видно, сколько карт нашлось.
+export const SHOP_NAV_LINKS: { href: string; label: string }[] = [
+  { href: "/shop", label: "All Map" },
+  { href: "/support", label: "Support" },
 ];
 
 // Товар, каким его видит сайт. Тот же паттерн границы, что у
 // projects.ts/reviews.ts: снаружи — домен сайта (price как готовая
 // строка), внутри — устройство БД (price_label/price_cents). Перевод
 // одного в другое — rowToProduct ниже, чистая функция под тест.
+// Статус модерации (миграция 20260730120000). Отдельно от is_published:
+// status — очередь на проверку владельцем сайта, is_published — то, что
+// реально видит витрина. Черновик креатора = pending + не опубликован;
+// владелец публикует вручную через Table Editor.
+export type ProductStatus = "pending" | "published" | "rejected";
+
 export type Product = {
   /** uuid — нужен как внешний ключ order_items.product_id (подэтап B). */
   id: string;
@@ -45,10 +81,16 @@ export type Product = {
    */
   priceCents: number;
   currency: string;
-  /** Категория витрины (пока производная от slug, см. deriveCategory). */
+  /**
+   * Категория витрины. Реальная колонка (миграция 20260730120000) —
+   * deriveCategory используется только как фоллбэк для старых строк,
+   * созданных до неё (см. rowToProduct).
+   */
   category: ProductCategory;
   /** Автор карты — profiles.id. null у карт, чей автор удалил аккаунт. */
   creatorId: string | null;
+  /** pending — ждёт ручной проверки владельцем; published — прошёл её. */
+  status: ProductStatus;
   /**
    * Профиль автора для показа на карточке. Опционален: приезжает
    * отдельным запросом (см. getCreatorsById — связать вложенной выборкой
@@ -70,7 +112,15 @@ export type Product = {
 // нехалявных категорий. «free» сюда не попадает — бесплатность определяется
 // ценой, а не тегом (см. filterByCategory), иначе платный товар мог бы
 // оказаться в «Free».
-const TAGGABLE: ProductCategory[] = ["assets", "landscape"];
+const TAGGABLE: ProductCategory[] = [
+  "spawn",
+  "adventure",
+  "minigame",
+  "building",
+  "interior",
+  "landscape",
+  "assets",
+];
 
 export function deriveCategory(slug: string): ProductCategory {
   let hash = 0;
@@ -78,6 +128,36 @@ export function deriveCategory(slug: string): ProductCategory {
     hash = (hash * 31 + slug.charCodeAt(i)) >>> 0;
   }
   return TAGGABLE[hash % TAGGABLE.length];
+}
+
+// Текст без HTML-разметки — для поиска по описанию. Описание пишется
+// редактором и хранится как HTML, поэтому поиск по сырой строке находил
+// бы совпадения в именах тегов и адресах картинок («img», «span»,
+// «https»), а слово, разорванное тегом на середине, наоборот пропускал.
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, " ");
+}
+
+/**
+ * Поиск по каталогу. Совпадение ищется в названии, кратком описании,
+ * полном описании и **имени автора** — по нику креатора искали и не
+ * находили, потому что раньше смотрели только на название и summary.
+ *
+ * Чистая функция рядом с filterByCategory: одинаково работает на
+ * клиенте (ShopCatalog) и в тесте.
+ */
+export function filterBySearch(products: Product[], query: string): Product[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return products;
+
+  return products.filter((p) =>
+    [
+      p.title,
+      p.summary,
+      stripHtml(p.description),
+      p.creator?.displayName ?? "",
+    ].some((field) => field.toLowerCase().includes(q)),
+  );
 }
 
 // Фильтр витрины по вкладке навбара. «free» — по цене (0), остальные — по
@@ -104,6 +184,9 @@ type ProductRow = {
   created_at: string;
   /** Появилась вместе с мульти-креатором; у старых баз колонки нет. */
   creator_id?: string | null;
+  /** Появились вместе с creator upload; у старых баз колонок нет. */
+  category?: ProductCategory | null;
+  status?: ProductStatus | null;
   /**
    * Вложенная выборка PostgREST по внешнему ключу (product_images).
    * Опциональна: если миграции галереи ещё нет, Supabase вернёт строки
@@ -134,10 +217,11 @@ export function rowToProduct(row: ProductRow): Product {
     price: row.price_label,
     priceCents: Number(row.price_cents),
     currency: row.price_currency,
-    // Пока производная от slug; заменить на row.category, когда появится
-    // колонка (тогда добавить category в PRODUCT_FIELDS и ProductRow).
-    category: deriveCategory(row.slug),
+    // Реальная колонка, если есть (новые строки её всегда заполняют);
+    // старые строки без category — деривация из slug, тот же фоллбэк.
+    category: row.category ?? deriveCategory(row.slug),
     creatorId: row.creator_id ?? null,
+    status: row.status ?? "published",
   };
 }
 
@@ -151,15 +235,21 @@ const PRODUCT_FIELDS_NO_IMAGES =
 // галереи. product_images(...) — PostgREST сам подтягивает связанные
 // строки по внешнему ключу одним запросом, без второго похода в базу и
 // без ручного join'а на нашей стороне.
-const PRODUCT_FIELDS = `${PRODUCT_FIELDS_NO_IMAGES}, creator_id, product_images(url, position)`;
+const PRODUCT_FIELDS = `${PRODUCT_FIELDS_NO_IMAGES}, creator_id, category, status, product_images(url, position)`;
 
-// Запасной путь на случай, когда миграции галереи/автора в этой базе ещё
-// не прогнаны. PostgREST на незнакомую колонку или связь отвечает
-// ошибкой и НЕ отдаёт строки вовсе — то есть магазин лёг бы целиком
-// из-за необязательного поля. Деплой кода не должен зависеть от тайминга
-// миграции: тот же принцип, что у get_product_stats и public_profiles.
+// Запасной путь на случай, когда миграции галереи/автора/upload в этой
+// базе ещё не прогнаны. PostgREST на незнакомую колонку или связь
+// отвечает ошибкой и НЕ отдаёт строки вовсе — то есть магазин лёг бы
+// целиком из-за необязательного поля. Деплой кода не должен зависеть от
+// тайминга миграции: тот же принцип, что у get_product_stats и
+// public_profiles.
 function isMissingOptional(message: string): boolean {
-  return message.includes("product_images") || message.includes("creator_id");
+  return (
+    message.includes("product_images") ||
+    message.includes("creator_id") ||
+    message.includes("category") ||
+    message.includes("status")
+  );
 }
 
 // Фильтр is_published здесь — для ясности намерения; настоящая защита —
@@ -271,4 +361,97 @@ export async function getProduct(slug: string): Promise<Product | null> {
   if (error) throw new Error(`Не удалось загрузить товар "${slug}": ${error.message}`);
 
   return data ? rowToProduct(data as unknown as ProductRow) : null;
+}
+
+// Бакет под обложку + галерею (миграция 20260730120000_creator_uploads).
+// Публичный, как avatars — товар показывается всем, подписанные ссылки
+// только усложнили бы витрину.
+export const PRODUCT_IMAGES_BUCKET = "product-images";
+
+// slug из заголовка: только [a-z0-9-], пробелы/спецсимволы → дефис,
+// повторы дефисов схлопываются. Пустой заголовок ("!!!") даёт пустую
+// строку — вызывающий код (createProduct) страхует это случайным
+// суффиксом, который тогда становится всем slug'ом.
+function slugify(title: string): string {
+  return title
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[̀-ͯ]/g, "") // combining diacritics after NFKD
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
+export type CreateProductInput = {
+  creatorId: string;
+  title: string;
+  summary: string;
+  /** HTML из Tiptap-редактора — санитизируется при показе, не здесь. */
+  description: string;
+  imageUrl: string;
+  priceCents: number;
+  category: Exclude<ProductCategory, "free">;
+  filePath: string;
+};
+
+// Черновик карты от креатора: status='pending', is_published=false —
+// невидим на витрине, пока владелец не одобрит вручную (Table Editor).
+// RLS "creators insert own products" разрешает вставку только со своим
+// creator_id — эта функция сама ничего не проверяет, доверяет базе.
+//
+// slug уникален (unique constraint) — при коллизии добавляем случайный
+// хвост и пробуем ещё раз, до 5 попыток (коллизия по одинаковому
+// заголовку — редкость, не нужен отдельный "slug taken" UX).
+export async function createProduct(
+  supabase: SupabaseClient,
+  input: CreateProductInput
+): Promise<{ id: string; slug: string }> {
+  const base = slugify(input.title) || "map";
+  let lastError: string | null = null;
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const slug = attempt === 0 ? base : `${base}-${Math.random().toString(36).slice(2, 7)}`;
+
+    const { data, error } = await supabase
+      .from("products")
+      .insert({
+        slug,
+        title: input.title,
+        summary: input.summary,
+        description: input.description,
+        image_url: input.imageUrl,
+        price_cents: input.priceCents,
+        price_currency: "EUR",
+        price_label: `€${(input.priceCents / 100).toFixed(2)}`,
+        file_path: input.filePath,
+        category: input.category,
+        creator_id: input.creatorId,
+        status: "pending",
+        is_published: false,
+      })
+      .select("id, slug")
+      .single();
+
+    if (!error) return { id: data.id as string, slug: data.slug as string };
+    // 23505 — unique_violation (slug занят). Другая ошибка — не наша
+    // область, пробовать заново бессмысленно.
+    if (error.code !== "23505") throw new Error(`Не удалось создать товар: ${error.message}`);
+    lastError = error.message;
+  }
+
+  throw new Error(`Не удалось создать товар: ${lastError}`);
+}
+
+// Дополнительные скриншоты галереи (сверх обложки) — обложка уже ушла в
+// products.image_url при createProduct. position = порядок в массиве.
+export async function addProductImages(
+  supabase: SupabaseClient,
+  productId: string,
+  urls: string[]
+): Promise<void> {
+  if (urls.length === 0) return;
+  const { error } = await supabase
+    .from("product_images")
+    .insert(urls.map((url, position) => ({ product_id: productId, url, position })));
+
+  if (error) throw new Error(`Не удалось сохранить фото товара: ${error.message}`);
 }

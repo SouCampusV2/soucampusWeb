@@ -10,6 +10,15 @@ import { getStripe } from "@/lib/stripe";
 // Stripe (вебхук). Браузер сообщает только slug товара и session_id,
 // оба — идентификаторы, а не данные.
 
+// supabase-js типизирует ЛЮБОЙ вложенный select как массив, хотя по связи
+// "many-to-one" (order_items → products) объект приходит ровно один. Эта
+// нормализация нужна в каждом таком месте — держим её одним хелпером, чтобы
+// не разъезжалась по копиям.
+function unwrapOne<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
+}
+
 export type OrderItemInput = {
   productId: string;
   /** Снимок на момент покупки — см. шапку миграции orders. */
@@ -193,16 +202,50 @@ export const PRODUCT_FILES_BUCKET = "product-files";
 const DOWNLOAD_URL_TTL_SECONDS = 60 * 60;
 
 /**
+ * Имя, под которым файл карты ложится на диск: название карты + то
+ * расширение, с которым его загрузил креатор.
+ *
+ * Расширение берём из пути в Storage, а не из названия: `.zip`,
+ * `.schem` и `.schematic` — разные вещи, и подменять их нельзя.
+ * Название чистим до безопасного набора символов — в имя файла едет
+ * произвольный пользовательский текст, а в нём бывают и слэши, и
+ * кавычки, и всё то, что ломает Content-Disposition.
+ */
+export function downloadFileName(title: string, filePath: string): string {
+  const dot = filePath.lastIndexOf(".");
+  const extension = dot > -1 ? filePath.slice(dot).toLowerCase() : "";
+  const safeTitle =
+    title
+      .normalize("NFKD")
+      .replace(/[^\w\s-]/g, "")
+      .trim()
+      .replace(/\s+/g, "-")
+      .slice(0, 80) || "map";
+  return `${safeTitle}${extension}`;
+}
+
+/**
  * Временная ссылка на файл из приватного бакета. null — файл не найден
  * (не загружен или путь в products.file_path указывает мимо).
  *
  * Вызывать ТОЛЬКО после проверки оплаты (getPaidOrder): сама функция
  * прав не проверяет, она просто подписывает путь служебным ключом.
+ *
+ * downloadAs — имя, под которым файл ляжет на диск. В Storage объекты
+ * зовутся по сгенерированному пути (uuid и время загрузки), и без этого
+ * человек получает papka с именем вида `a3f9…-1753.zip` и не понимает,
+ * какая из десяти скачанных карт какая. Supabase кладёт имя в
+ * Content-Disposition подписанной ссылки.
  */
-export async function signedDownloadUrl(filePath: string): Promise<string | null> {
+export async function signedDownloadUrl(
+  filePath: string,
+  downloadAs?: string
+): Promise<string | null> {
   const { data, error } = await getSupabaseAdmin()
     .storage.from(PRODUCT_FILES_BUCKET)
-    .createSignedUrl(filePath, DOWNLOAD_URL_TTL_SECONDS);
+    .createSignedUrl(filePath, DOWNLOAD_URL_TTL_SECONDS, {
+      download: downloadAs ?? true,
+    });
 
   if (error) {
     // Оплата уже прошла — ронять страницу успеха нельзя. Показываем
@@ -257,8 +300,6 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
     title: string;
     price_cents: number;
     quantity: number;
-    // supabase-js типизирует вложенный select как массив, но по связи
-    // "many-to-one" объект приходит один — нормализуем ниже.
     products: { file_path: string | null } | { file_path: string | null }[] | null;
   };
 
@@ -267,9 +308,7 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
     totalCents: Number(data.total_cents),
     currency: data.currency,
     items: ((data.order_items ?? []) as ItemRow[]).map((item) => {
-      const product = Array.isArray(item.products)
-        ? item.products[0]
-        : item.products;
+      const product = unwrapOne(item.products);
       return {
         title: item.title,
         priceCents: Number(item.price_cents),
@@ -339,7 +378,7 @@ export async function getPurchasesForUser(
   for (const order of [...(byUser.data ?? []), ...(byEmail.data ?? [])] as OrderRow[]) {
     for (const item of order.order_items ?? []) {
       if (byProduct.has(item.product_id)) continue;
-      const product = Array.isArray(item.products) ? item.products[0] : item.products;
+      const product = unwrapOne(item.products);
       byProduct.set(item.product_id, {
         productId: item.product_id,
         title: item.title,

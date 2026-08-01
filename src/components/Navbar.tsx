@@ -10,14 +10,13 @@ import {
   ChatCircleDots,
   Bell,
   UserCircle,
-  MagnifyingGlass,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
 import { useCart } from "@/lib/cart-context";
 import { useUser } from "@/lib/useUser";
-import { SHOP_CATEGORIES } from "@/lib/products";
+import { SHOP_NAV_LINKS } from "@/lib/products";
 import { creatorHref } from "@/lib/creators";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
@@ -32,18 +31,8 @@ export function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
   const [prevPathname, setPrevPathname] = useState(pathname);
-  const [search, setSearch] = useState("");
   const { count } = useCart();
   const { user, loading: userLoading } = useUser();
-
-  // Поиск: уводим на /shop?q=… (каталог там клиентски фильтрует по q).
-  // Пустой запрос — просто на /shop. Меню закрываем (мобильная выпадашка).
-  function submitSearch(e: React.FormEvent) {
-    e.preventDefault();
-    const q = search.trim();
-    router.push(q ? `/shop?q=${encodeURIComponent(q)}` : "/shop");
-    setOpen(false);
-  }
 
   async function handleLogout() {
     const supabase = createSupabaseBrowser();
@@ -76,6 +65,10 @@ export function Navbar() {
   // магазина — тот же навбар, что на /shop, а не первоначальный:
   // посетитель не должен видеть портфолио-навигацию посреди оформления
   // заказа или обращения в поддержку по купленному товару.
+  // Поиска в пилюле НЕТ (убран 2026-07-30): он переехал на саму витрину
+  // (CategoryFilter), где поле показывает текущий запрос. В навбаре это
+  // было невозможно без того, чтобы утянуть все статические страницы
+  // сайта в клиентский рендер — навбар живёт в layout.
   // Форма/стекло самой пилюли не меняются — высоту держит фиксированная
   // h-[…] на <nav> (см. ниже), не кнопка Order now, именно поэтому
   // переход между режимами не дёргает высоту.
@@ -88,9 +81,18 @@ export function Navbar() {
     pathname === "/support" ||
     // Вход/регистрация/профиль — часть флоу магазина (покупка требует
     // аккаунта), поэтому на них тоже магазинный навбар, а не портфолио.
+    // Сюда же обе страницы сброса пароля: попадают на них с формы входа,
+    // и переключение навбара посреди «войти → забыл → задать новый»
+    // выглядело бы так, будто человека выкинуло на другой сайт.
     pathname === "/login" ||
     pathname === "/signup" ||
+    pathname === "/forgot-password" ||
+    pathname === "/reset-password" ||
+    pathname === "/link-expired" ||
     pathname.startsWith("/profile") ||
+    pathname === "/settings" ||
+    pathname === "/purchases" ||
+    pathname.startsWith("/resources") ||
     // Профиль продавца — часть магазина (его витрина), тот же навбар.
     pathname.startsWith("/creator");
 
@@ -138,48 +140,19 @@ export function Navbar() {
                   (только на выходе через лого SouCampus). Support — после
                   Free, тем же стилем, что All Map (по просьбе владельца). */}
               <div className="flex shrink-0 items-center gap-1 text-sm font-medium text-zinc-600 dark:text-zinc-300">
-                <Link
-                  href="/shop"
-                  className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                >
-                  All Map
-                </Link>
-                {SHOP_CATEGORIES.map((category) => (
+                {SHOP_NAV_LINKS.map((link) => (
                   <Link
-                    key={category.slug}
-                    href={`/shop?category=${category.slug}`}
+                    key={link.href}
+                    href={link.href}
                     className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
                   >
-                    {category.label}
+                    {link.label}
                   </Link>
                 ))}
-                <Link
-                  href="/support"
-                  className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                >
-                  Support
-                </Link>
               </div>
 
               {/* Поиск + иконки — вместе справа. */}
               <div className="flex min-w-0 items-center gap-3 text-zinc-600 dark:text-zinc-300">
-                {/* Поиск: сабмит уводит на /shop?q=… (см. submitSearch). */}
-                <form onSubmit={submitSearch} className="relative min-w-0 max-w-[240px] flex-1">
-                  <MagnifyingGlass
-                    size={16}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-600"
-                  />
-                  <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    type="search"
-                    name="q"
-                    aria-label="Search maps"
-                    placeholder="Search"
-                    className="w-full rounded-full border border-zinc-950/[0.08] bg-transparent py-1.5 pl-9 pr-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-400 focus:outline-none dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-600"
-                  />
-                </form>
-
                 {/* Иконки: gap-1 + p-2 на каждой — крупная зона нажатия. */}
                 <div className="flex shrink-0 items-center gap-1">
                   <button
@@ -198,18 +171,11 @@ export function Navbar() {
                   >
                     <Bell size={22} />
                   </button>
-                  <Link
-                    href="/cart"
-                    aria-label="Cart"
-                    className="relative flex items-center justify-center rounded-full p-2 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
-                  >
-                    <ShoppingCart size={22} />
-                    {count > 0 && (
-                      <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
-                        {count}
-                      </span>
-                    )}
-                  </Link>
+                  <CartLink
+                    count={count}
+                    size={22}
+                    className="transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+                  />
                   {/* Пока не знаем, кто залогинен (сессия читается на
                       клиенте — статический HTML её не содержит), показываем
                       нейтральную заглушку-кружок вместо заведомо неверной
@@ -227,43 +193,59 @@ export function Navbar() {
                     // focus-within — чтобы открывалось и с клавиатуры. pt-2 на
                     // обёртке меню — прозрачный «мостик», чтобы курсор не терял
                     // hover в зазоре между профилем и карточкой.
-                    <div className="group relative">
+                    <div className="group relative flex h-full items-center self-stretch">
                       <Link
                         href={ownProfileHref}
                         title={displayName}
                         className="flex max-w-[11rem] items-center gap-2 rounded-full px-2.5 py-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
                       >
-                        {avatarUrl ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img
-                            src={avatarUrl}
-                            alt=""
-                            className="h-6 w-6 shrink-0 rounded-full object-cover"
-                          />
-                        ) : (
-                          <UserCircle size={22} className="shrink-0" />
-                        )}
+                        <AccountAvatar avatarUrl={avatarUrl ?? null} size={22} />
                         <span className="truncate text-sm font-medium">
                           {displayName}
                         </span>
                       </Link>
 
-                      <div className="invisible absolute right-0 top-full z-50 pt-2 opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+                      <div className="invisible absolute left-0 top-full z-50 w-max opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
                         {/* Без вертикального паддинга: py-1 оставлял 4px
                             фона над первым и под последним пунктом, из-за
                             чего их подсветка при наведении не доходила до
                             скруглённых краёв — сверху/снизу оставалась
                             белая полоска. overflow-hidden и так вписывает
                             прямоугольную подсветку в радиус карточки. */}
-                        <div className="w-48 overflow-hidden rounded-2xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 shadow-lg backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/95">
+                        {/* Стекло по тому же рецепту, что карточка
+                            калькулятора (BuildEstimator): сильный блюр по
+                            фону + очень слабая заливка + светлая грань.
+                            Прежние bg/95 давали почти непрозрачную
+                            подложку — «матовый пластик», а не стекло:
+                            сквозь неё ничего не просвечивало, и блюру
+                            нечего было размывать. Блик в левом верхнем
+                            углу — потому что ровная заливка читается как
+                            пластик, настоящее стекло ловит свет
+                            неравномерно. */}
+                        {/* Заливка плотнее (было /20 и /30): при почти
+                            прозрачном фоне сквозь пункты меню просвечивал
+                            контент страницы, и текст становился нечитаемым —
+                            блюр размывает, но не гасит контраст. Плюс
+                            backdrop-brightness приглушает то, что осталось
+                            позади, отдельно в светлой и тёмной теме. */}
+                        <div className="relative min-w-[11rem] overflow-hidden rounded-2xl border border-white/60 bg-white/80 shadow-xl shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-110 dark:border-white/10 dark:bg-zinc-900/85 dark:backdrop-brightness-75">
+                          <div
+                            aria-hidden
+                            // -z-10: блик позиционирован, пункты меню — нет,
+                            // поэтому без этого он бы рисовался ПОВЕРХ текста.
+                            className="pointer-events-none absolute -left-1/4 -top-1/3 -z-10 h-2/3 w-2/3 rounded-full bg-white/40 blur-3xl dark:bg-white/10"
+                          />
                           <Link
-                            href="/profile/edit"
+                            href="/settings"
                             className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
                           >
                             Settings
                           </Link>
+                          {/* Свои карты — управление, а не публичная
+                              витрина: раньше пункт вёл на /creator/<ник>,
+                              где ничего нельзя было отредактировать. */}
                           <Link
-                            href={ownProfileHref}
+                            href="/resources"
                             className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
                           >
                             Your resources
@@ -272,7 +254,7 @@ export function Navbar() {
                               2026-07-27): раньше они прятались за
                               «Settings», хотя это разные вещи. */}
                           <Link
-                            href="/profile"
+                            href="/purchases"
                             className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
                           >
                             My purchases
@@ -344,18 +326,7 @@ export function Navbar() {
               className="flex h-9 w-9 cursor-pointer flex-col items-center justify-center gap-1.5 min-[760px]:hidden"
               aria-label="Toggle menu"
             >
-              <motion.span
-                animate={{ rotate: open ? 45 : 0, y: open ? 6 : 0 }}
-                className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
-              />
-              <motion.span
-                animate={{ opacity: open ? 0 : 1 }}
-                className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
-              />
-              <motion.span
-                animate={{ rotate: open ? -45 : 0, y: open ? -6 : 0 }}
-                className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
-              />
+              <HamburgerIcon open={open} />
             </button>
           )}
 
@@ -364,18 +335,7 @@ export function Navbar() {
               зоной нажатия p-2, как на десктопе. */}
           {isShopActive && (
             <div className="flex items-center gap-1 text-zinc-700 dark:text-zinc-200 min-[760px]:hidden">
-              <Link
-                href="/cart"
-                aria-label="Cart"
-                className="relative flex items-center justify-center rounded-full p-2"
-              >
-                <ShoppingCart size={24} />
-                {count > 0 && (
-                  <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
-                    {count}
-                  </span>
-                )}
-              </Link>
+              <CartLink count={count} size={24} />
 
               {userLoading ? (
                 <div className="flex items-center justify-center p-2" aria-hidden>
@@ -383,21 +343,12 @@ export function Navbar() {
                 </div>
               ) : user ? (
                 <Link
-                  href="/profile"
+                  href="/settings"
                   aria-label="Profile"
                   title={displayName}
                   className="flex items-center justify-center rounded-full p-2"
                 >
-                  {avatarUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={avatarUrl}
-                      alt=""
-                      className="h-6 w-6 rounded-full object-cover"
-                    />
-                  ) : (
-                    <UserCircle size={24} />
-                  )}
+                  <AccountAvatar avatarUrl={avatarUrl ?? null} size={24} />
                 </Link>
               ) : (
                 <Link
@@ -415,18 +366,7 @@ export function Navbar() {
                 className="ml-0.5 flex h-9 w-9 cursor-pointer flex-col items-center justify-center gap-1.5"
                 aria-label="Toggle menu"
               >
-                <motion.span
-                  animate={{ rotate: open ? 45 : 0, y: open ? 6 : 0 }}
-                  className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
-                />
-                <motion.span
-                  animate={{ opacity: open ? 0 : 1 }}
-                  className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
-                />
-                <motion.span
-                  animate={{ rotate: open ? -45 : 0, y: open ? -6 : 0 }}
-                  className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
-                />
+                <HamburgerIcon open={open} />
               </button>
             </div>
           )}
@@ -485,59 +425,96 @@ export function Navbar() {
               exit={{ height: 0, opacity: 0 }}
               className="absolute inset-x-0 top-[calc(100%+8px)] overflow-hidden rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/95 min-[760px]:hidden"
             >
-              <div className="p-3">
-                <form onSubmit={submitSearch} className="relative">
-                  <MagnifyingGlass
-                    size={16}
-                    className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400 dark:text-zinc-600"
-                  />
-                  <input
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    type="search"
-                    name="q"
-                    aria-label="Search maps"
-                    placeholder="Search"
-                    className="w-full rounded-full border border-zinc-950/[0.08] bg-transparent py-2 pl-9 pr-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-400 focus:outline-none dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-600"
-                  />
-                </form>
-              </div>
-
               <ul className="pb-2">
-                <li>
-                  <Link
-                    href="/shop"
-                    onClick={() => setOpen(false)}
-                    className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                  >
-                    All Map
-                  </Link>
-                </li>
-                {SHOP_CATEGORIES.map((category) => (
-                  <li key={category.slug}>
+                {SHOP_NAV_LINKS.map((link) => (
+                  <li key={link.href}>
                     <Link
-                      href={`/shop?category=${category.slug}`}
+                      href={link.href}
                       onClick={() => setOpen(false)}
                       className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
                     >
-                      {category.label}
+                      {link.label}
                     </Link>
                   </li>
                 ))}
-                <li>
-                  <Link
-                    href="/support"
-                    onClick={() => setOpen(false)}
-                    className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                  >
-                    Support
-                  </Link>
-                </li>
               </ul>
             </motion.div>
           )}
         </AnimatePresence>
       </header>
     </div>
+  );
+}
+
+// ── Мелкие детали навбара, которые нужны И на десктопе, И на мобильном ──
+// Раньше каждая существовала в двух дословных копиях, отличаясь только
+// размером иконки: любую правку приходилось делать дважды, и однажды это
+// уже разошлось. Компоненты локальные (не в отдельных файлах) — за
+// пределами навбара они не нужны.
+
+// Три полоски гамбургера, складывающиеся в крестик при open.
+function HamburgerIcon({ open }: { open: boolean }) {
+  return (
+    <>
+      <motion.span
+        animate={{ rotate: open ? 45 : 0, y: open ? 6 : 0 }}
+        className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
+      />
+      <motion.span
+        animate={{ opacity: open ? 0 : 1 }}
+        className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
+      />
+      <motion.span
+        animate={{ rotate: open ? -45 : 0, y: open ? -6 : 0 }}
+        className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
+      />
+    </>
+  );
+}
+
+// Корзина с бейджем-счётчиком. Бейдж прячется при count === 0.
+function CartLink({
+  count,
+  size,
+  className = "",
+}: {
+  count: number;
+  size: number;
+  className?: string;
+}) {
+  return (
+    <Link
+      href="/cart"
+      aria-label="Cart"
+      className={`relative flex items-center justify-center rounded-full p-2 ${className}`}
+    >
+      <ShoppingCart size={size} />
+      {count > 0 && (
+        <span className="absolute right-0 top-0 flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-bold text-zinc-950">
+          {count}
+        </span>
+      )}
+    </Link>
+  );
+}
+
+// Аватар пользователя: настоящая картинка, если она загружена, иначе
+// иконка-заглушка того же размера.
+function AccountAvatar({
+  avatarUrl,
+  size,
+}: {
+  avatarUrl: string | null;
+  size: number;
+}) {
+  if (!avatarUrl) return <UserCircle size={size} className="shrink-0" />;
+  return (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={avatarUrl}
+      alt=""
+      style={{ height: size - 2, width: size - 2 }}
+      className="shrink-0 rounded-full object-cover"
+    />
   );
 }

@@ -2,8 +2,9 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserCircle, Camera } from "@phosphor-icons/react";
-import { Button } from "@/components/Button";
+import Link from "next/link";
+import { UserCircle, Camera, Key } from "@phosphor-icons/react";
+import { Button, BUTTON_COLORS } from "@/components/Button";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import type { Profile } from "@/lib/profiles";
 
@@ -133,7 +134,7 @@ export function ProfileEditForm({
     setPending(false);
     setAvatarUrl(nextAvatarUrl);
     router.refresh();
-    router.push("/profile");
+    router.push("/settings");
   }
 
   const shownAvatar = avatarPreview ?? avatarUrl;
@@ -226,9 +227,29 @@ export function ProfileEditForm({
         <Button type="submit" variant="primary" disabled={pending} className="flex-1">
           {pending ? "Saving…" : "Save changes"}
         </Button>
-        <Button href="/profile" variant="secondary" className="flex-1">
+        <Button href="/purchases" variant="secondary" className="flex-1">
           Cancel
         </Button>
+      </div>
+
+      {/* Смена пароля — отдельным блоком, а не полем этой формы.
+          Причина: пароль меняется через письмо-подтверждение (тот же
+          флоу, что «забыл пароль»), то есть это другой процесс с другим
+          результатом, а не ещё одно сохраняемое поле профиля. */}
+      <div className="mt-8 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+        <h2 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+          Password
+        </h2>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          We&apos;ll email you a link to set a new one.
+        </p>
+        <Link
+          href="/forgot-password"
+          className={`mt-3 inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold transition-colors ${BUTTON_COLORS.secondary}`}
+        >
+          <Key size={16} weight="bold" />
+          Change password
+        </Link>
       </div>
     </form>
   );

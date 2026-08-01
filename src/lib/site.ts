@@ -29,8 +29,11 @@ export const SITE_SAMEAS: string[] = [
   "https://www.patreon.com/c/SouCampus",
   "https://chunkfactory.com/community/members/soucampus.19017/",
   "https://www.reddit.com/user/SouCampus/",
-  // Дописать по мере готовности: YouTube, X (после починки хэндла на SouCampus).
-  // См. часть B SEO-плана.
+  "https://www.youtube.com/@SouCampus",
+  // Хэндл в X — CouSampus, а не SouCampus (слоги переставлены), и сменить его
+  // нельзя. Для sameAs это не помеха: связь строится по самой ссылке, а не по
+  // тексту хэндла, — важно лишь, чтобы профиль ссылался обратно на сайт.
+  "https://x.com/CouSampus",
 ];
 
 export const NAV_LINKS = [

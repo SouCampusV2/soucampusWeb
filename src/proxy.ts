@@ -43,7 +43,31 @@ export async function proxy(request: NextRequest) {
   // Не делать здесь никакой другой логики между createServerClient и
   // getUser — это рекомендация Supabase, иначе сессия может рассинхро-
   // низироваться.
-  await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  // ------------------------------------------------------------
+  // Второй рубеж админки.
+  //
+  // Права проверяет и layout админки (src/app/admin/layout.tsx), и сам
+  // обработчик /api/admin/*. Но опираться ТОЛЬКО на layout нельзя — это
+  // прямая рекомендация Next.js: layout не перерендеривается на каждой
+  // навигации, и есть сценарии прямых RSC-запросов, где он не отработает
+  // как страж маршрута.
+  //
+  // Здесь проверка намеренно грубая — только «залогинен ли вообще».
+  // Точную проверку is_admin оставляем layout'у: она требует запроса в
+  // базу, а proxy выполняется на КАЖДЫЙ запрос сайта, и поход в БД
+  // отсюда стоил бы задержки на всех страницах ради одного раздела.
+  // Смысл этого рубежа — отсечь анонима до того, как он вообще дойдёт до
+  // серверного рендера админки.
+  if (!user && request.nextUrl.pathname.startsWith("/admin")) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = `?next=${encodeURIComponent(request.nextUrl.pathname)}`;
+    return NextResponse.redirect(url);
+  }
 
   return response;
 }

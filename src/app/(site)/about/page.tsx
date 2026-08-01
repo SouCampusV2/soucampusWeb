@@ -1,5 +1,22 @@
 import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
+import {
+  Selection,
+  Target,
+  MagicWand,
+  PaintBrush,
+  PaintRoller,
+  Cube,
+  Lightning,
+  ChatsCircle,
+  MapTrifold,
+  FrameCorners,
+  PaintBrushHousehold,
+  Mountains,
+  Buildings,
+  Armchair,
+  House,
+} from "@phosphor-icons/react/dist/ssr";
 import { Skeleton } from "@/components/Skeleton";
 import { AuthorCta } from "@/components/AuthorCta";
 import { JsonLd } from "@/components/JsonLd";
@@ -72,6 +89,40 @@ const TIMELINE = [
   },
 ];
 
+// Skills & toolkit — building tools first (in the rough order I picked them
+// up), then the softer/creative skills that actually decide what a build
+// looks like. Icon per skill (same "labelled pill" shape as a typical
+// UI/UX skills row, adapted to Minecraft building instead of design tools):
+// - WorldEdit: selection-based editing (//set, //copy, //walls) → Selection.
+// - VoxelSniper: brush that "shoots" terrain from a distance → Target.
+// - Axiom / Arceon: modern sculpting mods (freeform shaping) → MagicWand / Cube.
+// - GoBrush / GoPaint: brush vs. fill-style painting plugins → PaintBrush / PaintRoller.
+// - EzEdit: fast in-game quick-edit tool → Lightning.
+// - Communication with client: the non-building skill that actually
+//   decides what gets built → ChatsCircle.
+// - Level design: laying out a map's flow/space → MapTrifold.
+// - Composition: framing/balance → FrameCorners.
+// - Texturing: block-palette/material choice → PaintBrushHousehold.
+// - Landscape / Architecture / Interior / Exterior: the four "genres" of a
+//   build → Mountains / Buildings / Armchair / House.
+const SKILLS = [
+  { label: "WorldEdit", icon: Selection },
+  { label: "VoxelSniper", icon: Target },
+  { label: "Axiom", icon: MagicWand },
+  { label: "Arceon", icon: Cube },
+  { label: "GoBrush", icon: PaintBrush },
+  { label: "GoPaint", icon: PaintRoller },
+  { label: "EzEdit", icon: Lightning },
+  { label: "Communication with client", icon: ChatsCircle },
+  { label: "Level design", icon: MapTrifold },
+  { label: "Composition", icon: FrameCorners },
+  { label: "Texturing", icon: PaintBrushHousehold },
+  { label: "Landscape", icon: Mountains },
+  { label: "Architecture", icon: Buildings },
+  { label: "Interior", icon: Armchair },
+  { label: "Exterior", icon: House },
+];
+
 export default function AboutPage() {
   return (
     <>
@@ -119,6 +170,32 @@ export default function AboutPage() {
           </div>
         ))}
       </div>
+
+      <section className="mx-auto mt-12 max-w-3xl text-center sm:mt-24">
+        <span className="text-sm font-semibold text-lime-600">Skills & toolkit</span>
+        <h2
+          className={`${displayFont.className} mt-3 text-3xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl`}
+        >
+          What I build with
+        </h2>
+        <p className="mt-4 leading-7 text-zinc-600 dark:text-zinc-400">
+          A builder needs more than the right plugin — a wide toolkit and an eye
+          for composition and space, built up over 8 years across servers and
+          studios:
+        </p>
+
+        <div className="mt-8 flex flex-wrap justify-center gap-3">
+          {SKILLS.map(({ label, icon: Icon }) => (
+            <span
+              key={label}
+              className="flex items-center gap-2 rounded-full bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+            >
+              <Icon size={18} className="shrink-0 text-lime-600 dark:text-lime-400" />
+              {label}
+            </span>
+          ))}
+        </div>
+      </section>
 
       <div className="mx-auto mt-12 max-w-xl text-center sm:mt-24">
         <p className="leading-7 text-zinc-600 dark:text-zinc-400">

@@ -4,6 +4,7 @@ import { useSearchParams } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import {
   filterByCategory,
+  filterBySearch,
   SHOP_CATEGORIES,
   type Product,
   type ProductCategory,
@@ -58,10 +59,11 @@ export function ShopCatalog({ products }: { products: Product[] }) {
       .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
       .slice(0, take);
 
-    // Рядов по Assets/Landscape на витрине сознательно НЕТ (решение
-    // владельца 2026-07-27): эти две категории уже есть отдельными
-    // вкладками в навбаре, и дублировать их ещё и рядами — лишний шум.
-    // Ряды остаются только под подборки, которых вкладками не выразить.
+    // Рядов по конкретным категориям на витрине сознательно НЕТ: с
+    // 2026-07-30 категории выбираются фильтром прямо над каталогом
+    // (CategoryFilter), и дублировать их ещё и рядами — лишний шум. Ряды
+    // остаются только под подборки, которые категорией не выразить:
+    // популярное, новое, лучшее по оценкам, бесплатное.
     const free = filterByCategory(products, "free").slice(0, take);
 
     return (
@@ -91,17 +93,11 @@ export function ShopCatalog({ products }: { products: Product[] }) {
     );
   }
 
-  // Фильтрация: сперва по категории (если выбрана), затем по тексту поиска
-  // (по названию и краткому описанию, регистронезависимо).
+  // Фильтрация: сперва по категории (если выбрана), затем по тексту
+  // поиска — он смотрит название, оба описания и имя автора
+  // (см. filterBySearch).
   let result = category ? filterByCategory(products, category) : products;
-  if (query) {
-    const q = query.toLowerCase();
-    result = result.filter(
-      (p) =>
-        p.title.toLowerCase().includes(q) ||
-        p.summary.toLowerCase().includes(q),
-    );
-  }
+  result = filterBySearch(result, query);
 
   const heading = query
     ? `Results for “${query}”`
