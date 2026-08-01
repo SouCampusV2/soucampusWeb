@@ -18,7 +18,8 @@ import {
 import { useCart, type CartItem } from "@/lib/cart-context";
 import { useUser } from "@/lib/useUser";
 import { Button, BUTTON_COLORS } from "@/components/Button";
-import { PageGlow } from "@/components/PageGlow";
+import { CartBackdrop } from "@/components/CartBackdrop";
+import { GlassCard } from "@/components/GlassCard";
 
 // Клиентская страница целиком (нужен localStorage через useCart) — как
 // у /shop/[slug], metadata живёт в соседнем layout.tsx, потому что
@@ -118,7 +119,9 @@ export default function CartPage() {
     // обёртке контента внутри. Иначе контейнер отрежет свечение (разбор — в
     // шапке PageGlow).
     <main className="relative w-full flex-1 overflow-x-clip px-6">
-      <PageGlow color="rgba(249,115,22,0.28)" />
+      {/* ЭКСПЕРИМЕНТ: живой фон вместо статичного PageGlow — стеклу нужно,
+          чтобы за ним всё время было что-то новое (см. CartBackdrop). */}
+      <CartBackdrop />
 
       <div className="mx-auto max-w-5xl pb-28 pt-20">
         <h1
@@ -157,12 +160,7 @@ export default function CartPage() {
         )}
 
         {items.length === 0 ? (
-          // Стекло, а не плотная белая плита: карточка стоит прямо под
-          // свечением страницы, и непрозрачный фон гасил его в самом
-          // ярком месте — получалась большая белая заплатка. Рецепт тот
-          // же, что у BuildEstimator и выпадашки в навбаре, чтобы стекло
-          // на сайте было одно, а не у каждого своё.
-          <div className="mt-10 rounded-3xl border border-white/50 bg-white/20 px-6 py-14 text-center shadow-lg shadow-zinc-950/5 backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-900/30">
+          <GlassCard className="mt-10 px-6 py-14 text-center">
             <ShoppingCartSimple
               size={40}
               weight="duotone"
@@ -210,7 +208,7 @@ export default function CartPage() {
               </Link>
               .
             </p>
-          </div>
+          </GlassCard>
         ) : (
           <div className="mt-10 grid items-start gap-8 lg:grid-cols-[1fr_20rem]">
             {/* Позиции */}
@@ -219,7 +217,11 @@ export default function CartPage() {
                 {items.map((item) => (
                   <li
                     key={item.slug}
-                    className="flex flex-wrap items-center gap-4 rounded-2xl border border-zinc-200 bg-[#fbfbff] p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:flex-nowrap"
+                    // Позиции — стекло попроще: размытие слабее и без
+                    // блика. На мелких карточках полный рецепт спорит сам
+                    // с собой — три подряд бликующие плитки читаются как
+                    // рябь, а не как стекло.
+                    className="flex flex-wrap items-center gap-4 rounded-2xl border border-white/40 bg-white/25 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.55)] backdrop-blur-xl backdrop-saturate-150 dark:border-white/10 dark:bg-zinc-900/35 dark:shadow-[inset_0_1px_0_rgba(255,255,255,0.10)] sm:flex-nowrap"
                   >
                     <Link
                       href={`/shop/${item.slug}`}
@@ -274,7 +276,7 @@ export default function CartPage() {
             {/* Итог — липкий на широких экранах: список может быть длинным,
                 а кнопка оплаты должна оставаться на виду. */}
             <aside className="lg:sticky lg:top-28">
-              <div className="rounded-3xl border border-zinc-200 bg-[#fbfbff] p-6 dark:border-zinc-800 dark:bg-zinc-950">
+              <GlassCard className="p-6">
                 <h2 className="text-sm font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
                   Order summary
                 </h2>
@@ -345,7 +347,7 @@ export default function CartPage() {
                     </span>
                   </li>
                 </ul>
-              </div>
+              </GlassCard>
 
               <Link
                 href="/shop"
