@@ -50,7 +50,13 @@
       "PowerShell(npm test --silent 2>&1)",
       "PowerShell(git add -A)",
       "PowerShell(git checkout master 2>&1)",
-      "PowerShell(git merge dev --no-edit 2>&1)"
+      "PowerShell(git merge dev --no-edit 2>&1)",
+      "PowerShell(git push origin master 2>&1)",
+      "PowerShell(npx eslint \"src/app/\\(site\\)/cart/page.tsx\" src/components/GlassCard.tsx src/components/CartBackdrop.tsx)",
+      "PowerShell(git checkout dev 2>&1)",
+      "PowerShell(git rm -q src/components/CartBackdrop.tsx src/components/GlassCard.tsx)",
+      "PowerShell(git push origin dev 2>&1)",
+      "PowerShell(git commit -q -m \"Allow the push commands in the permission list\")"
     ]
   }
 }

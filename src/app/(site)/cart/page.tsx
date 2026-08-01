@@ -157,12 +157,11 @@ export default function CartPage() {
         )}
 
         {items.length === 0 ? (
-          // Стекло, а не плотная белая плита: карточка стоит прямо под
-          // свечением страницы, и непрозрачный фон гасил его в самом
-          // ярком месте — получалась большая белая заплатка. Рецепт тот
-          // же, что у BuildEstimator и выпадашки в навбаре, чтобы стекло
-          // на сайте было одно, а не у каждого своё.
-          <div className="mt-10 rounded-3xl border border-white/50 bg-white/20 px-6 py-14 text-center shadow-lg shadow-zinc-950/5 backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-900/30">
+          // Без карточки и обводки (просьба владельца 2026-08-01): плотная
+          // плита стояла ровно под свечением и гасила его в самом ярком
+          // месте, а стеклянный вариант мы попробовали и отвергли. Контент
+          // просто лежит на странице.
+          <div className="mt-10 px-6 py-14 text-center">
             <ShoppingCartSimple
               size={40}
               weight="duotone"
