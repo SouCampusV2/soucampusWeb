@@ -157,15 +157,23 @@ export default function CartPage() {
         )}
 
         {items.length === 0 ? (
-          <div className="mt-10 rounded-3xl border border-zinc-200 bg-[#fbfbff] px-6 py-16 text-center dark:border-zinc-800 dark:bg-zinc-950">
+          // Стекло, а не плотная белая плита: карточка стоит прямо под
+          // свечением страницы, и непрозрачный фон гасил его в самом
+          // ярком месте — получалась большая белая заплатка. Рецепт тот
+          // же, что у BuildEstimator и выпадашки в навбаре, чтобы стекло
+          // на сайте было одно, а не у каждого своё.
+          <div className="mt-10 rounded-3xl border border-white/50 bg-white/20 px-6 py-14 text-center shadow-lg shadow-zinc-950/5 backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-900/30">
             <ShoppingCartSimple
               size={40}
               weight="duotone"
               className="mx-auto text-orange-500 dark:text-orange-400"
             />
-            <p className="mx-auto mt-5 max-w-sm text-sm text-zinc-600 dark:text-zinc-400">
-              Your cart is empty. Pick a map from the shop — or start with the free ones, they
-              download the same way.
+            <h2 className="mt-5 text-xl font-bold text-zinc-950 dark:text-zinc-50">
+              Your cart is empty
+            </h2>
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+              Pick a map from the shop — or start with the free ones, they download exactly the
+              same way.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
               <Button href="/shop">Browse the shop</Button>
@@ -173,6 +181,35 @@ export default function CartPage() {
                 Free maps
               </Button>
             </div>
+
+            {/* Те же обещания, что и в Order summary у полной корзины —
+                здесь они отвечают на «а что вообще будет, если куплю»
+                ДО того, как человек что-то выбрал. */}
+            <ul className="mx-auto mt-10 grid max-w-2xl gap-6 border-t border-zinc-950/[0.06] pt-8 text-left dark:border-white/10 sm:grid-cols-3">
+              {FACTS.map(({ Icon, text }) => (
+                <li key={text} className="flex flex-col gap-2 sm:items-center sm:text-center">
+                  <Icon
+                    size={20}
+                    weight="bold"
+                    className="shrink-0 text-orange-500 dark:text-orange-400"
+                  />
+                  <span className="text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                    {text}
+                  </span>
+                </li>
+              ))}
+            </ul>
+
+            <p className="mt-8 text-xs text-zinc-500 dark:text-zinc-400">
+              Bought something already?{" "}
+              <Link
+                href="/purchases"
+                className="font-semibold text-orange-500 underline decoration-2 underline-offset-2 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-500"
+              >
+                Your downloads live here
+              </Link>
+              .
+            </p>
           </div>
         ) : (
           <div className="mt-10 grid items-start gap-8 lg:grid-cols-[1fr_20rem]">
