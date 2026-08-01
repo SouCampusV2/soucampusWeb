@@ -48,7 +48,9 @@
       "PowerShell(npm run build 2>&1)",
       "PowerShell(npx eslint src/app/layout.tsx src/components/CategoryFilter.tsx src/components/ResourceActions.tsx)",
       "PowerShell(npm test --silent 2>&1)",
-      "PowerShell(git add -A)"
+      "PowerShell(git add -A)",
+      "PowerShell(git checkout master 2>&1)",
+      "PowerShell(git merge dev --no-edit 2>&1)"
     ]
   }
 }
