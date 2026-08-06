@@ -64,7 +64,8 @@
       "Skill(schedule)",
       "Skill(schedule:*)",
       "Bash(git commit *)",
-      "Bash(git push *)"
+      "Bash(git push *)",
+      "Bash(npx vitest *)"
     ]
   }
 }
