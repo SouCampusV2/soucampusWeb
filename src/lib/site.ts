@@ -36,6 +36,23 @@ export const SITE_SAMEAS: string[] = [
   "https://x.com/CouSampus",
 ];
 
+// Куда безопасно вести после входа/подтверждения почты.
+//
+// Пускаем ТОЛЬКО относительный путь своего сайта. Без этой проверки
+// ссылка вида ?next=//evil.com логинила бы человека и тут же уводила на
+// чужой домен — классический open redirect. Отсекаем два случая:
+// абсолютный URL (не начинается со слэша) и протокол-относительный
+// "//evil.com" — второй выглядит относительным, но браузер понимает его
+// как чужой хост.
+//
+// Живёт в общем месте намеренно: раньше это условие стояло дословной
+// копией в AuthForm и в /auth/callback, и усиление проверки в одном из
+// них молча оставило бы второй дырявым. Обработчик callback опаснее
+// формы — до него доходят по ссылке из письма, минуя весь UI.
+export function safeNextPath(next: string | null | undefined, fallback = "/shop") {
+  return next && next.startsWith("/") && !next.startsWith("//") ? next : fallback;
+}
+
 export const NAV_LINKS = [
   { href: "/", label: "Home" },
   { href: "/portfolio", label: "Portfolio" },

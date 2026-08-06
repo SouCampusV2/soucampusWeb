@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { safeNextPath } from "@/lib/site";
 
 // Куда ведёт ссылка из письма-подтверждения. Supabase, проверив email,
 // редиректит сюда с одноразовым `code` (PKCE-флоу). Наша задача —
@@ -16,17 +17,10 @@ export async function GET(request: Request) {
 
   // next — куда уйти после успеха (по умолчанию магазин).
   //
-  // Пускаем ТОЛЬКО относительный путь своего сайта. Без этой проверки
-  // ссылка вида /auth/callback?next=//evil.com логинила бы человека и
-  // тут же уводила на чужой домен — классический open redirect, и он
-  // особенно опасен именно здесь, потому что адрес приходит из письма,
-  // где выглядит доверенным. Та же проверка есть в AuthForm; здесь она
-  // обязательна, потому что до обработчика можно дойти и минуя форму.
-  const requested = searchParams.get("next");
-  const next =
-    requested && requested.startsWith("/") && !requested.startsWith("//")
-      ? requested
-      : "/shop";
+  // Проверка на open redirect — общая с формой входа (safeNextPath в
+  // lib/site.ts, там же объяснено, что именно отсекается). Здесь она
+  // обязательна: до обработчика доходят по ссылке из письма, минуя форму.
+  const next = safeNextPath(searchParams.get("next"));
 
   if (code) {
     const supabase = await createSupabaseServer();

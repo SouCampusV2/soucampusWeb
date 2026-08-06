@@ -9,6 +9,7 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { PASSWORD_RULES, friendlyAuthError } from "@/lib/password";
 import { PasswordChecklist } from "@/components/PasswordChecklist";
 import { AuthField } from "@/components/AuthField";
+import { safeNextPath } from "@/lib/site";
 
 type Mode = "login" | "signup";
 
@@ -16,11 +17,9 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
   const router = useRouter();
   const isSignup = mode === "signup";
 
-  // Куда вести после успеха. Только относительный путь на своём сайте:
-  // "//..." (протокол-относительный) и абсолютные URL отсекаем, иначе
-  // ?next=//evil.com стал бы open redirect на чужой домен.
-  const target =
-    next && next.startsWith("/") && !next.startsWith("//") ? next : "/shop";
+  // Куда вести после успеха — через общую проверку (см. safeNextPath):
+  // только относительный путь своего сайта, иначе /shop.
+  const target = safeNextPath(next);
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
