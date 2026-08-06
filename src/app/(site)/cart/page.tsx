@@ -309,7 +309,7 @@ export default function CartPage() {
                 )}
 
                 {STRIPE_TEST_MODE && (
-                  <p className="mt-4 rounded-xl bg-amber-500/10 px-4 py-3 text-xs leading-relaxed text-amber-700 dark:text-amber-300">
+                  <p className="mt-4 rounded-xl bg-orange-50 px-4 py-3 text-xs leading-relaxed text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
                     Demo shop — Stripe is in test mode. Use card 4242 4242 4242 4242 with any future
                     date and CVC. No real money moves.
                   </p>

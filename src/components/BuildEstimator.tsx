@@ -194,7 +194,7 @@ export function BuildEstimator() {
   const clampSize = (n: number) => Math.min(2000, Math.max(1, n));
 
   return (
-    <div className="relative mx-auto max-w-md rounded-3xl border border-white/50 bg-white/20 p-6 shadow-lg shadow-zinc-950/5 backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-900/30 sm:p-8">
+    <div className="relative mx-auto max-w-md rounded-3xl border border-white/50 bg-[#fbfbff]/20 p-6 shadow-lg shadow-zinc-950/5 backdrop-blur-2xl dark:border-white/10 dark:bg-zinc-900/30 sm:p-8">
       {/* A flat, uniform tint reads as "translucent plastic," not glass —
           real glass catches light unevenly. This fakes that with a soft
           highlight in the top-left corner (where the light in this section's
@@ -203,7 +203,7 @@ export function BuildEstimator() {
           the card itself can't have overflow-hidden, the currency dropdown
           below needs to pop outside its bounds. */}
       <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden rounded-3xl">
-        <div className="absolute -left-1/4 -top-1/3 h-2/3 w-2/3 rounded-full bg-white/40 blur-3xl dark:bg-white/10" />
+        <div className="absolute -left-1/4 -top-1/3 h-2/3 w-2/3 rounded-full bg-[#fbfbff]/40 blur-3xl dark:bg-white/10" />
       </div>
       <p className="text-sm font-medium text-zinc-600 dark:text-zinc-400">
         Map size (blocks)

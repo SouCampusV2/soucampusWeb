@@ -228,12 +228,12 @@ export function Navbar() {
                             блюр размывает, но не гасит контраст. Плюс
                             backdrop-brightness приглушает то, что осталось
                             позади, отдельно в светлой и тёмной теме. */}
-                        <div className="relative min-w-[11rem] overflow-hidden rounded-2xl border border-white/60 bg-white/80 shadow-xl shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-110 dark:border-white/10 dark:bg-zinc-900/85 dark:backdrop-brightness-75">
+                        <div className="relative min-w-[11rem] overflow-hidden rounded-2xl border border-white/60 bg-[#fbfbff]/80 shadow-xl shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-110 dark:border-white/10 dark:bg-zinc-900/85 dark:backdrop-brightness-75">
                           <div
                             aria-hidden
                             // -z-10: блик позиционирован, пункты меню — нет,
                             // поэтому без этого он бы рисовался ПОВЕРХ текста.
-                            className="pointer-events-none absolute -left-1/4 -top-1/3 -z-10 h-2/3 w-2/3 rounded-full bg-white/40 blur-3xl dark:bg-white/10"
+                            className="pointer-events-none absolute -left-1/4 -top-1/3 -z-10 h-2/3 w-2/3 rounded-full bg-[#fbfbff]/40 blur-3xl dark:bg-white/10"
                           />
                           <Link
                             href="/settings"
