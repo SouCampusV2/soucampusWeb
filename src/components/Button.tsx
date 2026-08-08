@@ -42,13 +42,28 @@ const base =
 // фиксированную высоту h-12/h-14 из base, а цвета обязаны совпадать с
 // остальными кнопками. Раньше эти классы копировались туда руками и
 // разъезжались — теперь источник один.
+// Подчёркивание tertiary отделено от её цвета намеренно.
+//
+// Когда в tertiary есть иконка, подчёркивать её нельзя — черта проезжает
+// под стрелкой и выглядит как опечатка. Поэтому у таких кнопок черта
+// вешается на <span> с текстом, а не на саму кнопку (см. «Open Discord»
+// на /contact и BackLink). Но до 2026-08-08 «цвет без подчёркивания»
+// нельзя было получить, не переписав руками все четыре цветовых класса
+// через colorClassName — и на /contact именно это и сделано, из-за чего
+// синяя ссылка держит собственную копию оттенков. Теперь части
+// разделены: цвет берётся отсюда, черта добавляется там, где нужна.
+export const TERTIARY_UNDERLINE = "underline decoration-2 underline-offset-4";
+
+export const TERTIARY_COLORS =
+  "text-orange-500 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-500";
+
 export const BUTTON_COLORS: Record<Variant, string> = {
   primary:
     "rounded-full bg-orange-500 text-zinc-950 hover:bg-orange-600 dark:bg-orange-400 dark:hover:bg-orange-500",
   secondary:
     "rounded-full border-2 border-orange-500 text-orange-500 hover:border-orange-600 hover:text-orange-600 dark:border-orange-400 dark:text-orange-400 dark:hover:border-orange-500 dark:hover:text-orange-500",
-  tertiary:
-    "text-orange-500 underline decoration-2 underline-offset-4 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-500",
+  // Без иконки — подчёркиваем кнопку целиком, это обычный случай.
+  tertiary: `${TERTIARY_COLORS} ${TERTIARY_UNDERLINE}`,
 };
 
 // Геометрия «маленькой пилюли» — того самого исключения, ради которого
@@ -60,6 +75,24 @@ export const BUTTON_COLORS: Record<Variant, string> = {
 // фиксированная высота, а паддинг только горизонтальный.
 export const BUTTON_PILL =
   "inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60";
+
+// Ссылка ВНУТРИ текста — не кнопка и не tertiary.
+//
+// Разница принципиальная и часто путается. `Button variant="tertiary"` —
+// это самостоятельное действие: у него кнопочная высота (h-12/h-14 из
+// base), он стоит отдельной строкой и подчёркнут всегда. А это — слово
+// или два внутри предложения: «by SouCampus», «Back to site», ссылка на
+// портфолио посреди абзаца. Дать им кнопочную высоту значило бы разорвать
+// строку, в которой они стоят.
+//
+// Заведено 2026-08-08: таких ссылок по сайту набралось около четырёх
+// десятков примерно в дюжине разных начертаний — где-то с подчёркиванием
+// по наведению, где-то без, с тремя разными оттенками в тёмной теме.
+// Подчёркивание здесь по hover, а не всегда: сплошь подчёркнутый абзац
+// читается тяжело, а отдельная tertiary-кнопка наоборот обязана быть
+// подчёркнутой, потому что стоит одна и ей нужно выглядеть кликабельной.
+export const INLINE_LINK =
+  "text-orange-600 hover:underline dark:text-orange-400";
 
 // Точечное переопределение цвета primary-кнопки (по умолчанию — оранжевый,
 // см. правило "кнопки всегда orange" в DESIGN.md). Использовать только для

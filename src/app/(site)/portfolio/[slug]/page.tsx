@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getAllProjects, getProject } from "@/lib/projects";
 import { getViewCounts, VIEW_PATHS } from "@/lib/views";
 import { ViewCount } from "@/components/ViewCount";
 import { PortfolioGallery } from "@/components/PortfolioGallery";
+import { BackLink } from "@/components/BackLink";
 
 // Список адресов, которые Next.js соберёт заранее, во время сборки.
 // Раньше брался из массива мгновенно, теперь — запросом в базу, поэтому
@@ -70,15 +70,14 @@ export default async function ProjectPage({
   // visitor, not always default to the catalog. Carried via ?from=home
   // rather than router.back() so it also works from a fresh/shared link.
   const backHref = from === "home" ? "/" : "/portfolio";
-  const backLabel = from === "home" ? "← Home" : "← All work";
+  // Стрелку рисует BackLink иконкой — в подписи её быть не должно.
+  const backLabel = from === "home" ? "Home" : "All work";
 
   return (
     <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-16 sm:py-28">
 
       <div className="mx-auto max-w-3xl">
-        <Link href={backHref} className="text-sm font-medium text-orange-600">
-          {backLabel}
-        </Link>
+        <BackLink href={backHref}>{backLabel}</BackLink>
 
         {/* Тег и счётчик — в одну строку: оба относятся к работе целиком,
             но счётчик приглушён, это второстепенная информация. */}

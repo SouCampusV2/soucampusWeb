@@ -1,8 +1,8 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getAllReviews, getReview } from "@/lib/reviews";
 import { Skeleton } from "@/components/Skeleton";
+import { BackLink } from "@/components/BackLink";
 
 export async function generateStaticParams() {
   const reviews = await getAllReviews();
@@ -43,9 +43,7 @@ export default async function ReviewPage({
   return (
     <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-16 sm:py-28">
       <div className="mx-auto max-w-2xl text-center">
-        <Link href="/#reviews" className="text-sm font-medium text-orange-600">
-          ← Home
-        </Link>
+        <BackLink href="/#reviews">Home</BackLink>
 
         {/* TODO: this is a stub — flesh out into a real case study (photos,
             the project this client ordered, more of their words) once
