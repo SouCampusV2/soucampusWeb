@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeDescription } from "@/lib/sanitize";
 import { Star, SealCheck } from "@phosphor-icons/react/dist/ssr";
 import { getAllProducts, getProduct, getProductStats } from "@/lib/products";
 import { AddToCartButton } from "@/components/AddToCartButton";
@@ -137,31 +137,18 @@ export default async function ProductPage({
           <h2 className="mt-10 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
             Description
           </h2>
-          {/* description может быть HTML из редактора создателя (Tiptap,
-              см. UploadMapForm) — санитизируем перед вставкой, это
-              контент от постороннего пользователя, показанный всем
-              посетителям. dangerouslySetInnerHTML только через DOMPurify,
-              без исключений. */}
           {/* Описание — HTML из редактора креатора (Tiptap, см.
               UploadMapForm): заголовки, списки, картинки между блоками,
               таблицы версий. Санитизация обязательна и без исключений —
               это контент постороннего пользователя, который увидит
-              каждый посетитель. Разметка ограничена белым списком тегов:
-              всё, что умеет вставить наш редактор, и ничего сверх.
+              каждый посетитель. Белый список тегов и разбор правил — в
+              sanitize.ts, общий с админкой модерации: модератор обязан
+              видеть ровно то, что получит покупатель.
               Стили — общая константа с редактором, чтобы креатор вёрстку
               видел так же, как покупатель. */}
           <div
             className={`mt-4 leading-7 text-zinc-700 dark:text-zinc-300 ${RICH_TEXT_CLASS}`}
-            dangerouslySetInnerHTML={{
-              __html: DOMPurify.sanitize(product.description, {
-                ALLOWED_TAGS: [
-                  "p", "br", "strong", "em", "s", "code", "pre", "blockquote",
-                  "h2", "h3", "ul", "ol", "li", "a", "img",
-                  "table", "thead", "tbody", "tr", "th", "td",
-                ],
-                ALLOWED_ATTR: ["href", "target", "rel", "src", "alt", "colspan", "rowspan"],
-              }),
-            }}
+            dangerouslySetInnerHTML={{ __html: sanitizeDescription(product.description) }}
           />
         </div>
 

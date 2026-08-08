@@ -65,7 +65,8 @@
       "Skill(schedule:*)",
       "Bash(git commit *)",
       "Bash(git push *)",
-      "Bash(npx vitest *)"
+      "Bash(npx vitest *)",
+      "Bash(npm uninstall *)"
     ]
   }
 }
