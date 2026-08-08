@@ -1,5 +1,5 @@
 import Link from "next/link";
-import DOMPurify from "isomorphic-dompurify";
+import { sanitizeDescription } from "@/lib/sanitize";
 import { DownloadSimple, Clock } from "@phosphor-icons/react/dist/ssr";
 import { getPendingProducts } from "@/lib/moderation";
 import { ModerationActions } from "@/components/ModerationActions";
@@ -102,14 +102,7 @@ export default async function ModerationPage() {
                 <div
                   className={`mt-3 rounded-2xl border border-zinc-200 p-5 text-sm leading-7 text-zinc-700 dark:border-zinc-800 dark:text-zinc-300 ${RICH_TEXT_CLASS}`}
                   dangerouslySetInnerHTML={{
-                    __html: DOMPurify.sanitize(product.description, {
-                      ALLOWED_TAGS: [
-                        "p", "br", "strong", "em", "s", "code", "pre", "blockquote",
-                        "h2", "h3", "ul", "ol", "li", "a", "img",
-                        "table", "thead", "tbody", "tr", "th", "td",
-                      ],
-                      ALLOWED_ATTR: ["href", "target", "rel", "src", "alt", "colspan", "rowspan"],
-                    }),
+                    __html: sanitizeDescription(product.description),
                   }}
                 />
               </details>

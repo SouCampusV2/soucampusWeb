@@ -28,7 +28,7 @@ export default async function AdminLayout({
   if (!admin) notFound();
 
   return (
-    <div className="flex min-h-screen flex-col bg-white dark:bg-zinc-950">
+    <div className="flex min-h-screen flex-col bg-[#fbfbff] dark:bg-zinc-950">
       <header className="border-b border-zinc-200 dark:border-zinc-800">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-6 py-4">
           <Link

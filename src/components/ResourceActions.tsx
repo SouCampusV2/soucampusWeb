@@ -113,7 +113,7 @@ export function ResourceActions({
       </button>
 
       {open && (
-        <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-56 overflow-hidden rounded-2xl border border-zinc-200 bg-white p-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
+        <div className="absolute right-0 top-[calc(100%+8px)] z-20 w-56 overflow-hidden rounded-2xl border border-zinc-200 bg-[#fbfbff] p-1 shadow-lg dark:border-zinc-800 dark:bg-zinc-950">
           {canHide && (
             <button
               type="button"
@@ -147,7 +147,7 @@ export function ResourceActions({
           aria-label={`Delete ${title}`}
           className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/70 p-4 backdrop-blur-sm"
         >
-          <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-white p-6 dark:border-zinc-800 dark:bg-zinc-950">
+          <div className="w-full max-w-md rounded-3xl border border-zinc-200 bg-[#fbfbff] p-6 dark:border-zinc-800 dark:bg-zinc-950">
             <h2 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
               Delete this map?
             </h2>

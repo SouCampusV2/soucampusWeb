@@ -59,7 +59,7 @@ export function SelectField({
             <option
               key={option.value}
               value={option.value}
-              className="bg-white text-zinc-950 dark:bg-zinc-900 dark:text-zinc-50"
+              className="bg-[#fbfbff] text-zinc-950 dark:bg-zinc-900 dark:text-zinc-50"
             >
               {option.label}
             </option>

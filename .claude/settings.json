@@ -56,7 +56,20 @@
       "PowerShell(git checkout dev 2>&1)",
       "PowerShell(git rm -q src/components/CartBackdrop.tsx src/components/GlassCard.tsx)",
       "PowerShell(git push origin dev 2>&1)",
-      "PowerShell(git commit -q -m \"Allow the push commands in the permission list\")"
+      "PowerShell(git commit -q -m \"Allow the push commands in the permission list\")",
+      "Bash(gh run *)",
+      "Bash(gh secret *)",
+      "Bash(git fetch *)",
+      "Bash(git ls-tree *)",
+      "Skill(schedule)",
+      "Skill(schedule:*)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(npx vitest *)",
+      "Bash(npm uninstall *)",
+      "Bash(git checkout *)",
+      "Bash(git pull *)",
+      "Bash(git merge *)"
     ]
   }
 }
