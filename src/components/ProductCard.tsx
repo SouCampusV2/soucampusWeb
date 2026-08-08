@@ -3,6 +3,7 @@ import { Unbounded } from "next/font/google";
 import { Star, SealCheck } from "@phosphor-icons/react/dist/ssr";
 import type { Product } from "@/lib/products";
 import { ProductCardImage } from "@/components/ProductCardImage";
+import { INLINE_LINK } from "@/components/Button";
 
 // Тот же дисплейный шрифт, что у hero-заголовков и карточек портфолио
 // (см. DESIGN.md, "Hero-секции страниц").
@@ -92,7 +93,7 @@ export function ProductCard({
           {author.href ? (
             <Link
               href={author.href}
-              className="pointer-events-auto relative z-10 inline-flex items-center gap-1 text-orange-600 hover:underline dark:text-orange-400"
+              className={`pointer-events-auto relative z-10 inline-flex items-center gap-1 ${INLINE_LINK}`}
             >
               {author.name}
               {author.isVerified && <SealCheck size={12} weight="fill" aria-hidden />}

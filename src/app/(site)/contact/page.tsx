@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
-import { Button } from "@/components/Button";
+import { Button, TERTIARY_UNDERLINE } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
 import { ArrowCircle } from "@/components/ArrowCircle";
 import { FaqAccordion } from "@/components/FaqAccordion";
@@ -149,7 +149,9 @@ export default function ContactPage() {
               colorClassName="text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-500"
               className="group gap-2"
             >
-              <span className="underline decoration-2 underline-offset-4">Open Discord</span>
+              {/* Черта на тексте, а не на кнопке: иначе она проезжает и
+                  под стрелкой (см. TERTIARY_UNDERLINE в Button.tsx). */}
+              <span className={TERTIARY_UNDERLINE}>Open Discord</span>
               <ArrowCircle
                 direction="right"
                 variant="bare"
@@ -176,7 +178,7 @@ export default function ContactPage() {
               href="#faq"
               variant="tertiary"
               size="lg"
-              colorClassName="text-blue-500 underline decoration-2 underline-offset-4 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-500"
+              colorClassName={`text-blue-500 hover:text-blue-600 dark:text-blue-400 dark:hover:text-blue-500 ${TERTIARY_UNDERLINE}`}
             >
               See the questions
             </Button>

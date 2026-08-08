@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
-import Link from "next/link";
 import { Unbounded } from "next/font/google";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getOwnProduct } from "@/lib/moderation";
 import { EditMapForm } from "@/components/EditMapForm";
 import { PageGlow } from "@/components/PageGlow";
+import { BackLink } from "@/components/BackLink";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -42,12 +42,7 @@ export default async function EditResourcePage({
       <PageGlow color="rgba(249,115,22,0.28)" />
       <section className="relative pb-28 pt-20">
         <div className="mx-auto max-w-2xl">
-          <Link
-            href="/resources"
-            className="text-sm font-medium text-orange-600 dark:text-orange-400"
-          >
-            ← Your resources
-          </Link>
+          <BackLink href="/resources">Your resources</BackLink>
 
           <h1
             className={`${displayFont.className} mt-6 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}

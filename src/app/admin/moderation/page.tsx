@@ -5,7 +5,7 @@ import { getPendingProducts } from "@/lib/moderation";
 import { ModerationActions } from "@/components/ModerationActions";
 import { ModerationGallery } from "@/components/ModerationGallery";
 import { RICH_TEXT_CLASS } from "@/lib/rich-text";
-import { BUTTON_COLORS, BUTTON_PILL } from "@/components/Button";
+import { BUTTON_COLORS, BUTTON_PILL, INLINE_LINK } from "@/components/Button";
 import { creatorHref } from "@/lib/creators";
 
 // Очередь всегда свежая: список меняется от каждого решения, кэшировать
@@ -55,7 +55,7 @@ export default async function ModerationPage() {
                     {product.creator ? (
                       <Link
                         href={creatorHref(product.creator.displayName)}
-                        className="font-medium text-orange-600 hover:underline dark:text-orange-400"
+                        className={`font-medium ${INLINE_LINK}`}
                       >
                         {product.creator.displayName}
                       </Link>
@@ -96,7 +96,7 @@ export default async function ModerationPage() {
                   /shop/[slug]). Смысл админки именно в этом: решение
                   принимается по готовой странице, а не по строке БД. */}
               <details className="mt-5 group">
-                <summary className="cursor-pointer text-sm font-medium text-orange-600 hover:underline dark:text-orange-400">
+                <summary className={`cursor-pointer text-sm font-medium ${INLINE_LINK}`}>
                   Preview description
                 </summary>
                 <div

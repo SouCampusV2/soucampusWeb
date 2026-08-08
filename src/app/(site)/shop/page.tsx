@@ -6,6 +6,7 @@ import { getAllProducts, getAllProductsWithStats } from "@/lib/products";
 import { ShopCatalog } from "@/components/ShopCatalog";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { PageGlow } from "@/components/PageGlow";
+import { INLINE_LINK } from "@/components/Button";
 
 // Тот же дисплейный шрифт, что у hero-заголовков остальных страниц
 // (см. DESIGN.md, "Hero-секции страниц").
@@ -64,7 +65,7 @@ export default async function ShopPage() {
         // этом остаётся noindex (см. generateMetadata) — как раньше.
         <p className="mt-16 max-w-2xl text-zinc-600 dark:text-zinc-400">
           First products are on the way. Meanwhile, check the{" "}
-          <Link href="/portfolio" className="font-medium text-orange-600 underline decoration-2 underline-offset-4">
+          <Link href="/portfolio" className={`font-medium ${INLINE_LINK}`}>
             portfolio
           </Link>{" "}
           or order a custom build.

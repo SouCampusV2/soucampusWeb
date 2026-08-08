@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import { getAdminUser } from "@/lib/admin";
+import { INLINE_LINK } from "@/components/Button";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -41,7 +42,7 @@ export default async function AdminLayout({
             <span className="text-zinc-500 dark:text-zinc-400">{admin.email}</span>
             <Link
               href="/"
-              className="font-medium text-orange-600 hover:underline dark:text-orange-400"
+              className={`font-medium ${INLINE_LINK}`}
             >
               Back to site
             </Link>

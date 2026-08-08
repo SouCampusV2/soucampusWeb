@@ -7,6 +7,8 @@ import { getAllProducts, getProduct, getProductStats } from "@/lib/products";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductGallery } from "@/components/ProductGallery";
 import { RICH_TEXT_CLASS } from "@/lib/rich-text";
+import { BackLink } from "@/components/BackLink";
+import { INLINE_LINK } from "@/components/Button";
 
 // Страницы товаров собираются заранее, как и работы портфолио.
 export async function generateStaticParams() {
@@ -66,9 +68,7 @@ export default async function ProductPage({
 
   return (
     <main className="w-full mx-auto max-w-[120rem] flex-1 px-6 py-16 sm:px-10 sm:py-28 lg:px-16 xl:px-24 2xl:px-[120px]">
-      <Link href="/shop" className="text-sm font-medium text-orange-600">
-        ← All products
-      </Link>
+      <BackLink href="/shop">All products</BackLink>
 
       <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl">
         {product.title}
@@ -77,7 +77,7 @@ export default async function ProductPage({
         by{" "}
         <Link
           href="/creator/soucampus"
-          className="inline-flex items-center gap-1 text-orange-600 hover:underline dark:text-orange-400"
+          className={`inline-flex items-center gap-1 ${INLINE_LINK}`}
         >
           SouCampus
           <SealCheck size={13} weight="fill" aria-hidden />
@@ -189,7 +189,7 @@ export default async function ProductPage({
                 <dd>
                   <Link
                     href="/support"
-                    className="font-medium text-orange-600 hover:underline dark:text-orange-400"
+                    className={`font-medium ${INLINE_LINK}`}
                   >
                     Support
                   </Link>

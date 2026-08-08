@@ -3,6 +3,7 @@
 import { useRef, useState } from "react";
 import Image from "next/image";
 import { ArrowCircle } from "@/components/ArrowCircle";
+import { Lightbox } from "@/components/Lightbox";
 
 // Галерея товара: большой кадр + лента миниатюр под ним, как на витринах
 // ассетов (образец — скриншот от владельца 2026-07-27). Обложка всегда
@@ -18,6 +19,9 @@ export function ProductGallery({
   title: string;
 }) {
   const [index, setIndex] = useState(0);
+  // Разворот на весь экран. Отдельное состояние от index: закрыв разворот,
+  // человек должен остаться на том кадре, до которого долистал внутри.
+  const [openAt, setOpenAt] = useState<number | null>(null);
   const stripRef = useRef<HTMLDivElement>(null);
   const many = images.length > 1;
 
@@ -32,6 +36,18 @@ export function ProductGallery({
       block: "nearest",
       inline: "nearest",
     });
+  };
+
+  // Закрывая разворот, переносим галерею на кадр, до которого долистали
+  // внутри: иначе человек листает во весь экран, закрывает — и видит под
+  // собой ту картинку, с которой начал. Выглядит как откат его действий.
+  const closeLightbox = (next: number | null) => {
+    if (next === null) {
+      if (openAt !== null) select(openAt);
+      setOpenAt(null);
+      return;
+    }
+    setOpenAt(next);
   };
 
   // Кнопка — только позиционирование; сам кружок со стрелкой рисует
@@ -51,10 +67,15 @@ export function ProductGallery({
           }
           fill
           sizes="(min-width: 1024px) 640px, 100vw"
-          className="object-cover"
+          className="cursor-zoom-in object-cover"
           // priority только у первого кадра: это LCP-картинка страницы.
           // Остальные грузятся обычным порядком, когда до них дойдёт.
           priority={index === 0}
+          // Клик по кадру разворачивает его во весь экран. Обработчик на
+          // самой картинке, а не на контейнере: стрелки лежат поверх
+          // отдельными кнопками, и на контейнере листание открывало бы
+          // разворот заодно.
+          onClick={() => setOpenAt(index)}
         />
 
         {many && (
@@ -110,6 +131,13 @@ export function ProductGallery({
           ))}
         </div>
       )}
+
+      <Lightbox
+        images={images}
+        title={title}
+        index={openAt}
+        onChange={closeLightbox}
+      />
     </div>
   );
 }
