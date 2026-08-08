@@ -1,10 +1,10 @@
 import Link from "next/link";
-import Image from "next/image";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getAllProjects, getProject } from "@/lib/projects";
 import { getViewCounts, VIEW_PATHS } from "@/lib/views";
 import { ViewCount } from "@/components/ViewCount";
+import { PortfolioGallery } from "@/components/PortfolioGallery";
 
 // Список адресов, которые Next.js соберёт заранее, во время сборки.
 // Раньше брался из массива мгновенно, теперь — запросом в базу, поэтому
@@ -112,32 +112,14 @@ export default async function ProjectPage({
 
         <p className="mt-8 leading-7 text-zinc-700 dark:text-zinc-300">{project.description}</p>
 
-        <div className="relative mt-10 aspect-video overflow-hidden rounded-2xl">
-          <Image
-            src={project.image}
-            alt={project.title}
-            fill
-            sizes="(min-width: 1024px) 768px, 100vw"
-            className="object-cover"
-            priority
-          />
-        </div>
-
-        {project.gallery && project.gallery.length > 0 && (
-          <div className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-4">
-            {project.gallery.map((src) => (
-              <div key={src} className="relative aspect-video overflow-hidden rounded-2xl">
-                <Image
-                  src={src}
-                  alt={project.title}
-                  fill
-                  sizes="(min-width: 1024px) 384px, (min-width: 640px) 50vw, 100vw"
-                  className="object-cover"
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Фото работы — клиентский блок: любой кадр открывается во весь
+            экран с листанием (общий Lightbox, он же на странице товара и
+            в админке). Остальная страница остаётся серверной. */}
+        <PortfolioGallery
+          image={project.image}
+          gallery={project.gallery}
+          title={project.title}
+        />
       </div>
     </main>
   );
