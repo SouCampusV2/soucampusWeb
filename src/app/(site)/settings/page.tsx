@@ -6,8 +6,6 @@ import { getCurrentUser } from "@/lib/current-user";
 import { readProfile, type Profile } from "@/lib/profiles";
 import { ProfileEditForm } from "@/components/ProfileEditForm";
 import { PageGlow } from "@/components/PageGlow";
-import { CreatorStatusCard } from "@/components/CreatorStatusCard";
-import { getOwnApplication, isCreator } from "@/lib/creator-applications";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -35,14 +33,6 @@ export default async function SettingsPage() {
       bio: null,
     };
 
-  // Право публиковать и состояние заявки — параллельно, они не зависят
-  // друг от друга: последовательные await здесь стоили бы двух ожиданий
-  // подряд ради двух независимых ответов.
-  const [creator, application] = await Promise.all([
-    isCreator(supabase, user.id),
-    getOwnApplication(supabase, user.id),
-  ]);
-
   // Ширину держит контент внутри (max-w-md) — см. комментарий в /profile.
   return (
     <main className="relative w-full overflow-x-clip px-6">
@@ -60,15 +50,6 @@ export default async function SettingsPage() {
             <ProfileEditForm initial={profile} userId={user.id} />
           </div>
 
-          {/* Заявка на статус креатора — здесь, а не отдельной страницей:
-              человек приходит в настройки за «что я могу на этом сайте», и
-              право публиковать карты — часть ответа. Отдельный адрес
-              пришлось бы ещё и найти. */}
-          <CreatorStatusCard
-            userId={user.id}
-            isCreator={creator}
-            application={application}
-          />
         </div>
       </section>
     </main>

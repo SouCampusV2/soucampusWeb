@@ -71,11 +71,11 @@ export default async function AdminLayout({
 
           <div className="flex items-center gap-4 text-sm">
             <span className="text-zinc-500 dark:text-zinc-400">{admin.email}</span>
-            <Link
-              href="/"
-              className={`font-medium ${INLINE_LINK}`}
-            >
-              Back to site
+            {/* В магазин, а не на лендинг: отсюда разбирают карты, и
+                «назад к сайту» здесь означает «к витрине», а не к
+                странице о студии. */}
+            <Link href="/shop" className={`font-medium ${INLINE_LINK}`}>
+              Back to shop
             </Link>
           </div>
         </div>
