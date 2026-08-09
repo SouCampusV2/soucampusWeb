@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { getCurrentUser } from "@/lib/current-user";
 import { readProfile, type Profile } from "@/lib/profiles";
 import { ProfileEditForm } from "@/components/ProfileEditForm";
 import { PageGlow } from "@/components/PageGlow";
@@ -15,9 +16,7 @@ export const metadata: Metadata = {
 
 export default async function SettingsPage() {
   const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser(supabase);
 
   if (!user) {
     redirect("/login?next=/settings");
@@ -27,8 +26,7 @@ export default async function SettingsPage() {
   // Фоллбэк на метаданные — на случай аккаунтов до появления таблицы.
   const profile: Profile =
     (await readProfile(supabase, user.id)) ?? {
-      displayName:
-        (user.user_metadata?.display_name as string | undefined) ?? "",
+      displayName: user.displayName ?? "",
       firstName: null,
       lastName: null,
       avatarUrl: null,

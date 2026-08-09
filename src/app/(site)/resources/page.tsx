@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import { PencilSimple, Plus, Eye } from "@phosphor-icons/react/dist/ssr";
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { getCurrentUser } from "@/lib/current-user";
 import { getOwnProducts, type OwnProduct } from "@/lib/moderation";
 import { PageGlow } from "@/components/PageGlow";
 import { Button, BUTTON_COLORS, BUTTON_PILL } from "@/components/Button";
@@ -24,9 +25,7 @@ export const metadata: Metadata = {
 // управляла ими. Здесь всё вместе и отсюда же правится.
 export default async function ResourcesPage() {
   const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser(supabase);
 
   if (!user) {
     redirect("/login?next=/resources");

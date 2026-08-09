@@ -4,6 +4,7 @@ import { Unbounded } from "next/font/google";
 import Link from "next/link";
 import { Warning } from "@phosphor-icons/react/dist/ssr";
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { getCurrentUser } from "@/lib/current-user";
 import { getOwnProducts } from "@/lib/moderation";
 import { UploadMapForm } from "@/components/UploadMapForm";
 import { PageGlow } from "@/components/PageGlow";
@@ -21,9 +22,7 @@ export const metadata: Metadata = {
 // защита — здесь, на сервере.
 export default async function UploadMapPage() {
   const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser(supabase);
 
   if (!user) {
     redirect("/login?next=/creator/upload");
