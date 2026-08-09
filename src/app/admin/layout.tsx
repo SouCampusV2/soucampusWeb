@@ -55,6 +55,12 @@ export default async function AdminLayout({
             >
               Catalog
             </Link>
+            <Link
+              href="/admin/applications"
+              className="font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+            >
+              Creators
+            </Link>
           </nav>
 
           <div className="flex items-center gap-4 text-sm">
