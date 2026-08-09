@@ -44,6 +44,12 @@ export default async function AdminLayout({
               пунктов. Появится третий-четвёртый — вернуться к этому. */}
           <nav className="flex items-center gap-4 text-sm">
             <Link
+              href="/admin"
+              className="font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+            >
+              Overview
+            </Link>
+            <Link
               href="/admin/moderation"
               className="font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
             >
