@@ -4,7 +4,9 @@ import { Unbounded } from "next/font/google";
 import Link from "next/link";
 import { Warning } from "@phosphor-icons/react/dist/ssr";
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { getCurrentUser } from "@/lib/current-user";
 import { getOwnProducts } from "@/lib/moderation";
+import { isCreator } from "@/lib/creator-applications";
 import { UploadMapForm } from "@/components/UploadMapForm";
 import { PageGlow } from "@/components/PageGlow";
 
@@ -21,12 +23,22 @@ export const metadata: Metadata = {
 // защита — здесь, на сервере.
 export default async function UploadMapPage() {
   const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser(supabase);
 
   if (!user) {
     redirect("/login?next=/creator/upload");
+  }
+
+  // Загружать может только одобренный креатор (с 2026-08-09). Раньше сюда
+  // проходил ЛЮБОЙ зарегистрированный, и единственным фильтром была
+  // модерация каждой карты по отдельности — то есть спамера приходилось
+  // ловить заново на каждой заявке.
+  //
+  // Отправляем в настройки, а не в 404: человек здесь не посторонний, он
+  // просто ещё не подавал заявку, и ему нужно показать, где это сделать.
+  // Сама форма подачи — в CreatorStatusCard на /settings.
+  if (!(await isCreator(supabase, user.id))) {
+    redirect("/settings");
   }
 
   // Два РАЗНЫХ случая, и путать их нельзя.

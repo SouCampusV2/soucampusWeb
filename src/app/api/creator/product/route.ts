@@ -43,7 +43,7 @@ export async function POST(request: Request) {
 
   const { data: product, error } = await db
     .from("products")
-    .select("id, title, status, is_published, creator_id")
+    .select("id, title, status, is_published, creator_id, hidden_by, deleted_at")
     .eq("id", productId)
     .maybeSingle();
 
@@ -59,6 +59,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
+  // Удалённая карта не управляется ничем: она уже ушла и с витрины, и из
+  // списка автора. Единственный, кто может её вернуть, — владелец сайта
+  // через каталог админки.
+  if (product.deleted_at) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
+
   if (action === "hide" || action === "unhide") {
     // Прятать и возвращать имеет смысл только у карты, ПРОШЕДШЕЙ разбор.
     // У заявки в очереди витрины и так нет, и «вернуть» её значило бы
@@ -70,9 +77,28 @@ export async function POST(request: Request) {
       );
     }
 
+    // Карту, снятую МОДЕРАТОРОМ, автор вернуть не может — иначе бан
+    // отменялся бы одной кнопкой в его же кабинете, и снятие с витрины
+    // не значило бы ничего. Своё собственное «спрятать» он отменяет
+    // свободно: разница ровно в hidden_by (см. миграцию 20260809120000).
+    if (action === "unhide" && product.hidden_by === "moderator") {
+      return NextResponse.json(
+        {
+          error:
+            "This map was taken down by a moderator, so it can't be brought back from here. Check the reason on the map and reply to it.",
+        },
+        { status: 403 }
+      );
+    }
+
     const { error: updateError } = await db
       .from("products")
-      .update({ is_published: action === "unhide" })
+      .update({
+        is_published: action === "unhide",
+        // Помечаем, что скрыл автор: без этого его собственное «спрятать»
+        // было бы неотличимо от бана, и вернуть карту он бы уже не смог.
+        hidden_by: action === "hide" ? "creator" : null,
+      })
       .eq("id", productId);
 
     if (updateError) {

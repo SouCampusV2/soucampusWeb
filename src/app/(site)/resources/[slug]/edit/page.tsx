@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound, redirect } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { getCurrentUser } from "@/lib/current-user";
 import { getOwnProduct } from "@/lib/moderation";
 import { EditMapForm } from "@/components/EditMapForm";
 import { PageGlow } from "@/components/PageGlow";
@@ -27,9 +28,7 @@ export default async function EditResourcePage({
   const { slug } = await params;
 
   const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser(supabase);
   if (!user) {
     redirect(`/login?next=/resources/${slug}/edit`);
   }

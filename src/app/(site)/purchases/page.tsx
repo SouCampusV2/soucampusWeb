@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import { DownloadSimple } from "@phosphor-icons/react/dist/ssr";
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { getCurrentUser } from "@/lib/current-user";
 import { getPurchasesForUser, signedDownloadUrl, downloadFileName } from "@/lib/orders";
 import { readUserRatings } from "@/lib/ratings";
 import { RatingStars } from "@/components/RatingStars";
@@ -24,9 +25,7 @@ export const metadata: Metadata = {
 // в /resources, здесь только купленное.
 export default async function PurchasesPage() {
   const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser(supabase);
 
   if (!user) {
     redirect("/login?next=/purchases");

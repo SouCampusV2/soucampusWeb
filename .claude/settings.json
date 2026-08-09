@@ -61,7 +61,11 @@
       "Bash(git merge *)",
       "Bash(git checkout *)",
       "Bash(git push *)",
-      "Bash(npx vitest *)"
+      "Bash(npx vitest *)",
+      "Bash(perl -0pi -e 's/import \\\\{\\\\n  EditorToolbar,\\\\n  EDITOR_CONTENT_CLASS,\\\\n  TextField,\\\\n  PriceField,\\\\n\\\\} from \"\\\\@\\\\/components\\\\/MapFormParts\";/import { TextField, PriceField } from \"\\\\@\\\\/components\\\\/MapFormParts\";/g' src/components/EditMapForm.tsx src/components/UploadMapForm.tsx)",
+      "Bash(read f *)",
+      "Bash(node -e ' *)",
+      "Bash(node -e \"console.log\\('supabase-js', require\\('./node_modules/@supabase/supabase-js/package.json'\\).version\\); console.log\\('ssr', require\\('./node_modules/@supabase/ssr/package.json'\\).version\\)\")"
     ]
   }
 }

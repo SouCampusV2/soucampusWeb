@@ -38,6 +38,31 @@ export default async function AdminLayout({
           >
             Admin
           </Link>
+          {/* Разделы админки. Пока их два, поэтому просто ссылки в шапке,
+              без выделения активного: подсветка требует usePathname, то
+              есть клиентской границы вокруг всего layout ради двух
+              пунктов. Появится третий-четвёртый — вернуться к этому. */}
+          <nav className="flex items-center gap-4 text-sm">
+            <Link
+              href="/admin/moderation"
+              className="font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+            >
+              Queue
+            </Link>
+            <Link
+              href="/admin/products"
+              className="font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+            >
+              Catalog
+            </Link>
+            <Link
+              href="/admin/applications"
+              className="font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+            >
+              Creators
+            </Link>
+          </nav>
+
           <div className="flex items-center gap-4 text-sm">
             <span className="text-zinc-500 dark:text-zinc-400">{admin.email}</span>
             <Link

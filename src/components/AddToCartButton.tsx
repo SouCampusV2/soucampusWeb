@@ -2,8 +2,8 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle, Info } from "@phosphor-icons/react";
-import { Button } from "@/components/Button";
+import { CheckCircle, Info, ArrowRight } from "@phosphor-icons/react";
+import { Button, TERTIARY_UNDERLINE } from "@/components/Button";
 import { useCart, type CartItem } from "@/lib/cart-context";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
@@ -161,12 +161,22 @@ export function AddToCartButton({
             )}
             <span>{notice.text}</span>
             {notice.href && (
+              // Стрелка — иконка Phosphor, и подчёркнут только текст:
+              // символ `→` внутри подчёркнутой ссылки собирал черту и под
+              // собой (см. TERTIARY_UNDERLINE в Button.tsx — там же
+              // разобрано, почему цвет и черта разделены).
               <Link
                 href={notice.href}
                 data-page-transition="true"
-                className="ml-auto shrink-0 font-semibold text-orange-700 underline decoration-2 underline-offset-4 dark:text-orange-300"
+                className="group ml-auto flex shrink-0 items-center gap-1.5 font-semibold text-orange-700 dark:text-orange-300"
               >
-                {notice.linkLabel} →
+                <span className={TERTIARY_UNDERLINE}>{notice.linkLabel}</span>
+                <ArrowRight
+                  size={14}
+                  weight="bold"
+                  className="transition-transform group-hover:translate-x-1"
+                  aria-hidden
+                />
               </Link>
             )}
           </div>

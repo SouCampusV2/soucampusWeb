@@ -3,6 +3,7 @@ import { Unbounded } from "next/font/google";
 import { ForgotPasswordForm } from "@/components/ForgotPasswordForm";
 import { PageGlow } from "@/components/PageGlow";
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { getCurrentUser } from "@/lib/current-user";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -25,9 +26,7 @@ export const metadata: Metadata = {
 // перед нами, решает сессия, а не догадка.
 export default async function ForgotPasswordPage() {
   const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser(supabase);
   const signedInEmail = user?.email ?? null;
 
   // Ширину держит контент внутри (max-w-md) — см. комментарий в /profile.

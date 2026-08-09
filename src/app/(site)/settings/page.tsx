@@ -2,9 +2,12 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { getCurrentUser } from "@/lib/current-user";
 import { readProfile, type Profile } from "@/lib/profiles";
 import { ProfileEditForm } from "@/components/ProfileEditForm";
 import { PageGlow } from "@/components/PageGlow";
+import { CreatorStatusCard } from "@/components/CreatorStatusCard";
+import { getOwnApplication, isCreator } from "@/lib/creator-applications";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -15,9 +18,7 @@ export const metadata: Metadata = {
 
 export default async function SettingsPage() {
   const supabase = await createSupabaseServer();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getCurrentUser(supabase);
 
   if (!user) {
     redirect("/login?next=/settings");
@@ -27,13 +28,20 @@ export default async function SettingsPage() {
   // Фоллбэк на метаданные — на случай аккаунтов до появления таблицы.
   const profile: Profile =
     (await readProfile(supabase, user.id)) ?? {
-      displayName:
-        (user.user_metadata?.display_name as string | undefined) ?? "",
+      displayName: user.displayName ?? "",
       firstName: null,
       lastName: null,
       avatarUrl: null,
       bio: null,
     };
+
+  // Право публиковать и состояние заявки — параллельно, они не зависят
+  // друг от друга: последовательные await здесь стоили бы двух ожиданий
+  // подряд ради двух независимых ответов.
+  const [creator, application] = await Promise.all([
+    isCreator(supabase, user.id),
+    getOwnApplication(supabase, user.id),
+  ]);
 
   // Ширину держит контент внутри (max-w-md) — см. комментарий в /profile.
   return (
@@ -51,6 +59,16 @@ export default async function SettingsPage() {
           <div className="mt-10">
             <ProfileEditForm initial={profile} userId={user.id} />
           </div>
+
+          {/* Заявка на статус креатора — здесь, а не отдельной страницей:
+              человек приходит в настройки за «что я могу на этом сайте», и
+              право публиковать карты — часть ответа. Отдельный адрес
+              пришлось бы ещё и найти. */}
+          <CreatorStatusCard
+            userId={user.id}
+            isCreator={creator}
+            application={application}
+          />
         </div>
       </section>
     </main>

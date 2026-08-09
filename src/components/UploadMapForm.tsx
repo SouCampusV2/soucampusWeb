@@ -2,11 +2,24 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useEditor, EditorContent } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Link from "@tiptap/extension-link";
-import Image from "@tiptap/extension-image";
-import { TableKit } from "@tiptap/extension-table/kit";
+import dynamic from "next/dynamic";
+// Только тип — на рантайм и на размер бандла не влияет (импорт стирается
+// при компиляции). Сама библиотека приезжает отдельным файлом, см. ниже.
+import type { Editor } from "@tiptap/react";
+import { RichTextEditorSkeleton } from "@/components/RichTextEditor";
+
+// Tiptap с ProseMirror — около 668 КБ, и до 2026-08-09 он лежал в бандле
+// страницы: браузер обязан был скачать и выполнить его прежде, чем форма
+// вообще оживёт. Отсюда «Add a map грузится миллион лет». Теперь он
+// отдельным файлом: название, цена, категория и выбор файла работают
+// сразу, редактор подъезжает следом на место заглушки.
+//
+// ssr: false — редактор всё равно не рендерится на сервере
+// (immediatelyRender: false), а без этого флага Next попытался бы.
+const RichTextEditor = dynamic(
+  () => import("@/components/RichTextEditor").then((m) => m.RichTextEditor),
+  { ssr: false, loading: () => <RichTextEditorSkeleton /> }
+);
 import {
   Star,
   Image as ImageIcon,
@@ -25,12 +38,7 @@ import {
   type ProductCategory,
 } from "@/lib/products";
 import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
-import {
-  EditorToolbar,
-  EDITOR_CONTENT_CLASS,
-  TextField,
-  PriceField,
-} from "@/components/MapFormParts";
+import { TextField, PriceField } from "@/components/MapFormParts";
 import {
   MAX_IMAGES,
   IMAGES_TOTAL_MAX_BYTES,
@@ -95,24 +103,10 @@ export function UploadMapForm({ userId }: { userId: string }) {
     saving: "Saving…",
   };
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Link.configure({ openOnClick: false }),
-      // Картинки прямо в тексте описания — как на BuiltByBit, где
-      // описание это полноценная страница со скринами между блоками,
-      // а не только галерея сверху.
-      Image.configure({ HTMLAttributes: { class: "rounded-xl" } }),
-      // Таблицы — ими креаторы описывают версии/форматы файлов.
-      TableKit.configure({ table: { resizable: false } }),
-    ],
-    immediatelyRender: false,
-    editorProps: {
-      attributes: {
-        class: EDITOR_CONTENT_CLASS,
-      },
-    },
-  });
+  // Редактор приезжает из RichTextEditor и кладёт себя сюда, когда
+  // догрузится. До этого момента он null — форма уже работает, просто
+  // описание ещё нельзя набирать (см. проверку в submit).
+  const [editor, setEditor] = useState<Editor | null>(null);
 
   async function pickImages(event: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -414,13 +408,10 @@ export function UploadMapForm({ userId }: { userId: string }) {
         <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
           Description
         </span>
-        <div className="overflow-hidden rounded-2xl border border-zinc-950/[0.08] focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/25 dark:border-zinc-50/[0.08]">
-          <EditorToolbar
-            editor={editor}
-            onPickImage={() => descImageInput.current?.click()}
-          />
-          <EditorContent editor={editor} />
-        </div>
+        <RichTextEditor
+          onReady={setEditor}
+          onPickImage={() => descImageInput.current?.click()}
+        />
         <input
           ref={descImageInput}
           type="file"

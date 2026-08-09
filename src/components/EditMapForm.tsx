@@ -2,20 +2,21 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useEditor, EditorContent, type Editor } from "@tiptap/react";
-import StarterKit from "@tiptap/starter-kit";
-import Link from "@tiptap/extension-link";
-import Image from "@tiptap/extension-image";
-import { TableKit } from "@tiptap/extension-table/kit";
+import dynamic from "next/dynamic";
+// Только тип — стирается при компиляции, в бандл не попадает.
+import type { Editor } from "@tiptap/react";
+import { RichTextEditorSkeleton } from "@/components/RichTextEditor";
+
+// Ленивая загрузка редактора — та же причина, что в UploadMapForm: Tiptap
+// с ProseMirror весит около 668 КБ и держал форму мёртвой, пока грузился.
+const RichTextEditor = dynamic(
+  () => import("@/components/RichTextEditor").then((m) => m.RichTextEditor),
+  { ssr: false, loading: () => <RichTextEditorSkeleton /> }
+);
 import { Star, X, FileArrowUp, Warning } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { SelectField } from "@/components/SelectField";
-import {
-  EditorToolbar,
-  EDITOR_CONTENT_CLASS,
-  TextField,
-  PriceField,
-} from "@/components/MapFormParts";
+import { TextField, PriceField } from "@/components/MapFormParts";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import {
   PRODUCT_IMAGES_BUCKET,
@@ -92,17 +93,8 @@ export function EditMapForm({
 
   const descImageInput = useRef<HTMLInputElement>(null);
 
-  const editor = useEditor({
-    extensions: [
-      StarterKit,
-      Link.configure({ openOnClick: false }),
-      Image.configure({ HTMLAttributes: { class: "rounded-xl" } }),
-      TableKit.configure({ table: { resizable: false } }),
-    ],
-    content: product.description,
-    immediatelyRender: false,
-    editorProps: { attributes: { class: EDITOR_CONTENT_CLASS } },
-  });
+  // Редактор кладёт себя сюда, когда догрузится (см. RichTextEditor).
+  const [editor, setEditor] = useState<Editor | null>(null);
 
   async function pickImages(event: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -492,13 +484,11 @@ export function EditMapForm({
         <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
           Description
         </span>
-        <div className="overflow-hidden rounded-2xl border border-zinc-950/[0.08] focus-within:border-orange-500 focus-within:ring-2 focus-within:ring-orange-500/25 dark:border-zinc-50/[0.08]">
-          <EditorToolbar
-            editor={editor as Editor | null}
-            onPickImage={() => descImageInput.current?.click()}
-          />
-          <EditorContent editor={editor} />
-        </div>
+        <RichTextEditor
+          content={product.description}
+          onReady={setEditor}
+          onPickImage={() => descImageInput.current?.click()}
+        />
         <input
           ref={descImageInput}
           type="file"

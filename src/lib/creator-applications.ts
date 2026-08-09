@@ -1,0 +1,154 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
+
+// Заявки на статус креатора.
+//
+// До этого загрузить карту мог ЛЮБОЙ зарегистрированный: /creator/upload
+// был открыт всем, и единственным фильтром была модерация каждой карты по
+// отдельности. То есть спамера приходилось ловить заново на каждой
+// заявке, вместо одного решения по человеку.
+//
+// Флаг profiles.is_creator существует с 24.07 и до сих пор нигде не
+// использовался — вот его применение.
+
+export type ApplicationStatus = "pending" | "approved" | "rejected";
+
+export type CreatorApplication = {
+  id: string;
+  userId: string;
+  portfolioUrl: string | null;
+  discord: string | null;
+  about: string;
+  status: ApplicationStatus;
+  rejectionReason: string | null;
+  createdAt: string;
+  decidedAt: string | null;
+};
+
+type Row = {
+  id: string;
+  user_id: string;
+  portfolio_url: string | null;
+  discord: string | null;
+  about: string;
+  status: ApplicationStatus;
+  rejection_reason: string | null;
+  created_at: string;
+  decided_at: string | null;
+};
+
+function toApplication(row: Row): CreatorApplication {
+  return {
+    id: row.id,
+    userId: row.user_id,
+    portfolioUrl: row.portfolio_url,
+    discord: row.discord,
+    about: row.about,
+    status: row.status,
+    rejectionReason: row.rejection_reason,
+    createdAt: row.created_at,
+    decidedAt: row.decided_at,
+  };
+}
+
+/**
+ * Последняя заявка пользователя — под ЕГО сессией: политика
+ * "read own application" отдаёт только свои строки, отдельной проверки
+ * владения в коде не требуется.
+ *
+ * Последняя, а не единственная: отклонённых может накопиться сколько
+ * угодно (отказали — исправился — подал снова), и человеку нужно видеть
+ * актуальное состояние, а не первую попытку.
+ */
+export async function getOwnApplication(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<CreatorApplication | null> {
+  const { data, error } = await supabase
+    .from("creator_applications")
+    .select(
+      "id, user_id, portfolio_url, discord, about, status, rejection_reason, created_at, decided_at"
+    )
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    // Не роняем страницу настроек, пока миграция не прогнана.
+    console.warn(`Заявка недоступна: ${error.message}`);
+    return null;
+  }
+  return data ? toApplication(data as Row) : null;
+}
+
+/** Есть ли у человека право загружать карты. */
+export async function isCreator(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<boolean> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("is_creator")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (error) {
+    console.warn(`Статус креатора недоступен: ${error.message}`);
+    // Закрываемся, а не открываемся: при непонятной ошибке правильнее
+    // не пустить, чем пустить. Загрузка — это запись в общее хранилище.
+    return false;
+  }
+  return Boolean(data?.is_creator);
+}
+
+/**
+ * Очередь заявок для владельца. Служебным ключом — чужие строки закрыты
+ * RLS, а модератор как раз не автор (тот же случай, что у очереди карт).
+ */
+export async function getPendingApplications(): Promise<
+  (CreatorApplication & { displayName: string; email: string | null })[]
+> {
+  const db = getSupabaseAdmin();
+
+  const { data, error } = await db
+    .from("creator_applications")
+    .select(
+      "id, user_id, portfolio_url, discord, about, status, rejection_reason, created_at, decided_at"
+    )
+    .eq("status", "pending")
+    .order("created_at", { ascending: true });
+
+  if (error) {
+    console.warn(`Очередь заявок недоступна: ${error.message}`);
+    return [];
+  }
+
+  const rows = (data ?? []) as Row[];
+  if (rows.length === 0) return [];
+
+  // Ники — одним запросом на всю очередь.
+  const { data: profiles } = await db
+    .from("profiles")
+    .select("id, display_name")
+    .in(
+      "id",
+      rows.map((r) => r.user_id)
+    );
+  const names = new Map<string, string>();
+  for (const p of profiles ?? []) names.set(p.id, p.display_name);
+
+  // Адрес берём из auth.users: в profiles его нет, а владельцу он нужен —
+  // по нему он и ответит человеку, пока нет раздела сообщений.
+  const emails = new Map<string, string>();
+  const { data: users } = await db.auth.admin.listUsers({ perPage: 1000 });
+  for (const u of users?.users ?? []) {
+    if (u.email) emails.set(u.id, u.email);
+  }
+
+  return rows.map((row) => ({
+    ...toApplication(row),
+    displayName: names.get(row.user_id) ?? "—",
+    email: emails.get(row.user_id) ?? null,
+  }));
+}
