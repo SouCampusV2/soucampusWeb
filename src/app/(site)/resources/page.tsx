@@ -9,6 +9,8 @@ import { getOwnProducts, type OwnProduct } from "@/lib/moderation";
 import { PageGlow } from "@/components/PageGlow";
 import { Button, BUTTON_COLORS, BUTTON_PILL } from "@/components/Button";
 import { ResourceActions } from "@/components/ResourceActions";
+import { CreatorStatusCard } from "@/components/CreatorStatusCard";
+import { getOwnApplication, isCreator } from "@/lib/creator-applications";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -31,7 +33,12 @@ export default async function ResourcesPage() {
     redirect("/login?next=/resources");
   }
 
-  const products = await getOwnProducts(supabase, user.id);
+  // Право загружать и состояние заявки — параллельно, они независимы.
+  const [products, creator, application] = await Promise.all([
+    getOwnProducts(supabase, user.id),
+    isCreator(supabase, user.id),
+    getOwnApplication(supabase, user.id),
+  ]);
 
   return (
     <main className="relative w-full overflow-x-clip px-6">
@@ -47,14 +54,20 @@ export default async function ResourcesPage() {
             {/* Кнопка «добавить» в шапке — только когда карты уже есть.
                 В пустом списке она была бы вторым таким же призывом
                 рядом с большим блоком ниже. */}
-            {products.length > 0 && (
+            {creator && products.length > 0 && (
               <Button href="/creator/upload" size="sm">
                 Add a map
               </Button>
             )}
           </div>
 
-          {products.length === 0 ? (
+          {/* Три состояния, и порядок проверок важен. Ещё не креатор —
+              показываем заявку, а не «добавь первую карту»: кнопка вела
+              бы на форму, с которой его развернёт гейт. Дальше обычное
+              пустое состояние и, наконец, список. */}
+          {!creator ? (
+            <CreatorStatusCard userId={user.id} application={application} />
+          ) : products.length === 0 ? (
             // Пустое состояние — это не «пусто», а «начни»: крупный
             // призыв с объяснением, что будет дальше.
             <div className="mt-10 rounded-3xl border border-dashed border-zinc-300 bg-[#fbfbff] p-12 text-center dark:border-zinc-700 dark:bg-zinc-950">
