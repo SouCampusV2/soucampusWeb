@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/admin";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { notify } from "@/lib/notifications";
 
 // Управление уже опубликованными картами: снять с витрины, вернуть,
 // мягко удалить, восстановить.
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
 
   const { data: product, error: readError } = await db
     .from("products")
-    .select("id, slug, is_published, deleted_at, hidden_by")
+    .select("id, slug, title, creator_id, is_published, deleted_at, hidden_by")
     .eq("id", productId)
     .maybeSingle();
 
@@ -121,6 +122,29 @@ export async function POST(request: Request) {
     reason: suspensionReason,
   });
   if (logError) console.error("Журнал модерации:", logError.message);
+
+  // Автору сообщаем только о снятии: карта пропала с витрины и из его
+  // дохода — это то, что он обязан узнать не постфактум. «Вернули» —
+  // тоже новость, а «удалил/восстановил» он делает сам и уведомлять его
+  // о собственном действии незачем.
+  if (product.creator_id && (action === "suspend" || action === "unsuspend")) {
+    await notify(
+      product.creator_id as string,
+      action === "suspend"
+        ? {
+            kind: "map_suspended",
+            title: `“${product.title}” was taken off the shop`,
+            body: suspensionReason,
+            href: "/resources",
+          }
+        : {
+            kind: "map_approved",
+            title: `“${product.title}” is back on the shop`,
+            body: null,
+            href: `/shop/${product.slug}`,
+          }
+    );
+  }
 
   // Витрина живёт на ISR (revalidate = 60): без этого снятая карта
   // оставалась бы открытой по прямой ссылке до минуты. Для бана это

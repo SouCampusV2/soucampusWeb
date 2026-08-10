@@ -1,5 +1,6 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getStripe } from "@/lib/stripe";
+import { notify } from "@/lib/notifications";
 
 // Слой заказов (Этап 4, подэтапы B/C). Всё здесь работает ТОЛЬКО на сервере:
 // таблицы orders/order_items закрыты для анонима полностью (см. миграцию
@@ -175,7 +176,7 @@ export async function buildPaidOrderFromSession(
  * order_items.
  */
 export async function recordPaidOrder(input: PaidOrderInput): Promise<void> {
-  const { error } = await getSupabaseAdmin().rpc("record_paid_order", {
+  const { data, error } = await getSupabaseAdmin().rpc("record_paid_order", {
     p_stripe_session_id: input.stripeSessionId,
     p_customer_email: input.customerEmail,
     p_user_id: input.userId,
@@ -190,6 +191,77 @@ export async function recordPaidOrder(input: PaidOrderInput): Promise<void> {
   });
 
   if (error) throw new Error(`Не удалось записать заказ: ${error.message}`);
+
+  // Уведомления — ровно один раз на заказ. Функция возвращает id только
+  // ТОМУ, кто действительно создал строку; пришедший вторым (вебхук
+  // против страницы успеха) получает null. Без этой проверки покупатель
+  // получал бы «спасибо за покупку» дважды за один платёж.
+  if (data) await notifyAboutPurchase(input);
+}
+
+/**
+ * Кому что сказать о состоявшейся покупке: покупателю — что заказ
+ * оплачен и файлы уже в его кабинете, каждому автору — что его карту
+ * купили.
+ *
+ * Отдельной функцией и без throw: деньги уже списаны, заказ записан, и
+ * ни одна ошибка почтового ящика не должна превращаться в ошибку
+ * вебхука — Stripe воспримет её как «не доставлено» и начнёт ретраить
+ * то, что уже сделано.
+ */
+async function notifyAboutPurchase(input: PaidOrderInput): Promise<void> {
+  try {
+    const titles = input.items.map((item) => item.title);
+
+    // Гостевой заказ (userId null) уведомлять некому — у покупателя нет
+    // аккаунта. Он получает письмо от Stripe и ссылку на странице успеха.
+    if (input.userId) {
+      await notify(input.userId, {
+        kind: "purchase",
+        title:
+          titles.length === 1
+            ? `You bought “${titles[0]}”`
+            : `You bought ${titles.length} maps`,
+        body: `${titles.join(", ")} — the files are in your purchases.`,
+        href: "/purchases",
+      });
+    }
+
+    // Авторов берём из products, а не из позиций заказа: в order_items
+    // лежит снимок названия и цены, но не автор.
+    const { data: products, error } = await getSupabaseAdmin()
+      .from("products")
+      .select("id, title, creator_id")
+      .in(
+        "id",
+        input.items.map((item) => item.productId)
+      );
+
+    if (error) {
+      console.error("Уведомление автору: чтение карт не удалось:", error.message);
+      return;
+    }
+
+    for (const product of products ?? []) {
+      const creatorId = product.creator_id as string | null;
+      if (!creatorId) continue;
+      // Себе о своей же покупке не пишем: купить свою карту нельзя, но
+      // случай дешевле исключить, чем потом объяснять.
+      if (creatorId === input.userId) continue;
+
+      await notify(creatorId, {
+        kind: "map_sold",
+        title: `“${product.title}” just sold`,
+        body: null,
+        href: "/resources",
+      });
+    }
+  } catch (err) {
+    console.error(
+      "Уведомления о покупке не отправлены:",
+      err instanceof Error ? err.message : err
+    );
+  }
 }
 
 // Приватный бакет Supabase Storage с файлами карт. Приватный — значит

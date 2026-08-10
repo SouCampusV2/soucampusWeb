@@ -1,7 +1,8 @@
 import Link from "next/link";
 import { UserPlus } from "@phosphor-icons/react/dist/ssr";
-import { getPendingApplications } from "@/lib/creator-applications";
+import { getPendingApplications, getCreators } from "@/lib/creator-applications";
 import { ApplicationActions } from "@/components/ApplicationActions";
+import { RevokeCreatorButton } from "@/components/RevokeCreatorButton";
 import { INLINE_LINK } from "@/components/Button";
 import { creatorHref } from "@/lib/creators";
 
@@ -16,7 +17,11 @@ import { creatorHref } from "@/lib/creators";
 export const dynamic = "force-dynamic";
 
 export default async function AdminApplicationsPage() {
-  const applications = await getPendingApplications();
+  // Очередь и список действующих независимы — берём параллельно.
+  const [applications, creators] = await Promise.all([
+    getPendingApplications(),
+    getCreators(),
+  ]);
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
@@ -103,6 +108,48 @@ export default async function AdminApplicationsPage() {
               </dl>
 
               <ApplicationActions applicationId={application.id} />
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {/* Действующие креаторы — ниже очереди: разбор заявок это работа
+          «сейчас», а отзыв статуса — редкое действие, за которым приходят
+          осознанно. Решение по человеку одно и то же по сути, поэтому оба
+          списка живут на одной странице, а не в разных разделах. */}
+      <h2 className="mt-14 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
+        Creators
+      </h2>
+      <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+        {creators.length === 0
+          ? "Nobody has creator access yet."
+          : `${creators.length} ${
+              creators.length === 1 ? "person" : "people"
+            } can upload maps.`}
+      </p>
+
+      {creators.length > 0 && (
+        <ul className="mt-4 divide-y divide-zinc-200 rounded-3xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+          {creators.map((creator) => (
+            <li
+              key={creator.id}
+              className="flex flex-wrap items-center justify-between gap-3 p-4"
+            >
+              <div className="min-w-0">
+                <Link
+                  href={creatorHref(creator.displayName)}
+                  className={`font-medium ${INLINE_LINK}`}
+                >
+                  {creator.displayName}
+                </Link>
+                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                  {creator.maps} {creator.maps === 1 ? "map" : "maps"}
+                </p>
+              </div>
+              <RevokeCreatorButton
+                userId={creator.id}
+                displayName={creator.displayName}
+              />
             </li>
           ))}
         </ul>

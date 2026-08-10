@@ -8,7 +8,6 @@ import { Unbounded } from "next/font/google";
 import {
   ShoppingCart,
   ChatCircleDots,
-  Bell,
   UserCircle,
 } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
@@ -19,6 +18,7 @@ import { useUser } from "@/lib/useUser";
 import { SHOP_NAV_LINKS } from "@/lib/products";
 import { creatorHref } from "@/lib/creators";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { NotificationsBell } from "@/components/NotificationsBell";
 
 // Same display font as the hero headings — the navbar rhymes with them.
 const displayFont = Unbounded({
@@ -92,6 +92,7 @@ export function Navbar() {
     pathname.startsWith("/profile") ||
     pathname === "/settings" ||
     pathname === "/purchases" ||
+    pathname === "/notifications" ||
     pathname.startsWith("/resources") ||
     // Профиль продавца — часть магазина (его витрина), тот же навбар.
     pathname.startsWith("/creator");
@@ -163,14 +164,11 @@ export function Navbar() {
                   >
                     <ChatCircleDots size={22} />
                   </button>
-                  <button
-                    type="button"
-                    disabled
-                    title="Notifications are coming soon"
-                    className="flex cursor-not-allowed items-center justify-center rounded-full p-2 text-zinc-700 dark:text-zinc-200"
-                  >
-                    <Bell size={22} />
-                  </button>
+                  {/* Колокол стоит всегда — и у гостя, и при нуле
+                      уведомлений: иконка, которая то появляется, то нет,
+                      дёргала бы соседние и выглядела бы поломкой. Бейдж
+                      появляется только когда есть что читать. */}
+                  <NotificationsBell userId={user?.id ?? null} />
                   <CartLink
                     count={count}
                     size={22}
@@ -335,6 +333,7 @@ export function Navbar() {
               зоной нажатия p-2, как на десктопе. */}
           {isShopActive && (
             <div className="flex items-center gap-1 text-zinc-700 dark:text-zinc-200 min-[760px]:hidden">
+              <NotificationsBell userId={user?.id ?? null} size={24} />
               <CartLink count={count} size={24} />
 
               {userLoading ? (
