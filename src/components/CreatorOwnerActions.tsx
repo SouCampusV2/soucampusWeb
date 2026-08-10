@@ -30,6 +30,9 @@ export function CreatorOwnerActions({
   variant?: "header" | "empty";
 }) {
   const [isOwner, setIsOwner] = useState(false);
+  // Право загружать. Пока неизвестно — null: рисовать «Add a map» до
+  // ответа нельзя, гейт на /creator/upload развернёт человека обратно.
+  const [isCreator, setIsCreator] = useState<boolean | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -38,23 +41,40 @@ export function CreatorOwnerActions({
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      if (active) setIsOwner(session?.user.id === creatorId);
+      if (!active) return;
+
+      const owner = session?.user.id === creatorId;
+      setIsOwner(owner);
+      if (!owner) return;
+
+      // Свою строку profiles человек читать вправе (RLS «read own
+      // profile»), поэтому отдельного роута не нужно.
+      const { data } = await supabase
+        .from("profiles")
+        .select("is_creator")
+        .eq("id", creatorId)
+        .maybeSingle();
+      if (active) setIsCreator(Boolean(data?.is_creator));
     })();
     return () => {
       active = false;
     };
   }, [creatorId]);
 
-  if (!isOwner) return null;
+  if (!isOwner || isCreator === null) return null;
 
+  // Ещё не креатор — ведём на /resources, где лежит форма заявки
+  // (CreatorStatusCard), а не на форму загрузки: туда его не пустят.
   if (variant === "empty") {
     return (
       <div className="mt-6">
-        <Button href="/creator/upload" size="md">
-          Add your first map
+        <Button href={isCreator ? "/creator/upload" : "/resources"} size="md">
+          {isCreator ? "Add your first map" : "Become a creator"}
         </Button>
         <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
-          Submitted maps are reviewed before they go live on the shop.
+          {isCreator
+            ? "Submitted maps are reviewed before they go live on the shop."
+            : "Apply once — after that you can upload maps to the shop."}
         </p>
       </div>
     );
@@ -65,8 +85,12 @@ export function CreatorOwnerActions({
       <Button href="/settings" size="sm" variant="secondary" pageTransition>
         Edit profile
       </Button>
-      <Button href="/creator/upload" size="sm" variant="secondary">
-        Add a map
+      <Button
+        href={isCreator ? "/creator/upload" : "/resources"}
+        size="sm"
+        variant="secondary"
+      >
+        {isCreator ? "Add a map" : "Become a creator"}
       </Button>
     </div>
   );

@@ -68,7 +68,9 @@
       "Bash(node -e \"console.log\\('supabase-js', require\\('./node_modules/@supabase/supabase-js/package.json'\\).version\\); console.log\\('ssr', require\\('./node_modules/@supabase/ssr/package.json'\\).version\\)\")",
       "Bash(node scripts/validate_palette.js \"#f97316\" --mode light)",
       "Bash(node scripts/validate_palette.js \"#fb923c\" --mode dark)",
-      "Bash(node scripts/validate_palette.js --help)"
+      "Bash(node scripts/validate_palette.js --help)",
+      "PowerShell(npx tsc --noEmit)",
+      "Bash(git commit *)"
     ]
   }
 }
