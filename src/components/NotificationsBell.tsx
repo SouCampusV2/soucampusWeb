@@ -16,19 +16,29 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 // Считаем количество, не вытаскивая строки (head: true) — колоколу нужно
 // только число, а сам список подождёт до перехода на страницу.
 //
-// Гостю колокол не показываем вовсе: непрочитанного у него быть не может,
-// а клик уводил бы на /login с пустыми руками.
+// Колокол стоит ВСЕГДА, в том числе у гостя и при нуле уведомлений
+// (просьба владельца): раздел с историей должен быть на своём месте
+// постоянно, а не появляться и исчезать вместе с содержимым. Пустой ящик
+// объясняет себя сам на самой странице. Гостя клик уводит на вход и
+// возвращает обратно.
 export function NotificationsBell({
   userId,
   size = 22,
 }: {
-  userId: string;
+  /** null — гость или сессия ещё не прочитана: тогда просто без бейджа. */
+  userId: string | null;
   size?: number;
 }) {
-  const [unread, setUnread] = useState(0);
+  const [counted, setCounted] = useState(0);
   const pathname = usePathname();
 
+  // У гостя бейджа нет по определению. Выводим это из userId, а не
+  // сбрасываем состояние в эффекте: после выхода из аккаунта число иначе
+  // осталось бы висеть до следующего запроса.
+  const unread = userId ? counted : 0;
+
   useEffect(() => {
+    if (!userId) return;
     let active = true;
     (async () => {
       const supabase = createSupabaseBrowser();
@@ -37,7 +47,7 @@ export function NotificationsBell({
         .select("id", { count: "exact", head: true })
         .eq("user_id", userId)
         .is("read_at", null);
-      if (active) setUnread(count ?? 0);
+      if (active) setCounted(count ?? 0);
     })();
     return () => {
       active = false;
@@ -49,7 +59,7 @@ export function NotificationsBell({
 
   return (
     <Link
-      href="/notifications"
+      href={userId ? "/notifications" : "/login?next=/notifications"}
       aria-label={unread > 0 ? `Notifications (${unread} unread)` : "Notifications"}
       title="Notifications"
       className="relative flex items-center justify-center rounded-full p-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"

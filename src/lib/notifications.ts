@@ -148,6 +148,38 @@ export async function notifyEveryone(
   }
 }
 
+/** Аккаунт в выпадашке «кому» на странице рассылки. */
+export type Recipient = { id: string; displayName: string };
+
+/**
+ * Все аккаунты — для выбора адресата в админке. Служебным ключом: чужие
+ * строки profiles закрыты RLS, а владельцу нужен именно чужой список.
+ *
+ * Без пагинации намеренно: при сотнях аккаунтов выпадашка справляется, а
+ * когда их станет тысячи, выпадашка перестанет быть подходящим способом
+ * выбора раньше, чем запрос станет тяжёлым, — и менять придётся её, а не
+ * этот запрос.
+ */
+export async function getRecipients(): Promise<Recipient[]> {
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from("profiles")
+      .select("id, display_name")
+      .order("display_name");
+
+    if (error) {
+      console.warn(`Список получателей недоступен: ${error.message}`);
+      return [];
+    }
+    return (data ?? []).map((row) => ({
+      id: row.id as string,
+      displayName: row.display_name as string,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 /** Все админы — адресаты служебных уведомлений (новая заявка и т.п.). */
 export async function getAdminIds(): Promise<string[]> {
   try {

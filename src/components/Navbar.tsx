@@ -164,11 +164,11 @@ export function Navbar() {
                   >
                     <ChatCircleDots size={22} />
                   </button>
-                  {/* Колокол — только залогиненному: уведомления адресные,
-                      гостю их не бывает. Пока сессия неизвестна, не
-                      показываем ничего: заглушка на месте иконки, которой
-                      у половины людей не будет, дёргала бы вёрстку. */}
-                  {user && <NotificationsBell userId={user.id} />}
+                  {/* Колокол стоит всегда — и у гостя, и при нуле
+                      уведомлений: иконка, которая то появляется, то нет,
+                      дёргала бы соседние и выглядела бы поломкой. Бейдж
+                      появляется только когда есть что читать. */}
+                  <NotificationsBell userId={user?.id ?? null} />
                   <CartLink
                     count={count}
                     size={22}
@@ -333,7 +333,7 @@ export function Navbar() {
               зоной нажатия p-2, как на десктопе. */}
           {isShopActive && (
             <div className="flex items-center gap-1 text-zinc-700 dark:text-zinc-200 min-[760px]:hidden">
-              {user && <NotificationsBell userId={user.id} size={24} />}
+              <NotificationsBell userId={user?.id ?? null} size={24} />
               <CartLink count={count} size={24} />
 
               {userLoading ? (

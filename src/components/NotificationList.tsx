@@ -11,6 +11,7 @@ import {
   CurrencyEur,
   Megaphone,
   UserPlus,
+  X,
 } from "@phosphor-icons/react";
 import type { Notification, NotificationKind } from "@/lib/notifications";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
@@ -29,6 +30,10 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 // был бы лишним звеном.
 export function NotificationList({ items }: { items: Notification[] }) {
   const [read, setRead] = useState(false);
+  // Список держим в состоянии, чтобы удаление убирало строку сразу, а не
+  // после похода на сервер и перерисовки страницы.
+  const [visible, setVisible] = useState(items);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     if (items.every((item) => item.readAt)) return;
@@ -48,16 +53,90 @@ export function NotificationList({ items }: { items: Notification[] }) {
     };
   }, [items]);
 
+  // Удаление — тоже напрямую из браузера, политикой "delete own
+  // notifications". Строку убираем из списка сразу и НЕ возвращаем при
+  // ошибке: это почтовый ящик, а не документ, и «не удалилось» человек
+  // увидит сам при следующем открытии страницы.
+  async function remove(id: string) {
+    setVisible((current) => current.filter((item) => item.id !== id));
+    const supabase = createSupabaseBrowser();
+    await supabase.from("notifications").delete().eq("id", id);
+  }
+
+  async function clearAll() {
+    setBusy(true);
+    const ids = visible.map((item) => item.id);
+    setVisible([]);
+    const supabase = createSupabaseBrowser();
+    await supabase.from("notifications").delete().in("id", ids);
+    setBusy(false);
+  }
+
+  if (visible.length === 0) {
+    // Всё вычистили прямо сейчас — страница не перезагружалась, поэтому
+    // пустое состояние рисуем здесь же, а не серверным.
+    return <EmptyState />;
+  }
+
   return (
-    <ul className="mt-8 space-y-3">
-      {items.map((item) => (
-        <Row key={item.id} item={item} dimmed={read} />
-      ))}
-    </ul>
+    <>
+      <div className="mt-6 flex justify-end">
+        <button
+          type="button"
+          disabled={busy}
+          onClick={clearAll}
+          className="cursor-pointer text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-950 disabled:cursor-not-allowed dark:text-zinc-400 dark:hover:text-zinc-50"
+        >
+          Clear all
+        </button>
+      </div>
+
+      <ul className="mt-2 space-y-3">
+        {visible.map((item) => (
+          <Row
+            key={item.id}
+            item={item}
+            dimmed={read}
+            onRemove={() => remove(item.id)}
+          />
+        ))}
+      </ul>
+    </>
   );
 }
 
-function Row({ item, dimmed }: { item: Notification; dimmed: boolean }) {
+/** Пустой ящик. Тот же вид, что у серверной страницы, — один компонент
+ *  на оба случая, чтобы «пусто с самого начала» и «стало пусто сейчас»
+ *  не разъехались по виду. */
+export function EmptyState() {
+  return (
+    <div className="mt-10 rounded-3xl border border-dashed border-zinc-300 p-12 text-center dark:border-zinc-700">
+      <Bell
+        size={40}
+        weight="thin"
+        className="mx-auto text-zinc-300 dark:text-zinc-700"
+        aria-hidden
+      />
+      <p className="mt-4 font-medium text-zinc-950 dark:text-zinc-50">
+        You have no notifications
+      </p>
+      <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
+        Decisions on your maps, your purchases and anything new around the
+        shop land here.
+      </p>
+    </div>
+  );
+}
+
+function Row({
+  item,
+  dimmed,
+  onRemove,
+}: {
+  item: Notification;
+  dimmed: boolean;
+  onRemove: () => void;
+}) {
   const unread = !item.readAt && !dimmed;
 
   const body = (
@@ -70,7 +149,10 @@ function Row({ item, dimmed }: { item: Notification; dimmed: boolean }) {
     >
       <Icon kind={item.kind} />
       <div className="min-w-0 flex-1">
-        <p className="font-semibold text-zinc-950 dark:text-zinc-50">
+        {/* Место под крестик держим паддингом справа, а не отдельной
+            колонкой: кнопка лежит поверх карточки (см. ниже), и без
+            запаса длинный заголовок уезжал бы прямо под неё. */}
+        <p className="pr-8 font-semibold text-zinc-950 dark:text-zinc-50">
           {item.title}
         </p>
         {item.body && (
@@ -87,8 +169,12 @@ function Row({ item, dimmed }: { item: Notification; dimmed: boolean }) {
 
   // Ссылку рисуем только когда ей есть куда вести: «карту купили» ведёт в
   // ресурсы, а «правила изменились» может не вести никуда.
+  //
+  // Крестик — СОСЕДОМ ссылки, поверх карточки, а не внутри неё: кнопка
+  // внутри <a> — невалидная разметка, и клик по ней всё равно уводил бы
+  // по ссылке вместо удаления.
   return (
-    <li>
+    <li className="relative">
       {item.href ? (
         <Link href={item.href} className="block">
           {body}
@@ -96,6 +182,15 @@ function Row({ item, dimmed }: { item: Notification; dimmed: boolean }) {
       ) : (
         body
       )}
+      <button
+        type="button"
+        onClick={onRemove}
+        aria-label="Delete notification"
+        title="Delete"
+        className="absolute right-3 top-3 cursor-pointer rounded-full p-1 text-zinc-400 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+      >
+        <X size={16} weight="bold" />
+      </button>
     </li>
   );
 }

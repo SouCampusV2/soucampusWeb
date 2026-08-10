@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Megaphone } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { TextField } from "@/components/MapFormParts";
+import type { Recipient } from "@/lib/notifications";
 
 // Объявление всем пользователям.
 //
@@ -11,7 +12,10 @@ import { TextField } from "@/components/MapFormParts";
 // отмены. Уведомление, разложенное по сотне ящиков, обратно не собрать —
 // цена лишнего клика несопоставима с ценой опечатки в тексте, который
 // увидят все.
-export function AnnounceForm() {
+export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
+  // "" — всем. Отдельного признака не заводим: пустая строка и есть
+  // «адресат не выбран», а обработчик на сервере решает по ней же.
+  const [userId, setUserId] = useState("");
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [href, setHref] = useState("");
@@ -27,14 +31,15 @@ export function AnnounceForm() {
       const res = await fetch("/api/admin/announce", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, text, href }),
+        body: JSON.stringify({ title, text, href, userId }),
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
         setError("Could not send the announcement.");
         return;
       }
-      setResult(`Sent to ${data?.sent ?? 0} accounts.`);
+      const sent = data?.sent ?? 0;
+      setResult(sent === 1 ? "Sent." : `Sent to ${sent} accounts.`);
       setTitle("");
       setText("");
       setHref("");
@@ -44,8 +49,32 @@ export function AnnounceForm() {
     }
   }
 
+  const toEveryone = userId === "";
+
   return (
     <div className="mt-6 space-y-4">
+      <div>
+        <label
+          htmlFor="announce-to"
+          className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+        >
+          Who gets it
+        </label>
+        <select
+          id="announce-to"
+          value={userId}
+          onChange={(e) => setUserId(e.target.value)}
+          className="w-full cursor-pointer rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-3 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:bg-zinc-900"
+        >
+          <option value="">Everyone ({recipients.length} accounts)</option>
+          {recipients.map((recipient) => (
+            <option key={recipient.id} value={recipient.id}>
+              {recipient.displayName}
+            </option>
+          ))}
+        </select>
+      </div>
+
       <TextField
         id="announce-title"
         label="Headline"
@@ -83,17 +112,21 @@ export function AnnounceForm() {
         <p className="text-sm text-lime-700 dark:text-lime-400">{result}</p>
       )}
 
+      {/* Переспрашиваем только у рассылки всем. Личное сообщение одному
+          человеку — обычное действие с понятной ценой ошибки, лишний
+          клик там только мешает. */}
       {!confirming ? (
         <Button
           size="md"
-          disabled={!title.trim()}
+          disabled={!title.trim() || busy}
           onClick={() => {
             setResult(null);
-            setConfirming(true);
+            if (toEveryone) setConfirming(true);
+            else void send();
           }}
         >
           <Megaphone size={18} weight="bold" />
-          Send to everyone
+          {busy ? "Sending…" : toEveryone ? "Send to everyone" : "Send"}
         </Button>
       ) : (
         <div className="rounded-2xl border border-orange-500/40 bg-orange-50 p-4 dark:bg-orange-950/30">

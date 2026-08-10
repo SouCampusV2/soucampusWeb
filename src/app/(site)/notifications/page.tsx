@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { Unbounded } from "next/font/google";
-import { Bell } from "@phosphor-icons/react/dist/ssr";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getCurrentUser } from "@/lib/current-user";
 import { getNotifications } from "@/lib/notifications";
 import { PageGlow } from "@/components/PageGlow";
-import { NotificationList } from "@/components/NotificationList";
+import { NotificationList, EmptyState } from "@/components/NotificationList";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -38,22 +37,7 @@ export default async function NotificationsPage() {
             Notifications
           </h1>
 
-          {items.length === 0 ? (
-            <div className="mt-10 rounded-3xl border border-dashed border-zinc-300 p-12 text-center dark:border-zinc-700">
-              <Bell
-                size={40}
-                weight="thin"
-                className="mx-auto text-zinc-300 dark:text-zinc-700"
-                aria-hidden
-              />
-              <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
-                Nothing yet. Decisions on your maps, sales and announcements
-                land here.
-              </p>
-            </div>
-          ) : (
-            <NotificationList items={items} />
-          )}
+          {items.length === 0 ? <EmptyState /> : <NotificationList items={items} />}
         </div>
       </section>
     </main>
