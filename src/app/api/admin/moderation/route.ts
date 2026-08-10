@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/admin";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { REJECTION_TEMPLATES } from "@/lib/rejection";
+import { notify } from "@/lib/notifications";
 
 // Разбор очереди модерации: подтвердить или отклонить карту.
 //
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
     .update(update)
     .eq("id", productId)
     .eq("status", "pending")
-    .select("id, slug")
+    .select("id, slug, title, creator_id")
     .maybeSingle();
 
   if (error) {
@@ -102,6 +103,29 @@ export async function POST(request: Request) {
   }
   if (!data) {
     return NextResponse.json({ error: "already handled" }, { status: 409 });
+  }
+
+  // Автору — итог разбора. Раньше он узнавал его, только если сам
+  // возвращался на /resources и замечал сменившуюся плашку.
+  if (data.creator_id) {
+    await notify(
+      data.creator_id as string,
+      (action as Action) === "approve"
+        ? {
+            kind: "map_approved",
+            title: `“${data.title}” is live`,
+            body: "Your map passed the review and is on the shop now.",
+            href: `/shop/${data.slug}`,
+          }
+        : {
+            kind: "map_rejected",
+            title: `“${data.title}” wasn't approved`,
+            body: rejectionReason,
+            // На правку, а не на витрину: исправил — карта сама
+            // возвращается в очередь.
+            href: `/resources/${data.slug}/edit`,
+          }
+    );
   }
 
   return NextResponse.json({ ok: true, slug: data.slug });

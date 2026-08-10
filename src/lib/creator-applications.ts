@@ -102,6 +102,59 @@ export async function isCreator(
   return Boolean(data?.is_creator);
 }
 
+/** Действующий креатор в списке админки. */
+export type CreatorRow = {
+  id: string;
+  displayName: string;
+  maps: number;
+};
+
+/**
+ * Все, у кого сейчас есть право загружать — список для отзыва статуса.
+ *
+ * Служебным ключом: чужие строки profiles закрыты RLS, а владельцу нужен
+ * ровно чужой список. Количество карт — рядом с именем, потому что это
+ * первое, что хочется знать перед тем, как забирать статус.
+ */
+export async function getCreators(): Promise<CreatorRow[]> {
+  const db = getSupabaseAdmin();
+
+  const { data, error } = await db
+    .from("profiles")
+    .select("id, display_name")
+    .eq("is_creator", true)
+    .order("display_name");
+
+  if (error) {
+    console.warn(`Список креаторов недоступен: ${error.message}`);
+    return [];
+  }
+
+  const rows = (data ?? []) as { id: string; display_name: string }[];
+  if (rows.length === 0) return [];
+
+  // Карты — одним запросом на весь список, а не по запросу на человека.
+  const { data: products } = await db
+    .from("products")
+    .select("creator_id")
+    .in(
+      "creator_id",
+      rows.map((r) => r.id)
+    );
+
+  const counts = new Map<string, number>();
+  for (const product of products ?? []) {
+    const id = product.creator_id as string;
+    counts.set(id, (counts.get(id) ?? 0) + 1);
+  }
+
+  return rows.map((row) => ({
+    id: row.id,
+    displayName: row.display_name,
+    maps: counts.get(row.id) ?? 0,
+  }));
+}
+
 /**
  * Очередь заявок для владельца. Служебным ключом — чужие строки закрыты
  * RLS, а модератор как раз не автор (тот же случай, что у очереди карт).

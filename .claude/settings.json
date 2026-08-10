@@ -70,7 +70,10 @@
       "Bash(node scripts/validate_palette.js \"#fb923c\" --mode dark)",
       "Bash(node scripts/validate_palette.js --help)",
       "PowerShell(npx tsc --noEmit)",
-      "Bash(git commit *)"
+      "Bash(git commit *)",
+      "PowerShell(npm run lint 2>&1)",
+      "PowerShell(npm test 2>&1)",
+      "Bash(git commit -q -m 'Tell people what happened instead of making them check *)"
     ]
   }
 }
