@@ -81,6 +81,16 @@ export async function POST(request: Request) {
           is_published: true,
           rejection_reason: null,
           rejection_flags: [],
+          // Одобрение снимает и пометку снятия. Карта могла прийти в
+          // очередь как возврат после take down (submission_kind =
+          // 'after_takedown'), и без этого она вышла бы на витрину, всё
+          // ещё помеченная снятой: автор видел бы у живой карты плашку
+          // «Taken down» со старой причиной, а сам вернуть её не смог бы
+          // — /api/creator/product запрещает это при hidden_by =
+          // 'moderator'.
+          hidden_by: null,
+          suspension_reason: null,
+          submission_kind: "first",
         }
       : {
           status: "rejected",
