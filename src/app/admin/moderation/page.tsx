@@ -3,6 +3,7 @@ import { sanitizeDescription } from "@/lib/sanitize";
 import { DownloadSimple, Clock } from "@phosphor-icons/react/dist/ssr";
 import { getPendingProducts } from "@/lib/moderation";
 import { ModerationActions } from "@/components/ModerationActions";
+import { RefreshButton } from "@/components/RefreshButton";
 import { ModerationGallery } from "@/components/ModerationGallery";
 import { RICH_TEXT_CLASS } from "@/lib/rich-text";
 import { BUTTON_COLORS, BUTTON_PILL, INLINE_LINK, NEW_TAB } from "@/components/Button";
@@ -21,9 +22,14 @@ export default async function ModerationPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-12">
-      <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
-        Moderation queue
-      </h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
+          Moderation queue
+        </h1>
+        {/* Очередь пополняется, пока она открыта: креатор отправляет
+            карту, а страница об этом не узнаёт. */}
+        <RefreshButton label="Check for new submissions" />
+      </div>
       <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
         {pending.length === 0
           ? "Nothing waiting."

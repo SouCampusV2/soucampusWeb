@@ -6,6 +6,7 @@ import { getCurrentUser } from "@/lib/current-user";
 import { getNotifications } from "@/lib/notifications";
 import { PageGlow } from "@/components/PageGlow";
 import { NotificationList, EmptyState } from "@/components/NotificationList";
+import { RefreshButton } from "@/components/RefreshButton";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -31,11 +32,16 @@ export default async function NotificationsPage() {
       <PageGlow color="rgba(249,115,22,0.28)" />
       <section className="relative pb-28 pt-20">
         <div className="mx-auto max-w-3xl">
-          <h1
-            className={`${displayFont.className} text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
-          >
-            Notifications
-          </h1>
+          <div className="flex items-center justify-between gap-4">
+            <h1
+              className={`${displayFont.className} text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
+            >
+              Notifications
+            </h1>
+            {/* Уведомления приходят, пока страница открыта, а сама она
+                серверная и об этом не узнаёт. */}
+            <RefreshButton label="Check for new notifications" />
+          </div>
 
           {items.length === 0 ? <EmptyState /> : <NotificationList items={items} />}
         </div>

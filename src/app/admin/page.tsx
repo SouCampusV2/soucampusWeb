@@ -72,7 +72,9 @@ export default async function AdminHomePage() {
           )}
         </Panel>
 
-        <Panel title="Top creators">
+        {/* Только те, у кого есть карты, и только пятеро — остальные
+            обладатели права загрузки сюда не попадают вовсе. */}
+        <Panel title="Creators with maps">
           {overview.topCreators.length === 0 ? (
             <Empty>Nobody has published a map yet.</Empty>
           ) : (
@@ -106,7 +108,16 @@ export default async function AdminHomePage() {
           value={String(overview.pendingMaps)}
           href="/admin/moderation"
         />
-        <Stat label="Creators" value={String(overview.creators)} href="/admin/applications" />
+        {/* «Могут выкладывать», а не «Creators»: считаются аккаунты с
+            правом загрузки (profiles.is_creator), а не авторы карт на
+            витрине. Числа расходятся законно и сильно — право есть у
+            всех одобренных, карты пока у одного, — но под общим словом
+            «Creators» это читалось как ошибка данных. */}
+        <Stat
+          label="Can upload"
+          value={String(overview.creators)}
+          href="/admin/applications"
+        />
         <Stat label="Accounts" value={String(overview.accounts)} />
       </div>
     </div>

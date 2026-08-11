@@ -9,6 +9,7 @@ import { getOwnProducts, type OwnProduct } from "@/lib/moderation";
 import { PageGlow } from "@/components/PageGlow";
 import { Button, BUTTON_COLORS, BUTTON_PILL } from "@/components/Button";
 import { ResourceActions } from "@/components/ResourceActions";
+import { RefreshButton } from "@/components/RefreshButton";
 import { CreatorStatusCard } from "@/components/CreatorStatusCard";
 import { getOwnApplication, isCreator } from "@/lib/creator-applications";
 
@@ -54,11 +55,17 @@ export default async function ResourcesPage() {
             {/* Кнопка «добавить» в шапке — только когда карты уже есть.
                 В пустом списке она была бы вторым таким же призывом
                 рядом с большим блоком ниже. */}
-            {creator && products.length > 0 && (
-              <Button href="/creator/upload" size="sm">
-                Add a map
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {/* Статус карт меняет модерация, а не владелец страницы:
+                  одобрили, сняли, отклонили — узнать об этом можно было
+                  только перезагрузкой. */}
+              <RefreshButton label="Check the status of your maps" />
+              {creator && products.length > 0 && (
+                <Button href="/creator/upload" size="sm">
+                  Add a map
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Три состояния, и порядок проверок важен. Ещё не креатор —
