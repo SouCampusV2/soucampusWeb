@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import { getAdminUser } from "@/lib/admin";
-import { INLINE_LINK } from "@/components/Button";
+import { INLINE_LINK, NEW_TAB } from "@/components/Button";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -80,7 +80,7 @@ export default async function AdminLayout({
             {/* В магазин, а не на лендинг: отсюда разбирают карты, и
                 «назад к сайту» здесь означает «к витрине», а не к
                 странице о студии. */}
-            <Link href="/shop" className={`font-medium ${INLINE_LINK}`}>
+            <Link href="/shop" {...NEW_TAB} className={`font-medium ${INLINE_LINK}`}>
               Back to shop
             </Link>
           </div>

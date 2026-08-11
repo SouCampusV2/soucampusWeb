@@ -5,7 +5,7 @@ import { getPendingProducts } from "@/lib/moderation";
 import { ModerationActions } from "@/components/ModerationActions";
 import { ModerationGallery } from "@/components/ModerationGallery";
 import { RICH_TEXT_CLASS } from "@/lib/rich-text";
-import { BUTTON_COLORS, BUTTON_PILL, INLINE_LINK } from "@/components/Button";
+import { BUTTON_COLORS, BUTTON_PILL, INLINE_LINK, NEW_TAB } from "@/components/Button";
 import { creatorHref } from "@/lib/creators";
 
 // Очередь всегда свежая: список меняется от каждого решения, кэшировать
@@ -55,6 +55,7 @@ export default async function ModerationPage() {
                     {product.creator ? (
                       <Link
                         href={creatorHref(product.creator.displayName)}
+                        {...NEW_TAB}
                         className={`font-medium ${INLINE_LINK}`}
                       >
                         {product.creator.displayName}

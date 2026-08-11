@@ -136,31 +136,72 @@ function ResourceRow({ product }: { product: OwnProduct }) {
               View
             </Link>
           )}
-          <Link
-            href={`/resources/${product.slug}/edit`}
-            className={`${BUTTON_PILL} ${BUTTON_COLORS.secondary}`}
-          >
-            <PencilSimple size={16} weight="bold" />
-            Edit
-          </Link>
+          {/* Правку удалённой карты не предлагаем: форма всё равно её не
+              сохранит, а кнопка обещает обратное. */}
+          {!product.deletedAt && (
+            <Link
+              href={`/resources/${product.slug}/edit`}
+              className={`${BUTTON_PILL} ${BUTTON_COLORS.secondary}`}
+            >
+              <PencilSimple size={16} weight="bold" />
+              Edit
+            </Link>
+          )}
           <ResourceActions
             productId={product.id}
             title={product.title}
             status={product.status}
             isPublished={product.isPublished}
+            deleted={Boolean(product.deletedAt)}
           />
         </div>
       </div>
 
-      {/* Причина отказа — под строкой, во всю ширину: это текст, который
-          автор обязан прочитать целиком, а не обрезанный хвост. */}
-      {product.status === "rejected" && product.rejectionReason && (
-        <p className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
-          <span className="font-semibold">Why it was rejected: </span>
-          {product.rejectionReason}
-        </p>
-      )}
+      {/* Причина — под строкой, во всю ширину: это текст, который автор
+          обязан прочитать целиком, а не обрезанный хвост.
+          Причин теперь три, и раньше показывалась только первая: карту
+          снимали или удаляли, а в списке она молча становилась «Hidden»
+          без единого слова, за что. Переносы строк сохраняем
+          (whitespace-pre-line) — текст собран списком пунктов. */}
+      <ReasonNote product={product} />
     </li>
+  );
+}
+
+/**
+ * Что именно случилось с картой и почему — одним блоком под строкой.
+ *
+ * Порядок веток тот же, что у бейджа, и по той же причине: удаление
+ * важнее отказа, отказ важнее снятия. Показываем ОДНУ причину — ту, в
+ * которой карта находится сейчас.
+ */
+function ReasonNote({ product }: { product: OwnProduct }) {
+  const note = (() => {
+    if (product.deletedAt) {
+      return {
+        label: "Removed by the site team:",
+        text:
+          product.suspensionReason ??
+          "No reason was recorded. Get in touch with support.",
+      };
+    }
+    if (product.status === "rejected" && product.rejectionReason) {
+      return { label: "Why it was rejected:", text: product.rejectionReason };
+    }
+    // Своё собственное «спрятать» объяснять не надо — автор сам это сделал.
+    if (product.hiddenBy === "moderator" && product.suspensionReason) {
+      return { label: "Why it was taken down:", text: product.suspensionReason };
+    }
+    return null;
+  })();
+
+  if (!note) return null;
+
+  return (
+    <p className="mt-3 whitespace-pre-line rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+      <span className="font-semibold">{note.label} </span>
+      {note.text}
+    </p>
   );
 }
 
@@ -182,10 +223,24 @@ function StatusBadge({ product }: { product: OwnProduct }) {
       </Badge>
     );
   }
-  if (!product.isPublished) {
+  // «Hidden» на всё подряд было неинформативно: автор видел одно и то же
+  // слово и когда прятал карту сам, и когда её снял модератор, и когда её
+  // удалили из каталога. Три разных положения — три разных подписи.
+  if (product.deletedAt) {
     return (
+      <Badge className="bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400">
+        Removed
+      </Badge>
+    );
+  }
+  if (!product.isPublished) {
+    return product.hiddenBy === "moderator" ? (
+      <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+        Taken down
+      </Badge>
+    ) : (
       <Badge className="bg-zinc-950/[0.05] text-zinc-600 dark:bg-zinc-50/[0.06] dark:text-zinc-400">
-        Hidden
+        Hidden by you
       </Badge>
     );
   }

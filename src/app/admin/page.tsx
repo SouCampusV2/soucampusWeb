@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { getOverview, formatMoney, WINDOW_DAYS } from "@/lib/analytics";
 import { SalesChart } from "@/components/SalesChart";
-import { INLINE_LINK } from "@/components/Button";
+import { INLINE_LINK, NEW_TAB } from "@/components/Button";
 import { creatorHref } from "@/lib/creators";
 
 // Сводка — она же корневая страница админки.
@@ -81,6 +81,7 @@ export default async function AdminHomePage() {
                 <li key={c.id} className="flex items-baseline justify-between gap-3 text-sm">
                   <Link
                     href={creatorHref(c.displayName)}
+                    {...NEW_TAB}
                     className={`min-w-0 truncate ${INLINE_LINK}`}
                   >
                     {c.displayName}

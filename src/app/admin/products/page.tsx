@@ -3,7 +3,7 @@ import { Package } from "@phosphor-icons/react/dist/ssr";
 import { getCatalog, summarize, type CatalogRow } from "@/lib/catalog";
 import { CatalogActions } from "@/components/CatalogActions";
 import { CatalogFilterBar } from "@/components/CatalogFilterBar";
-import { INLINE_LINK } from "@/components/Button";
+import { INLINE_LINK, NEW_TAB } from "@/components/Button";
 import { creatorHref } from "@/lib/creators";
 
 // Полный каталог: ВСЕ карты, а не только очередь разбора.
@@ -98,6 +98,7 @@ function CatalogRowItem({ product }: { product: CatalogRow }) {
             {product.creator ? (
               <Link
                 href={creatorHref(product.creator.displayName)}
+                {...NEW_TAB}
                 className={`font-medium ${INLINE_LINK}`}
               >
                 {product.creator.displayName}
@@ -115,6 +116,7 @@ function CatalogRowItem({ product }: { product: CatalogRow }) {
           {product.isPublished && !product.deletedAt && (
             <Link
               href={`/shop/${product.slug}`}
+              {...NEW_TAB}
               className={`mt-1 inline-block text-sm ${INLINE_LINK}`}
             >
               Open in the shop

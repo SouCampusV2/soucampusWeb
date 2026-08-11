@@ -38,10 +38,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "bad body" }, { status: 400 });
   }
 
-  const { productId, action, reason } = body as {
+  const { productId, action, reason, confirmTitle } = body as {
     productId?: unknown;
     action?: unknown;
     reason?: unknown;
+    confirmTitle?: unknown;
   };
 
   if (typeof productId !== "string" || productId.length === 0) {
@@ -51,10 +52,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "bad action" }, { status: 400 });
   }
 
-  // Причина обязательна у снятия: карта пропадает с витрины и из дохода
-  // автора, и он вправе знать, за что. Тот же принцип, что у отказа.
+  // Причина обязательна у ОБОИХ действий, уносящих карту с витрины: она
+  // пропадает из дохода автора, и он вправе знать, за что. Тот же
+  // принцип, что у отказа.
+  //
+  // Хранится в одной колонке suspension_reason и для снятия, и для
+  // удаления: смысл у неё один — «почему этой карты нет на витрине», а
+  // отличает случаи deleted_at, который и так есть. Заводить вторую
+  // колонку значило бы держать два поля, из которых в каждый момент
+  // осмысленно ровно одно.
   let suspensionReason: string | null = null;
-  if (action === "suspend") {
+  if (action === "suspend" || action === "delete") {
     if (typeof reason !== "string" || reason.trim().length === 0) {
       return NextResponse.json({ error: "reason required" }, { status: 400 });
     }
@@ -77,6 +85,21 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
+  // Название вводится руками и сверяется ЗДЕСЬ, а не только в форме:
+  // проверка в браузере защищает от случайного клика, серверная — от
+  // запроса мимо формы. Без учёта регистра и краевых пробелов: смысл
+  // подтверждения в осознанности, а не в диктанте (ровно как у автора в
+  // /api/creator/product).
+  if (action === "delete") {
+    const typed = typeof confirmTitle === "string" ? confirmTitle : "";
+    if (typed.trim().toLowerCase() !== (product.title as string).toLowerCase()) {
+      return NextResponse.json(
+        { error: "Type the map title exactly to confirm." },
+        { status: 400 }
+      );
+    }
+  }
+
   const update: Record<string, unknown> = (() => {
     switch (action as Action) {
       case "suspend":
@@ -93,12 +116,19 @@ export async function POST(request: Request) {
       case "delete":
         // Мягко: строка остаётся, файл и скриншоты не трогаем — за них
         // заплачено, и покупатель продолжает скачивать.
-        return { is_published: false, deleted_at: new Date().toISOString() };
+        return {
+          is_published: false,
+          deleted_at: new Date().toISOString(),
+          hidden_by: "moderator",
+          suspension_reason: suspensionReason,
+        };
       case "restore":
         // Возвращаем из удалённых СКРЫТОЙ, а не сразу на витрину:
         // восстановление — это отмена ошибки, а публиковать заново пусть
-        // будет отдельным осознанным действием.
-        return { deleted_at: null, is_published: false };
+        // будет отдельным осознанным действием. Причина и hidden_by
+        // остаются: карта продолжает быть снятой модератором, просто уже
+        // не удалённой, и автор по-прежнему видит, за что.
+        return { deleted_at: null };
     }
   })();
 
@@ -123,27 +153,37 @@ export async function POST(request: Request) {
   });
   if (logError) console.error("Журнал модерации:", logError.message);
 
-  // Автору сообщаем только о снятии: карта пропала с витрины и из его
-  // дохода — это то, что он обязан узнать не постфактум. «Вернули» —
-  // тоже новость, а «удалил/восстановил» он делает сам и уведомлять его
-  // о собственном действии незачем.
-  if (product.creator_id && (action === "suspend" || action === "unsuspend")) {
-    await notify(
-      product.creator_id as string,
-      action === "suspend"
-        ? {
-            kind: "map_suspended",
-            title: `“${product.title}” was taken off the shop`,
-            body: suspensionReason,
-            href: "/resources",
-          }
-        : {
-            kind: "map_approved",
-            title: `“${product.title}” is back on the shop`,
-            body: null,
-            href: `/shop/${product.slug}`,
-          }
-    );
+  // Автору сообщаем обо всём, что делает с картой НЕ он: сняли, вернули,
+  // удалили. Удаление здесь — действие модератора (своё собственное автор
+  // делает в /api/creator/product и уведомлять его о нём незачем), и
+  // молчать о нём нельзя: карта просто исчезает из его списка.
+  //
+  // «Восстановили» не шлём: снаружи это не событие — карта возвращается
+  // в том же снятом виде, с той же причиной, что автор уже прочитал.
+  if (product.creator_id) {
+    const message = {
+      suspend: {
+        kind: "map_suspended" as const,
+        title: `“${product.title}” was taken off the shop`,
+        body: suspensionReason,
+        href: "/resources",
+      },
+      unsuspend: {
+        kind: "map_approved" as const,
+        title: `“${product.title}” is back on the shop`,
+        body: null,
+        href: `/shop/${product.slug}`,
+      },
+      delete: {
+        kind: "map_suspended" as const,
+        title: `“${product.title}” was removed from the shop`,
+        body: suspensionReason,
+        href: "/resources",
+      },
+      restore: null,
+    }[action as Action];
+
+    if (message) await notify(product.creator_id as string, message);
   }
 
   // Витрина живёт на ISR (revalidate = 60): без этого снятая карта

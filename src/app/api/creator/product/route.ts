@@ -59,11 +59,22 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
-  // Удалённая карта не управляется ничем: она уже ушла и с витрины, и из
-  // списка автора. Единственный, кто может её вернуть, — владелец сайта
-  // через каталог админки.
+  // Удалённая карта не управляется ничем: вернуть её может только
+  // владелец сайта через каталог админки.
+  //
+  // Отвечаем ВНЯТНО, а не «not found». Скрывать тут нечего: карта висит в
+  // собственном списке автора, он на неё и смотрит, — и «not found» в
+  // ответ на клик по видимой строке читается как поломка сайта, а не как
+  // решение модерации. Прятать существование имеет смысл от постороннего
+  // (проверка владения выше), а не от хозяина карты.
   if (product.deleted_at) {
-    return NextResponse.json({ error: "not found" }, { status: 404 });
+    return NextResponse.json(
+      {
+        error:
+          "This map was removed by the site team, so it can't be changed from here. The reason is on the map — reply to it through support if you think it's a mistake.",
+      },
+      { status: 403 }
+    );
   }
 
   if (action === "hide" || action === "unhide") {

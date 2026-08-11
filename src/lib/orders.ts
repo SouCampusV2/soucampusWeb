@@ -89,8 +89,13 @@ export function orderInputFromLineItems(
   if (session.payment_status !== "paid") return null;
   if (lineItems.length === 0) return null;
 
+  // Сумма ноль — законный заказ, а не порченая сессия: корзина может
+  // состоять из одних бесплатных карт. Отсекаем только отсутствующее и
+  // отрицательное (см. ту же правку у позиций в
+  // buildPaidOrderFromSession — там нулевая цена стоила покупателю
+  // пропавшей карты).
   const totalCents = session.amount_total;
-  if (typeof totalCents !== "number" || totalCents <= 0) return null;
+  if (typeof totalCents !== "number" || totalCents < 0) return null;
 
   return {
     stripeSessionId: session.id,
@@ -145,7 +150,13 @@ export async function buildPaidOrderFromSession(
 
     const productId = product.metadata?.product_id;
     const unitAmountCents = li.price?.unit_amount;
-    if (!productId || typeof unitAmountCents !== "number" || unitAmountCents <= 0) continue;
+    // Цена НОЛЬ — это бесплатная карта, полноценная позиция заказа.
+    // Здесь стояло `<= 0`, и оно молча выбрасывало её из заказа: купив
+    // разом платную и бесплатную, покупатель получал уведомление об
+    // одной и видел в My purchases одну. Условие писалось, когда все
+    // карты стоили денег, и «нет цены» с «цена ноль» тогда совпадали.
+    // Отсутствие цены ловит проверка типа, отрицательную — знак.
+    if (!productId || typeof unitAmountCents !== "number" || unitAmountCents < 0) continue;
 
     lineItems.push({
       productId,

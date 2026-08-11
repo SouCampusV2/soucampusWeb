@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MagnifyingGlass, X } from "@phosphor-icons/react";
 
@@ -19,21 +19,58 @@ const FILTERS = [
   { value: "deleted", label: "Deleted" },
 ];
 
+// Сколько ждать после последнего нажатия клавиши, прежде чем идти в
+// базу. 250мс — примерно пауза между словами: за время набора «cathedral»
+// уходит один запрос, а не девять, но на глаз задержки не видно.
+const SEARCH_DEBOUNCE_MS = 250;
+
 export function CatalogFilterBar() {
   const router = useRouter();
   const params = useSearchParams();
   const currentStatus = params.get("status") ?? "";
-  const [query, setQuery] = useState(params.get("q") ?? "");
+  const urlQuery = params.get("q") ?? "";
+  const [query, setQuery] = useState(urlQuery);
 
-  function apply(next: { q?: string; status?: string }) {
+  function apply(next: { q?: string; status?: string }, replace = false) {
     const search = new URLSearchParams(params.toString());
 
     for (const [key, value] of Object.entries(next)) {
       if (value) search.set(key, value);
       else search.delete(key);
     }
-    router.push(`/admin/products?${search.toString()}`);
+    const href = `/admin/products?${search.toString()}`;
+    // Живой поиск — replace, а не push: иначе каждая буква становится
+    // шагом истории и «назад» приходится жать столько раз, сколько
+    // символов набрал. Клик по фильтру — push, это осознанный переход.
+    if (replace) router.replace(href);
+    else router.push(href);
   }
+
+  // Поиск по мере ввода, а не только по Enter. Стирание символов —
+  // такое же изменение запроса, как их добавление: очистив поле, человек
+  // ждёт полный список, а не тот же отфильтрованный, что был.
+  //
+  // Ref на актуальные значения, чтобы эффект зависел ТОЛЬКО от query:
+  // добавь сюда apply/params — таймер пересоздавался бы на каждую смену
+  // адреса, то есть на собственный же результат, и запросы пошли бы
+  // кругом.
+  const latest = useRef({ apply, currentStatus, urlQuery });
+  latest.current = { apply, currentStatus, urlQuery };
+
+  useEffect(() => {
+    // Уже совпадает с адресом — идти некуда. Это же условие гасит
+    // повторный заход после того, как адрес обновился нашим replace.
+    if (query.trim() === latest.current.urlQuery) return;
+
+    const timer = setTimeout(() => {
+      latest.current.apply(
+        { q: query.trim(), status: latest.current.currentStatus },
+        true
+      );
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [query]);
 
   return (
     <div className="mt-8 flex flex-wrap items-center gap-3">

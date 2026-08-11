@@ -120,6 +120,16 @@ export type OwnProduct = {
   isPublished: boolean;
   rejectionReason: string | null;
   rejectionFlags: string[];
+  /**
+   * Кто убрал карту с витрины: 'creator' — сам автор, 'moderator' — мы,
+   * null — она на витрине. Разница видна автору: своё «спрятать» он
+   * отменяет сам, снятое модератором — нет.
+   */
+  hiddenBy: "creator" | "moderator" | null;
+  /** За что сняли или удалили. Автор обязан это видеть, а не догадываться. */
+  suspensionReason: string | null;
+  /** Не null — карту убрал из каталога владелец сайта. */
+  deletedAt: string | null;
   createdAt: string;
 };
 
@@ -130,7 +140,7 @@ export async function getOwnProducts(
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, slug, title, image_url, price_label, status, is_published, rejection_reason, rejection_flags, created_at"
+      "id, slug, title, image_url, price_label, status, is_published, rejection_reason, rejection_flags, hidden_by, suspension_reason, deleted_at, created_at"
     )
     .eq("creator_id", userId)
     .order("created_at", { ascending: false });
@@ -153,6 +163,9 @@ export async function getOwnProducts(
     isPublished: Boolean(row.is_published),
     rejectionReason: row.rejection_reason ?? null,
     rejectionFlags: row.rejection_flags ?? [],
+    hiddenBy: row.hidden_by ?? null,
+    suspensionReason: row.suspension_reason ?? null,
+    deletedAt: row.deleted_at ?? null,
     createdAt: row.created_at,
   }));
 }
