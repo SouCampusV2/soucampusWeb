@@ -13,7 +13,13 @@ export type RejectionFlag =
   | "file"
   | "price"
   | "category"
-  | "title";
+  | "title"
+  // Тяжёлые причины — не «доделай», а «так нельзя». Только они дают
+  // паузу перед следующей заявкой (cooldownDays ниже).
+  | "stolen"
+  | "low_effort"
+  | "prohibited"
+  | "spam";
 
 export type RejectionTemplate = {
   flag: RejectionFlag;
@@ -28,6 +34,22 @@ export type RejectionTemplate = {
    * запятую» автоматически, и делать вид, что можно, — самообман.
    */
   requiresChange: "file" | "images" | null;
+  /**
+   * Сколько дней нельзя присылать НОВЫЕ карты после такого отказа.
+   *
+   * У всех обычных причин — ноль, и это принципиально. Пауза существует
+   * против того, кто заваливает очередь чужими работами и мусором, а не
+   * против того, кто криво снял скриншоты: наказывать за исправимую
+   * ошибку значит учить не исправлять её, а не приходить.
+   *
+   * Сроки заметно разные, потому что разные и проступки: перезалить
+   * ворованное можно за минуту, и неделя тут ничего не стоит, а три
+   * месяца за запрещёнку — это уже «возвращайтесь, если передумали».
+   *
+   * Правка УЖЕ ОТПРАВЛЕННОЙ карты паузой не запрещается никогда:
+   * иначе отказ с требованием исправить сам же и не давал бы исправить.
+   */
+  cooldownDays: number;
 };
 
 export const REJECTION_TEMPLATES: RejectionTemplate[] = [
@@ -37,6 +59,7 @@ export const REJECTION_TEMPLATES: RejectionTemplate[] = [
     message:
       "The screenshots need work — add clear, well-lit shots that actually show the build.",
     requiresChange: "images",
+    cooldownDays: 0,
   },
   {
     flag: "file",
@@ -44,6 +67,7 @@ export const REJECTION_TEMPLATES: RejectionTemplate[] = [
     message:
       "The map file has a problem — it didn't open, is incomplete, or doesn't match the screenshots. Please re-upload it.",
     requiresChange: "file",
+    cooldownDays: 0,
   },
   {
     flag: "description",
@@ -51,26 +75,79 @@ export const REJECTION_TEMPLATES: RejectionTemplate[] = [
     message:
       "The description needs more detail — what's included, the size of the build, and which Minecraft versions it works with.",
     requiresChange: null,
+    cooldownDays: 0,
   },
   {
     flag: "title",
     label: "Change the title",
     message: "The title doesn't describe the map clearly enough.",
     requiresChange: null,
+    cooldownDays: 0,
   },
   {
     flag: "price",
     label: "Reconsider the price",
     message: "The price doesn't match what's on offer here.",
     requiresChange: null,
+    cooldownDays: 0,
   },
   {
     flag: "category",
     label: "Pick a different category",
     message: "This map is in the wrong category.",
     requiresChange: null,
+    cooldownDays: 0,
+  },
+
+  // --- Тяжёлые причины. Дают паузу. ---
+  {
+    flag: "low_effort",
+    label: "Not a finished map",
+    message:
+      "This isn't a finished build — it's a draft, a test world or a handful of blocks. Send it when it's something someone would pay for.",
+    requiresChange: null,
+    cooldownDays: 3,
+  },
+  {
+    flag: "spam",
+    label: "Spam or a duplicate",
+    message:
+      "This is a duplicate or an empty listing. Repeating it will keep the queue closed to you for longer.",
+    requiresChange: null,
+    cooldownDays: 14,
+  },
+  {
+    flag: "stolen",
+    label: "Someone else's work",
+    message:
+      "This build isn't yours. Uploading other people's work is the one thing that gets an account closed here.",
+    requiresChange: null,
+    cooldownDays: 30,
+  },
+  {
+    flag: "prohibited",
+    label: "Prohibited content",
+    message:
+      "The listing contains content that isn't allowed on the site. See the terms.",
+    requiresChange: null,
+    cooldownDays: 90,
   },
 ];
+
+/**
+ * Сколько дней паузы даёт набор причин — самая тяжёлая из выбранных.
+ *
+ * Максимум, а не сумма: причины описывают ОДНУ заявку с разных сторон, и
+ * складывать их значило бы наказывать за подробность формулировки.
+ * Отметив «ворованное» и «не доделано», модератор говорит про одну и ту
+ * же карту, а не про два разных проступка.
+ */
+export function cooldownDaysFor(flags: string[]): number {
+  return flags.reduce((max, flag) => {
+    const days = templateFor(flag)?.cooldownDays ?? 0;
+    return days > max ? days : max;
+  }, 0);
+}
 
 export function templateFor(flag: string): RejectionTemplate | undefined {
   return REJECTION_TEMPLATES.find((t) => t.flag === flag);

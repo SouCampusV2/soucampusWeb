@@ -11,7 +11,11 @@ import { Button, BUTTON_COLORS, BUTTON_PILL } from "@/components/Button";
 import { ResourceActions } from "@/components/ResourceActions";
 import { RefreshButton } from "@/components/RefreshButton";
 import { CreatorStatusCard } from "@/components/CreatorStatusCard";
-import { getOwnApplication, isCreator } from "@/lib/creator-applications";
+import {
+  getOwnApplication,
+  isCreator,
+  getSubmissionBlock,
+} from "@/lib/creator-applications";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -35,10 +39,11 @@ export default async function ResourcesPage() {
   }
 
   // Право загружать и состояние заявки — параллельно, они независимы.
-  const [products, creator, application] = await Promise.all([
+  const [products, creator, application, blockedUntil] = await Promise.all([
     getOwnProducts(supabase, user.id),
     isCreator(supabase, user.id),
     getOwnApplication(supabase, user.id),
+    getSubmissionBlock(supabase, user.id),
   ]);
 
   return (
@@ -60,7 +65,9 @@ export default async function ResourcesPage() {
                   одобрили, сняли, отклонили — узнать об этом можно было
                   только перезагрузкой. */}
               <RefreshButton label="Check the status of your maps" />
-              {creator && products.length > 0 && (
+              {/* Под паузой кнопку не показываем: она вела бы на
+                  форму, с которой человека сразу разворачивает. */}
+              {creator && products.length > 0 && !blockedUntil && (
                 <Button href="/creator/upload" size="sm">
                   Add a map
                 </Button>
@@ -72,6 +79,29 @@ export default async function ResourcesPage() {
               показываем заявку, а не «добавь первую карту»: кнопка вела
               бы на форму, с которой его развернёт гейт. Дальше обычное
               пустое состояние и, наконец, список. */}
+          {/* Пауза после тяжёлого отказа — над списком и во всю ширину:
+              это первое, что человек должен прочитать, зайдя сюда за
+              «добавить карту». Правку уже отправленных карт она не
+              трогает, и об этом сказано прямо — иначе он решит, что
+              исправлять отклонённое тоже нельзя, и просто уйдёт. */}
+          {blockedUntil && (
+            <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 dark:border-red-900 dark:bg-red-950/40">
+              <p className="text-sm font-semibold text-red-800 dark:text-red-200">
+                New submissions are paused until{" "}
+                {blockedUntil.toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+              <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+                This came from a rejected submission — the reason is on the
+                map below. You can still edit and resubmit the maps you have
+                already uploaded.
+              </p>
+            </div>
+          )}
+
           {!creator ? (
             <CreatorStatusCard userId={user.id} application={application} />
           ) : products.length === 0 ? (
