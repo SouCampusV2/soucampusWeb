@@ -2,13 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { sanitizeDescription } from "@/lib/sanitize";
-import { Star, SealCheck } from "@phosphor-icons/react/dist/ssr";
+import { SealCheck } from "@phosphor-icons/react/dist/ssr";
 import { getAllProducts, getProduct, getProductStats } from "@/lib/products";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductGallery } from "@/components/ProductGallery";
 import { RICH_TEXT_CLASS } from "@/lib/rich-text";
 import { BackLink } from "@/components/BackLink";
 import { INLINE_LINK } from "@/components/Button";
+import { StarRating } from "@/components/StarRating";
 
 // Страницы товаров собираются заранее, как и работы портфолио.
 export async function generateStaticParams() {
@@ -64,7 +65,6 @@ export default async function ProductPage({
   const rating = stats?.rating ?? 0;
   const ratingCount = stats?.ratingCount ?? 0;
   const salesCount = stats?.salesCount ?? 0;
-  const filledStars = Math.round(rating);
 
   return (
     <main className="w-full mx-auto max-w-[120rem] flex-1 px-6 py-16 sm:px-10 sm:py-28 lg:px-16 xl:px-24 2xl:px-[120px]">
@@ -88,21 +88,7 @@ export default async function ProductPage({
       {/* Рейтинг + покупки — под заголовком, как на витрине. */}
       <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
         <div className="flex items-center gap-1.5">
-          <div className="flex items-center gap-0.5">
-            {[0, 1, 2, 3, 4].map((i) => (
-              <Star
-                key={i}
-                size={16}
-                weight={i < filledStars ? "fill" : "regular"}
-                aria-hidden
-                className={
-                  i < filledStars
-                    ? "text-orange-400"
-                    : "text-zinc-300 dark:text-zinc-600"
-                }
-              />
-            ))}
-          </div>
+          <StarRating rating={rating} size={16} />
           <span className="text-zinc-500 dark:text-zinc-400">
             {ratingCount
               ? `${rating.toFixed(1)} (${ratingCount} rating${ratingCount === 1 ? "" : "s"})`

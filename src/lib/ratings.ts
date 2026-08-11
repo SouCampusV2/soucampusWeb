@@ -17,9 +17,13 @@ export async function readUserRatings(
 
   if (error) return new Map();
 
+  // Number() — колонка стала numeric ради половинок (миграция
+  // 20260811130000), а numeric драйвер отдаёт строкой, чтобы не терять
+  // точность на больших числах. Для "4.5" это лишнее, но сравнение
+  // `value <= stars` на строке молча врёт.
   const map = new Map<string, number>();
-  for (const row of (data ?? []) as { product_id: string; stars: number }[]) {
-    map.set(row.product_id, row.stars);
+  for (const row of (data ?? []) as { product_id: string; stars: number | string }[]) {
+    map.set(row.product_id, Number(row.stars));
   }
   return map;
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MagnifyingGlass, X } from "@phosphor-icons/react";
 
@@ -31,46 +31,42 @@ export function CatalogFilterBar() {
   const urlQuery = params.get("q") ?? "";
   const [query, setQuery] = useState(urlQuery);
 
-  function apply(next: { q?: string; status?: string }, replace = false) {
+  function apply(next: { q?: string; status?: string }) {
     const search = new URLSearchParams(params.toString());
 
     for (const [key, value] of Object.entries(next)) {
       if (value) search.set(key, value);
       else search.delete(key);
     }
-    const href = `/admin/products?${search.toString()}`;
-    // Живой поиск — replace, а не push: иначе каждая буква становится
-    // шагом истории и «назад» приходится жать столько раз, сколько
-    // символов набрал. Клик по фильтру — push, это осознанный переход.
-    if (replace) router.replace(href);
-    else router.push(href);
+    // Клик по фильтру и Enter — push: это осознанные переходы, и им
+    // место в истории. Живой поиск по мере ввода идёт через replace,
+    // см. эффект ниже.
+    router.push(`/admin/products?${search.toString()}`);
   }
 
   // Поиск по мере ввода, а не только по Enter. Стирание символов —
   // такое же изменение запроса, как их добавление: очистив поле, человек
   // ждёт полный список, а не тот же отфильтрованный, что был.
   //
-  // Ref на актуальные значения, чтобы эффект зависел ТОЛЬКО от query:
-  // добавь сюда apply/params — таймер пересоздавался бы на каждую смену
-  // адреса, то есть на собственный же результат, и запросы пошли бы
-  // кругом.
-  const latest = useRef({ apply, currentStatus, urlQuery });
-  latest.current = { apply, currentStatus, urlQuery };
-
+  // Круга здесь не возникает, хотя эффект и зависит от адреса, который
+  // сам же меняет: сравнение с urlQuery гасит второй заход. Набрали
+  // текст → он разошёлся с адресом → уходим в replace → urlQuery стал
+  // равен query → эффект пробуждается и сразу выходит.
   useEffect(() => {
-    // Уже совпадает с адресом — идти некуда. Это же условие гасит
-    // повторный заход после того, как адрес обновился нашим replace.
-    if (query.trim() === latest.current.urlQuery) return;
+    const trimmed = query.trim();
+    if (trimmed === urlQuery) return;
 
     const timer = setTimeout(() => {
-      latest.current.apply(
-        { q: query.trim(), status: latest.current.currentStatus },
-        true
-      );
+      const search = new URLSearchParams();
+      if (trimmed) search.set("q", trimmed);
+      if (currentStatus) search.set("status", currentStatus);
+      // replace, а не push: иначе каждая буква становится шагом истории
+      // и «назад» приходится жать столько раз, сколько символов набрал.
+      router.replace(`/admin/products?${search.toString()}`);
     }, SEARCH_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-  }, [query]);
+  }, [query, urlQuery, currentStatus, router]);
 
   return (
     <div className="mt-8 flex flex-wrap items-center gap-3">

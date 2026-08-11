@@ -1,9 +1,10 @@
 import Link from "next/link";
 import { Unbounded } from "next/font/google";
-import { Star, SealCheck } from "@phosphor-icons/react/dist/ssr";
+import { SealCheck } from "@phosphor-icons/react/dist/ssr";
 import type { Product } from "@/lib/products";
 import { ProductCardImage } from "@/components/ProductCardImage";
 import { INLINE_LINK } from "@/components/Button";
+import { StarRating } from "@/components/StarRating";
 
 // Тот же дисплейный шрифт, что у hero-заголовков и карточек портфолио
 // (см. DESIGN.md, "Hero-секции страниц").
@@ -56,7 +57,6 @@ export function ProductCard({
           isVerified: product.creator.isVerified,
         }
       : { name: "Unknown creator", href: undefined, isVerified: false });
-  const filledStars = Math.round(rating ?? 0);
   // images появился вместе с галереей; у старых данных его может не быть —
   // тогда листать нечего, показываем одну обложку.
   const images = product.images?.length ? product.images : [product.image];
@@ -114,21 +114,7 @@ export function ProductCard({
             выравнивалась по одной линии. */}
         <div className="mt-auto flex items-center justify-between gap-3 pt-4 text-xs">
           <div className="flex items-center gap-1.5">
-            <div className="flex items-center gap-0.5">
-              {[0, 1, 2, 3, 4].map((i) => (
-                <Star
-                  key={i}
-                  size={13}
-                  weight={i < filledStars ? "fill" : "regular"}
-                  aria-hidden
-                  className={
-                    i < filledStars
-                      ? "text-orange-400"
-                      : "text-zinc-300 dark:text-zinc-600"
-                  }
-                />
-              ))}
-            </div>
+            <StarRating rating={rating ?? 0} />
             <span className="text-zinc-500 dark:text-zinc-400">
               {ratingCount
                 ? `${ratingCount} rating${ratingCount === 1 ? "" : "s"}`
