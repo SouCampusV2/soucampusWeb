@@ -2,6 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import { useEffect, useRef } from "react";
+import { isTrackablePath } from "@/lib/view-paths";
 
 /**
  * Невидимый компонент: сообщает серверу, что страницу открыли.
@@ -26,6 +27,26 @@ export function ViewTracker() {
 
   useEffect(() => {
     if (!pathname || sentFor.current === pathname) return;
+
+    // Не спрашиваем о том, в чём заведомо откажут.
+    //
+    // Считаются только публичные страницы (см. isTrackablePath), а
+    // компонент стоит в layout и срабатывает на ВСЕХ: /resources,
+    // /purchases, /settings, /notifications, /cart, вход. На каждой из
+    // них обработчик честно отвечал 400 «path not trackable» — то есть
+    // защита работала, но ценой лишнего запроса и красной строки в
+    // консоли на каждый переход. Владелец открыл свои карты и увидел
+    // пачку Bad Request на ровном месте.
+    //
+    // Проверка на сервере остаётся и остаётся настоящей: этот запрос
+    // отправляется из браузера, и полагаться на клиентскую проверку
+    // нельзя. Здесь она нужна ровно затем, чтобы не задавать вопрос,
+    // ответ на который известен заранее.
+    if (!isTrackablePath(pathname)) {
+      sentFor.current = pathname;
+      return;
+    }
+
     sentFor.current = pathname;
 
     fetch("/api/view", {
