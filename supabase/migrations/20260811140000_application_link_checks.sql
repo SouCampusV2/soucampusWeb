@@ -17,10 +17,26 @@
 -- NULL проходит обе проверки: оба поля необязательны, «не указал» —
 -- законный ответ. Пустую строку форма превращает в NULL сама.
 --
--- not valid + validate constraint отдельным шагом: старые строки, если
--- они успели набраться, не должны ронять миграцию. Если валидация
--- упадёт — значит такие строки есть, и разбирать их надо руками, а не
--- откатывать всю миграцию.
+-- NOT VALID — и БЕЗ последующего `validate constraint`. Это не
+-- недоделка, а всё поведение целиком: Postgres проверяет такое
+-- ограничение на каждой вставке и каждом обновлении, но не трогает уже
+-- лежащие строки.
+--
+-- Именно это здесь и нужно. Заявки на проде уже набрались, и в
+-- portfolio_url у части из них лежит то, ради чего проверка и
+-- заводится. Требовать, чтобы прошлое соответствовало правилу,
+-- введённому сегодня, — значит либо не суметь прогнать миграцию
+-- (первая попытка так и упала: 23514), либо молча стереть чужие данные.
+-- Правило работает с этого момента вперёд.
+--
+-- Старые кривые ссылки чинятся отдельно и руками — они видны запросом:
+--
+--   select id, portfolio_url from public.creator_applications
+--    where portfolio_url is not null
+--      and portfolio_url !~* '^https?://[^\s/]+\.[^\s/]+';
+--
+-- Заявок пока единицы, и разобрать их глазами дешевле и честнее, чем
+-- писать угадывающую нормализацию.
 -- ------------------------------------------------------------
 alter table public.creator_applications
   drop constraint if exists creator_applications_portfolio_url_check;
@@ -49,9 +65,3 @@ alter table public.creator_applications
     or discord ~* '^https?://(www\.)?(discord\.gg|discord\.com)/'
   )
   not valid;
-
-alter table public.creator_applications
-  validate constraint creator_applications_portfolio_url_check;
-
-alter table public.creator_applications
-  validate constraint creator_applications_discord_check;
