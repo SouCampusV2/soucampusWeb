@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/admin";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import { REJECTION_TEMPLATES } from "@/lib/rejection";
+import { REJECTION_TEMPLATES, cooldownDaysFor } from "@/lib/rejection";
 import { notify } from "@/lib/notifications";
 
 // Разбор очереди модерации: подтвердить или отклонить карту.
@@ -81,6 +81,16 @@ export async function POST(request: Request) {
           is_published: true,
           rejection_reason: null,
           rejection_flags: [],
+          // Одобрение снимает и пометку снятия. Карта могла прийти в
+          // очередь как возврат после take down (submission_kind =
+          // 'after_takedown'), и без этого она вышла бы на витрину, всё
+          // ещё помеченная снятой: автор видел бы у живой карты плашку
+          // «Taken down» со старой причиной, а сам вернуть её не смог бы
+          // — /api/creator/product запрещает это при hidden_by =
+          // 'moderator'.
+          hidden_by: null,
+          suspension_reason: null,
+          submission_kind: "first",
         }
       : {
           status: "rejected",
@@ -105,6 +115,47 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "already handled" }, { status: 409 });
   }
 
+  // Пауза перед следующей заявкой — если отказ был по тяжёлой причине.
+  //
+  // Ставим ПОСЛЕ успешного обновления карты: если бы разбор не удался,
+  // блокировать человека было бы не за что. И только вперёд по времени —
+  // новый отказ не должен сокращать уже идущую паузу (max с текущим
+  // значением), иначе лёгкий отказ обнулял бы тяжёлый.
+  let blockedUntil: string | null = null;
+  const cooldownDays = action === "reject" ? cooldownDaysFor(rejectionFlags) : 0;
+
+  if (cooldownDays > 0 && data.creator_id) {
+    const until = new Date(Date.now() + cooldownDays * 24 * 60 * 60 * 1000);
+
+    const { data: profile } = await db
+      .from("profiles")
+      .select("submissions_blocked_until")
+      .eq("id", data.creator_id)
+      .maybeSingle();
+
+    const current = profile?.submissions_blocked_until
+      ? new Date(profile.submissions_blocked_until as string)
+      : null;
+
+    if (!current || current < until) {
+      blockedUntil = until.toISOString();
+      const { error: blockError } = await db
+        .from("profiles")
+        .update({ submissions_blocked_until: blockedUntil })
+        .eq("id", data.creator_id);
+
+      // Пауза не проставилась — карта всё равно отклонена, и откатывать
+      // отказ из-за этого хуже, чем потерять паузу. В лог громко.
+      if (blockError) {
+        console.error("Пауза на заявки не выставлена:", blockError.message);
+        blockedUntil = null;
+      }
+    } else {
+      // Уже под более длинной паузой — сообщаем автору именно её.
+      blockedUntil = current.toISOString();
+    }
+  }
+
   // Автору — итог разбора. Раньше он узнавал его, только если сам
   // возвращался на /resources и замечал сменившуюся плашку.
   if (data.creator_id) {
@@ -120,7 +171,20 @@ export async function POST(request: Request) {
         : {
             kind: "map_rejected",
             title: `“${data.title}” wasn't approved`,
-            body: rejectionReason,
+            // Про паузу говорим в том же сообщении, а не отдельным:
+            // человек должен узнать «отказ» и «до какого числа нельзя»
+            // одновременно, иначе он пойдёт пробовать и упрётся молча.
+            body: blockedUntil
+              ? `${rejectionReason}
+
+You can submit a new map again after ${new Date(
+                  blockedUntil
+                ).toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}. Fixing and resubmitting this map is not affected.`
+              : rejectionReason,
             // На правку, а не на витрину: исправил — карта сама
             // возвращается в очередь.
             href: `/resources/${data.slug}/edit`,

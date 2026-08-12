@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { DotsThree, EyeSlash, Eye, Trash } from "@phosphor-icons/react";
-import { BUTTON_PILL } from "@/components/Button";
+import { BUTTON_PILL, DANGER_COLORS } from "@/components/Button";
 
 // Что автор может сделать со своей картой помимо правки: спрятать её с
 // витрины и удалить совсем.
@@ -20,11 +20,14 @@ export function ResourceActions({
   title,
   status,
   isPublished,
+  deleted = false,
 }: {
   productId: string;
   title: string;
   status: "pending" | "published" | "rejected";
   isPublished: boolean;
+  /** Карту убрал из каталога владелец сайта — распоряжаться ею нечем. */
+  deleted?: boolean;
 }) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
@@ -97,6 +100,10 @@ export function ResourceActions({
   // и так нет (сервер отвечает на это 409, здесь просто не показываем
   // бессмысленный пункт).
   const canHide = status === "published";
+  // У удалённой карты меню не показываем вовсе: обе его кнопки упёрлись
+  // бы в отказ сервера. Пустая кнопка «⋯», открывающая список из двух
+  // нерабочих пунктов, хуже её отсутствия.
+  if (deleted) return null;
   // Сверяем без регистра и краевых пробелов — ровно как сервер.
   const titleMatches = typed.trim().toLowerCase() === title.toLowerCase();
 
@@ -195,7 +202,7 @@ export function ResourceActions({
                 type="button"
                 onClick={() => send("delete")}
                 disabled={pending || !titleMatches}
-                className={`${BUTTON_PILL} bg-red-600 text-white hover:bg-red-700`}
+                className={`${BUTTON_PILL} ${DANGER_COLORS.solid}`}
               >
                 {pending ? "Deleting…" : "Delete forever"}
               </button>

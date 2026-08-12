@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MagnifyingGlass, X } from "@phosphor-icons/react";
 import { SHOP_CATEGORIES, type ProductCategory } from "@/lib/products";
@@ -18,6 +18,8 @@ import { SHOP_CATEGORIES, type ProductCategory } from "@/lib/products";
 // видимый набор избавляет от лишнего клика «открыть, чтобы посмотреть,
 // что есть». Выпадашка осталась там, где выбор обязателен и один —
 // в форме загрузки карты (SelectField).
+const SEARCH_DEBOUNCE_MS = 250;
+
 export function CategoryFilter() {
   const router = useRouter();
   const params = useSearchParams();
@@ -33,26 +35,46 @@ export function CategoryFilter() {
   // ВСЕ статические страницы сайта. Здесь мы уже внутри <Suspense> на
   // клиентской витрине, так что запрос читается бесплатно.
   //
-  // Правда о запросе — в адресе; SearchField (внизу файла) держит лишь
-  // то, что человек НАБРАЛ, но ещё не отправил, и пересоздаётся по
-  // key={activeQuery}, когда адрес меняется. Так две копии не приходится
-  // синхронизировать эффектом — setState в эффекте в этом проекте
-  // запрещён линтером (и правильно: лишний рендер плюс мигание).
-  function submitSearch(value: string) {
-    const next = new URLSearchParams(params.toString());
-    const trimmed = value.trim();
-    if (trimmed) next.set("q", trimmed);
-    else next.delete("q");
-    const query = next.toString();
-    router.push(query ? `/shop?${query}` : "/shop", { scroll: false });
-  }
+  // Правда о запросе — в адресе; SearchField (внизу файла) держит то,
+  // что человек набирает. С поиском по мере ввода эти два значения
+  // расходятся ровно на время паузы перед запросом и снова сходятся
+  // сами — синхронизировать их эффектом (setState в эффекте здесь
+  // запрещён линтером, и правильно) не требуется.
+  // useCallback здесь не про скорость: SearchField запускает по этим
+  // функциям таймер живого поиска, и если бы они пересоздавались на
+  // каждый рендер витрины, таймер перезапускался бы вместе с ними.
+  //
+  // replace для поиска по мере ввода и push для Enter — разница в
+  // истории: набранное слово не должно оставлять в ней по шагу на букву,
+  // а осознанная отправка запроса шагом быть обязана.
+  const applySearch = useCallback(
+    (value: string, { replace = false } = {}) => {
+      const next = new URLSearchParams(params.toString());
+      const trimmed = value.trim();
+      if (trimmed) next.set("q", trimmed);
+      else next.delete("q");
+      const query = next.toString();
+      const href = query ? `/shop?${query}` : "/shop";
+      if (replace) router.replace(href, { scroll: false });
+      else router.push(href, { scroll: false });
+    },
+    [params, router]
+  );
 
-  function clearSearch() {
-    const next = new URLSearchParams(params.toString());
-    next.delete("q");
-    const query = next.toString();
-    router.push(query ? `/shop?${query}` : "/shop", { scroll: false });
-  }
+  const submitSearch = useCallback(
+    (value: string) => applySearch(value),
+    [applySearch]
+  );
+
+  const clearSearch = useCallback(() => applySearch(""), [applySearch]);
+
+  const liveSearch = useCallback(
+    (value: string) => applySearch(value, { replace: true }),
+    [applySearch]
+  );
+
+  // Константа живого поиска — та же, что в админке: пауза между словами.
+
 
   // Меняем ОДИН параметр, остальные (в частности ?q поиска) сохраняем —
   // иначе выбор категории молча сбрасывал бы поисковый запрос.
@@ -101,11 +123,20 @@ export function CategoryFilter() {
     <div className="mt-8 flex flex-col gap-3 sm:flex-row-reverse sm:items-start sm:justify-between sm:gap-6">
       {/* Поиск справа на широком экране, сверху на узком: на телефоне
           набирать удобнее сразу, а не после прокрутки списка категорий. */}
+      {/* key={activeQuery} здесь БОЛЬШЕ НЕТ — и это принципиально.
+          Он пересоздавал поле при каждой смене ?q, чтобы подтянуть
+          запрос из адреса без setState в эффекте. Пока поиск шёл по
+          Enter, это было незаметно: адрес менялся один раз, уже после
+          ввода. С поиском по мере ввода адрес меняется в процессе
+          набора, и пересоздание выбивало бы фокус из поля на каждой
+          букве — набрать больше одного символа стало бы невозможно.
+          Плата за это: при переходе «назад» текст в поле остаётся
+          прежним, хотя список обновляется. */}
       <SearchField
-        key={activeQuery}
         initialQuery={activeQuery}
         onSubmit={submitSearch}
         onClear={clearSearch}
+        onLiveChange={liveSearch}
       />
 
       {pills}
@@ -127,12 +158,31 @@ function SearchField({
   initialQuery,
   onSubmit,
   onClear,
+  onLiveChange,
 }: {
   initialQuery: string;
   onSubmit: (value: string) => void;
   onClear: () => void;
+  /** Поиск по мере ввода — тот же переход, но без следа в истории. */
+  onLiveChange: (value: string) => void;
 }) {
   const [value, setValue] = useState(initialQuery);
+
+  // Поиск по мере ввода, а не только по Enter — и, что важнее, при
+  // СТИРАНИИ символов: убрав букву, человек ждёт, что список расширится
+  // обратно, а не останется на прежней выдаче до нажатия Enter.
+  //
+  // Сравнение с initialQuery (то, что уже в адресе) не даёт эффекту
+  // сработать на собственный результат: после навигации initialQuery
+  // становится равен value, и следующий заход выходит сразу.
+  useEffect(() => {
+    const trimmed = value.trim();
+    if (trimmed === initialQuery) return;
+
+    const timer = setTimeout(() => onLiveChange(trimmed), SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [value, initialQuery, onLiveChange]);
 
   return (
     <form

@@ -3,7 +3,8 @@ import { UserPlus } from "@phosphor-icons/react/dist/ssr";
 import { getPendingApplications, getCreators } from "@/lib/creator-applications";
 import { ApplicationActions } from "@/components/ApplicationActions";
 import { RevokeCreatorButton } from "@/components/RevokeCreatorButton";
-import { INLINE_LINK } from "@/components/Button";
+import { INLINE_LINK, NEW_TAB } from "@/components/Button";
+import { RefreshButton } from "@/components/RefreshButton";
 import { creatorHref } from "@/lib/creators";
 
 // Очередь заявок на статус креатора.
@@ -25,9 +26,12 @@ export default async function AdminApplicationsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-6 py-12">
-      <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
-        Creator applications
-      </h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
+          Creator applications
+        </h1>
+        <RefreshButton label="Check for new applications" />
+      </div>
       <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
         {applications.length === 0
           ? "Nothing waiting."
@@ -54,6 +58,7 @@ export default async function AdminApplicationsPage() {
                 <h2 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
                   <Link
                     href={creatorHref(application.displayName)}
+                    {...NEW_TAB}
                     className={INLINE_LINK}
                   >
                     {application.displayName}
@@ -138,6 +143,7 @@ export default async function AdminApplicationsPage() {
               <div className="min-w-0">
                 <Link
                   href={creatorHref(creator.displayName)}
+                  {...NEW_TAB}
                   className={`font-medium ${INLINE_LINK}`}
                 >
                   {creator.displayName}

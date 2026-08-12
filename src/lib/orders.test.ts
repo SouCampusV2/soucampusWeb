@@ -88,13 +88,47 @@ describe("orderInputFromLineItems", () => {
     expect(orderInputFromLineItems(paidSession, [])).toBeNull();
   });
 
-  it("НЕ принимает сессию без суммы или с нулевой суммой", () => {
+  it("НЕ принимает сессию без суммы или с отрицательной суммой", () => {
     expect(
       orderInputFromLineItems({ ...paidSession, amount_total: null }, oneItem)
     ).toBeNull();
     expect(
-      orderInputFromLineItems({ ...paidSession, amount_total: 0 }, oneItem)
+      orderInputFromLineItems({ ...paidSession, amount_total: -1 }, oneItem)
     ).toBeNull();
+  });
+
+  it("принимает заказ на нулевую сумму — корзину из одних бесплатных карт", () => {
+    // Раньше здесь стояло обратное: нулевая сумма считалась порченой
+    // сессией. Пока все карты стоили денег, разница не проявлялась, а с
+    // появлением бесплатных ровно это и выбрасывало их из заказа.
+    const free: LineItemLike[] = [
+      {
+        productId: "3f2c8a10-0000-4000-8000-000000000003",
+        title: "Starter Hub",
+        unitAmountCents: 0,
+        quantity: 1,
+      },
+    ];
+    const input = orderInputFromLineItems({ ...paidSession, amount_total: 0 }, free);
+    expect(input?.items).toHaveLength(1);
+    expect(input?.items[0].priceCents).toBe(0);
+  });
+
+  it("держит бесплатную карту в одном заказе с платной", () => {
+    // Тот самый случай владельца: купил две карты разом, одна бесплатная —
+    // в заказ попадала только платная, и в My purchases приезжала одна.
+    const mixed: LineItemLike[] = [
+      ...oneItem,
+      {
+        productId: "3f2c8a10-0000-4000-8000-000000000003",
+        title: "Starter Hub",
+        unitAmountCents: 0,
+        quantity: 1,
+      },
+    ];
+    const input = orderInputFromLineItems({ ...paidSession, amount_total: 1500 }, mixed);
+    expect(input?.items).toHaveLength(2);
+    expect(input?.items.map((i) => i.title)).toContain("Starter Hub");
   });
 
   it("подставляет запасной email, если Stripe его не отдал", () => {

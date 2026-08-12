@@ -102,6 +102,37 @@ export async function isCreator(
   return Boolean(data?.is_creator);
 }
 
+/**
+ * До какого момента человеку закрыта отправка новых карт, или null.
+ *
+ * Настоящий запрет стоит в RLS-политике вставки (миграция
+ * 20260811160000) — эта функция нужна, чтобы СКАЗАТЬ человеку, до какого
+ * числа ждать, вместо отказа базы без объяснений. Полагаться на неё как
+ * на защиту нельзя и не нужно.
+ *
+ * Прошедшую дату считаем отсутствием паузы: чистить колонку по
+ * расписанию было бы лишней работой ради того же результата.
+ */
+export async function getSubmissionBlock(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<Date | null> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("submissions_blocked_until")
+    .eq("id", userId)
+    .maybeSingle();
+
+  // Колонки ещё нет (миграция не прогнана) — считаем, что паузы нет.
+  // Открываемся, а не закрываемся, в отличие от isCreator: там ошибка
+  // означала бы «пустить неизвестно кого», здесь — «держать взаперти
+  // того, кого никто не наказывал».
+  if (error || !data?.submissions_blocked_until) return null;
+
+  const until = new Date(data.submissions_blocked_until as string);
+  return until > new Date() ? until : null;
+}
+
 /** Действующий креатор в списке админки. */
 export type CreatorRow = {
   id: string;

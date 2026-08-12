@@ -140,6 +140,24 @@ export default async function CreatorPage({
                 />
               )}
             </h1>
+
+            {/* Кто это. Раньше профиль креатора и профиль обычного
+                участника выглядели одинаково, и различить их можно было
+                только по тому, есть ли карты ниже, — а у креатора без
+                карт список тоже пуст. Галочка (is_verified) отвечает на
+                другой вопрос — «это точно он», — и роль ею не заменяется. */}
+            <p className="mt-2 flex justify-center sm:justify-start">
+              <span
+                className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                  creator.isCreator
+                    ? "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
+                    : "bg-zinc-950/[0.05] text-zinc-600 dark:bg-zinc-50/[0.06] dark:text-zinc-400"
+                }`}
+              >
+                {creator.isCreator ? "Creator" : "Member"}
+              </span>
+            </p>
+
             {creator.bio && (
               <p className="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400">
                 {creator.bio}

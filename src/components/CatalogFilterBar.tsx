@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MagnifyingGlass, X } from "@phosphor-icons/react";
 
@@ -19,11 +19,17 @@ const FILTERS = [
   { value: "deleted", label: "Deleted" },
 ];
 
+// Сколько ждать после последнего нажатия клавиши, прежде чем идти в
+// базу. 250мс — примерно пауза между словами: за время набора «cathedral»
+// уходит один запрос, а не девять, но на глаз задержки не видно.
+const SEARCH_DEBOUNCE_MS = 250;
+
 export function CatalogFilterBar() {
   const router = useRouter();
   const params = useSearchParams();
   const currentStatus = params.get("status") ?? "";
-  const [query, setQuery] = useState(params.get("q") ?? "");
+  const urlQuery = params.get("q") ?? "";
+  const [query, setQuery] = useState(urlQuery);
 
   function apply(next: { q?: string; status?: string }) {
     const search = new URLSearchParams(params.toString());
@@ -32,8 +38,35 @@ export function CatalogFilterBar() {
       if (value) search.set(key, value);
       else search.delete(key);
     }
+    // Клик по фильтру и Enter — push: это осознанные переходы, и им
+    // место в истории. Живой поиск по мере ввода идёт через replace,
+    // см. эффект ниже.
     router.push(`/admin/products?${search.toString()}`);
   }
+
+  // Поиск по мере ввода, а не только по Enter. Стирание символов —
+  // такое же изменение запроса, как их добавление: очистив поле, человек
+  // ждёт полный список, а не тот же отфильтрованный, что был.
+  //
+  // Круга здесь не возникает, хотя эффект и зависит от адреса, который
+  // сам же меняет: сравнение с urlQuery гасит второй заход. Набрали
+  // текст → он разошёлся с адресом → уходим в replace → urlQuery стал
+  // равен query → эффект пробуждается и сразу выходит.
+  useEffect(() => {
+    const trimmed = query.trim();
+    if (trimmed === urlQuery) return;
+
+    const timer = setTimeout(() => {
+      const search = new URLSearchParams();
+      if (trimmed) search.set("q", trimmed);
+      if (currentStatus) search.set("status", currentStatus);
+      // replace, а не push: иначе каждая буква становится шагом истории
+      // и «назад» приходится жать столько раз, сколько символов набрал.
+      router.replace(`/admin/products?${search.toString()}`);
+    }, SEARCH_DEBOUNCE_MS);
+
+    return () => clearTimeout(timer);
+  }, [query, urlQuery, currentStatus, router]);
 
   return (
     <div className="mt-8 flex flex-wrap items-center gap-3">

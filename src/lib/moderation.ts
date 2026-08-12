@@ -23,7 +23,21 @@ export type PendingProduct = {
   /** Подписанная ссылка на файл карты; null — файла нет или подпись не удалась. */
   fileUrl: string | null;
   creator: { id: string; displayName: string } | null;
+  /**
+   * Откуда карта пришла в очередь (колонка submission_kind, миграция
+   * 20260811150000). Первая заявка, исправление после отказа и возврат
+   * после снятия — три разных разбора, а выглядели одинаково.
+   */
+  submissionKind: SubmissionKind;
+  /** За что сняли, если это возврат после снятия. Триггер её не стирает. */
+  suspensionReason: string | null;
 };
+
+export type SubmissionKind =
+  | "first"
+  | "after_rejection"
+  | "after_takedown"
+  | "file_changed";
 
 type Row = {
   id: string;
@@ -38,6 +52,8 @@ type Row = {
   created_at: string;
   creator_id: string | null;
   product_images: { url: string; position: number }[] | null;
+  submission_kind: SubmissionKind | null;
+  suspension_reason: string | null;
 };
 
 /**
@@ -51,9 +67,11 @@ export async function getPendingProducts(): Promise<PendingProduct[]> {
   const { data, error } = await db
     .from("products")
     .select(
-      "id, slug, title, summary, description, image_url, price_label, category, file_path, created_at, creator_id, product_images(url, position)"
+      "id, slug, title, summary, description, image_url, price_label, category, file_path, created_at, creator_id, submission_kind, suspension_reason, product_images(url, position)"
     )
     .eq("status", "pending")
+    // Удалённые в очередь не попадают: разбирать нечего, карты уже нет.
+    .is("deleted_at", null)
     .order("created_at", { ascending: true });
 
   if (error) throw new Error(`Не удалось загрузить очередь: ${error.message}`);
@@ -99,6 +117,8 @@ export async function getPendingProducts(): Promise<PendingProduct[]> {
         creator: row.creator_id
           ? { id: row.creator_id, displayName: names.get(row.creator_id) ?? "—" }
           : null,
+        submissionKind: row.submission_kind ?? "first",
+        suspensionReason: row.suspension_reason,
       };
     })
   );
@@ -120,6 +140,16 @@ export type OwnProduct = {
   isPublished: boolean;
   rejectionReason: string | null;
   rejectionFlags: string[];
+  /**
+   * Кто убрал карту с витрины: 'creator' — сам автор, 'moderator' — мы,
+   * null — она на витрине. Разница видна автору: своё «спрятать» он
+   * отменяет сам, снятое модератором — нет.
+   */
+  hiddenBy: "creator" | "moderator" | null;
+  /** За что сняли или удалили. Автор обязан это видеть, а не догадываться. */
+  suspensionReason: string | null;
+  /** Не null — карту убрал из каталога владелец сайта. */
+  deletedAt: string | null;
   createdAt: string;
 };
 
@@ -130,7 +160,7 @@ export async function getOwnProducts(
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, slug, title, image_url, price_label, status, is_published, rejection_reason, rejection_flags, created_at"
+      "id, slug, title, image_url, price_label, status, is_published, rejection_reason, rejection_flags, hidden_by, suspension_reason, deleted_at, created_at"
     )
     .eq("creator_id", userId)
     .order("created_at", { ascending: false });
@@ -153,6 +183,9 @@ export async function getOwnProducts(
     isPublished: Boolean(row.is_published),
     rejectionReason: row.rejection_reason ?? null,
     rejectionFlags: row.rejection_flags ?? [],
+    hiddenBy: row.hidden_by ?? null,
+    suspensionReason: row.suspension_reason ?? null,
+    deletedAt: row.deleted_at ?? null,
     createdAt: row.created_at,
   }));
 }

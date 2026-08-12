@@ -9,8 +9,13 @@ import { getOwnProducts, type OwnProduct } from "@/lib/moderation";
 import { PageGlow } from "@/components/PageGlow";
 import { Button, BUTTON_COLORS, BUTTON_PILL } from "@/components/Button";
 import { ResourceActions } from "@/components/ResourceActions";
+import { RefreshButton } from "@/components/RefreshButton";
 import { CreatorStatusCard } from "@/components/CreatorStatusCard";
-import { getOwnApplication, isCreator } from "@/lib/creator-applications";
+import {
+  getOwnApplication,
+  isCreator,
+  getSubmissionBlock,
+} from "@/lib/creator-applications";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -34,10 +39,11 @@ export default async function ResourcesPage() {
   }
 
   // Право загружать и состояние заявки — параллельно, они независимы.
-  const [products, creator, application] = await Promise.all([
+  const [products, creator, application, blockedUntil] = await Promise.all([
     getOwnProducts(supabase, user.id),
     isCreator(supabase, user.id),
     getOwnApplication(supabase, user.id),
+    getSubmissionBlock(supabase, user.id),
   ]);
 
   return (
@@ -54,17 +60,48 @@ export default async function ResourcesPage() {
             {/* Кнопка «добавить» в шапке — только когда карты уже есть.
                 В пустом списке она была бы вторым таким же призывом
                 рядом с большим блоком ниже. */}
-            {creator && products.length > 0 && (
-              <Button href="/creator/upload" size="sm">
-                Add a map
-              </Button>
-            )}
+            <div className="flex items-center gap-2">
+              {/* Статус карт меняет модерация, а не владелец страницы:
+                  одобрили, сняли, отклонили — узнать об этом можно было
+                  только перезагрузкой. */}
+              <RefreshButton label="Check the status of your maps" />
+              {/* Под паузой кнопку не показываем: она вела бы на
+                  форму, с которой человека сразу разворачивает. */}
+              {creator && products.length > 0 && !blockedUntil && (
+                <Button href="/creator/upload" size="sm">
+                  Add a map
+                </Button>
+              )}
+            </div>
           </div>
 
           {/* Три состояния, и порядок проверок важен. Ещё не креатор —
               показываем заявку, а не «добавь первую карту»: кнопка вела
               бы на форму, с которой его развернёт гейт. Дальше обычное
               пустое состояние и, наконец, список. */}
+          {/* Пауза после тяжёлого отказа — над списком и во всю ширину:
+              это первое, что человек должен прочитать, зайдя сюда за
+              «добавить карту». Правку уже отправленных карт она не
+              трогает, и об этом сказано прямо — иначе он решит, что
+              исправлять отклонённое тоже нельзя, и просто уйдёт. */}
+          {blockedUntil && (
+            <div className="mt-8 rounded-2xl border border-red-200 bg-red-50 px-5 py-4 dark:border-red-900 dark:bg-red-950/40">
+              <p className="text-sm font-semibold text-red-800 dark:text-red-200">
+                New submissions are paused until{" "}
+                {blockedUntil.toLocaleDateString("en-GB", {
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </p>
+              <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+                This came from a rejected submission — the reason is on the
+                map below. You can still edit and resubmit the maps you have
+                already uploaded.
+              </p>
+            </div>
+          )}
+
           {!creator ? (
             <CreatorStatusCard userId={user.id} application={application} />
           ) : products.length === 0 ? (
@@ -136,31 +173,72 @@ function ResourceRow({ product }: { product: OwnProduct }) {
               View
             </Link>
           )}
-          <Link
-            href={`/resources/${product.slug}/edit`}
-            className={`${BUTTON_PILL} ${BUTTON_COLORS.secondary}`}
-          >
-            <PencilSimple size={16} weight="bold" />
-            Edit
-          </Link>
+          {/* Правку удалённой карты не предлагаем: форма всё равно её не
+              сохранит, а кнопка обещает обратное. */}
+          {!product.deletedAt && (
+            <Link
+              href={`/resources/${product.slug}/edit`}
+              className={`${BUTTON_PILL} ${BUTTON_COLORS.secondary}`}
+            >
+              <PencilSimple size={16} weight="bold" />
+              Edit
+            </Link>
+          )}
           <ResourceActions
             productId={product.id}
             title={product.title}
             status={product.status}
             isPublished={product.isPublished}
+            deleted={Boolean(product.deletedAt)}
           />
         </div>
       </div>
 
-      {/* Причина отказа — под строкой, во всю ширину: это текст, который
-          автор обязан прочитать целиком, а не обрезанный хвост. */}
-      {product.status === "rejected" && product.rejectionReason && (
-        <p className="mt-3 rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
-          <span className="font-semibold">Why it was rejected: </span>
-          {product.rejectionReason}
-        </p>
-      )}
+      {/* Причина — под строкой, во всю ширину: это текст, который автор
+          обязан прочитать целиком, а не обрезанный хвост.
+          Причин теперь три, и раньше показывалась только первая: карту
+          снимали или удаляли, а в списке она молча становилась «Hidden»
+          без единого слова, за что. Переносы строк сохраняем
+          (whitespace-pre-line) — текст собран списком пунктов. */}
+      <ReasonNote product={product} />
     </li>
+  );
+}
+
+/**
+ * Что именно случилось с картой и почему — одним блоком под строкой.
+ *
+ * Порядок веток тот же, что у бейджа, и по той же причине: удаление
+ * важнее отказа, отказ важнее снятия. Показываем ОДНУ причину — ту, в
+ * которой карта находится сейчас.
+ */
+function ReasonNote({ product }: { product: OwnProduct }) {
+  const note = (() => {
+    if (product.deletedAt) {
+      return {
+        label: "Removed by the site team:",
+        text:
+          product.suspensionReason ??
+          "No reason was recorded. Get in touch with support.",
+      };
+    }
+    if (product.status === "rejected" && product.rejectionReason) {
+      return { label: "Why it was rejected:", text: product.rejectionReason };
+    }
+    // Своё собственное «спрятать» объяснять не надо — автор сам это сделал.
+    if (product.hiddenBy === "moderator" && product.suspensionReason) {
+      return { label: "Why it was taken down:", text: product.suspensionReason };
+    }
+    return null;
+  })();
+
+  if (!note) return null;
+
+  return (
+    <p className="mt-3 whitespace-pre-line rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+      <span className="font-semibold">{note.label} </span>
+      {note.text}
+    </p>
   );
 }
 
@@ -182,10 +260,24 @@ function StatusBadge({ product }: { product: OwnProduct }) {
       </Badge>
     );
   }
-  if (!product.isPublished) {
+  // «Hidden» на всё подряд было неинформативно: автор видел одно и то же
+  // слово и когда прятал карту сам, и когда её снял модератор, и когда её
+  // удалили из каталога. Три разных положения — три разных подписи.
+  if (product.deletedAt) {
     return (
+      <Badge className="bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400">
+        Removed
+      </Badge>
+    );
+  }
+  if (!product.isPublished) {
+    return product.hiddenBy === "moderator" ? (
+      <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+        Taken down
+      </Badge>
+    ) : (
       <Badge className="bg-zinc-950/[0.05] text-zinc-600 dark:bg-zinc-50/[0.06] dark:text-zinc-400">
-        Hidden
+        Hidden by you
       </Badge>
     );
   }

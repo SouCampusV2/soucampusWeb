@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { sanitizeDescription } from "@/lib/sanitize";
 import { DownloadSimple, Clock } from "@phosphor-icons/react/dist/ssr";
-import { getPendingProducts } from "@/lib/moderation";
+import { getPendingProducts, type SubmissionKind } from "@/lib/moderation";
 import { ModerationActions } from "@/components/ModerationActions";
+import { RefreshButton } from "@/components/RefreshButton";
 import { ModerationGallery } from "@/components/ModerationGallery";
 import { RICH_TEXT_CLASS } from "@/lib/rich-text";
-import { BUTTON_COLORS, BUTTON_PILL, INLINE_LINK } from "@/components/Button";
+import { BUTTON_COLORS, BUTTON_PILL, INLINE_LINK, NEW_TAB } from "@/components/Button";
 import { creatorHref } from "@/lib/creators";
 
 // Очередь всегда свежая: список меняется от каждого решения, кэшировать
@@ -16,14 +17,51 @@ export const dynamic = "force-dynamic";
 // попадает только админ. Дублировать проверку здесь не нужно, но и
 // полагаться на неё в API нельзя: /api/admin/moderation проверяет
 // заново, потому что запрос туда можно отправить и минуя эту страницу.
+// Откуда карта пришла в очередь. Три случая — три разных разбора:
+// впервые её видят целиком, после отказа проверяют перечисленное, после
+// снятия решают, снят ли повод. До этого все три выглядели одинаково, и
+// отличить их можно было только по памяти.
+function SubmissionBadge({ kind }: { kind: SubmissionKind }) {
+  if (kind === "first") return null;
+
+  const { label, className } = {
+    after_takedown: {
+      label: "Back after a takedown",
+      className:
+        "bg-red-50 text-red-700 dark:bg-red-950/40 dark:text-red-300",
+    },
+    after_rejection: {
+      label: "Fixed after a rejection",
+      className:
+        "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
+    },
+    file_changed: {
+      label: "File replaced on a live map",
+      className:
+        "bg-zinc-950/[0.05] text-zinc-600 dark:bg-zinc-50/[0.06] dark:text-zinc-400",
+    },
+  }[kind];
+
+  return (
+    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${className}`}>
+      {label}
+    </span>
+  );
+}
+
 export default async function ModerationPage() {
   const pending = await getPendingProducts();
 
   return (
     <div className="mx-auto max-w-5xl px-6 py-12">
-      <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
-        Moderation queue
-      </h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
+          Moderation queue
+        </h1>
+        {/* Очередь пополняется, пока она открыта: креатор отправляет
+            карту, а страница об этом не узнаёт. */}
+        <RefreshButton label="Check for new submissions" />
+      </div>
       <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
         {pending.length === 0
           ? "Nothing waiting."
@@ -47,14 +85,18 @@ export default async function ModerationPage() {
               {/* Шапка заявки: кто, что, почём, когда */}
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div className="min-w-0">
-                  <h2 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
-                    {product.title}
-                  </h2>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <h2 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
+                      {product.title}
+                    </h2>
+                    <SubmissionBadge kind={product.submissionKind} />
+                  </div>
                   <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
                     by{" "}
                     {product.creator ? (
                       <Link
                         href={creatorHref(product.creator.displayName)}
+                        {...NEW_TAB}
                         className={`font-medium ${INLINE_LINK}`}
                       >
                         {product.creator.displayName}
@@ -68,6 +110,20 @@ export default async function ModerationPage() {
                   <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                     {product.summary}
                   </p>
+
+                  {/* За что снимали — прямо здесь. Разбирать возврат, не
+                      видя претензии, значит решать вслепую: вопрос ведь
+                      не «хороша ли карта», а «устранён ли повод».
+                      Триггер эту причину намеренно не стирает. */}
+                  {product.submissionKind === "after_takedown" &&
+                    product.suspensionReason && (
+                      <p className="mt-3 whitespace-pre-line rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+                        <span className="font-semibold">
+                          It was taken down for:{" "}
+                        </span>
+                        {product.suspensionReason}
+                      </p>
+                    )}
                 </div>
 
                 {/* Скачать файл — без этого проверка невозможна: судить о

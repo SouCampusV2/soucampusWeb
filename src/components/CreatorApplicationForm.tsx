@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
 import { TextField } from "@/components/MapFormParts";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { checkPortfolioUrl, checkDiscord } from "@/lib/contact-links";
 
 // Заявка на статус креатора.
 //
@@ -25,10 +26,21 @@ export function CreatorApplicationForm({ userId }: { userId: string }) {
   const [discord, setDiscord] = useState("");
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [portfolioError, setPortfolioError] = useState<string | null>(null);
+  const [discordError, setDiscordError] = useState<string | null>(null);
 
   async function submit(event: React.FormEvent) {
     event.preventDefault();
     if (about.trim().length === 0) return;
+
+    // Ссылки проверяем ДО отправки и показываем ошибку у поля, а не
+    // общим текстом внизу: иначе человек видит «не получилось» и не
+    // знает, какое из трёх полей чинить.
+    const link = checkPortfolioUrl(portfolio);
+    const contact = checkDiscord(discord);
+    setPortfolioError(link.ok ? null : link.error);
+    setDiscordError(contact.ok ? null : contact.error);
+    if (!link.ok || !contact.ok) return;
 
     setPending(true);
     setError(null);
@@ -39,8 +51,10 @@ export function CreatorApplicationForm({ userId }: { userId: string }) {
       .insert({
         user_id: userId,
         about: about.trim().slice(0, MAX_ABOUT),
-        portfolio_url: portfolio.trim() || null,
-        discord: discord.trim() || null,
+        // Нормализованные значения, а не то, что набрано: у ссылки
+        // дописана схема, у ника срезана @ и приведён регистр.
+        portfolio_url: link.value || null,
+        discord: contact.value || null,
       });
 
     setPending(false);
@@ -49,10 +63,16 @@ export function CreatorApplicationForm({ userId }: { userId: string }) {
       // Частичный уникальный индекс не даёт завести вторую ОТКРЫТУЮ
       // заявку. Это не поломка, а именно то поведение, которое нужно, —
       // объясняем человеку по-человечески вместо кода ошибки.
+      // 23514 — check_violation: ту же проверку ссылок база держит у
+      // себя (миграция 20260811140000), потому что вставка идёт из
+      // браузера и форму можно обойти. Сюда мы попадаем, только если
+      // проверки разошлись, — говорим прямо, что не понравилось.
       setError(
         insertError.code === "23505"
           ? "You already have an application waiting. We'll get back to you on it."
-          : "Could not send the application. Try again in a moment."
+          : insertError.code === "23514"
+            ? "Check the portfolio link and the Discord name — one of them isn't in a form we can use."
+            : "Could not send the application. Try again in a moment."
       );
       return;
     }
@@ -84,20 +104,43 @@ export function CreatorApplicationForm({ userId }: { userId: string }) {
         />
       </div>
 
-      <TextField
-        id="portfolio"
-        label="Portfolio link"
-        hint="PlanetMinecraft, YouTube, ArtStation — wherever your work lives."
-        value={portfolio}
-        onChange={setPortfolio}
-      />
-      <TextField
-        id="discord"
-        label="Discord"
-        hint="So we can reach you about the application."
-        value={discord}
-        onChange={setDiscord}
-      />
+      <div>
+        <TextField
+          id="portfolio"
+          label="Portfolio link"
+          hint="PlanetMinecraft, YouTube, ArtStation — wherever your work lives."
+          value={portfolio}
+          onChange={(value) => {
+            setPortfolio(value);
+            // Ошибка снимается сразу, как только человек начал править:
+            // держать её под полем, пока он печатает исправление, —
+            // ругаться на то, что он уже чинит.
+            if (portfolioError) setPortfolioError(null);
+          }}
+        />
+        {portfolioError && (
+          <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">
+            {portfolioError}
+          </p>
+        )}
+      </div>
+      <div>
+        <TextField
+          id="discord"
+          label="Discord"
+          hint="So we can reach you about the application."
+          value={discord}
+          onChange={(value) => {
+            setDiscord(value);
+            if (discordError) setDiscordError(null);
+          }}
+        />
+        {discordError && (
+          <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">
+            {discordError}
+          </p>
+        )}
+      </div>
 
       {error && (
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>

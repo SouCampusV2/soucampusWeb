@@ -18,6 +18,11 @@ export type Creator = {
    * кнопка «Order a custom build» (приём заказов пока только у бренда).
    */
   isVerified: boolean;
+  /**
+   * Есть ли право выкладывать карты. Отличает креатора от обычного
+   * участника в шапке профиля — до этого обе роли выглядели одинаково.
+   */
+  isCreator: boolean;
 };
 
 type CreatorRow = {
@@ -26,6 +31,8 @@ type CreatorRow = {
   avatar_url: string | null;
   bio: string | null;
   is_verified: boolean;
+  /** Появилась в представлении миграцией 20260811120000; у старых баз её нет. */
+  is_creator?: boolean | null;
 };
 
 // Хэндл = ник в нижнем регистре. Ники уникальны РЕГИСТРОНЕЗАВИСИМО
@@ -49,10 +56,22 @@ function rowToCreator(row: CreatorRow): Creator {
     avatarUrl: row.avatar_url,
     bio: row.bio,
     isVerified: row.is_verified,
+    isCreator: Boolean(row.is_creator),
   };
 }
 
-const CREATOR_FIELDS = "id, display_name, avatar_url, bio, is_verified";
+const CREATOR_FIELDS = "id, display_name, avatar_url, bio, is_verified, is_creator";
+
+// Тот же набор без is_creator — запасной путь, пока миграция
+// 20260811120000 не прогнана. PostgREST на незнакомую колонку отвечает
+// ошибкой и НЕ отдаёт строки вовсе, то есть профили и авторы на
+// карточках витрины исчезли бы целиком из-за одной подписи под ником.
+// Тот же принцип, что у PRODUCT_FIELDS_NO_IMAGES в products.ts.
+const CREATOR_FIELDS_NO_ROLE = "id, display_name, avatar_url, bio, is_verified";
+
+function isMissingRole(message: string): boolean {
+  return message.includes("is_creator");
+}
 
 // Ошибку чтения профилей глушим и отдаём пустоту вместо исключения: пока
 // миграция не прогнана, представления public_profiles ещё нет, и падать
@@ -63,32 +82,42 @@ function warn(message: string) {
 }
 
 export async function getAllCreators(): Promise<Creator[]> {
-  const { data, error } = await getSupabase()
-    .from("public_profiles")
-    .select(CREATOR_FIELDS);
+  const query = (fields: string) =>
+    getSupabase().from("public_profiles").select(fields);
+
+  let { data, error } = await query(CREATOR_FIELDS);
+  if (error && isMissingRole(error.message)) {
+    ({ data, error } = await query(CREATOR_FIELDS_NO_ROLE));
+  }
 
   if (error) {
     warn(error.message);
     return [];
   }
-  return (data ?? []).map(rowToCreator);
+  return ((data ?? []) as unknown as CreatorRow[]).map(rowToCreator);
 }
 
 export async function getCreatorByHandle(handle: string): Promise<Creator | null> {
   // ilike без подстановочных знаков — это обычное сравнение, только
   // регистронезависимое: ровно то, что нужно, раз хэндл в адресе
   // строчный, а ник хранится как введён.
-  const { data, error } = await getSupabase()
-    .from("public_profiles")
-    .select(CREATOR_FIELDS)
-    .ilike("display_name", handle)
-    .maybeSingle();
+  const query = (fields: string) =>
+    getSupabase()
+      .from("public_profiles")
+      .select(fields)
+      .ilike("display_name", handle)
+      .maybeSingle();
+
+  let { data, error } = await query(CREATOR_FIELDS);
+  if (error && isMissingRole(error.message)) {
+    ({ data, error } = await query(CREATOR_FIELDS_NO_ROLE));
+  }
 
   if (error) {
     warn(error.message);
     return null;
   }
-  return data ? rowToCreator(data as CreatorRow) : null;
+  return data ? rowToCreator(data as unknown as CreatorRow) : null;
 }
 
 // Карта id → профиль. Нужна витрине: карточка товара показывает автора,

@@ -6,7 +6,7 @@ import { Warning } from "@phosphor-icons/react/dist/ssr";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getCurrentUser } from "@/lib/current-user";
 import { getOwnProducts } from "@/lib/moderation";
-import { isCreator } from "@/lib/creator-applications";
+import { isCreator, getSubmissionBlock } from "@/lib/creator-applications";
 import { UploadMapForm } from "@/components/UploadMapForm";
 import { PageGlow } from "@/components/PageGlow";
 
@@ -52,6 +52,14 @@ export default async function UploadMapPage() {
   // спокойно делаешь вторую. Сначала предупреждение показывалось на обе,
   // и человек, добавляя ВТОРУЮ карту, получал тревожную плашку про
   // дубликаты на ровном месте.
+  // Пауза после тяжёлого отказа (миграция 20260811160000). Уводим
+  // отсюда, а не показываем форму, которую база всё равно не примет:
+  // человек заполнял бы её, грузил файл и получал непонятный отказ на
+  // последнем шаге. Объяснение и дата ждут его на /resources.
+  if (await getSubmissionBlock(supabase, user.id)) {
+    redirect("/resources");
+  }
+
   const own = await getOwnProducts(supabase, user.id);
   const rejected = own.filter((p) => p.status === "rejected");
   const pending = own.filter((p) => p.status === "pending");

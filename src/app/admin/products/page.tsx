@@ -3,7 +3,8 @@ import { Package } from "@phosphor-icons/react/dist/ssr";
 import { getCatalog, summarize, type CatalogRow } from "@/lib/catalog";
 import { CatalogActions } from "@/components/CatalogActions";
 import { CatalogFilterBar } from "@/components/CatalogFilterBar";
-import { INLINE_LINK } from "@/components/Button";
+import { RefreshButton } from "@/components/RefreshButton";
+import { INLINE_LINK, NEW_TAB } from "@/components/Button";
 import { creatorHref } from "@/lib/creators";
 
 // Полный каталог: ВСЕ карты, а не только очередь разбора.
@@ -30,9 +31,12 @@ export default async function AdminProductsPage({
 
   return (
     <div className="mx-auto max-w-6xl px-6 py-12">
-      <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
-        Catalog
-      </h1>
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
+          Catalog
+        </h1>
+        <RefreshButton label="Reload the catalog" />
+      </div>
       <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
         Every map on the site, whatever its state.
       </p>
@@ -98,6 +102,7 @@ function CatalogRowItem({ product }: { product: CatalogRow }) {
             {product.creator ? (
               <Link
                 href={creatorHref(product.creator.displayName)}
+                {...NEW_TAB}
                 className={`font-medium ${INLINE_LINK}`}
               >
                 {product.creator.displayName}
@@ -115,6 +120,7 @@ function CatalogRowItem({ product }: { product: CatalogRow }) {
           {product.isPublished && !product.deletedAt && (
             <Link
               href={`/shop/${product.slug}`}
+              {...NEW_TAB}
               className={`mt-1 inline-block text-sm ${INLINE_LINK}`}
             >
               Open in the shop
@@ -122,8 +128,13 @@ function CatalogRowItem({ product }: { product: CatalogRow }) {
           )}
 
           {product.suspensionReason && (
-            <p className="mt-2 rounded-xl bg-orange-50 px-3 py-2 text-sm text-orange-800 dark:bg-orange-950/40 dark:text-orange-200">
-              <span className="font-semibold">Taken down: </span>
+            <p className="mt-2 whitespace-pre-line rounded-xl bg-orange-50 px-3 py-2 text-sm text-orange-800 dark:bg-orange-950/40 dark:text-orange-200">
+              {/* Подпись по состоянию: колонка одна на оба случая (см.
+                  /api/admin/catalog), а называть удаление «снятием» —
+                  врать самому себе при следующем разборе. */}
+              <span className="font-semibold">
+                {product.deletedAt ? "Removed: " : "Taken down: "}
+              </span>
               {product.suspensionReason}
             </p>
           )}
