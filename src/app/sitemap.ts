@@ -10,7 +10,7 @@ import { SITE_URL } from "@/lib/site";
 // Работы и отзывы берём ИЗ БАЗЫ (getAllProjects/getAllReviews), а не списком
 // руками: добавил работу строкой в Supabase — она попадает в карту сама, без
 // правки кода. /terms сюда НЕ включаем — заглушка под noindex (см. page.tsx).
-// /shop и товары появляются в карте только когда есть опубликованные товары —
+// /marketplace и товары появляются в карте только когда есть опубликованные товары —
 // та же логика, что у robots в shop/page.tsx: пустой каталог не индексируем.
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
@@ -49,9 +49,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     products.length === 0
       ? []
       : [
-          { url: `${SITE_URL}/shop`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.8 },
+          { url: `${SITE_URL}/marketplace`, lastModified: now, changeFrequency: "weekly" as const, priority: 0.8 },
           ...products.map((p) => ({
-            url: `${SITE_URL}/shop/${p.slug}`,
+            url: `${SITE_URL}/marketplace/${p.slug}`,
             lastModified: now,
             changeFrequency: "monthly" as const,
             priority: 0.7,

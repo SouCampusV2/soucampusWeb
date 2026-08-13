@@ -10,7 +10,7 @@ import {
   type ProductCategory,
 } from "@/lib/products";
 import { ProductCard } from "@/components/ProductCard";
-import { ShopShowcaseRow } from "@/components/ShopShowcaseRow";
+import { MarketplaceShowcaseRow } from "@/components/MarketplaceShowcaseRow";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -18,11 +18,11 @@ const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 // поиск (?q) из адреса — их проставляют ссылки категорий и строка поиска
 // в навбаре. Фильтрация на клиенте: каталог маленький, всё уже приехало
 // с сервера в products, лишний запрос на каждый фильтр не нужен, а
-// страница /shop остаётся статической (компонент под <Suspense>).
+// страница /marketplace остаётся статической (компонент под <Suspense>).
 //
 // Без фильтра — витрина «Most popular» + сетка «All maps». С фильтром —
 // заголовок (категория или «Results for …») + отфильтрованная сетка.
-export function ShopCatalog({ products }: { products: Product[] }) {
+export function MarketplaceCatalog({ products }: { products: Product[] }) {
   const params = useSearchParams();
   const rawCategory = params.get("category");
   const category = SHOP_CATEGORIES.some((c) => c.slug === rawCategory)
@@ -35,7 +35,7 @@ export function ShopCatalog({ products }: { products: Product[] }) {
   if (!isFiltering) {
     // Подборки главной витрины. Все считаются из одного уже загруженного
     // массива — ни одного лишнего запроса. Каждая ряд-подборка сама
-    // исчезает, если в ней нечего показать (ShopShowcaseRow возвращает
+    // исчезает, если в ней нечего показать (MarketplaceShowcaseRow возвращает
     // null на пустом списке), поэтому «Free» не висит пустым заголовком,
     // пока бесплатных карт нет.
     const take = 8;
@@ -68,18 +68,18 @@ export function ShopCatalog({ products }: { products: Product[] }) {
 
     return (
       <>
-        <ShopShowcaseRow
+        <MarketplaceShowcaseRow
           title="Most popular"
           products={popular}
           viewAllHref="#all-maps"
           viewAllLabel="View all"
         />
-        <ShopShowcaseRow title="Recently added" products={recent} />
-        <ShopShowcaseRow title="Top rated" products={topRated} />
-        <ShopShowcaseRow
+        <MarketplaceShowcaseRow title="Recently added" products={recent} />
+        <MarketplaceShowcaseRow title="Top rated" products={topRated} />
+        <MarketplaceShowcaseRow
           title="Free to download"
           products={free}
-          viewAllHref="/shop?category=free"
+          viewAllHref="/marketplace?category=free"
         />
         <section id="all-maps" className="mt-16 scroll-mt-28">
           <h2

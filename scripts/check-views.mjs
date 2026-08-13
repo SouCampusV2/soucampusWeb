@@ -88,7 +88,7 @@ async function main() {
     JSON.stringify(forgedRows)
   );
 
-  const tampered = await post("/shop", { ip: ip2, cookie: `${forgedRows[0].visitor_id}.tamperedsignature` });
+  const tampered = await post("/marketplace", { ip: ip2, cookie: `${forgedRows[0].visitor_id}.tamperedsignature` });
   check("испорченная подпись -> выдана новая cookie", !!tampered.issued);
 
   console.log("\n── 3. Проверка адреса страницы ──");

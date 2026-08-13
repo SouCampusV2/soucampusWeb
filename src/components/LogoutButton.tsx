@@ -15,7 +15,7 @@ export function LogoutButton() {
     const supabase = createSupabaseBrowser();
     await supabase.auth.signOut();
     router.refresh();
-    router.push("/shop");
+    router.push("/marketplace");
   }
 
   return (

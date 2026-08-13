@@ -11,7 +11,7 @@ import { SHOP_CATEGORIES, type ProductCategory } from "@/lib/products";
 //
 // Состояние держит АДРЕС (?category=…), а не useState. Причин две:
 // ссылку на «Spawns & hubs» можно отправить или сохранить в закладки, и
-// тот же параметр уже читает ShopCatalog — второй источник правды
+// тот же параметр уже читает MarketplaceCatalog — второй источник правды
 // неминуемо разъехался бы с первым.
 //
 // Пилюли, а не выпадающий список: вариантов немного и все влезают, а
@@ -29,7 +29,7 @@ export function CategoryFilter() {
   // Своя строка поиска на витрине — в дополнение к той, что в навбаре.
   //
   // Навбарная не показывает текущий запрос: приходишь по ссылке
-  // /shop?q=castle, карты отфильтрованы, а поле пустое — выглядит так,
+  // /marketplace?q=castle, карты отфильтрованы, а поле пустое — выглядит так,
   // будто поиск не сработал. Починить её на месте нельзя дёшево:
   // useSearchParams в навбаре (а он в layout) утянул бы в client-render
   // ВСЕ статические страницы сайта. Здесь мы уже внутри <Suspense> на
@@ -54,7 +54,7 @@ export function CategoryFilter() {
       if (trimmed) next.set("q", trimmed);
       else next.delete("q");
       const query = next.toString();
-      const href = query ? `/shop?${query}` : "/shop";
+      const href = query ? `/marketplace?${query}` : "/marketplace";
       if (replace) router.replace(href, { scroll: false });
       else router.push(href, { scroll: false });
     },
@@ -85,7 +85,7 @@ export function CategoryFilter() {
     const query = next.toString();
     // scroll: false — список под фильтром обновляется на месте, прыгать
     // к началу страницы при каждом переключении незачем.
-    router.push(query ? `/shop?${query}` : "/shop", { scroll: false });
+    router.push(query ? `/marketplace?${query}` : "/marketplace", { scroll: false });
   }
 
   const pill =

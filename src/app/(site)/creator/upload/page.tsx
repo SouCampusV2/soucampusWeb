@@ -75,7 +75,7 @@ export default async function UploadMapPage() {
             Add a map
           </h1>
           <p className="mx-auto mt-4 max-w-lg text-center text-zinc-600 dark:text-zinc-400">
-            Submitted maps are reviewed before they go live on the shop —
+            Submitted maps are reviewed before they go live on the marketplace —
             you&apos;ll see it on your profile once it&apos;s approved.
           </p>
 

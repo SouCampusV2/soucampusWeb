@@ -49,7 +49,7 @@ export const SITE_SAMEAS: string[] = [
 // копией в AuthForm и в /auth/callback, и усиление проверки в одном из
 // них молча оставило бы второй дырявым. Обработчик callback опаснее
 // формы — до него доходят по ссылке из письма, минуя весь UI.
-export function safeNextPath(next: string | null | undefined, fallback = "/shop") {
+export function safeNextPath(next: string | null | undefined, fallback = "/marketplace") {
   return next && next.startsWith("/") && !next.startsWith("//") ? next : fallback;
 }
 
@@ -58,5 +58,5 @@ export const NAV_LINKS = [
   { href: "/portfolio", label: "Portfolio" },
   { href: "/about", label: "About me" },
   { href: "/contact", label: "Contact" },
-  { href: "/shop", label: "Shop" },
+  { href: "/marketplace", label: "Marketplace" },
 ];

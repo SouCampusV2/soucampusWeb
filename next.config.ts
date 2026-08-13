@@ -36,6 +36,23 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+
+  // Магазин переехал с /shop на /marketplace (2026-08-13, переименование
+  // в «SouCampus Marketplace»). Редирект постоянный и остаётся навсегда:
+  // на старые адреса ведут закладки владельца, письма Stripe с прошлых
+  // покупок (success_url раньше был /shop/success), уведомления, разосланные
+  // до переезда, и всё, что кто-то успел скопировать из адресной строки.
+  // Стоит он ноль, а без него это 404 у человека, который уже заплатил.
+  //
+  // :path* захватывает и /shop/<карта>, и /shop/success, и query-строку
+  // (?category=free Next переносит сам). 308, а не 307: адрес сменился
+  // навсегда, и поисковику надо сказать именно это.
+  async redirects() {
+    return [
+      { source: "/shop", destination: "/marketplace", permanent: true },
+      { source: "/shop/:path*", destination: "/marketplace/:path*", permanent: true },
+    ];
+  },
 };
 
 export default nextConfig;

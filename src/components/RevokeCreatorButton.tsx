@@ -69,7 +69,7 @@ export function RevokeCreatorButton({
         Why is {displayName} losing creator access?
       </label>
       <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-        They see this text. Maps already on the shop stay up — take those
+        They see this text. Maps already on the marketplace stay up — take those
         down separately from the catalog.
       </p>
       <textarea

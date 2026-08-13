@@ -54,7 +54,7 @@ export function CreatorStatusCard({
       </h2>
       <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-600 dark:text-zinc-400">
         Tell us what you build. Once you&apos;re approved you can upload maps,
-        and each one goes live on the shop after a review.
+        and each one goes live on the marketplace after a review.
       </p>
 
       {/* Отказ — ВМЕСТЕ с формой, а не вместо неё: человек должен прочитать

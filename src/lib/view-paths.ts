@@ -29,7 +29,7 @@ const STATIC_PATHS = new Set([
   "/portfolio",
   "/about",
   "/contact",
-  "/shop",
+  "/marketplace",
   "/terms",
 ]);
 
@@ -39,5 +39,5 @@ const STATIC_PATHS = new Set([
 // латинские буквы, цифры и дефис, ровно то, что порождает БД.
 export function isTrackablePath(path: string) {
   if (STATIC_PATHS.has(path)) return true;
-  return /^\/(portfolio|reviews|shop)\/[a-z0-9-]{1,80}$/.test(path);
+  return /^\/(portfolio|reviews|marketplace)\/[a-z0-9-]{1,80}$/.test(path);
 }

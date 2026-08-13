@@ -17,7 +17,7 @@ describe("rowToProduct", () => {
     title: "Medieval Spawn",
     summary: "Ready-to-use 300×300 spawn.",
     description: "Long description.",
-    image_url: "/shop/medieval-spawn.jpg",
+    image_url: "/marketplace/medieval-spawn.jpg",
     price_label: "€15",
     price_cents: 1500,
     price_currency: "EUR",
@@ -31,9 +31,9 @@ describe("rowToProduct", () => {
       title: "Medieval Spawn",
       summary: "Ready-to-use 300×300 spawn.",
       description: "Long description.",
-      image: "/shop/medieval-spawn.jpg",
+      image: "/marketplace/medieval-spawn.jpg",
       // Без product_images галерея — это одна обложка.
-      images: ["/shop/medieval-spawn.jpg"],
+      images: ["/marketplace/medieval-spawn.jpg"],
       createdAt: "2026-07-22T12:00:00.000Z",
       price: "€15",
       priceCents: 1500,
@@ -63,15 +63,15 @@ describe("rowToProduct", () => {
       // вложенной выборки не гарантирует, а обложку легко случайно
       // продублировать в product_images при заливке контента.
       product_images: [
-        { url: "/shop/medieval-spawn-3.jpg", position: 2 },
-        { url: "/shop/medieval-spawn.jpg", position: 0 },
-        { url: "/shop/medieval-spawn-2.jpg", position: 1 },
+        { url: "/marketplace/medieval-spawn-3.jpg", position: 2 },
+        { url: "/marketplace/medieval-spawn.jpg", position: 0 },
+        { url: "/marketplace/medieval-spawn-2.jpg", position: 1 },
       ],
     };
     expect(rowToProduct(withGallery).images).toEqual([
-      "/shop/medieval-spawn.jpg",
-      "/shop/medieval-spawn-2.jpg",
-      "/shop/medieval-spawn-3.jpg",
+      "/marketplace/medieval-spawn.jpg",
+      "/marketplace/medieval-spawn-2.jpg",
+      "/marketplace/medieval-spawn-3.jpg",
     ]);
   });
 });

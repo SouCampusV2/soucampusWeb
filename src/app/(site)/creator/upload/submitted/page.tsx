@@ -24,12 +24,12 @@ export default function UploadSubmittedPage() {
         </h1>
         <p className="mx-auto mt-4 max-w-md text-zinc-600 dark:text-zinc-400">
           Thanks — your map is in the queue. It&apos;ll appear on your
-          profile and the shop once it&apos;s approved.
+          profile and the marketplace once it&apos;s approved.
         </p>
         <div className="mt-8 flex gap-3">
           <Button href="/resources">Your resources</Button>
-          <Button href="/shop" variant="secondary">
-            Back to shop
+          <Button href="/marketplace" variant="secondary">
+            Back to the marketplace
           </Button>
         </div>
       </section>

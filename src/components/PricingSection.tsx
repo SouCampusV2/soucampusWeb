@@ -11,7 +11,7 @@ import { ArrowCircle } from "@/components/ArrowCircle";
 // content with a section that already reads as a natural full stop (Ages
 // timeline, portfolio grid, FAQ), so PricingSection's own border-t + top
 // padding on top of that looked like a redundant second seam. Every other
-// route (home, a project detail page, /shop, /terms) keeps the divider.
+// route (home, a project detail page, /marketplace, /terms) keeps the divider.
 const NO_TOP_DIVIDER_ROUTES = ["/about", "/portfolio", "/contact"];
 
 type Accent = "blue" | "orange" | "lime";

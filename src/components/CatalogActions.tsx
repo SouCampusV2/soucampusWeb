@@ -212,19 +212,21 @@ function ReasonDialog({
     >
       <div className="my-8 w-full max-w-lg rounded-3xl border border-zinc-200 bg-[#fbfbff] p-6 dark:border-zinc-800 dark:bg-zinc-950">
         <h2 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
-          {isDelete ? "Remove this map from the shop?" : "Take this map down?"}
+          {isDelete
+            ? "Remove this map from the marketplace?"
+            : "Take this map down?"}
         </h2>
 
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
           {isDelete ? (
             <>
               {/* Пробел после названия — его тут не хватало, и текст читался
-                  как «Sky Cathedralfrom the shop». */}
+                  как «Sky Cathedralfrom the marketplace». */}
               Remove{" "}
               <span className="font-semibold text-zinc-950 dark:text-zinc-50">
                 {title}
               </span>{" "}
-              from the shop and the creator&apos;s list? It stays in this
+              from the marketplace and the creator&apos;s list? It stays in this
               catalog, and anyone who bought it keeps their download. Nothing is
               erased.
             </>
@@ -233,7 +235,7 @@ function ReasonDialog({
               <span className="font-semibold text-zinc-950 dark:text-zinc-50">
                 {title}
               </span>{" "}
-              comes off the shop. The creator keeps it, sees the reason below,
+              comes off the marketplace. The creator keeps it, sees the reason below,
               and can fix it and send it back for review.
             </>
           )}

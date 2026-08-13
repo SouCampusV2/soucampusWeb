@@ -68,7 +68,7 @@ export default function TermsPage() {
         </h1>
         <p className="mt-4 max-w-2xl text-zinc-600 dark:text-zinc-400">
           This page is a placeholder — the full terms will go live before the
-          shop opens. Below is the outline of what it will cover.
+          marketplace opens. Below is the outline of what it will cover.
         </p>
       </section>
 
@@ -111,7 +111,7 @@ export default function TermsPage() {
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
             Full terms covering orders, payment, revisions, licensing, and
             liability are being written and will be published here ahead of
-            the shop launch. Until then, order terms are agreed directly in
+            the marketplace launch. Until then, order terms are agreed directly in
             Discord for every commission.
           </p>
 

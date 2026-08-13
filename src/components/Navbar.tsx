@@ -38,7 +38,7 @@ export function Navbar() {
     const supabase = createSupabaseBrowser();
     await supabase.auth.signOut();
     router.refresh();
-    router.push("/shop");
+    router.push("/marketplace");
     setOpen(false);
   }
 
@@ -62,7 +62,7 @@ export function Navbar() {
   // вход/регистрация — покупка требует аккаунта, это часть флоу магазина)
   // содержимое навбара ЗАМЕНЯЕТСЯ целиком: обычные ссылки и "Order now"
   // уступают место магазинным кнопкам. /cart и /support считаются частью
-  // магазина — тот же навбар, что на /shop, а не первоначальный:
+  // магазина — тот же навбар, что на /marketplace, а не первоначальный:
   // посетитель не должен видеть портфолио-навигацию посреди оформления
   // заказа или обращения в поддержку по купленному товару.
   // Поиска в пилюле НЕТ (убран 2026-07-30): он переехал на саму витрину
@@ -74,9 +74,9 @@ export function Navbar() {
   // переход между режимами не дёргает высоту.
   // Вернуться на сайт — через лого SouCampus (оно всегда ведёт на "/"),
   // отдельной ссылки "назад" в магазине нет.
-  const isShopActive =
-    pathname === "/shop" ||
-    pathname.startsWith("/shop/") ||
+  const isMarketplaceActive =
+    pathname === "/marketplace" ||
+    pathname.startsWith("/marketplace/") ||
     pathname === "/cart" ||
     pathname === "/support" ||
     // Вход/регистрация/профиль — часть флоу магазина (покупка требует
@@ -134,7 +134,7 @@ export function Navbar() {
             SouCampus
           </Link>
 
-          {isShopActive ? (
+          {isMarketplaceActive ? (
             <div className="ml-6 hidden min-w-0 flex-1 items-center justify-between gap-4 min-[760px]:flex">
               {/* Категории + Support — навигация магазина. Без
                   data-page-transition: внутри магазина без анимации-волны
@@ -300,7 +300,7 @@ export function Navbar() {
               Обычный навбар её не показывает: магазин и портфолио-сайт
               рекламируются раздельно, корзина не должна маячить, пока
               посетитель просто листает портфолио. */}
-          {!isShopActive && (
+          {!isMarketplaceActive && (
             <div className="hidden min-[760px]:block">
               <Button
                 href={DISCORD_INVITE}
@@ -318,7 +318,7 @@ export function Navbar() {
               обычную навигацию, в магазине — магазинные вкладки (All Map,
               категории, Support, поиск). Сами дропдауны — ниже, каждый под
               свой режим. */}
-          {!isShopActive && (
+          {!isMarketplaceActive && (
             <button
               onClick={() => setOpen((v) => !v)}
               className="flex h-9 w-9 cursor-pointer flex-col items-center justify-center gap-1.5 min-[760px]:hidden"
@@ -331,7 +331,7 @@ export function Navbar() {
           {/* Мобильно, в режиме магазина: корзина + аккаунт (профиль или
               вход) + гамбургер с магазинной навигацией. Иконки крупнее с
               зоной нажатия p-2, как на десктопе. */}
-          {isShopActive && (
+          {isMarketplaceActive && (
             <div className="flex items-center gap-1 text-zinc-700 dark:text-zinc-200 min-[760px]:hidden">
               <NotificationsBell userId={user?.id ?? null} size={24} />
               <CartLink count={count} size={24} />
@@ -372,7 +372,7 @@ export function Navbar() {
         </nav>
 
         <AnimatePresence>
-          {open && !isShopActive && (
+          {open && !isMarketplaceActive && (
             <motion.ul
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
@@ -417,7 +417,7 @@ export function Navbar() {
           {/* Магазинная выпадашка: те же вкладки, что в пилюле на десктопе
               (All Map + категории + Support) плюс рабочий поиск. Карта и
               аккаунт уже в верхней строке — здесь только навигация. */}
-          {open && isShopActive && (
+          {open && isMarketplaceActive && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}

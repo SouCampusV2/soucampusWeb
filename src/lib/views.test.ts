@@ -7,7 +7,7 @@ import { isTrackablePath, VIEW_PATHS } from "./views";
 
 describe("isTrackablePath", () => {
   it("пропускает статические страницы сайта", () => {
-    for (const path of ["/", "/portfolio", "/about", "/contact", "/shop", "/terms"]) {
+    for (const path of ["/", "/portfolio", "/about", "/contact", "/marketplace", "/terms"]) {
       expect(isTrackablePath(path), path).toBe(true);
     }
   });
@@ -15,7 +15,7 @@ describe("isTrackablePath", () => {
   it("пропускает страницы работ, отзывов и товаров", () => {
     expect(isTrackablePath(VIEW_PATHS.project("bluespawn"))).toBe(true);
     expect(isTrackablePath("/reviews/luke-and-sven")).toBe(true);
-    expect(isTrackablePath("/shop/medieval-spawn")).toBe(true);
+    expect(isTrackablePath("/marketplace/medieval-spawn")).toBe(true);
   });
 
   it("отбивает выдуманные адреса", () => {

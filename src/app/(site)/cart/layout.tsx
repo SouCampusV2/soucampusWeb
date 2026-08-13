@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 // Персональная страница (у каждого свой набор товаров в localStorage) —
-// поисковику здесь делать нечего, как на /shop/success и /terms.
+// поисковику здесь делать нечего, как на /marketplace/success и /terms.
 export const metadata: Metadata = {
   title: "Cart",
   robots: { index: false, follow: false },

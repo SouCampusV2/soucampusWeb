@@ -33,12 +33,12 @@ export async function generateMetadata({
   return {
     title: product.title,
     description,
-    alternates: { canonical: `/shop/${product.slug}` },
+    alternates: { canonical: `/marketplace/${product.slug}` },
     openGraph: {
       type: "article",
       title: product.title,
       description,
-      url: `/shop/${product.slug}`,
+      url: `/marketplace/${product.slug}`,
       images: [{ url: product.image, alt: product.title }],
     },
     twitter: {
@@ -68,7 +68,7 @@ export default async function ProductPage({
 
   return (
     <main className="w-full mx-auto max-w-[120rem] flex-1 px-6 py-16 sm:px-10 sm:py-28 lg:px-16 xl:px-24 2xl:px-[120px]">
-      <BackLink href="/shop">All products</BackLink>
+      <BackLink href="/marketplace">All products</BackLink>
 
       <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl">
         {product.title}
