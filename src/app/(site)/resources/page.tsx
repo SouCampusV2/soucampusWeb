@@ -116,7 +116,7 @@ export default async function ResourcesPage() {
               </h2>
               <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-600 dark:text-zinc-400">
                 Upload your first map — screenshots, description and the file
-                itself. It goes live on the shop once it&apos;s reviewed.
+                itself. It goes live on the marketplace once it&apos;s reviewed.
               </p>
               <div className="mt-6 flex justify-center">
                 <Button href="/creator/upload" size="md">
@@ -166,7 +166,7 @@ function ResourceRow({ product }: { product: OwnProduct }) {
               is_published), ссылка вела бы в 404. */}
           {product.isPublished && (
             <Link
-              href={`/shop/${product.slug}`}
+              href={`/marketplace/${product.slug}`}
               className={`${BUTTON_PILL} text-zinc-600 hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50`}
             >
               <Eye size={16} />

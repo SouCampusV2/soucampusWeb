@@ -192,7 +192,7 @@ export const TAKEDOWN_TEMPLATES: ReasonTemplate[] = [
     code: "stolen_content",
     label: "Someone else's work",
     message:
-      "We've had a credible report that this build isn't yours. It stays off the shop until you can show it is.",
+      "We've had a credible report that this build isn't yours. It stays off the marketplace until you can show it is.",
   },
   {
     code: "misleading_images",
@@ -204,7 +204,7 @@ export const TAKEDOWN_TEMPLATES: ReasonTemplate[] = [
     code: "buyer_complaints",
     label: "Buyer complaints",
     message:
-      "Several buyers reported problems with this map. It's off the shop while we sort it out.",
+      "Several buyers reported problems with this map. It's off the marketplace while we sort it out.",
   },
   {
     code: "rules",

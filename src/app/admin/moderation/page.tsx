@@ -149,7 +149,7 @@ export default async function ModerationPage() {
 
               {/* Описание — ровно в том виде, в каком его увидит
                   покупатель (те же классы, тот же санитайзер, что на
-                  /shop/[slug]). Смысл админки именно в этом: решение
+                  /marketplace/[slug]). Смысл админки именно в этом: решение
                   принимается по готовой странице, а не по строке БД. */}
               <details className="mt-5 group">
                 <summary className={`cursor-pointer text-sm font-medium ${INLINE_LINK}`}>

@@ -119,11 +119,11 @@ function CatalogRowItem({ product }: { product: CatalogRow }) {
               страницы не существует, ссылка вела бы в 404. */}
           {product.isPublished && !product.deletedAt && (
             <Link
-              href={`/shop/${product.slug}`}
+              href={`/marketplace/${product.slug}`}
               {...NEW_TAB}
               className={`mt-1 inline-block text-sm ${INLINE_LINK}`}
             >
-              Open in the shop
+              Open in the marketplace
             </Link>
           )}
 

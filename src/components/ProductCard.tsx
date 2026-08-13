@@ -68,7 +68,7 @@ export function ProductCard({
       {/* Ссылка-оверлей: делает кликабельной всю карточку, оставляя место
           для собственных ссылок/кнопок поверх неё. Текст внутри нужен
           скринридеру — у пустой ссылки нет доступного имени. */}
-      <Link href={`/shop/${product.slug}`} className="absolute inset-0 z-0">
+      <Link href={`/marketplace/${product.slug}`} className="absolute inset-0 z-0">
         <span className="sr-only">{product.title}</span>
       </Link>
 

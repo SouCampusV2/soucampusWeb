@@ -3,11 +3,11 @@
 import { useEffect, useRef } from "react";
 import { useCart } from "@/lib/cart-context";
 
-// Ничего не рисует. Живёт на /shop/success рядом с подтверждённым
+// Ничего не рисует. Живёт на /marketplace/success рядом с подтверждённым
 // заказом и один раз опустошает корзину — раньше её никто не очищал,
 // и после успешной оплаты бейдж на иконке корзины продолжал показывать
 // уже купленные товары. Отдельный клиентский компонент, а не вызов
-// clear() прямо на странице: /shop/success — серверный компонент
+// clear() прямо на странице: /marketplace/success — серверный компонент
 // (читает БД), а localStorage доступен только в браузере.
 export function ClearCartOnSuccess() {
   const { clear } = useCart();

@@ -102,7 +102,7 @@ export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
       <TextField
         id="announce-href"
         label="Link (optional)"
-        hint="A path on this site, like /shop or /terms. External links are dropped."
+        hint="A path on this site, like /marketplace or /terms. External links are dropped."
         value={href}
         onChange={setHref}
       />

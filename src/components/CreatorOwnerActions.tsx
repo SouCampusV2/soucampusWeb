@@ -73,8 +73,8 @@ export function CreatorOwnerActions({
         </Button>
         <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
           {isCreator
-            ? "Submitted maps are reviewed before they go live on the shop."
-            : "Apply once — after that you can upload maps to the shop."}
+            ? "Submitted maps are reviewed before they go live on the marketplace."
+            : "Apply once — after that you can upload maps to the marketplace."}
         </p>
       </div>
     );

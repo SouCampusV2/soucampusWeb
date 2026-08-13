@@ -164,19 +164,19 @@ export async function POST(request: Request) {
     const message = {
       suspend: {
         kind: "map_suspended" as const,
-        title: `“${product.title}” was taken off the shop`,
+        title: `“${product.title}” was taken off the marketplace`,
         body: suspensionReason,
         href: "/resources",
       },
       unsuspend: {
         kind: "map_approved" as const,
-        title: `“${product.title}” is back on the shop`,
+        title: `“${product.title}” is back on the marketplace`,
         body: null,
-        href: `/shop/${product.slug}`,
+        href: `/marketplace/${product.slug}`,
       },
       delete: {
         kind: "map_suspended" as const,
-        title: `“${product.title}” was removed from the shop`,
+        title: `“${product.title}” was removed from the marketplace`,
         body: suspensionReason,
         href: "/resources",
       },
@@ -189,8 +189,8 @@ export async function POST(request: Request) {
   // Витрина живёт на ISR (revalidate = 60): без этого снятая карта
   // оставалась бы открытой по прямой ссылке до минуты. Для бана это
   // слишком долго — сбрасываем кэш сразу.
-  revalidatePath("/shop");
-  revalidatePath(`/shop/${product.slug}`);
+  revalidatePath("/marketplace");
+  revalidatePath(`/marketplace/${product.slug}`);
 
   return NextResponse.json({ ok: true });
 }

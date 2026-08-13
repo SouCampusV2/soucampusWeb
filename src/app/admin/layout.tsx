@@ -80,8 +80,8 @@ export default async function AdminLayout({
             {/* В магазин, а не на лендинг: отсюда разбирают карты, и
                 «назад к сайту» здесь означает «к витрине», а не к
                 странице о студии. */}
-            <Link href="/shop" {...NEW_TAB} className={`font-medium ${INLINE_LINK}`}>
-              Back to shop
+            <Link href="/marketplace" {...NEW_TAB} className={`font-medium ${INLINE_LINK}`}>
+              Back to the marketplace
             </Link>
           </div>
         </div>

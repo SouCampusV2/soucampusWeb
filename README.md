@@ -16,7 +16,7 @@ It's also my hands-on way of learning modern web development — going from "I k
 - [Tailwind CSS v4](https://tailwindcss.com)
 - [Motion](https://motion.dev) (`motion/react`) for animation
 - [Supabase](https://supabase.com) (Postgres + Auth + Storage) — all site content lives here: projects, reviews, stats, products, orders, user profiles, plus a first-party visitor counter. Email+password auth gates the shop (purchase requires an account); avatars live in a public Storage bucket. A second project mirrors the schema for local/preview work, so migrations and payment testing never touch production data
-- [Stripe](https://stripe.com) — Checkout for the digital build shop (`/shop`, `/cart`), webhook-verified, signed downloads from a private Storage bucket
+- [Stripe](https://stripe.com) — Checkout for the digital build shop (`/marketplace`, `/cart`), webhook-verified, signed downloads from a private Storage bucket
 - [Tiptap](https://tiptap.dev) — the rich-text editor creators write map descriptions in (images and tables inline, not a bare textarea)
 - [sanitize-html](https://github.com/apostrophecms/sanitize-html) — descriptions are creator-authored HTML, so they go through an explicit tag allowlist before they reach a visitor's browser. It parses the markup itself; DOMPurify (used until 2026-08-08) needs a browser DOM, and the jsdom stand-in it falls back to on the server does not load on Vercel
 - [Vitest](https://vitest.dev) — unit tests for the pure logic (pricing formula, DB-row mapping, cookie signing, path allowlist, Stripe session → order mapping)
@@ -45,7 +45,7 @@ Day-to-day work happens on the `dev` branch (Vercel gives it its own Preview URL
 
 ## Project structure
 
-- `src/app/(site)/` — public pages (Next.js App Router): home, `/portfolio`, `/portfolio/[slug]`, `/reviews/[slug]`, `/about`, `/contact`, `/support`, `/shop`, `/shop/[slug]`, `/shop/success`, `/cart`, `/creator/[username]` (public seller profile), `/creator/upload`, `/settings`, `/purchases`, `/resources` (a creator's own maps, including ones awaiting review), `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/terms`. The `(site)` group exists so these share a layout the future admin will not inherit
+- `src/app/(site)/` — public pages (Next.js App Router): home, `/portfolio`, `/portfolio/[slug]`, `/reviews/[slug]`, `/about`, `/contact`, `/support`, `/marketplace`, `/marketplace/[slug]`, `/marketplace/success`, `/cart`, `/creator/[username]` (public seller profile), `/creator/upload`, `/settings`, `/purchases`, `/resources` (a creator's own maps, including ones awaiting review), `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/terms`. The `(site)` group exists so these share a layout the future admin will not inherit
 - `src/app/admin/` — owner-only area, deliberately outside the `(site)` group so it inherits no navbar, pricing block or footer. `/admin/moderation` is the review queue for submitted maps
 - `src/app/api/view/` — the visitor-counter endpoint
 - `src/app/api/admin/moderation/`, `src/app/api/creator/cleanup-storage/` — approve/reject a submission, and collect Storage objects nothing references any more. Both run under the service key on the server; the cleanup one accepts no path from the browser and works out what's in use from the database

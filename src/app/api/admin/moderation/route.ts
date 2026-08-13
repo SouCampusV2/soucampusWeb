@@ -165,8 +165,8 @@ export async function POST(request: Request) {
         ? {
             kind: "map_approved",
             title: `“${data.title}” is live`,
-            body: "Your map passed the review and is on the shop now.",
-            href: `/shop/${data.slug}`,
+            body: "Your map passed the review and is on the marketplace now.",
+            href: `/marketplace/${data.slug}`,
           }
         : {
             kind: "map_rejected",

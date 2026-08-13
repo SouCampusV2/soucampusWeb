@@ -152,7 +152,7 @@ export async function POST(request: Request) {
     await notify(application.user_id, {
       kind: "creator_approved",
       title: "You're a creator now",
-      body: "Your application was approved — you can upload maps to the shop.",
+      body: "Your application was approved — you can upload maps to the marketplace.",
       href: "/creator/upload",
     });
   } else {

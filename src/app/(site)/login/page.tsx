@@ -10,7 +10,7 @@ const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Sign in",
   description: "Sign in to your SouCampus builds account to access your purchases and downloads.",
-  // Служебная страница — как /shop и /terms, из поиска исключаем.
+  // Служебная страница — как /marketplace и /terms, из поиска исключаем.
   robots: { index: false },
 };
 

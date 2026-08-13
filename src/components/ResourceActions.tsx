@@ -129,7 +129,9 @@ export function ResourceActions({
               className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] disabled:opacity-60 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06]"
             >
               {isPublished ? <EyeSlash size={16} /> : <Eye size={16} />}
-              {isPublished ? "Hide from the shop" : "Show in the shop"}
+              {isPublished
+                ? "Hide from the marketplace"
+                : "Show in the marketplace"}
             </button>
           )}
           <button
@@ -161,7 +163,7 @@ export function ResourceActions({
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
               The map, its screenshots and the uploaded file are removed for
               good. This can&apos;t be undone — if you only want it off the
-              shop, hide it instead.
+              marketplace, hide it instead.
             </p>
 
             {/* Ввод названия, а не «вы уверены?»: диалог с одной кнопкой

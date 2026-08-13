@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Unbounded } from "next/font/google";
 import { getAllProducts, getAllProductsWithStats } from "@/lib/products";
-import { ShopCatalog } from "@/components/ShopCatalog";
+import { MarketplaceCatalog } from "@/components/MarketplaceCatalog";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { PageGlow } from "@/components/PageGlow";
 import { INLINE_LINK } from "@/components/Button";
@@ -22,17 +22,17 @@ const displayFont = Unbounded({
 export async function generateMetadata(): Promise<Metadata> {
   const products = await getAllProducts();
   return {
-    title: "Shop",
+    title: "Marketplace",
     description:
       "Ready-made Minecraft maps and builds by SouCampus — download instantly after purchase.",
-    alternates: { canonical: "/shop" },
+    alternates: { canonical: "/marketplace" },
     robots: products.length === 0 ? { index: false, follow: true } : undefined,
   };
 }
 
-export default async function ShopPage() {
+export default async function MarketplacePage() {
   // Со статистикой: карточки показывают оценки/покупки, «Most popular»
-  // сортируется по продажам (см. ShopCatalog).
+  // сортируется по продажам (см. MarketplaceCatalog).
   const products = await getAllProductsWithStats();
 
   // Магазин шире портфолио (тест, по просьбе владельца): контейнер растёт
@@ -52,7 +52,7 @@ export default async function ShopPage() {
         <h1
           className={`${displayFont.className} text-4xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
         >
-          Shop
+          SouCampus Marketplace
         </h1>
         <p className="mt-4 max-w-2xl text-zinc-600 dark:text-zinc-400">
           Ready-made maps and builds. Pick one, and it&apos;s yours to download
@@ -72,13 +72,13 @@ export default async function ShopPage() {
         </p>
       ) : (
         // Оба компонента клиентские и оба читают адрес: CategoryFilter
-        // ставит ?category, ShopCatalog по нему (и по ?q) отбирает. Общее
+        // ставит ?category, MarketplaceCatalog по нему (и по ?q) отбирает. Общее
         // состояние — сам адрес, а не проп между ними. Suspense обязателен
-        // вокруг useSearchParams, иначе статическая /shop свалилась бы
+        // вокруг useSearchParams, иначе статическая /marketplace свалилась бы
         // целиком в client-render.
         <Suspense>
           <CategoryFilter />
-          <ShopCatalog products={products} />
+          <MarketplaceCatalog products={products} />
         </Suspense>
       )}
       </div>

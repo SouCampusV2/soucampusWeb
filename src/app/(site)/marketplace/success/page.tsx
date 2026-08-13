@@ -105,8 +105,8 @@ export default async function SuccessPage({
             <Button href={DISCORD_INVITE} target="_blank" rel="noopener noreferrer">
               Contact on Discord
             </Button>
-            <Button href="/shop" variant="secondary">
-              Back to shop
+            <Button href="/marketplace" variant="secondary">
+              Back to the marketplace
             </Button>
           </div>
         </div>

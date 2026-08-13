@@ -126,7 +126,7 @@ export async function POST(request: Request) {
     metadata: { user_id: user.id },
     // {CHECKOUT_SESSION_ID} подставляет сам Stripe при редиректе — так
     // страница успеха получает ключ к заказу, не полагаясь на cookie.
-    success_url: `${base}/shop/success?session_id={CHECKOUT_SESSION_ID}`,
+    success_url: `${base}/marketplace/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/cart`,
   });
 

@@ -14,7 +14,7 @@ const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 // Переиспользуема под разные подборки — «Most popular», «Recently added»,
 // «Free» и т.п. (см. docs/SHOP.md). Клиентский компонент: стрелкам нужен
 // ref на контейнер и обработчик прокрутки.
-export function ShopShowcaseRow({
+export function MarketplaceShowcaseRow({
   title,
   products,
   viewAllHref,

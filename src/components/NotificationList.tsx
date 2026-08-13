@@ -122,7 +122,7 @@ export function EmptyState() {
       </p>
       <p className="mx-auto mt-1 max-w-sm text-sm text-zinc-500 dark:text-zinc-400">
         Decisions on your maps, your purchases and anything new around the
-        shop land here.
+        marketplace land here.
       </p>
     </div>
   );

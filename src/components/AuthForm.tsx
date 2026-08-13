@@ -18,7 +18,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
   const isSignup = mode === "signup";
 
   // Куда вести после успеха — через общую проверку (см. safeNextPath):
-  // только относительный путь своего сайта, иначе /shop.
+  // только относительный путь своего сайта, иначе /marketplace.
   const target = safeNextPath(next);
 
   const [email, setEmail] = useState("");

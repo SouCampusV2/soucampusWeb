@@ -30,7 +30,7 @@ export const SHOP_CATEGORIES: { slug: ProductCategory; label: string }[] = [
 ];
 
 // Готовая навигация магазина. Ровно этот список показывают ТРИ места
-// (пилюля навбара на десктопе, мобильная выпадашка магазина, колонка Shop
+// (пилюля навбара на десктопе, мобильная выпадашка магазина, колонка Marketplace
 // в футере) — раньше каждое собирало его само, и футер успел отстать:
 // там категории годами висели неактивными «Coming soon», хотя в навбаре
 // уже работали. Один источник — не разъедутся.
@@ -41,7 +41,7 @@ export const SHOP_CATEGORIES: { slug: ProductCategory; label: string }[] = [
 // самой витрине (CategoryFilter), где есть куда развернуться и где рядом
 // видно, сколько карт нашлось.
 export const SHOP_NAV_LINKS: { href: string; label: string }[] = [
-  { href: "/shop", label: "All Map" },
+  { href: "/marketplace", label: "All Map" },
   { href: "/support", label: "Support" },
 ];
 
@@ -144,7 +144,7 @@ function stripHtml(html: string): string {
  * находили, потому что раньше смотрели только на название и summary.
  *
  * Чистая функция рядом с filterByCategory: одинаково работает на
- * клиенте (ShopCatalog) и в тесте.
+ * клиенте (MarketplaceCatalog) и в тесте.
  */
 export function filterBySearch(products: Product[], query: string): Product[] {
   const q = query.trim().toLowerCase();
@@ -162,7 +162,7 @@ export function filterBySearch(products: Product[], query: string): Product[] {
 
 // Фильтр витрины по вкладке навбара. «free» — по цене (0), остальные — по
 // производной категории. Вынесено отдельной чистой функцией, чтобы
-// одинаково работало и на клиенте (ShopCatalog), и в тесте.
+// одинаково работало и на клиенте (MarketplaceCatalog), и в тесте.
 export function filterByCategory(
   products: Product[],
   category: ProductCategory,
@@ -310,7 +310,7 @@ export async function getProductStats(): Promise<Map<string, ProductStats>> {
   return map;
 }
 
-// Товары витрины вместе с агрегатами и профилями авторов. Для /shop:
+// Товары витрины вместе с агрегатами и профилями авторов. Для /marketplace:
 // карточки показывают оценки/покупки и кликабельное имя креатора,
 // «Most popular» сортируется по продажам.
 //

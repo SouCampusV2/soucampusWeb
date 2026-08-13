@@ -132,7 +132,7 @@ export function ContactFooter() {
 
             <div>
               <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
-                Shop
+                Marketplace
               </h3>
               <ul className="mt-3 space-y-2 text-sm text-zinc-500 dark:text-zinc-400">
                 {/* Тот же список, что в навбаре (SHOP_NAV_LINKS) — раньше

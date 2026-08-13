@@ -63,10 +63,10 @@ export default async function PurchasesPage() {
                 You haven&apos;t bought any maps yet.
               </p>
               <Link
-                href="/shop"
+                href="/marketplace"
                 className="mt-3 inline-block text-sm font-semibold text-orange-500 underline decoration-2 underline-offset-4 hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-500"
               >
-                Browse the shop
+                Browse the marketplace
               </Link>
             </div>
           ) : (
@@ -79,7 +79,7 @@ export default async function PurchasesPage() {
                   <div className="min-w-0">
                     {item.slug ? (
                       <Link
-                        href={`/shop/${item.slug}`}
+                        href={`/marketplace/${item.slug}`}
                         className="truncate font-semibold text-zinc-950 hover:underline dark:text-zinc-50"
                       >
                         {item.title}

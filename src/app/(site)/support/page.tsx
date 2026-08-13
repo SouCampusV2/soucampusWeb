@@ -12,7 +12,7 @@ const displayFont = Unbounded({
 
 export const metadata: Metadata = {
   title: "Support",
-  description: "Get help with an order from the shop.",
+  description: "Get help with an order from the marketplace.",
   // Заглушка (реальный канал поддержки пока — Discord) — прячем от
   // индексации до полноценной страницы, как /terms до Этапа 4.
   robots: { index: false, follow: true },
@@ -26,7 +26,7 @@ export default function SupportPage() {
   return (
     <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-16 sm:py-28">
       <div className="mx-auto max-w-2xl">
-        <span className="text-sm font-semibold text-orange-500">Shop</span>
+        <span className="text-sm font-semibold text-orange-500">Marketplace</span>
         <h1
           className={`${displayFont.className} mt-3 text-4xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
         >

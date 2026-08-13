@@ -381,7 +381,7 @@ export function EditMapForm({
           <Warning size={18} weight="fill" className="mt-0.5 shrink-0" />
           <span>
             This map is live. Text and images update right away — but
-            <strong> replacing the map file </strong> takes it off the shop
+            <strong> replacing the map file </strong> takes it off the marketplace
             until it&apos;s reviewed again.
           </span>
         </p>

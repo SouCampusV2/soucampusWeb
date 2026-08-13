@@ -21,7 +21,7 @@ import { Button, BUTTON_COLORS } from "@/components/Button";
 import { PageGlow } from "@/components/PageGlow";
 
 // Клиентская страница целиком (нужен localStorage через useCart) — как
-// у /shop/[slug], metadata живёт в соседнем layout.tsx, потому что
+// у /marketplace/[slug], metadata живёт в соседнем layout.tsx, потому что
 // клиентский компонент не может экспортировать metadata сам.
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
@@ -171,12 +171,12 @@ export default function CartPage() {
               Your cart is empty
             </h2>
             <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-              Pick a map from the shop — or start with the free ones, they download exactly the
+              Pick a map from the marketplace — or start with the free ones, they download exactly the
               same way.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
-              <Button href="/shop">Browse the shop</Button>
-              <Button href="/shop?category=free" variant="secondary">
+              <Button href="/marketplace">Browse the marketplace</Button>
+              <Button href="/marketplace?category=free" variant="secondary">
                 Free maps
               </Button>
             </div>
@@ -221,7 +221,7 @@ export default function CartPage() {
                     className="flex flex-wrap items-center gap-4 rounded-2xl border border-zinc-200 bg-[#fbfbff] p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:flex-nowrap"
                   >
                     <Link
-                      href={`/shop/${item.slug}`}
+                      href={`/marketplace/${item.slug}`}
                       className="relative h-20 w-32 shrink-0 overflow-hidden rounded-xl"
                     >
                       <Image
@@ -235,7 +235,7 @@ export default function CartPage() {
 
                     <div className="min-w-0 flex-1">
                       <Link
-                        href={`/shop/${item.slug}`}
+                        href={`/marketplace/${item.slug}`}
                         className="font-semibold text-zinc-950 hover:underline dark:text-zinc-50"
                       >
                         {item.title}
@@ -310,7 +310,7 @@ export default function CartPage() {
 
                 {STRIPE_TEST_MODE && (
                   <p className="mt-4 rounded-xl bg-orange-50 px-4 py-3 text-xs leading-relaxed text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
-                    Demo shop — Stripe is in test mode. Use card 4242 4242 4242 4242 with any future
+                    Demo marketplace — Stripe is in test mode. Use card 4242 4242 4242 4242 with any future
                     date and CVC. No real money moves.
                   </p>
                 )}
@@ -347,7 +347,7 @@ export default function CartPage() {
               </div>
 
               <Link
-                href="/shop"
+                href="/marketplace"
                 className={`mt-4 block text-center text-sm ${BUTTON_COLORS.tertiary}`}
               >
                 Keep browsing
