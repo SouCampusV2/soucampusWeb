@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/admin";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { notify } from "@/lib/notifications";
@@ -78,17 +79,53 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "already handled" }, { status: 409 });
     }
 
-    // Карты НЕ снимаем с витрины: отзыв статуса закрывает загрузку
-    // нового, а уже проданное и опубликованное — отдельное решение,
-    // для него есть каталог с причиной по каждой карте.
+    // Карты уходят с витрины ВМЕСТЕ со статусом (решение владельца
+    // 2026-08-14). Прежде отзыв закрывал только загрузку нового, а уже
+    // опубликованное оставалось продаваться — то есть у человека,
+    // лишённого статуса за чужие работы, эти работы висели на витрине,
+    // пока владелец не пройдёт по каталогу вручную.
+    //
+    // hidden_by = 'revoked', а не 'moderator': по этому значению карты
+    // потом вернутся сами, когда статус выдадут снова, и при этом не
+    // заденут те, что сняты по своим отдельным причинам.
+    //
+    // Трогаем только ЖИВЫЕ и неудалённые: карта, снятая за конкретную
+    // провинность, обязана остаться снятой и после возврата статуса.
+    const hiddenSlugs = await setMapsHidden(db, userId, revokeReason);
+
+    // Журнал — по каждой карте, тем же форматом, что у ручного снятия:
+    // иначе в истории карты появлялся бы разрыв, который ничем не
+    // объяснить через полгода.
+    if (hiddenSlugs.length > 0) {
+      const { error: logError } = await db.from("moderation_log").insert(
+        hiddenSlugs.map((s) => ({
+          product_id: s.id,
+          actor_id: admin.id,
+          action: "suspend",
+          reason: revokeReason,
+        }))
+      );
+      if (logError) console.error("Журнал модерации:", logError.message);
+    }
+
     await notify(userId, {
       kind: "creator_revoked",
       title: "Your creator status was removed",
-      body: revokeReason,
+      // Про карты говорим прямо и числом: человек всё равно увидит пустую
+      // витрину, и узнать об этом из уведомления честнее, чем обнаружить
+      // самому.
+      body:
+        hiddenSlugs.length > 0
+          ? `${revokeReason}\n\n${hiddenSlugs.length} ${
+              hiddenSlugs.length === 1 ? "map is" : "maps are"
+            } off the marketplace while your access is closed. Buyers keep the files they paid for.`
+          : revokeReason,
       href: "/resources",
     });
 
-    return NextResponse.json({ ok: true });
+    revalidateMaps(hiddenSlugs);
+
+    return NextResponse.json({ ok: true, hidden: hiddenSlugs.length });
   }
 
   if (typeof applicationId !== "string" || applicationId.length === 0) {
@@ -146,15 +183,33 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "grant failed" }, { status: 500 });
     }
 
+    // Вернулся статус — вернулись и карты, снятые вместе с ним. Иначе
+    // человек с восстановленным доступом смотрит на пустую витрину и
+    // вынужден просить вернуть каждую карту по отдельности, хотя решение
+    // уже принято одно на всех.
+    //
+    // Возвращаем СРАЗУ на витрину, а не «скрытыми»: эти карты уже прошли
+    // модерацию и стояли живыми — их сняло не решение по карте, а
+    // временное состояние автора. Ровно поэтому же не трогаем те, у
+    // которых hidden_by другой.
+    const restored = await setMapsVisible(db, application.user_id);
+
     // Права выданы — только теперь можно сказать «добро пожаловать».
     // Порядок важен: уведомление до выдачи прав отправило бы человека на
     // форму загрузки, с которой его развернёт гейт.
     await notify(application.user_id, {
       kind: "creator_approved",
       title: "You're a creator now",
-      body: "Your application was approved — you can upload maps to the marketplace.",
+      body:
+        restored.length > 0
+          ? `Your application was approved — you can upload maps to the marketplace again. ${restored.length} ${
+              restored.length === 1 ? "map is" : "maps are"
+            } back on sale.`
+          : "Your application was approved — you can upload maps to the marketplace.",
       href: "/creator/upload",
     });
+
+    revalidateMaps(restored);
   } else {
     await notify(application.user_id, {
       kind: "creator_rejected",
@@ -165,4 +220,73 @@ export async function POST(request: Request) {
   }
 
   return NextResponse.json({ ok: true });
+}
+
+type MapRef = { id: string; slug: string };
+type Db = ReturnType<typeof getSupabaseAdmin>;
+
+/**
+ * Снять с витрины всё живое, что выложил этот человек.
+ *
+ * Возвращает снятое, потому что вызывающему нужны и число (для текста
+ * уведомления), и адреса (для сброса ISR): выяснять это вторым запросом
+ * после update было бы уже поздно — карты перестанут подходить под
+ * условие.
+ */
+async function setMapsHidden(
+  db: Db,
+  userId: string,
+  reason: string
+): Promise<MapRef[]> {
+  const { data, error } = await db
+    .from("products")
+    .update({
+      is_published: false,
+      hidden_by: "revoked",
+      suspension_reason: reason,
+    })
+    .eq("creator_id", userId)
+    .eq("is_published", true)
+    .is("deleted_at", null)
+    .select("id, slug");
+
+  if (error) {
+    // Статус уже отозван, и это главное: загружать человек больше не
+    // может. Сорвавшееся снятие карт не отменяет отзыв — иначе владелец
+    // остался бы и со статусом на месте, и без объяснения. Пишем в лог,
+    // карты снимаются из каталога руками.
+    console.error("Отзыв: карты не сняты:", error.message);
+    return [];
+  }
+  return (data ?? []) as MapRef[];
+}
+
+/** Вернуть на витрину то, что ушло вместе со статусом, и только это. */
+async function setMapsVisible(db: Db, userId: string): Promise<MapRef[]> {
+  const { data, error } = await db
+    .from("products")
+    .update({ is_published: true, hidden_by: null, suspension_reason: null })
+    .eq("creator_id", userId)
+    .eq("hidden_by", "revoked")
+    .is("deleted_at", null)
+    .select("id, slug");
+
+  if (error) {
+    console.error("Возврат статуса: карты не вернулись:", error.message);
+    return [];
+  }
+  return (data ?? []) as MapRef[];
+}
+
+/**
+ * Сбросить кэш витрины после массового снятия или возврата.
+ *
+ * Витрина живёт на ISR (revalidate = 60), и без сброса снятая карта
+ * оставалась бы открытой по прямой ссылке до минуты. Для страницы,
+ * которую убрали за ворованный контент, это слишком долго.
+ */
+function revalidateMaps(maps: MapRef[]) {
+  if (maps.length === 0) return;
+  revalidatePath("/marketplace");
+  for (const map of maps) revalidatePath(`/marketplace/${map.slug}`);
 }

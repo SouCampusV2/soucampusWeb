@@ -23,7 +23,7 @@ export type CatalogRow = {
   isPublished: boolean;
   category: ProductCategory | null;
   /** null — на витрине; иначе кто снял. */
-  hiddenBy: "creator" | "moderator" | null;
+  hiddenBy: "creator" | "moderator" | "revoked" | null;
   suspensionReason: string | null;
   deletedAt: string | null;
   createdAt: string;
