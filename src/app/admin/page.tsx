@@ -1,6 +1,7 @@
 import Link from "next/link";
-import { getOverview, formatMoney, WINDOW_DAYS } from "@/lib/analytics";
+import { getOverview, formatMoney, resolveRange, type Range } from "@/lib/analytics";
 import { SalesChart } from "@/components/SalesChart";
+import { PeriodPicker } from "@/components/PeriodPicker";
 import { INLINE_LINK, NEW_TAB } from "@/components/Button";
 import { creatorHref } from "@/lib/creators";
 
@@ -11,8 +12,13 @@ import { creatorHref } from "@/lib/creators";
 // разделы — ссылками из шапки.
 export const dynamic = "force-dynamic";
 
-export default async function AdminHomePage() {
-  const overview = await getOverview();
+export default async function AdminHomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ days?: string; from?: string; to?: string }>;
+}) {
+  const range = resolveRange(await searchParams);
+  const overview = await getOverview(range);
 
   if (!overview) {
     return (
@@ -33,8 +39,13 @@ export default async function AdminHomePage() {
         Overview
       </h1>
       <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-        Last {WINDOW_DAYS} days.
+        {formatRange(range)}
       </p>
+
+      {/* Переключатель периода стоит НАД деньгами: он меняет и их тоже,
+          а не только график, и внизу это читалось бы как «фильтр
+          графика». */}
+      <PeriodPicker range={range} />
 
       {/* Деньги — первым и крупно: это то, ради чего сюда заходят. */}
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -50,7 +61,7 @@ export default async function AdminHomePage() {
       <h2 className="mt-10 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
         Revenue per day
       </h2>
-      <SalesChart days={overview.days} />
+      <SalesChart days={overview.days} range={range} />
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2">
         <Panel title="Top maps">
@@ -108,20 +119,38 @@ export default async function AdminHomePage() {
           value={String(overview.pendingMaps)}
           href="/admin/moderation"
         />
-        {/* «Могут выкладывать», а не «Creators»: считаются аккаунты с
-            правом загрузки (profiles.is_creator), а не авторы карт на
-            витрине. Числа расходятся законно и сильно — право есть у
-            всех одобренных, карты пока у одного, — но под общим словом
-            «Creators» это читалось как ошибка данных. */}
+        {/* Считаются аккаунты с правом загрузки (profiles.is_creator), а
+            не авторы карт на витрине — числа с панелью «Creators with
+            maps» выше расходятся законно: право есть у всех одобренных,
+            карты пока у одного. Плитка называлась «Can upload» именно
+            поэтому, но владелец просит «Creators» (2026-08-14): под
+            заголовком раздела Creators в шапке админки это то же самое
+            множество людей, и два разных слова про одно путали сильнее,
+            чем расхождение чисел. */}
         <Stat
-          label="Can upload"
+          label="Creators"
           value={String(overview.creators)}
           href="/admin/applications"
         />
-        <Stat label="Accounts" value={String(overview.accounts)} />
+        <Stat label="Users" value={String(overview.accounts)} />
       </div>
     </div>
   );
+}
+
+/** «Aug 1 – Aug 14, 2026 · 14 days» — период словами под заголовком. */
+function formatRange(range: Range): string {
+  const day = (key: string) =>
+    new Date(`${key}T00:00:00Z`).toLocaleDateString(undefined, {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+      timeZone: "UTC",
+    });
+
+  return `${day(range.from)} – ${day(range.to)} · ${range.days} ${
+    range.days === 1 ? "day" : "days"
+  }`;
 }
 
 function Stat({

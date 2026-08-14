@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import { getAdminUser } from "@/lib/admin";
 import { INLINE_LINK, NEW_TAB } from "@/components/Button";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -83,6 +84,9 @@ export default async function AdminLayout({
             <Link href="/marketplace" {...NEW_TAB} className={`font-medium ${INLINE_LINK}`}>
               Back to the marketplace
             </Link>
+            {/* Тему переключают из футера, а футера в админке нет — иначе
+                тёмная тема здесь недоступна вовсе. */}
+            <ThemeToggle />
           </div>
         </div>
       </header>
