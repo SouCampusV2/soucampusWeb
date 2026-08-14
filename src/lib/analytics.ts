@@ -10,10 +10,64 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 //
 // Служебный ключ: orders закрыты RLS от всех, кроме сервера.
 
-/** Сколько дней показывать на графике продаж. */
+/** Период по умолчанию, когда в адресе ничего не выбрано. */
 export const WINDOW_DAYS = 30;
 
+/** Готовые периоды в переключателе над графиком. */
+export const PERIOD_PRESETS = [7, 30, 90, 365] as const;
+
+/** Дальше 2 лет не пускаем: это не аналитика, а способ уронить страницу. */
+const MAX_DAYS = 730;
+
 export type DayPoint = { date: string; orders: number; revenueCents: number };
+
+/** Отрезок дат, включая обе границы. Ключи в UTC — как `created_at`. */
+export type Range = { from: string; to: string; days: number };
+
+function dayKey(d: Date): string {
+  return d.toISOString().slice(0, 10);
+}
+
+function shiftDays(key: string, delta: number): string {
+  const d = new Date(`${key}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + delta);
+  return dayKey(d);
+}
+
+function isDayKey(value: string | undefined): value is string {
+  return !!value && /^\d{4}-\d{2}-\d{2}$/.test(value) && !Number.isNaN(Date.parse(value));
+}
+
+/**
+ * Адрес → отрезок дат. Период живёт в URL, а не в состоянии компонента:
+ * ссылку на «сентябрь» можно переслать себе же, а «назад» в браузере
+ * возвращает прошлый период, а не уводит со страницы.
+ *
+ * Мусор в параметрах не роняет страницу и не показывает ошибку — просто
+ * откатывает к периоду по умолчанию: это дашборд, а не форма.
+ */
+export function resolveRange(params: {
+  days?: string;
+  from?: string;
+  to?: string;
+}): Range {
+  const today = dayKey(new Date());
+
+  if (isDayKey(params.from) && isDayKey(params.to) && params.from <= params.to) {
+    const from = params.from;
+    const to = params.to > today ? today : params.to;
+    const days = Math.round(
+      (Date.parse(`${to}T00:00:00Z`) - Date.parse(`${from}T00:00:00Z`)) / 86_400_000
+    ) + 1;
+    if (days <= MAX_DAYS) return { from, to, days };
+  }
+
+  const asked = Number(params.days);
+  const days =
+    Number.isInteger(asked) && asked >= 1 && asked <= MAX_DAYS ? asked : WINDOW_DAYS;
+
+  return { from: shiftDays(today, -(days - 1)), to: today, days };
+}
 
 export type Overview = {
   revenueCents: number;
@@ -26,6 +80,7 @@ export type Overview = {
   liveMaps: number;
   pendingMaps: number;
   days: DayPoint[];
+  range: Range;
   topProducts: { id: string; title: string; sales: number; revenueCents: number }[];
   topCreators: { id: string; displayName: string; sales: number; maps: number }[];
 };
@@ -33,11 +88,16 @@ export type Overview = {
 type OrderRow = { id: string; total_cents: number; customer_email: string; created_at: string };
 type ItemRow = { order_id: string; product_id: string; unit_price_cents: number };
 
-export async function getOverview(): Promise<Overview | null> {
+export async function getOverview(
+  range: Range = resolveRange({})
+): Promise<Overview | null> {
   const db = getSupabaseAdmin();
 
-  const since = new Date();
-  since.setDate(since.getDate() - WINDOW_DAYS);
+  // Верхняя граница — начало СЛЕДУЮЩИХ суток, поэтому строгое `lt`:
+  // с `lte` по дате отсечётся всё, что куплено позже полуночи, то есть
+  // почти весь последний день.
+  const since = `${range.from}T00:00:00.000Z`;
+  const until = `${shiftDays(range.to, 1)}T00:00:00.000Z`;
 
   // Только оплаченные: pending — это брошенные корзины на стороне Stripe,
   // а failed и refunded деньгами не являются. Считать их выручкой значило
@@ -46,7 +106,8 @@ export async function getOverview(): Promise<Overview | null> {
     .from("orders")
     .select("id, total_cents, customer_email, created_at")
     .eq("status", "paid")
-    .gte("created_at", since.toISOString())
+    .gte("created_at", since)
+    .lt("created_at", until)
     .order("created_at", { ascending: true });
 
   if (error) {
@@ -62,10 +123,8 @@ export async function getOverview(): Promise<Overview | null> {
   // Пустые дни обязаны присутствовать: график по одним лишь дням с
   // продажами врёт — три покупки за месяц выглядят как ровная линия.
   const byDay = new Map<string, DayPoint>();
-  for (let i = WINDOW_DAYS - 1; i >= 0; i--) {
-    const d = new Date();
-    d.setDate(d.getDate() - i);
-    const key = d.toISOString().slice(0, 10);
+  for (let i = 0; i < range.days; i++) {
+    const key = shiftDays(range.from, i);
     byDay.set(key, { date: key, orders: 0, revenueCents: 0 });
   }
   for (const order of orderRows) {
@@ -143,6 +202,7 @@ export async function getOverview(): Promise<Overview | null> {
     liveMaps: productRows.filter((p) => p.is_published && !p.deleted_at).length,
     pendingMaps: productRows.filter((p) => p.status === "pending").length,
     days: [...byDay.values()],
+    range,
     topProducts,
     topCreators,
   };
