@@ -145,7 +145,7 @@ export type OwnProduct = {
    * null — она на витрине. Разница видна автору: своё «спрятать» он
    * отменяет сам, снятое модератором — нет.
    */
-  hiddenBy: "creator" | "moderator" | null;
+  hiddenBy: "creator" | "moderator" | "revoked" | null;
   /** За что сняли или удалили. Автор обязан это видеть, а не догадываться. */
   suspensionReason: string | null;
   /** Не null — карту убрал из каталога владелец сайта. */

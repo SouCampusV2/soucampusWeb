@@ -27,8 +27,10 @@ import { formatMoney, type DayPoint, type Range } from "@/lib/analytics";
 // было.
 //
 // Координаты в SVG фиксированные, наружу растягивается вся картинка
-// целиком (`w-full`) — поэтому подписи масштабируются вместе с графиком и
-// не наезжают друг на друга ни на телефоне, ни на широком мониторе.
+// целиком — поэтому подписи масштабируются вместе с графиком и никогда не
+// наезжают друг на друга. Обратная сторона: ужимать такую картинку до
+// ширины телефона нельзя, шрифт уедет в нечитаемое. Ниже — минимальная
+// ширина и прокрутка вбок именно поэтому.
 
 const WIDTH = 760;
 const HEIGHT = 260;
@@ -42,14 +44,21 @@ const GRID_LINES = 4;
 /** Больше этого числа подписей дат по низу не помещается. */
 const MAX_DATE_LABELS = 8;
 
-export function SalesChart({ days, range }: { days: DayPoint[]; range: Range }) {
+export function SalesChart({
+  days,
+  range,
+}: {
+  days: DayPoint[];
+  range: Range;
+}) {
   const peak = Math.max(...days.map((d) => d.revenueCents), 0);
   const total = days.reduce((sum, d) => sum + d.revenueCents, 0);
 
   if (peak === 0) {
     return (
       <p className="mt-6 rounded-2xl border border-dashed border-zinc-300 px-6 py-10 text-center text-sm text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
-        No paid orders between {formatDay(range.from)} and {formatDay(range.to)}.
+        No paid orders between {formatDay(range.from)} and {formatDay(range.to)}
+        .
       </p>
     );
   }
@@ -70,114 +79,124 @@ export function SalesChart({ days, range }: { days: DayPoint[]; range: Range }) 
 
   return (
     <figure className="mt-4">
-      <svg
-        viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-        className="w-full"
-        role="img"
-        aria-label={`Revenue per day from ${formatDay(range.from)} to ${formatDay(range.to)}, ${formatMoney(total)} in total`}
-      >
-        {/* Горизонтальная сетка + шкала денег слева. */}
-        {Array.from({ length: GRID_LINES + 1 }, (_, i) => {
-          const value = (top / GRID_LINES) * i;
-          const lineY = y(value);
-          const isBase = i === 0;
+      {/* На телефоне график НЕ ужимается до ширины экрана, а прокручивается
+          вбок. SVG масштабируется целиком, вместе с подписями: на 360px
+          картинка шириной 760 единиц дала бы шрифт меньше пяти пикселей —
+          формально график есть, фактически не читается ничего. Полоса
+          прокрутки с фиксированной минимальной шириной оставляет буквы
+          того же размера, что на десктопе, ценой одного жеста. */}
+      <div className="-mx-6 overflow-x-auto px-6 sm:mx-0 sm:overflow-visible sm:px-0">
+        <svg
+          viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+          className="w-full min-w-[36rem]"
+          role="img"
+          aria-label={`Revenue per day from ${formatDay(range.from)} to ${formatDay(range.to)}, ${formatMoney(total)} in total`}
+        >
+          {/* Горизонтальная сетка + шкала денег слева. */}
+          {Array.from({ length: GRID_LINES + 1 }, (_, i) => {
+            const value = (top / GRID_LINES) * i;
+            const lineY = y(value);
+            const isBase = i === 0;
 
-          return (
-            <g key={value}>
-              <line
-                x1={PAD.left}
-                y1={lineY}
-                x2={WIDTH - PAD.right}
-                y2={lineY}
-                className={
-                  isBase
-                    ? "stroke-zinc-300 dark:stroke-zinc-700"
-                    : "stroke-zinc-200 dark:stroke-zinc-800"
-                }
-                strokeWidth={1}
-              />
-              <text
-                x={PAD.left - 8}
-                y={lineY + 3}
-                textAnchor="end"
-                className="fill-zinc-500 text-[10px] dark:fill-zinc-400"
-              >
-                {formatMoney(value)}
-              </text>
-            </g>
-          );
-        })}
-
-        {days.map((day, i) => {
-          const x = PAD.left + i * slot;
-          const barX = x + (slot - barWidth) / 2;
-          const barTop = y(day.revenueCents);
-          const height = PAD.top + PLOT_H - barTop;
-          const showLabel = i % labelStep === 0 || i === days.length - 1;
-
-          return (
-            <g key={day.date} className="group">
-              {/* Вертикальная засечка под подписанными днями — по ней
-                  глаз соотносит столбик с датой на длинных периодах. */}
-              {showLabel && (
+            return (
+              <g key={value}>
                 <line
-                  x1={x + slot / 2}
-                  y1={PAD.top}
-                  x2={x + slot / 2}
-                  y2={PAD.top + PLOT_H}
-                  className="stroke-zinc-200 dark:stroke-zinc-800"
+                  x1={PAD.left}
+                  y1={lineY}
+                  x2={WIDTH - PAD.right}
+                  y2={lineY}
+                  className={
+                    isBase
+                      ? "stroke-zinc-300 dark:stroke-zinc-700"
+                      : "stroke-zinc-200 dark:stroke-zinc-800"
+                  }
                   strokeWidth={1}
-                  strokeDasharray="2 4"
                 />
-              )}
-
-              {/* Прозрачная зона нажатия во всю высоту: попасть курсором в
-                  столбик высотой 3px невозможно, а навести на день — нужно. */}
-              <rect
-                x={x}
-                y={PAD.top}
-                width={slot}
-                height={PLOT_H}
-                className="fill-transparent group-hover:fill-zinc-950/[0.04] dark:group-hover:fill-zinc-50/[0.06]"
-              />
-
-              {day.revenueCents > 0 && (
-                <rect
-                  x={barX}
-                  y={barTop}
-                  width={barWidth}
-                  height={height}
-                  rx={Math.min(3, barWidth / 2, height / 2)}
-                  className="fill-orange-500 dark:fill-orange-400"
-                />
-              )}
-
-              {showLabel && (
                 <text
-                  x={x + slot / 2}
-                  y={HEIGHT - 10}
-                  textAnchor="middle"
+                  x={PAD.left - 8}
+                  y={lineY + 3}
+                  textAnchor="end"
                   className="fill-zinc-500 text-[10px] dark:fill-zinc-400"
                 >
-                  {formatDay(day.date)}
+                  {formatMoney(value)}
                 </text>
-              )}
+              </g>
+            );
+          })}
 
-              {/* Подпись по наведению. Своим текстом, а не браузерным
+          {days.map((day, i) => {
+            const x = PAD.left + i * slot;
+            const barX = x + (slot - barWidth) / 2;
+            const barTop = y(day.revenueCents);
+            const height = PAD.top + PLOT_H - barTop;
+            const showLabel = i % labelStep === 0 || i === days.length - 1;
+
+            return (
+              <g key={day.date} className="group">
+                {/* Вертикальная засечка под подписанными днями — по ней
+                  глаз соотносит столбик с датой на длинных периодах. */}
+                {showLabel && (
+                  <line
+                    x1={x + slot / 2}
+                    y1={PAD.top}
+                    x2={x + slot / 2}
+                    y2={PAD.top + PLOT_H}
+                    className="stroke-zinc-200 dark:stroke-zinc-800"
+                    strokeWidth={1}
+                    strokeDasharray="2 4"
+                  />
+                )}
+
+                {/* Прозрачная зона нажатия во всю высоту: попасть курсором в
+                  столбик высотой 3px невозможно, а навести на день — нужно. */}
+                <rect
+                  x={x}
+                  y={PAD.top}
+                  width={slot}
+                  height={PLOT_H}
+                  className="fill-transparent group-hover:fill-zinc-950/[0.04] dark:group-hover:fill-zinc-50/[0.06]"
+                />
+
+                {day.revenueCents > 0 && (
+                  <rect
+                    x={barX}
+                    y={barTop}
+                    width={barWidth}
+                    height={height}
+                    rx={Math.min(3, barWidth / 2, height / 2)}
+                    className="fill-orange-500 dark:fill-orange-400"
+                  />
+                )}
+
+                {showLabel && (
+                  <text
+                    x={x + slot / 2}
+                    y={HEIGHT - 10}
+                    textAnchor="middle"
+                    className="fill-zinc-500 text-[10px] dark:fill-zinc-400"
+                  >
+                    {formatDay(day.date)}
+                  </text>
+                )}
+
+                {/* Подпись по наведению. Своим текстом, а не браузерным
                   title: тот появляется через секунду и на графике из
                   тридцати столбиков делает просмотр мучительным. Плашка
                   под текстом обязательна — иначе он ложится поверх сетки
                   и столбиков и не читается. */}
-              <Tooltip
-                x={x + slot / 2}
-                text={`${formatDay(day.date)} · ${formatMoney(day.revenueCents)}${
-                  day.orders > 0 ? ` · ${day.orders} ${day.orders === 1 ? "order" : "orders"}` : ""
-                }`}
-              />
-            </g>
-          );
-        })}
-      </svg>
+                <Tooltip
+                  x={x + slot / 2}
+                  text={`${formatDay(day.date)} · ${formatMoney(day.revenueCents)}${
+                    day.orders > 0
+                      ? ` · ${day.orders} ${day.orders === 1 ? "order" : "orders"}`
+                      : ""
+                  }`}
+                />
+              </g>
+            );
+          })}
+        </svg>
+      </div>
 
       {/* Таблица — не запасной вариант, а обязательная часть: график
           читается глазами, а числа нужны точные, и скринридеру SVG
@@ -198,18 +217,25 @@ export function SalesChart({ days, range }: { days: DayPoint[]; range: Range }) 
             {days
               .filter((d) => d.orders > 0)
               .map((day) => (
-                <tr key={day.date} className="border-t border-zinc-200 dark:border-zinc-800">
+                <tr
+                  key={day.date}
+                  className="border-t border-zinc-200 dark:border-zinc-800"
+                >
                   <td className="py-1 text-zinc-700 dark:text-zinc-300">
                     {new Date(day.date).toLocaleDateString()}
                   </td>
-                  <td className="py-1 text-zinc-700 dark:text-zinc-300">{day.orders}</td>
+                  <td className="py-1 text-zinc-700 dark:text-zinc-300">
+                    {day.orders}
+                  </td>
                   <td className="py-1 text-right font-medium text-zinc-950 dark:text-zinc-50">
                     {formatMoney(day.revenueCents)}
                   </td>
                 </tr>
               ))}
             <tr className="border-t border-zinc-300 dark:border-zinc-700">
-              <td className="py-1 font-medium text-zinc-950 dark:text-zinc-50">Total</td>
+              <td className="py-1 font-medium text-zinc-950 dark:text-zinc-50">
+                Total
+              </td>
               <td className="py-1 font-medium text-zinc-950 dark:text-zinc-50">
                 {days.reduce((sum, d) => sum + d.orders, 0)}
               </td>
@@ -233,7 +259,10 @@ function Tooltip({ x, text }: { x: number; text: string }) {
   const width = text.length * 5.6 + 14;
   // Не даём плашке уехать за край картинки — у крайних дней она иначе
   // обрезается ровно там, где написана сумма.
-  const left = Math.min(Math.max(x - width / 2, PAD.left), WIDTH - PAD.right - width);
+  const left = Math.min(
+    Math.max(x - width / 2, PAD.left),
+    WIDTH - PAD.right - width,
+  );
 
   return (
     <g className="pointer-events-none opacity-0 transition-opacity group-hover:opacity-100">
@@ -270,6 +299,7 @@ function formatDay(key: string): string {
 function niceCeil(value: number): number {
   const magnitude = 10 ** Math.floor(Math.log10(value));
   const normalized = value / magnitude;
-  const step = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  const step =
+    normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
   return step * magnitude;
 }

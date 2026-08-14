@@ -41,6 +41,30 @@ export async function POST(request: Request) {
 
   const db = getSupabaseAdmin();
 
+  // Без статуса креатора картами не распоряжаются вовсе (решение
+  // владельца 2026-08-14). Отзыв статуса — это не только «больше не
+  // загружай»: пока доступ закрыт, человек не прячет, не возвращает и не
+  // удаляет уже выложенное. Иначе снятые вместе со статусом карты он бы
+  // тут же удалил — вместе с историей, по которой разбирают спор.
+  //
+  // Проверка служебным ключом: profiles закрыта RLS, и читать её от лица
+  // пользователя ради одного флага незачем.
+  const { data: profile } = await db
+    .from("profiles")
+    .select("is_creator")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (!profile?.is_creator) {
+    return NextResponse.json(
+      {
+        error:
+          "Your creator access is closed, so maps can't be changed from here. The reason is on your resources page.",
+      },
+      { status: 403 }
+    );
+  }
+
   const { data: product, error } = await db
     .from("products")
     .select("id, title, status, is_published, creator_id, hidden_by, deleted_at")
@@ -88,15 +112,19 @@ export async function POST(request: Request) {
       );
     }
 
-    // Карту, снятую МОДЕРАТОРОМ, автор вернуть не может — иначе бан
-    // отменялся бы одной кнопкой в его же кабинете, и снятие с витрины
-    // не значило бы ничего. Своё собственное «спрятать» он отменяет
-    // свободно: разница ровно в hidden_by (см. миграцию 20260809120000).
-    if (action === "unhide" && product.hidden_by === "moderator") {
+    // Вернуть автор может ТОЛЬКО то, что спрятал сам, — иначе бан
+    // отменялся бы одной кнопкой в его же кабинете, и снятие с витрины не
+    // значило бы ничего. Разница ровно в hidden_by (миграции 20260809120000
+    // и 20260814120000).
+    //
+    // Условие «не creator», а не «moderator»: значений теперь три, и
+    // перечислять запрещённые — способ однажды забыть новое. Разрешаем
+    // единственное, про которое точно известно, что его поставил автор.
+    if (action === "unhide" && product.hidden_by !== "creator") {
       return NextResponse.json(
         {
           error:
-            "This map was taken down by a moderator, so it can't be brought back from here. Check the reason on the map and reply to it.",
+            "This map was taken off the marketplace by the site team, so it can't be brought back from here. Check the reason on the map and reply to it.",
         },
         { status: 403 }
       );

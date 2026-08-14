@@ -249,6 +249,55 @@ export const DELETION_TEMPLATES: ReasonTemplate[] = [
   },
 ];
 
+/**
+ * За что забирают сам статус креатора. Разговор здесь не про карту, а про
+ * человека: он в один момент теряет и загрузку, и витрину — все его карты
+ * уходят вместе со статусом. Поэтому формулировки говорят о поведении, а
+ * не о конкретном файле, и каждая объясняет, что делать дальше.
+ *
+ * Отдельный список, а не TAKEDOWN_TEMPLATES: «пересними скриншоты» — не
+ * причина лишать человека статуса, и предлагать её в этом окне значило бы
+ * подталкивать к несоразмерному решению.
+ */
+export const REVOCATION_TEMPLATES: ReasonTemplate[] = [
+  {
+    code: "stolen_content",
+    label: "Publishing other people's work",
+    message:
+      "Maps you published turned out to be other people's builds. Creator access is closed and your maps are off the marketplace until this is sorted out.",
+  },
+  {
+    code: "quality",
+    label: "Repeated quality problems",
+    message:
+      "Several of your maps had the same problems after review, and buyers ran into them. Creator access is on hold until we agree on what changes.",
+  },
+  {
+    code: "buyer_harm",
+    label: "Buyers were left without support",
+    message:
+      "Buyers reported broken downloads and got no answer from you. A map that nobody supports can't stay on sale.",
+  },
+  {
+    code: "rules",
+    label: "Breaking the site rules",
+    message:
+      "Your listings break the site rules — see the terms. Creator access is closed and your maps are off the marketplace.",
+  },
+  {
+    code: "prohibited",
+    label: "Prohibited content",
+    message:
+      "You published content that isn't allowed here. Creator access is closed for good; write to support if you believe this is a mistake.",
+  },
+  {
+    code: "creator_request",
+    label: "The creator asked us to",
+    message:
+      "Creator access was closed at your own request. Your maps are off the marketplace — ask us and we'll open it again.",
+  },
+];
+
 export function reasonTemplateFor(
   templates: ReasonTemplate[],
   code: string

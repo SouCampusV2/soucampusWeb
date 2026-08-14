@@ -229,6 +229,17 @@ function ReasonNote({ product }: { product: OwnProduct }) {
     if (product.hiddenBy === "moderator" && product.suspensionReason) {
       return { label: "Why it was taken down:", text: product.suspensionReason };
     }
+    // Карта ушла не за себя, а вместе со статусом автора. Подпись другая
+    // именно поэтому: «за что сняли ЭТУ карту» здесь ответа не имеет, и
+    // претензия к карте сбивала бы с толку — исправлять в ней нечего.
+    if (product.hiddenBy === "revoked") {
+      return {
+        label: "Off the marketplace while your creator access is closed:",
+        text:
+          product.suspensionReason ??
+          "No reason was recorded. Get in touch with support.",
+      };
+    }
     return null;
   })();
 
@@ -271,6 +282,13 @@ function StatusBadge({ product }: { product: OwnProduct }) {
     );
   }
   if (!product.isPublished) {
+    if (product.hiddenBy === "revoked") {
+      return (
+        <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+          Paused
+        </Badge>
+      );
+    }
     return product.hiddenBy === "moderator" ? (
       <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300">
         Taken down

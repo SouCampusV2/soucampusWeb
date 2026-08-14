@@ -161,7 +161,14 @@ function StatusBadge({ product }: { product: CatalogRow }) {
   if (!product.isPublished) {
     return (
       <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300">
-        {product.hiddenBy === "moderator" ? "Taken down" : "Hidden by author"}
+        {/* «Creator revoked» отдельной подписью: иначе владелец видит
+            «Taken down» и идёт искать, за что снял ЭТУ карту, хотя решение
+            было про автора и вернётся она сама. */}
+        {product.hiddenBy === "moderator"
+          ? "Taken down"
+          : product.hiddenBy === "revoked"
+            ? "Creator revoked"
+            : "Hidden by author"}
       </Badge>
     );
   }
