@@ -13,10 +13,8 @@ import {
   RedditLogo,
   XLogo,
   YoutubeLogo,
-  Sun,
-  Moon,
 } from "@phosphor-icons/react";
-import { useTheme } from "@/components/ThemeProvider";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
 import { SHOP_NAV_LINKS } from "@/lib/products";
 
@@ -79,8 +77,6 @@ const SOCIALS = [
 ];
 
 export function ContactFooter() {
-  const { theme, toggleTheme } = useTheme();
-
   return (
     <section className="border-t border-zinc-200 dark:border-zinc-800">
       <footer className="px-6 py-12">
@@ -94,15 +90,7 @@ export function ContactFooter() {
               >
                 SouCampus
               </Link>
-              <button
-                type="button"
-                onClick={toggleTheme}
-                aria-label="Toggle dark mode"
-                title="Toggle dark mode"
-                className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-zinc-200 text-zinc-500 transition-colors hover:text-orange-500 dark:border-zinc-800 dark:text-zinc-400 dark:hover:text-orange-400"
-              >
-                {theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}
-              </button>
+              <ThemeToggle />
             </div>
             <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
               Custom Minecraft builds on order — castles, spawns, cities, and
@@ -140,13 +128,23 @@ export function ContactFooter() {
                     и отстали от навбара, где давно работают. */}
                 {SHOP_NAV_LINKS.map((link) => (
                   <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                      data-page-transition="true"
-                    >
-                      {link.label}
-                    </Link>
+                    {link.soon ? (
+                      <span
+                        title={link.title}
+                        aria-disabled="true"
+                        className="cursor-not-allowed text-zinc-400 dark:text-zinc-500"
+                      >
+                        {link.label} <span className="text-xs">soon</span>
+                      </span>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                        data-page-transition="true"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>

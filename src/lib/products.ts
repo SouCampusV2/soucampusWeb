@@ -40,8 +40,32 @@ export const SHOP_CATEGORIES: { slug: ProductCategory; label: string }[] = [
 // в свалку, а на мобильном — в простыню. Место категорий — фильтр на
 // самой витрине (CategoryFilter), где есть куда развернуться и где рядом
 // видно, сколько карт нашлось.
-export const SHOP_NAV_LINKS: { href: string; label: string }[] = [
-  { href: "/marketplace", label: "All Map" },
+// `soon` — пункт виден, но не кликается: раздела ещё нет. Заглушку ставим
+// осознанно, а не «ссылкой на пустую страницу»: неактивный пункт честно
+// говорит «будет», а живая ссылка на пустоту читается как поломка сайта.
+// Как только раздел появится — снять флаг и поставить настоящий href,
+// больше нигде править не нужно.
+export const SHOP_NAV_LINKS: {
+  href: string;
+  label: string;
+  soon?: boolean;
+  title?: string;
+}[] = [
+  // «Maps», а не «All Map» (2026-08-14): прежняя подпись была ещё и
+  // безграмотной — all с единственным числом.
+  { href: "/marketplace", label: "Maps" },
+  {
+    href: "/wiki",
+    label: "Wiki",
+    soon: true,
+    title: "Guides on installing maps are coming soon",
+  },
+  {
+    href: "/updates",
+    label: "What's new",
+    soon: true,
+    title: "Updates and new maps are coming soon",
+  },
   { href: "/support", label: "Support" },
 ];
 

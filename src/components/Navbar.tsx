@@ -139,17 +139,28 @@ export function Navbar() {
               {/* Категории + Support — навигация магазина. Без
                   data-page-transition: внутри магазина без анимации-волны
                   (только на выходе через лого SouCampus). Support — после
-                  Free, тем же стилем, что All Map (по просьбе владельца). */}
+                  Free, тем же стилем, что Maps (по просьбе владельца). */}
               <div className="flex shrink-0 items-center gap-1 text-sm font-medium text-zinc-600 dark:text-zinc-300">
-                {SHOP_NAV_LINKS.map((link) => (
-                  <Link
-                    key={link.href}
-                    href={link.href}
-                    className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                  >
-                    {link.label}
-                  </Link>
-                ))}
+                {SHOP_NAV_LINKS.map((link) =>
+                  link.soon ? (
+                    <span
+                      key={link.href}
+                      title={link.title}
+                      aria-disabled="true"
+                      className="cursor-not-allowed px-2 py-1.5 text-zinc-400 dark:text-zinc-500"
+                    >
+                      {link.label}
+                    </span>
+                  ) : (
+                    <Link
+                      key={link.href}
+                      href={link.href}
+                      className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                    >
+                      {link.label}
+                    </Link>
+                  )
+                )}
               </div>
 
               {/* Поиск + иконки — вместе справа. */}
@@ -315,7 +326,7 @@ export function Navbar() {
           )}
 
           {/* Мобильный гамбургер. В обоих режимах: вне магазина открывает
-              обычную навигацию, в магазине — магазинные вкладки (All Map,
+              обычную навигацию, в магазине — магазинные вкладки (Maps,
               категории, Support, поиск). Сами дропдауны — ниже, каждый под
               свой режим. */}
           {!isMarketplaceActive && (
@@ -415,7 +426,7 @@ export function Navbar() {
           )}
 
           {/* Магазинная выпадашка: те же вкладки, что в пилюле на десктопе
-              (All Map + категории + Support) плюс рабочий поиск. Карта и
+              (Maps + категории + Support) плюс рабочий поиск. Карта и
               аккаунт уже в верхней строке — здесь только навигация. */}
           {open && isMarketplaceActive && (
             <motion.div
@@ -427,13 +438,24 @@ export function Navbar() {
               <ul className="pb-2">
                 {SHOP_NAV_LINKS.map((link) => (
                   <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      onClick={() => setOpen(false)}
-                      className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                    >
-                      {link.label}
-                    </Link>
+                    {link.soon ? (
+                      <span
+                        title={link.title}
+                        aria-disabled="true"
+                        className="block cursor-not-allowed px-6 py-3 text-sm font-medium text-zinc-400 dark:text-zinc-500"
+                      >
+                        {link.label}
+                        <span className="ml-2 text-xs font-normal">soon</span>
+                      </span>
+                    ) : (
+                      <Link
+                        href={link.href}
+                        onClick={() => setOpen(false)}
+                        className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                      >
+                        {link.label}
+                      </Link>
+                    )}
                   </li>
                 ))}
               </ul>
