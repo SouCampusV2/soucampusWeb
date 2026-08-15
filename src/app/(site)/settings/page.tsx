@@ -14,6 +14,10 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
+// Личная страница — не кэшируем, гасим унаследованный от (site)
+// revalidate = 60 (подробно — в notifications/page.tsx).
+export const dynamic = "force-dynamic";
+
 export default async function SettingsPage() {
   const supabase = await createSupabaseServer();
   const user = await getCurrentUser(supabase);

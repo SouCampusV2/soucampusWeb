@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Bell } from "@phosphor-icons/react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { useNotificationEvents } from "@/lib/useNotificationEvents";
 
 // Колокол уведомлений в навбаре: ссылка на /notifications + число
 // непрочитанных.
@@ -37,25 +38,47 @@ export function NotificationsBell({
   // осталось бы висеть до следующего запроса.
   const unread = userId ? counted : 0;
 
+  // Запрос вынесен отдельно от setState намеренно: он нужен и при
+  // открытии страницы, и по событию из базы, а держать состояние в нём
+  // самом нельзя — вызов из тела эффекта тогда читается линтером (и
+  // React'ом) как каскадный setState. Поэтому здесь чистое «сколько
+  // непрочитанных», а кто и куда кладёт ответ — решают места вызова.
+  //
+  // Именно ПЕРЕСЧЁТ, а не «прибавить единицу к прошлому числу»: то же
+  // уведомление могли прочитать в другой вкладке, и арифметика на клиенте
+  // разошлась бы с базой без единого способа это заметить. Запрос
+  // дешёвый — считает по частичному индексу notifications_unread_idx и не
+  // тащит ни одной строки (head: true).
+  const fetchUnread = useCallback(async () => {
+    if (!userId) return 0;
+    const supabase = createSupabaseBrowser();
+    const { count } = await supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", userId)
+      .is("read_at", null);
+    return count ?? 0;
+  }, [userId]);
+
   useEffect(() => {
-    if (!userId) return;
     let active = true;
-    (async () => {
-      const supabase = createSupabaseBrowser();
-      const { count } = await supabase
-        .from("notifications")
-        .select("id", { count: "exact", head: true })
-        .eq("user_id", userId)
-        .is("read_at", null);
-      if (active) setCounted(count ?? 0);
+    void (async () => {
+      const next = await fetchUnread();
+      if (active) setCounted(next);
     })();
     return () => {
       active = false;
     };
     // pathname в зависимостях — чтобы число обновилось после того, как
-    // человек сходил на /notifications и всё прочитал. Дешевле, чем
-    // держать подписку на изменения таблицы ради счётчика.
-  }, [userId, pathname]);
+    // человек сходил на /notifications и всё прочитал.
+  }, [fetchUnread, pathname]);
+
+  // А это — то, чего не хватало: уведомление, пришедшее в открытую
+  // вкладку, зажигает бейдж само, без единого действия человека.
+  const recount = useCallback(async () => {
+    setCounted(await fetchUnread());
+  }, [fetchUnread]);
+  useNotificationEvents(userId, recount, recount);
 
   return (
     <Link
