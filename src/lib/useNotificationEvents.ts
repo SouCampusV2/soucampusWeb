@@ -58,17 +58,7 @@ let shared: {
   listeners: Set<Listener>;
 } | null = null;
 
-// ВРЕМЕННО. Снять, когда подписка подтвердится на preview.
-//
-// Стоит здесь потому, что четыре попытки чинить это рассуждением
-// закончились четырьмя разными ошибками. Три строчки в консоли отвечают
-// на вопрос, который иначе приходится угадывать: канал вообще
-// подключился? событие из базы пришло? слушатели на месте?
-const trace = (...args: unknown[]) =>
-  console.info("[notifications]", ...args);
-
 function emit(kind: "insert" | "update") {
-  trace("событие из базы:", kind, "слушателей:", shared?.listeners.size ?? 0);
   if (!shared) return;
   // Копия перед обходом: обработчик вправе отписаться прямо в себе.
   for (const listener of Array.from(shared.listeners)) {
@@ -87,11 +77,8 @@ function attach(userId: string, listener: Listener) {
 
   if (shared) {
     shared.listeners.add(listener);
-    trace("слушатель добавлен к живому каналу, всего:", shared.listeners.size);
     return;
   }
-
-  trace("поднимаю канал для", userId);
 
   const supabase = createSupabaseBrowser();
 
@@ -130,12 +117,8 @@ function attach(userId: string, listener: Listener) {
   void supabase.realtime.setAuth().then(() => {
     // Пока ждали, канал могли закрыть (ушли со страницы, сменился
     // пользователь). Присоединять покойника незачем.
-    if (shared?.channel !== channel) {
-      trace("канал закрыли, пока ждали токен — не присоединяюсь");
-      return;
-    }
-    channel.subscribe((status, err) => {
-      trace("статус канала:", status, err ?? "");
+    if (shared?.channel !== channel) return;
+    channel.subscribe((status) => {
       // Предохранитель. Realtime сам переподключается при ошибке, и это
       // правильно для обрыва связи — но неправильно для ошибки, которая
       // повторится при каждой попытке (таблицы нет в публикации, права
@@ -157,7 +140,6 @@ function attach(userId: string, listener: Listener) {
 
 function detachAll() {
   if (!shared) return;
-  trace("закрываю канал");
   void createSupabaseBrowser().removeChannel(shared.channel);
   shared = null;
 }
