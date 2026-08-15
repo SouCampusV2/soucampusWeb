@@ -91,7 +91,7 @@ export async function POST(request: Request) {
     //
     // Трогаем только ЖИВЫЕ и неудалённые: карта, снятая за конкретную
     // провинность, обязана остаться снятой и после возврата статуса.
-    const hiddenSlugs = await setMapsHidden(db, userId, revokeReason);
+    const hiddenSlugs = await listCreatorLiveMaps(db, userId);
 
     // Журнал — по каждой карте, тем же форматом, что у ручного снятия:
     // иначе в истории карты появлялся бы разрыв, который ничем не
@@ -226,36 +226,39 @@ type MapRef = { id: string; slug: string };
 type Db = ReturnType<typeof getSupabaseAdmin>;
 
 /**
- * Снять с витрины всё живое, что выложил этот человек.
+ * Какие карты этого человека уходят с витрины вместе с его статусом.
  *
- * Возвращает снятое, потому что вызывающему нужны и число (для текста
- * уведомления), и адреса (для сброса ISR): выяснять это вторым запросом
- * после update было бы уже поздно — карты перестанут подходить под
- * условие.
+ * Именно «какие», а не «снять»: снимает их триггер (см. ниже). Список
+ * нужен вызывающему для текста уведомления и для сброса ISR.
+ *
+ * Причину больше не принимает: раньше она проставлялась каждой карте в
+ * suspension_reason, хотя претензии к самим картам нет — с витрины их
+ * убрал статус автора. Объясняет это кабинет автора отдельной подписью,
+ * а не заимствованной причиной.
  */
-async function setMapsHidden(
-  db: Db,
-  userId: string,
-  reason: string
-): Promise<MapRef[]> {
+async function listCreatorLiveMaps(db: Db, userId: string): Promise<MapRef[]> {
+  // Карты СНИМАЕТ НЕ ЭТОТ КОД, а триггер на profiles: сняли is_creator —
+  // у всех его карт стало creator_active = false, и с витрины они ушли,
+  // СОХРАНИВ своё состояние (миграция 20260815130000).
+  //
+  // Раньше здесь проставлялось hidden_by = 'revoked', и прежнее значение
+  // затиралось — то есть при возврате статуса было уже неизвестно, какая
+  // карта до отзыва висела на витрине, а какую автор прятал сам. Теперь
+  // ничего восстанавливать не нужно: состояние карт никто и не трогал.
+  //
+  // Запрос остаётся, но только ЧИТАЕТ — вызывающему нужны число (для
+  // текста уведомления) и адреса (для сброса ISR).
   const { data, error } = await db
     .from("products")
-    .update({
-      is_published: false,
-      hidden_by: "revoked",
-      suspension_reason: reason,
-    })
+    .select("id, slug")
     .eq("creator_id", userId)
-    .eq("is_published", true)
-    .is("deleted_at", null)
-    .select("id, slug");
+    .eq("state", "live");
 
   if (error) {
     // Статус уже отозван, и это главное: загружать человек больше не
-    // может. Сорвавшееся снятие карт не отменяет отзыв — иначе владелец
-    // остался бы и со статусом на месте, и без объяснения. Пишем в лог,
-    // карты снимаются из каталога руками.
-    console.error("Отзыв: карты не сняты:", error.message);
+    // может, а карты сняты триггером. Не сложившийся список означает
+    // лишь то, что мы не сбросим ISR и не назовём число в уведомлении.
+    console.error("Отзыв: список снятых карт не собран:", error.message);
     return [];
   }
   return (data ?? []) as MapRef[];
@@ -263,16 +266,17 @@ async function setMapsHidden(
 
 /** Вернуть на витрину то, что ушло вместе со статусом, и только это. */
 async function setMapsVisible(db: Db, userId: string): Promise<MapRef[]> {
+  // Возвращает карты тот же триггер на profiles — и возвращает их ТУДА,
+  // ГДЕ ОНИ БЫЛИ: живые снова на витрине, спрятанные остаются
+  // спрятанными. Здесь только читаем, что именно вернулось.
   const { data, error } = await db
     .from("products")
-    .update({ is_published: true, hidden_by: null, suspension_reason: null })
+    .select("id, slug")
     .eq("creator_id", userId)
-    .eq("hidden_by", "revoked")
-    .is("deleted_at", null)
-    .select("id, slug");
+    .eq("state", "live");
 
   if (error) {
-    console.error("Возврат статуса: карты не вернулись:", error.message);
+    console.error("Возврат статуса: список вернувшихся карт не собран:", error.message);
     return [];
   }
   return (data ?? []) as MapRef[];

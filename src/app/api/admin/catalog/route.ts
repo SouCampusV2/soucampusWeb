@@ -103,25 +103,16 @@ export async function POST(request: Request) {
   const update: Record<string, unknown> = (() => {
     switch (action as Action) {
       case "suspend":
-        // hidden_by = 'moderator' — именно это отличает бан от «автор
-        // сам убрал»: вернуть такую карту креатор не сможет, проверка
-        // стоит в /api/creator/product.
-        return {
-          is_published: false,
-          hidden_by: "moderator",
-          suspension_reason: suspensionReason,
-        };
+        // Состояние 'suspended' и означает «сняла площадка»: вернуть
+        // такую карту автор не может, переход suspended → hidden базой
+        // не разрешён (миграция 20260815130000).
+        return { state: "suspended", suspension_reason: suspensionReason };
       case "unsuspend":
-        return { is_published: true, hidden_by: null, suspension_reason: null };
+        return { state: "live", suspension_reason: null };
       case "delete":
         // Мягко: строка остаётся, файл и скриншоты не трогаем — за них
         // заплачено, и покупатель продолжает скачивать.
-        return {
-          is_published: false,
-          deleted_at: new Date().toISOString(),
-          hidden_by: "moderator",
-          suspension_reason: suspensionReason,
-        };
+        return { state: "deleted", suspension_reason: suspensionReason };
       case "restore":
         // Возвращаем карту АВТОРУ: не удалена, не снята, просто не на
         // витрине — и он сам решает, когда её вернуть.
@@ -149,12 +140,7 @@ export async function POST(request: Request) {
         // то, чего автор не делал, значит врать в данных ради удобства
         // проверки. null и означает ровно то, что есть, — карту не
         // снимал никто, она просто не опубликована.
-        return {
-          deleted_at: null,
-          is_published: false,
-          hidden_by: null,
-          suspension_reason: null,
-        };
+        return { state: "hidden", suspension_reason: null };
     }
   })();
 

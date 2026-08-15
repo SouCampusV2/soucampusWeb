@@ -19,6 +19,23 @@ export const dynamic = "force-dynamic";
 
 type Action = "hide" | "unhide" | "delete";
 
+// Почему кнопка не сработала — по состоянию карты.
+//
+// Текст на каждое состояние свой: «нельзя» без причины читается как
+// поломка сайта, особенно когда человек жмёт по видимой строке в
+// собственном списке. Прятать тут нечего — это его карта, он на неё и
+// смотрит.
+const HIDE_ERRORS: Record<string, string> = {
+  pending: "This map is waiting to be reviewed. You can take it off the marketplace once it is approved.",
+  rejected: "This map has not been approved yet, so it is not on the marketplace.",
+  suspended:
+    "This map was taken off the marketplace by the site team. Edit it and it goes back for review — the reason is on the map.",
+  deleted:
+    "This map was removed by the site team, so it can't be changed from here.",
+};
+
+const FALLBACK_HIDE_ERROR = "This map can't be changed right now.";
+
 export async function POST(request: Request) {
   const supabase = await createSupabaseServer();
   const {
@@ -67,7 +84,7 @@ export async function POST(request: Request) {
 
   const { data: product, error } = await db
     .from("products")
-    .select("id, title, status, is_published, creator_id, hidden_by, deleted_at")
+    .select("id, title, state, creator_id")
     .eq("id", productId)
     .maybeSingle();
 
@@ -91,7 +108,7 @@ export async function POST(request: Request) {
   // ответ на клик по видимой строке читается как поломка сайта, а не как
   // решение модерации. Прятать существование имеет смысл от постороннего
   // (проверка владения выше), а не от хозяина карты.
-  if (product.deleted_at) {
+  if (product.state === "deleted") {
     return NextResponse.json(
       {
         error:
@@ -102,51 +119,30 @@ export async function POST(request: Request) {
   }
 
   if (action === "hide" || action === "unhide") {
-    // Прятать и возвращать имеет смысл только у карты, ПРОШЕДШЕЙ разбор.
-    // У заявки в очереди витрины и так нет, и «вернуть» её значило бы
-    // опубликовать без модерации — ровно то, что запрещает триггер.
-    if (product.status !== "published") {
+    // Вот ради чего заводилась колонка state (миграция 20260815130000).
+    //
+    // Раньше здесь стояли две проверки по трём полям: «карта прошла
+    // разбор» по status и «спрятал её автор, а не площадка» по hidden_by,
+    // со списком разрешённых значений и оговоркой про null. Ошибиться в
+    // такой проверке легко, что и произошло: восстановленная из
+    // удалённых карта не подходила ни под одно разрешённое значение и
+    // застревала навсегда.
+    //
+    // Теперь вопрос ровно один — в каком состоянии карта. Спрятать можно
+    // живую, вернуть можно спрятанную, и всё. Снятую площадкой автор не
+    // вернёт не потому, что мы это здесь запрещаем, а потому что
+    // перехода suspended → live у него нет: его не пропустит база.
+    const allowed = action === "hide" ? "live" : "hidden";
+    if (product.state !== allowed) {
       return NextResponse.json(
-        { error: "Only an approved map can be hidden or brought back." },
+        { error: HIDE_ERRORS[product.state as string] ?? FALLBACK_HIDE_ERROR },
         { status: 409 }
-      );
-    }
-
-    // Вернуть автор может ТОЛЬКО то, что спрятал сам, — иначе бан
-    // отменялся бы одной кнопкой в его же кабинете, и снятие с витрины не
-    // значило бы ничего. Разница ровно в hidden_by (миграции 20260809120000
-    // и 20260814120000).
-    //
-    // Перечисляем РАЗРЕШЁННОЕ, а не запрещённое: значений у hidden_by
-    // уже три, и список запретов — способ однажды забыть новое.
-    //
-    // Разрешённых состояния два. 'creator' — автор спрятал карту сам.
-    // null — её не снимал никто: так выглядит карта, восстановленная
-    // админкой из удалённых (см. /api/admin/catalog). Раньше null сюда
-    // не входил, и восстановленная карта оказывалась в тупике —
-    // вернуть нельзя, причины нет.
-    if (
-      action === "unhide" &&
-      product.hidden_by !== "creator" &&
-      product.hidden_by !== null
-    ) {
-      return NextResponse.json(
-        {
-          error:
-            "This map was taken off the marketplace by the site team, so it can't be brought back from here. Check the reason on the map and reply to it.",
-        },
-        { status: 403 }
       );
     }
 
     const { error: updateError } = await db
       .from("products")
-      .update({
-        is_published: action === "unhide",
-        // Помечаем, что скрыл автор: без этого его собственное «спрятать»
-        // было бы неотличимо от бана, и вернуть карту он бы уже не смог.
-        hidden_by: action === "hide" ? "creator" : null,
-      })
+      .update({ state: action === "hide" ? "hidden" : "live" })
       .eq("id", productId);
 
     if (updateError) {
