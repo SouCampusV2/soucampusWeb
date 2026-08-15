@@ -78,8 +78,15 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (readError) {
+    // Текст ошибки отдаём НАРУЖУ, а не только в лог. Это админка: смотрит
+    // её владелец сайта, посторонний сюда не попадает вовсе (404 выше), а
+    // «read failed» без подробностей стоило нам полудня поисков не в той
+    // стороне.
     console.error("Каталог: чтение не удалось:", readError.message);
-    return NextResponse.json({ error: "read failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: `read failed: ${readError.message}` },
+      { status: 500 }
+    );
   }
   if (!product) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
@@ -150,8 +157,14 @@ export async function POST(request: Request) {
     .eq("id", productId);
 
   if (updateError) {
+    // Здесь особенно важно: именно сюда прилетают отказы триггера
+    // разрешённых переходов, и без текста они неотличимы от «база
+    // недоступна».
     console.error("Каталог: обновление не удалось:", updateError.message);
-    return NextResponse.json({ error: "update failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: `update failed: ${updateError.message}` },
+      { status: 500 }
+    );
   }
 
   // Журнал — после успешного обновления. Ошибку журнала не превращаем в

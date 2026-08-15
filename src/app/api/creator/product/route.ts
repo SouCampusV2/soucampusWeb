@@ -89,8 +89,14 @@ export async function POST(request: Request) {
     .maybeSingle();
 
   if (error) {
+    // Подробность отдаём владельцу КАРТЫ (владение проверено ниже по
+    // creator_id, а до того запрос и не дошёл бы): это его строка, и
+    // «read failed» ни о чём ему не говорит — как не сказало и нам.
     console.error("Управление картой: чтение не удалось:", error.message);
-    return NextResponse.json({ error: "read failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: `read failed: ${error.message}` },
+      { status: 500 }
+    );
   }
 
   // 404, а не 403: посторонний не должен по коду ответа узнавать даже
@@ -147,7 +153,10 @@ export async function POST(request: Request) {
 
     if (updateError) {
       console.error("Управление картой: update не удался:", updateError.message);
-      return NextResponse.json({ error: "update failed" }, { status: 500 });
+      return NextResponse.json(
+        { error: `update failed: ${updateError.message}` },
+        { status: 500 }
+      );
     }
 
     return NextResponse.json({ ok: true });
