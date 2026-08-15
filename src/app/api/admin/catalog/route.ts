@@ -73,7 +73,7 @@ export async function POST(request: Request) {
 
   const { data: product, error: readError } = await db
     .from("products")
-    .select("id, slug, title, creator_id, is_published, deleted_at, hidden_by")
+    .select("id, slug, title, creator_id, state, was_approved")
     .eq("id", productId)
     .maybeSingle();
 
@@ -147,7 +147,17 @@ export async function POST(request: Request) {
         // то, чего автор не делал, значит врать в данных ради удобства
         // проверки. null и означает ровно то, что есть, — карту не
         // снимал никто, она просто не опубликована.
-        return { state: "hidden", suspension_reason: null };
+        //
+        // Куда именно возвращать — решает то, была ли карта одобрена.
+        // Уже побывавшую на витрине возвращаем спрятанной, автор сам
+        // опубликует. А заявку, удалённую прямо из очереди, — обратно в
+        // очередь: вернуть её «одобренной» значило бы дать автору
+        // выложить на витрину то, что никто не разбирал (миграция
+        // 20260815140000).
+        return {
+          state: product.was_approved ? "hidden" : "pending",
+          suspension_reason: null,
+        };
     }
   })();
 
