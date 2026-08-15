@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRefresh } from "@/lib/useRefresh";
 import { Button } from "@/components/Button";
 import { TextField } from "@/components/MapFormParts";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
@@ -20,7 +20,7 @@ import { checkPortfolioUrl, checkDiscord } from "@/lib/contact-links";
 const MAX_ABOUT = 2000;
 
 export function CreatorApplicationForm({ userId }: { userId: string }) {
-  const router = useRouter();
+  const refresh = useRefresh();
   const [about, setAbout] = useState("");
   const [portfolio, setPortfolio] = useState("");
   const [discord, setDiscord] = useState("");
@@ -77,7 +77,7 @@ export function CreatorApplicationForm({ userId }: { userId: string }) {
       return;
     }
 
-    router.refresh();
+    refresh();
   }
 
   return (

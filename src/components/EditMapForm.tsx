@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useRefresh } from "@/lib/useRefresh";
 import dynamic from "next/dynamic";
 // Только тип — стирается при компиляции, в бандл не попадает.
 import type { Editor } from "@tiptap/react";
@@ -69,6 +70,7 @@ export function EditMapForm({
   userId: string;
 }) {
   const router = useRouter();
+  const refresh = useRefresh();
 
   const [title, setTitle] = useState(product.title);
   const [summary, setSummary] = useState(product.summary);
@@ -328,7 +330,7 @@ export function EditMapForm({
       fetch("/api/creator/cleanup-storage", { method: "POST" }).catch(() => {});
 
       router.push("/resources");
-      router.refresh();
+      refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setPending(false);

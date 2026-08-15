@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRefresh } from "@/lib/useRefresh";
 import { DotsThree, EyeSlash, Eye, Trash } from "@phosphor-icons/react";
 import { BUTTON_PILL, DANGER_COLORS } from "@/components/Button";
 
@@ -29,7 +29,7 @@ export function ResourceActions({
   /** Карту убрал из каталога владелец сайта — распоряжаться ею нечем. */
   deleted?: boolean;
 }) {
-  const router = useRouter();
+  const refresh = useRefresh();
   const [open, setOpen] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [typed, setTyped] = useState("");
@@ -93,7 +93,7 @@ export function ResourceActions({
     setOpen(false);
     setConfirming(false);
     setTyped("");
-    router.refresh();
+    refresh();
   }
 
   // Прятать можно только одобренную карту: у заявки в очереди витрины

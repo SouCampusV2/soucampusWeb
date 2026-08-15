@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRefresh } from "@/lib/useRefresh";
 import { EyeSlash, Eye, Trash, ArrowCounterClockwise } from "@phosphor-icons/react";
 import { BUTTON_PILL, BUTTON_COLORS, DANGER_COLORS } from "@/components/Button";
 import {
@@ -27,7 +27,7 @@ import type { CatalogRow } from "@/lib/catalog";
 type Mode = "suspend" | "delete";
 
 export function CatalogActions({ product }: { product: CatalogRow }) {
-  const router = useRouter();
+  const refresh = useRefresh();
   const [busy, setBusy] = useState(false);
   const [asking, setAsking] = useState<Mode | null>(null);
   const [codes, setCodes] = useState<string[]>([]);
@@ -60,7 +60,7 @@ export function CatalogActions({ product }: { product: CatalogRow }) {
       reset();
       // Каталог — серверный компонент; refresh перерисовывает его свежими
       // данными, не перезагружая страницу целиком.
-      router.refresh();
+      refresh();
     } finally {
       setBusy(false);
     }

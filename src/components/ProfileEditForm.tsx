@@ -2,6 +2,7 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useRefresh } from "@/lib/useRefresh";
 import Link from "next/link";
 import { UserCircle, Camera, Key } from "@phosphor-icons/react";
 import { Button, BUTTON_COLORS } from "@/components/Button";
@@ -18,6 +19,7 @@ export function ProfileEditForm({
   userId: string;
 }) {
   const router = useRouter();
+  const refresh = useRefresh();
 
   const [displayName, setDisplayName] = useState(initial.displayName);
   const [firstName, setFirstName] = useState(initial.firstName ?? "");
@@ -133,7 +135,7 @@ export function ProfileEditForm({
 
     setPending(false);
     setAvatarUrl(nextAvatarUrl);
-    router.refresh();
+    refresh();
     router.push("/settings");
   }
 

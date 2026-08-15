@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRefresh } from "@/lib/useRefresh";
 import { Check, X } from "@phosphor-icons/react";
 import { Button, BUTTON_PILL, BUTTON_COLORS } from "@/components/Button";
 
@@ -11,7 +11,7 @@ import { Button, BUTTON_PILL, BUTTON_COLORS } from "@/components/Button";
 // ждёт ответа, и «нет» без объяснения он прочитает как «нас тут не ждут».
 // Тот же принцип, что у отказа по карте.
 export function ApplicationActions({ applicationId }: { applicationId: string }) {
-  const router = useRouter();
+  const refresh = useRefresh();
   const [busy, setBusy] = useState(false);
   const [asking, setAsking] = useState(false);
   const [reason, setReason] = useState("");
@@ -39,7 +39,7 @@ export function ApplicationActions({ applicationId }: { applicationId: string })
         );
         return;
       }
-      router.refresh();
+      refresh();
     } finally {
       setBusy(false);
     }

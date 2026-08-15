@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useRefresh } from "@/lib/useRefresh";
 import { SignOut } from "@phosphor-icons/react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { Button } from "@/components/Button";
@@ -10,11 +11,12 @@ import { Button } from "@/components/Button";
 // серверные компоненты и push уводит в магазин.
 export function LogoutButton() {
   const router = useRouter();
+  const refresh = useRefresh();
 
   async function handleLogout() {
     const supabase = createSupabaseBrowser();
     await supabase.auth.signOut();
-    router.refresh();
+    refresh();
     router.push("/marketplace");
   }
 

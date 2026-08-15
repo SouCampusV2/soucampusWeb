@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRefresh } from "@/lib/useRefresh";
 import { Check, X } from "@phosphor-icons/react";
 import { BUTTON_COLORS, BUTTON_PILL } from "@/components/Button";
 import { REJECTION_TEMPLATES, buildRejectionMessage } from "@/lib/rejection";
@@ -12,7 +12,7 @@ import { REJECTION_TEMPLATES, buildRejectionMessage } from "@/lib/rejection";
 // опубликовать карту, даже подделав запрос: публикация идёт служебным
 // ключом только внутри обработчика.
 export function ModerationActions({ productId }: { productId: string }) {
-  const router = useRouter();
+  const refresh = useRefresh();
   const [pending, setPending] = useState(false);
   const [rejecting, setRejecting] = useState(false);
   // Выбранные пункты («что не так») и произвольная приписка. Итоговый
@@ -49,7 +49,7 @@ export function ModerationActions({ productId }: { productId: string }) {
       // 409 — карту уже разобрали в другой вкладке. Это не ошибка
       // пользователя, а гонка; обновляем список, чтобы он показал правду.
       if (response.status === 409) {
-        router.refresh();
+        refresh();
         setError("This map was already handled — refreshing the queue.");
         return;
       }
@@ -58,7 +58,7 @@ export function ModerationActions({ productId }: { productId: string }) {
     }
 
     // Заявка ушла из очереди — перечитываем серверные данные страницы.
-    router.refresh();
+    refresh();
   }
 
   if (rejecting) {

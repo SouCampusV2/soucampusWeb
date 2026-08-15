@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import { useRefresh } from "@/lib/useRefresh";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Unbounded } from "next/font/google";
@@ -30,6 +31,7 @@ export function Navbar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const refresh = useRefresh();
   const [prevPathname, setPrevPathname] = useState(pathname);
   const { count } = useCart();
   const { user, loading: userLoading } = useUser();
@@ -37,7 +39,7 @@ export function Navbar() {
   async function handleLogout() {
     const supabase = createSupabaseBrowser();
     await supabase.auth.signOut();
-    router.refresh();
+    refresh();
     router.push("/marketplace");
     setOpen(false);
   }
