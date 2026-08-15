@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useNotificationEvents } from "@/lib/useNotificationEvents";
 
@@ -21,7 +21,19 @@ import { useNotificationEvents } from "@/lib/useNotificationEvents";
 // спросить руками.
 export function NotificationsLive({ userId }: { userId: string }) {
   const router = useRouter();
-  const refresh = useCallback(() => router.refresh(), [router]);
+  const [, startTransition] = useTransition();
+
+  // startTransition обязателен, и это выяснилось опытом, а не из
+  // документации: ровно тот же router.refresh() из кнопки «обновить»
+  // рядом работал, а отсюда — нет. Разница была одна. Кнопку нажимает
+  // человек, то есть вызов идёт изнутри обработчика события React, где
+  // обновление и так попадает в правильную очередь. А сюда вызов
+  // приходит из колбэка WebSocket — снаружи React вообще, и без явного
+  // перехода перерисовка серверной части не доезжала.
+  const refresh = useCallback(
+    () => startTransition(() => router.refresh()),
+    [router]
+  );
 
   // Только INSERT. UPDATE здесь — это почти всегда «прочитано», отметку
   // ставит сам этот экран, и перечитывать страницу в ответ на собственное
