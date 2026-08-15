@@ -19,6 +19,7 @@ export type NotificationKind =
   | "map_approved"
   | "map_rejected"
   | "map_suspended"
+  | "map_deleted"
   | "map_sold"
   | "purchase"
   | "announcement";

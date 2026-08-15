@@ -119,7 +119,11 @@ export async function POST(request: Request) {
       case "delete":
         // Мягко: строка остаётся, файл и скриншоты не трогаем — за них
         // заплачено, и покупатель продолжает скачивать.
-        return { state: "deleted", suspension_reason: suspensionReason };
+        return {
+          state: "deleted",
+          deleted_by: "moderator",
+          suspension_reason: suspensionReason,
+        };
       case "restore":
         // Возвращаем карту АВТОРУ: не удалена, не снята, просто не на
         // витрине — и он сам решает, когда её вернуть.
@@ -217,7 +221,7 @@ export async function POST(request: Request) {
         href: `/marketplace/${product.slug}`,
       },
       delete: {
-        kind: "map_suspended" as const,
+        kind: "map_deleted" as const,
         title: `“${product.title}” was removed from the marketplace`,
         body: suspensionReason,
         href: "/resources",

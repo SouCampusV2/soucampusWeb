@@ -140,7 +140,7 @@ export function ResourceActions({
             className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/30"
           >
             <Trash size={16} />
-            Delete permanently
+            Delete this map
           </button>
 
           {error && !confirming && (
@@ -160,10 +160,16 @@ export function ResourceActions({
             <h2 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
               Delete this map?
             </h2>
+            {/* Текст переписан вслед за поведением: удаление стало
+                мягким (миграция 20260815150000), и обещать «стёрто
+                навсегда» стало неправдой. Врать в диалоге подтверждения
+                нельзя ни в какую сторону — ни пугая сильнее, чем есть,
+                ни успокаивая: человек принимает решение по этому тексту. */}
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-              The map, its screenshots and the uploaded file are removed for
-              good. This can&apos;t be undone — if you only want it off the
-              marketplace, hide it instead.
+              It goes off the marketplace and out of your resources, and you
+              can&apos;t undo it yourself. The site keeps the file, so support
+              can bring it back — but if you only want it off the marketplace,
+              hide it instead.
             </p>
 
             {/* Ввод названия, а не «вы уверены?»: диалог с одной кнопкой

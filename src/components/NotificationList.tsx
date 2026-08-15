@@ -13,23 +13,12 @@ import {
   UserPlus,
   X,
   Check,
+  Trash,
 } from "@phosphor-icons/react";
 import type { Notification, NotificationKind } from "@/lib/notifications";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { useHydrated } from "@/lib/useHydrated";
 
-// Список уведомлений.
-//
-// Данные приходят с сервера пропсом, клиентским здесь остаётся ровно одно:
-// отметка «прочитано». Она ставится САМА при открытии страницы — человек
-// уведомления уже увидел, и требовать за это отдельный клик значит просто
-// оставить счётчик врать. Непрочитанные при этом успевают подсветиться:
-// первый кадр рисуется по серверным данным, до запроса.
-//
-// Пишет браузер напрямую: политика "mark own notifications read" пускает
-// только к своим строкам, а триггер в базе замораживает всё, кроме
-// read_at (см. миграцию 20260810120000). Route handler ради одной колонки
-// был бы лишним звеном.
 // Время уведомления.
 //
 // Отдельный компонент из-за расхождения гидратации, которое стоило нам
@@ -67,6 +56,15 @@ function SentAt({ iso }: { iso: string }) {
 const ACTION_LINK =
   "cursor-pointer text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-950 disabled:cursor-not-allowed dark:text-zinc-400 dark:hover:text-zinc-50";
 
+// Список уведомлений.
+//
+// Строки приходят пропсом сверху (их владелец — NotificationsFeed), а
+// здесь живёт только то, что человек делает с ними на экране: отмечает
+// прочитанным и убирает. И то и другое пишется в базу прямо из браузера
+// — политики "mark own notifications read" и "delete own notifications"
+// пускают к своим строкам, а триггер замораживает всё, кроме read_at
+// (миграция 20260810120000). Route handler ради одной колонки был бы
+// лишним звеном.
 export function NotificationList({ items }: { items: Notification[] }) {
   const [busy, setBusy] = useState(false);
 
@@ -355,6 +353,7 @@ const ICONS: Record<
   creator_revoked: [Prohibit, "text-red-600 dark:text-red-400"],
   map_approved: [SealCheck, "text-lime-600 dark:text-lime-400"],
   map_rejected: [XCircle, "text-red-600 dark:text-red-400"],
+  map_deleted: [Trash, "text-zinc-400"],
   map_suspended: [Prohibit, "text-red-600 dark:text-red-400"],
   map_sold: [CurrencyEur, "text-lime-600 dark:text-lime-400"],
   purchase: [ShoppingBag, "text-orange-500"],
