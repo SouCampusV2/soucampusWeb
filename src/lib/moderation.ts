@@ -148,8 +148,10 @@ export type OwnProduct = {
   hiddenBy: "creator" | "moderator" | "revoked" | null;
   /** За что сняли или удалили. Автор обязан это видеть, а не догадываться. */
   suspensionReason: string | null;
-  /** Не null — карту убрал из каталога владелец сайта. */
+  /** Не null — карта удалена (мягко). Кем именно — в deletedBy. */
   deletedAt: string | null;
+  /** Кто удалил: площадка или сам автор. */
+  deletedBy: "creator" | "moderator" | null;
   createdAt: string;
 };
 
@@ -160,9 +162,18 @@ export async function getOwnProducts(
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, slug, title, image_url, price_label, status, is_published, rejection_reason, rejection_flags, hidden_by, suspension_reason, deleted_at, created_at"
+      "id, slug, title, image_url, price_label, status, is_published, rejection_reason, rejection_flags, hidden_by, suspension_reason, deleted_at, deleted_by, created_at"
     )
     .eq("creator_id", userId)
+    // Своё же удаление автор в списке не видит: он его и сделал, а
+    // строка живёт дальше только ради каталога админки и возможного
+    // возврата через поддержку (миграция 20260815150000). Показывать её
+    // здесь значило бы отвечать на «удалить» словами «карта на месте».
+    //
+    // Удаление ПЛОЩАДКОЙ остаётся видимым, и это не непоследовательность:
+    // там автор — сторона, которую поставили перед фактом, и ему нужно
+    // видеть и сам факт, и причину.
+    .or("deleted_by.is.null,deleted_by.eq.moderator")
     .order("created_at", { ascending: false });
 
   // Не роняем страницу из-за этой секции: пока миграция модерации не
@@ -186,6 +197,7 @@ export async function getOwnProducts(
     hiddenBy: row.hidden_by ?? null,
     suspensionReason: row.suspension_reason ?? null,
     deletedAt: row.deleted_at ?? null,
+    deletedBy: row.deleted_by ?? null,
     createdAt: row.created_at,
   }));
 }
