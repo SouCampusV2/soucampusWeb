@@ -35,21 +35,11 @@ export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
       });
       const data = await res.json().catch(() => null);
       if (!res.ok) {
-        setError(
-          "Could not send it — nothing was delivered. Check the connection and try again; the text above is still here.",
-        );
+        setError("Could not send the announcement.");
         return;
       }
-      // Имя адресата берём из списка, а не из ответа: сервер возвращает
-      // только число разложенных уведомлений, а «кому» админ выбирал
-      // здесь же — переспрашивать нечего.
       const sent = data?.sent ?? 0;
-      const recipient = recipients.find((r) => r.id === userId);
-      setResult(
-        userId
-          ? `Sent to ${recipient?.displayName ?? "the account"}. It's in their notifications now — they'll see the bell marked next time they open the site.`
-          : `Sent to ${sent} ${sent === 1 ? "account" : "accounts"} — everyone registered. It's in their notifications now; there's no way to take it back.`,
-      );
+      setResult(sent === 1 ? "Sent." : `Sent to ${sent} accounts.`);
       setTitle("");
       setText("");
       setHref("");
@@ -117,16 +107,17 @@ export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
         onChange={setHref}
       />
 
+      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {result && (
+        <p className="text-sm text-lime-700 dark:text-lime-400">{result}</p>
+      )}
+
       {/* Переспрашиваем только у рассылки всем. Личное сообщение одному
           человеку — обычное действие с понятной ценой ошибки, лишний
           клик там только мешает. */}
       {!confirming ? (
-        // Иконка справа и `group gap-2` — тот же приём, что у «Open Discord»
-        // на /contact: у кнопки с иконкой анимируется иконка, а не сама
-        // кнопка (hover:scale со всего сайта убран, см. Button.tsx).
         <Button
           size="md"
-          className="group gap-2"
           disabled={!title.trim() || busy}
           onClick={() => {
             setResult(null);
@@ -134,12 +125,8 @@ export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
             else void send();
           }}
         >
+          <Megaphone size={18} weight="bold" />
           {busy ? "Sending…" : toEveryone ? "Send to everyone" : "Send"}
-          <Megaphone
-            size={18}
-            weight="bold"
-            className="transition-transform duration-300 group-hover:-rotate-12"
-          />
         </Button>
       ) : (
         <div className="rounded-2xl border border-orange-500/40 bg-orange-50 p-4 dark:bg-orange-950/30">
@@ -159,14 +146,6 @@ export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
             </Button>
           </div>
         </div>
-      )}
-
-      {/* Итог — ПОД кнопкой: сообщение появляется как ответ на нажатие, и
-          читать его естественно там, куда только что ушёл клик. Сверху оно
-          вдобавок сдвигало саму кнопку вниз в момент нажатия. */}
-      {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
-      {result && (
-        <p className="text-sm text-lime-700 dark:text-lime-400">{result}</p>
       )}
     </div>
   );

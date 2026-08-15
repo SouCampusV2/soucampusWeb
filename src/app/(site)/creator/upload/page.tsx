@@ -17,11 +17,6 @@ export const metadata: Metadata = {
   robots: { index: false },
 };
 
-// Личная страница — не кэшируем, гасим унаследованный от (site)
-// revalidate = 60 (подробно — в notifications/page.tsx). Право на
-// загрузку выдаёт админ, и появиться оно должно сразу.
-export const dynamic = "force-dynamic";
-
 // Тот же гейт, что у /profile/edit: страница закрыта, гость летит на
 // /login. Клиентская проверка в CreatorOwnerActions (кнопка сюда ведёт)
 // — это только UX ("не показывать кнопку постороннему"), не защита; сама
