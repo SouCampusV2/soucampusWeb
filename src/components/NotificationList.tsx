@@ -30,10 +30,34 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 // был бы лишним звеном.
 export function NotificationList({ items }: { items: Notification[] }) {
   const [read, setRead] = useState(false);
-  // Список держим в состоянии, чтобы удаление убирало строку сразу, а не
-  // после похода на сервер и перерисовки страницы.
-  const [visible, setVisible] = useState(items);
   const [busy, setBusy] = useState(false);
+
+  // Что человек убрал руками — множество id, а НЕ копия списка.
+  //
+  // Раньше здесь лежал сам список: useState(items). Это тихая ловушка,
+  // из-за которой страница уведомлений и выглядела сломанной. useState
+  // берёт аргумент только ПРИ ПЕРВОМ рендере — дальше он не значит
+  // ничего. Приходит новое уведомление, сервер честно отдаёт список из
+  // трёх строк вместо двух, проп items обновляется — а состояние так и
+  // держит те две, с которыми компонент когда-то смонтировали. Список
+  // мог обновиться только вместе со всем компонентом, то есть по F5.
+  //
+  // Признак был прямо на виду и объяснял всё разом: новое уведомление в
+  // списке не появлялось, но при этом ОТМЕЧАЛОСЬ ПРОЧИТАННЫМ и бейдж
+  // гас. Отметку ставит эффект ниже с зависимостью [items] — значит
+  // новые данные до компонента доходили, их просто некому было
+  // показать. Ни кэш, ни router.refresh(), ни realtime тут ни при чём:
+  // они все работали.
+  //
+  // Теперь список не дублируется в состоянии вовсе: он всегда приходит
+  // сверху, а состояние помнит только вычеркнутое. Новые строки
+  // появляются сами собой, удалённые не возвращаются, и рассинхронизации
+  // между «что показано» и «что пришло» больше не существует как
+  // возможности.
+  const [removed, setRemoved] = useState<ReadonlySet<string>>(
+    () => new Set<string>()
+  );
+  const visible = items.filter((item) => !removed.has(item.id));
 
   useEffect(() => {
     if (items.every((item) => item.readAt)) return;
@@ -58,7 +82,7 @@ export function NotificationList({ items }: { items: Notification[] }) {
   // ошибке: это почтовый ящик, а не документ, и «не удалилось» человек
   // увидит сам при следующем открытии страницы.
   async function remove(id: string) {
-    setVisible((current) => current.filter((item) => item.id !== id));
+    setRemoved((current) => new Set(current).add(id));
     const supabase = createSupabaseBrowser();
     await supabase.from("notifications").delete().eq("id", id);
   }
@@ -66,7 +90,11 @@ export function NotificationList({ items }: { items: Notification[] }) {
   async function clearAll() {
     setBusy(true);
     const ids = visible.map((item) => item.id);
-    setVisible([]);
+    setRemoved((current) => {
+      const next = new Set(current);
+      for (const id of ids) next.add(id);
+      return next;
+    });
     const supabase = createSupabaseBrowser();
     await supabase.from("notifications").delete().in("id", ids);
     setBusy(false);
