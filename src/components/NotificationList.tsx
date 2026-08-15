@@ -15,6 +15,7 @@ import {
 } from "@phosphor-icons/react";
 import type { Notification, NotificationKind } from "@/lib/notifications";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { useHydrated } from "@/lib/useHydrated";
 
 // Список уведомлений.
 //
@@ -28,28 +29,109 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 // только к своим строкам, а триггер в базе замораживает всё, кроме
 // read_at (см. миграцию 20260810120000). Route handler ради одной колонки
 // был бы лишним звеном.
+// Время уведомления.
+//
+// Отдельный компонент из-за расхождения гидратации, которое стоило нам
+// нескольких раундов поисков. Раньше здесь стояло просто
+// `new Date(item.createdAt).toLocaleString()`. toLocaleString берёт
+// локаль и часовой пояс у того, кто его выполняет: на сервере (Vercel,
+// UTC, en-US) выходит один текст, у человека в браузере — другой. React
+// сверяет первый клиентский рендер с серверным HTML посимвольно, видит
+// разный текст и роняет ошибку гидратации (#418 в консоли), после чего
+// перерисовывает поддерево заново, сбрасывая состояние компонентов.
+//
+// То есть безобидная строчка с датой ломала страницу целиком, а
+// выглядело это как «уведомления не работают».
+//
+// Лечение: до гидратации показываем ЗАВЕДОМО одинаковый текст — дату в
+// UTC, которую сервер и браузер посчитают побуквенно одинаково, — и
+// только после неё переключаемся на местное время. useHydrated для того
+// и заведён (см. его шапку). Подмена происходит в том же кадре, что и
+// остальная гидратация, глазом не ловится.
+function SentAt({ iso }: { iso: string }) {
+  const hydrated = useHydrated();
+  const date = new Date(iso);
+  return (
+    <>
+      {hydrated
+        ? date.toLocaleString()
+        : date.toLocaleString("en-GB", { timeZone: "UTC" })}
+    </>
+  );
+}
+
+// Сколько держится оранжевая подсветка нового, прежде чем список
+// отметится прочитанным. Семь секунд — из вилки «5-10», которую назвал
+// владелец: меньше пяти не успеваешь прочитать заголовок, больше десяти
+// подсветка начинает выглядеть как состояние страницы, а не как «вот это
+// новое».
+const HIGHLIGHT_MS = 7000;
+
 export function NotificationList({ items }: { items: Notification[] }) {
   const [read, setRead] = useState(false);
-  // Список держим в состоянии, чтобы удаление убирало строку сразу, а не
-  // после похода на сервер и перерисовки страницы.
-  const [visible, setVisible] = useState(items);
   const [busy, setBusy] = useState(false);
+
+  // Что человек убрал руками — множество id, а НЕ копия списка.
+  //
+  // Раньше здесь лежал сам список: useState(items). Это тихая ловушка,
+  // из-за которой страница уведомлений и выглядела сломанной. useState
+  // берёт аргумент только ПРИ ПЕРВОМ рендере — дальше он не значит
+  // ничего. Приходит новое уведомление, сервер честно отдаёт список из
+  // трёх строк вместо двух, проп items обновляется — а состояние так и
+  // держит те две, с которыми компонент когда-то смонтировали. Список
+  // мог обновиться только вместе со всем компонентом, то есть по F5.
+  //
+  // Признак был прямо на виду и объяснял всё разом: новое уведомление в
+  // списке не появлялось, но при этом ОТМЕЧАЛОСЬ ПРОЧИТАННЫМ и бейдж
+  // гас. Отметку ставит эффект ниже с зависимостью [items] — значит
+  // новые данные до компонента доходили, их просто некому было
+  // показать. Ни кэш, ни router.refresh(), ни realtime тут ни при чём:
+  // они все работали.
+  //
+  // Теперь список не дублируется в состоянии вовсе: он всегда приходит
+  // сверху, а состояние помнит только вычеркнутое. Новые строки
+  // появляются сами собой, удалённые не возвращаются, и рассинхронизации
+  // между «что показано» и «что пришло» больше не существует как
+  // возможности.
+  const [removed, setRemoved] = useState<ReadonlySet<string>>(
+    () => new Set<string>()
+  );
+  const visible = items.filter((item) => !removed.has(item.id));
 
   useEffect(() => {
     if (items.every((item) => item.readAt)) return;
     let active = true;
-    (async () => {
-      const supabase = createSupabaseBrowser();
-      await supabase
-        .from("notifications")
-        .update({ read_at: new Date().toISOString() })
-        .is("read_at", null);
-      // Подсветку снимаем только после успешной записи — иначе она
-      // пропала бы и в случае, когда отметка не сохранилась.
-      if (active) setRead(true);
-    })();
+
+    // Пауза перед отметкой «прочитано» (замечание владельца: подсветка
+    // пропадала слишком быстро).
+    //
+    // Отмечали сразу при появлении списка, и оранжевое выделение вместе
+    // с бейджем гасли в тот же миг — то есть ровно тогда, когда человек
+    // ещё ищет глазами, ЧТО именно пришло. Подсветка нужна не для
+    // бухгалтерии, а чтобы показать новое среди старого, и жить она
+    // должна хотя бы несколько секунд.
+    //
+    // Задержка стоит перед самой записью, а не перед снятием подсветки:
+    // если человек ушёл со страницы за эти секунды, уведомление честно
+    // остаётся непрочитанным — он его и правда не разглядел. Таймер
+    // снимается при уходе (см. возврат ниже), поэтому запись в этом
+    // случае просто не случится.
+    const timer = setTimeout(() => {
+      void (async () => {
+        const supabase = createSupabaseBrowser();
+        await supabase
+          .from("notifications")
+          .update({ read_at: new Date().toISOString() })
+          .is("read_at", null);
+        // Подсветку снимаем только после успешной записи — иначе она
+        // пропала бы и в случае, когда отметка не сохранилась.
+        if (active) setRead(true);
+      })();
+    }, HIGHLIGHT_MS);
+
     return () => {
       active = false;
+      clearTimeout(timer);
     };
   }, [items]);
 
@@ -58,7 +140,7 @@ export function NotificationList({ items }: { items: Notification[] }) {
   // ошибке: это почтовый ящик, а не документ, и «не удалилось» человек
   // увидит сам при следующем открытии страницы.
   async function remove(id: string) {
-    setVisible((current) => current.filter((item) => item.id !== id));
+    setRemoved((current) => new Set(current).add(id));
     const supabase = createSupabaseBrowser();
     await supabase.from("notifications").delete().eq("id", id);
   }
@@ -66,7 +148,11 @@ export function NotificationList({ items }: { items: Notification[] }) {
   async function clearAll() {
     setBusy(true);
     const ids = visible.map((item) => item.id);
-    setVisible([]);
+    setRemoved((current) => {
+      const next = new Set(current);
+      for (const id of ids) next.add(id);
+      return next;
+    });
     const supabase = createSupabaseBrowser();
     await supabase.from("notifications").delete().in("id", ids);
     setBusy(false);
@@ -161,7 +247,7 @@ function Row({
           </p>
         )}
         <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-          {new Date(item.createdAt).toLocaleString()}
+          <SentAt iso={item.createdAt} />
         </p>
       </div>
     </div>

@@ -5,9 +5,7 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { getCurrentUser } from "@/lib/current-user";
 import { getNotifications } from "@/lib/notifications";
 import { PageGlow } from "@/components/PageGlow";
-import { NotificationList, EmptyState } from "@/components/NotificationList";
-import { RefreshButton } from "@/components/RefreshButton";
-import { NotificationsLive } from "@/components/NotificationsLive";
+import { NotificationsFeed } from "@/components/NotificationsFeed";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -53,24 +51,15 @@ export default async function NotificationsPage() {
       <PageGlow color="rgba(249,115,22,0.28)" />
       <section className="relative pb-28 pt-20">
         <div className="mx-auto max-w-3xl">
-          <div className="flex items-center justify-between gap-4">
-            <h1
-              className={`${displayFont.className} text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
-            >
-              Notifications
-            </h1>
-            {/* Список подтягивается сам по событию из базы (см.
-                NotificationsLive ниже). Кнопка остаётся запасным путём:
-                WebSocket может отвалиться, и тогда нужен способ спросить
-                руками. */}
-            <RefreshButton label="Check for new notifications" />
-          </div>
-
-          {/* Ничего не рисует: слушает базу и перечитывает страницу,
-              когда приходит новое. */}
-          <NotificationsLive userId={user.id} />
-
-          {items.length === 0 ? <EmptyState /> : <NotificationList items={items} />}
+          {/* Заголовок, кнопка и список — одним клиентским компонентом.
+              Сервер отдаёт ему первый экран (items) и больше в список не
+              вмешивается: дальше тот сам перечитывает строки по событию
+              из базы и по нажатию кнопки. */}
+          <NotificationsFeed
+            userId={user.id}
+            initial={items}
+            headingClassName={`${displayFont.className} text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
+          />
         </div>
       </section>
     </main>
