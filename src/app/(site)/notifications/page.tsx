@@ -7,6 +7,7 @@ import { getNotifications } from "@/lib/notifications";
 import { PageGlow } from "@/components/PageGlow";
 import { NotificationList, EmptyState } from "@/components/NotificationList";
 import { RefreshButton } from "@/components/RefreshButton";
+import { NotificationsLive } from "@/components/NotificationsLive";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -14,6 +15,26 @@ export const metadata: Metadata = {
   title: "Notifications",
   robots: { index: false },
 };
+
+// Личная страница — кэшировать её нельзя, и вот почему это пришлось
+// написать явно.
+//
+// Группа (site) объявляет `revalidate = 60` (см. её layout.tsx), и это
+// наследуют ВСЕ страницы внутри, включая эту. Для витрины и портфолио
+// «считай готовый ответ свежим минуту» — то, ради чего сайт и держится
+// на статике. Здесь же ответ у каждого свой и меняется не от действий
+// смотрящего: уведомление приходит, пока страница открыта.
+//
+// Из-за унаследованной минуты кнопка «обновить» выглядела сломанной:
+// router.refresh() уходил на сервер, но ответ приезжал из кэша маршрута,
+// и нового уведомления в нём не было. F5 при этом помогал — полная
+// перезагрузка идёт другим путём, и именно это расхождение («жму кнопку
+// — ничего, жму F5 — есть») указывало на кэш, а не на выборку.
+//
+// force-dynamic = «рендерить на каждый запрос», это же обнуляет
+// унаследованный revalidate. Ровно так объявлены все страницы админки —
+// там та же кнопка работала как раз поэтому.
+export const dynamic = "force-dynamic";
 
 // Всё, что площадка сказала человеку: решения по заявке и картам,
 // покупки, объявления. Заглушка-колокол в навбаре наконец ведёт сюда.
@@ -38,10 +59,16 @@ export default async function NotificationsPage() {
             >
               Notifications
             </h1>
-            {/* Уведомления приходят, пока страница открыта, а сама она
-                серверная и об этом не узнаёт. */}
+            {/* Список подтягивается сам по событию из базы (см.
+                NotificationsLive ниже). Кнопка остаётся запасным путём:
+                WebSocket может отвалиться, и тогда нужен способ спросить
+                руками. */}
             <RefreshButton label="Check for new notifications" />
           </div>
+
+          {/* Ничего не рисует: слушает базу и перечитывает страницу,
+              когда приходит новое. */}
+          <NotificationsLive userId={user.id} />
 
           {items.length === 0 ? <EmptyState /> : <NotificationList items={items} />}
         </div>
