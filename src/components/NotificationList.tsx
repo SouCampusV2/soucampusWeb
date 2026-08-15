@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import {
   Bell,
   SealCheck,
@@ -12,6 +12,7 @@ import {
   Megaphone,
   UserPlus,
   X,
+  Check,
 } from "@phosphor-icons/react";
 import type { Notification, NotificationKind } from "@/lib/notifications";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
@@ -60,15 +61,13 @@ function SentAt({ iso }: { iso: string }) {
   );
 }
 
-// Сколько держится оранжевая подсветка нового, прежде чем список
-// отметится прочитанным. Семь секунд — из вилки «5-10», которую назвал
-// владелец: меньше пяти не успеваешь прочитать заголовок, больше десяти
-// подсветка начинает выглядеть как состояние страницы, а не как «вот это
-// новое».
-const HIGHLIGHT_MS = 7000;
+// Приглушённые действия над списком («Mark all as read», «Clear all»).
+// Не Button и не INLINE_LINK: это служебные операции над содержимым
+// страницы, они не должны спорить за внимание с самими уведомлениями.
+const ACTION_LINK =
+  "cursor-pointer text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-950 disabled:cursor-not-allowed dark:text-zinc-400 dark:hover:text-zinc-50";
 
 export function NotificationList({ items }: { items: Notification[] }) {
-  const [read, setRead] = useState(false);
   const [busy, setBusy] = useState(false);
 
   // Что человек убрал руками — множество id, а НЕ копия списка.
@@ -98,42 +97,58 @@ export function NotificationList({ items }: { items: Notification[] }) {
   );
   const visible = items.filter((item) => !removed.has(item.id));
 
-  useEffect(() => {
-    if (items.every((item) => item.readAt)) return;
-    let active = true;
+  // Прочитанное в этой сессии — поверх того, что уже отмечено в базе.
+  // Держим отдельно, чтобы подсветка снималась сразу по клику, не
+  // дожидаясь, пока строка вернётся с сервера.
+  const [markedRead, setMarkedRead] = useState<ReadonlySet<string>>(
+    () => new Set<string>()
+  );
 
-    // Пауза перед отметкой «прочитано» (замечание владельца: подсветка
-    // пропадала слишком быстро).
-    //
-    // Отмечали сразу при появлении списка, и оранжевое выделение вместе
-    // с бейджем гасли в тот же миг — то есть ровно тогда, когда человек
-    // ещё ищет глазами, ЧТО именно пришло. Подсветка нужна не для
-    // бухгалтерии, а чтобы показать новое среди старого, и жить она
-    // должна хотя бы несколько секунд.
-    //
-    // Задержка стоит перед самой записью, а не перед снятием подсветки:
-    // если человек ушёл со страницы за эти секунды, уведомление честно
-    // остаётся непрочитанным — он его и правда не разглядел. Таймер
-    // снимается при уходе (см. возврат ниже), поэтому запись в этом
-    // случае просто не случится.
-    const timer = setTimeout(() => {
-      void (async () => {
-        const supabase = createSupabaseBrowser();
-        await supabase
-          .from("notifications")
-          .update({ read_at: new Date().toISOString() })
-          .is("read_at", null);
-        // Подсветку снимаем только после успешной записи — иначе она
-        // пропала бы и в случае, когда отметка не сохранилась.
-        if (active) setRead(true);
-      })();
-    }, HIGHLIGHT_MS);
+  /**
+   * Отметка «прочитано» — ТОЛЬКО по действию человека (решение владельца
+   * 2026-08-15).
+   *
+   * Раньше список отмечал всё сам: сперва сразу при открытии, потом
+   * через семь секунд. Оба варианта врали. «Прочитано» — это утверждение
+   * о человеке, а не о странице: открытая вкладка не значит, что в неё
+   * смотрели, и уж тем более не значит, что прочли все двадцать строк.
+   * Отсюда и знакомое раздражение: зашёл посмотреть, что за оранжевый
+   * кружок, отвлёкся — и отметка уже стоит, а что именно пришло, ты так
+   * и не увидел.
+   *
+   * Теперь отметку ставит клик: по самой карточке, по кнопке на ней или
+   * по «Mark all as read». Непрочитанное остаётся непрочитанным ровно
+   * до тех пор, пока его не тронули, и это единственное поведение, за
+   * которое можно ручаться.
+   *
+   * Пишет браузер напрямую: политика "mark own notifications read"
+   * пускает только к своим строкам, а триггер в базе замораживает всё,
+   * кроме read_at (миграция 20260810120000). Route handler ради одной
+   * колонки был бы лишним звеном.
+   */
+  async function markRead(ids: string[]) {
+    const fresh = ids.filter((id) => {
+      const item = items.find((candidate) => candidate.id === id);
+      return item && !item.readAt && !markedRead.has(id);
+    });
+    if (fresh.length === 0) return;
 
-    return () => {
-      active = false;
-      clearTimeout(timer);
-    };
-  }, [items]);
+    setMarkedRead((current) => {
+      const next = new Set(current);
+      for (const id of fresh) next.add(id);
+      return next;
+    });
+
+    const supabase = createSupabaseBrowser();
+    await supabase
+      .from("notifications")
+      .update({ read_at: new Date().toISOString() })
+      .in("id", fresh);
+  }
+
+  const unreadIds = visible
+    .filter((item) => !item.readAt && !markedRead.has(item.id))
+    .map((item) => item.id);
 
   // Удаление — тоже напрямую из браузера, политикой "delete own
   // notifications". Строку убираем из списка сразу и НЕ возвращаем при
@@ -166,12 +181,23 @@ export function NotificationList({ items }: { items: Notification[] }) {
 
   return (
     <>
-      <div className="mt-6 flex justify-end">
+      <div className="mt-6 flex justify-end gap-4">
+        {/* Появляется только когда есть что отмечать: кнопка, которая
+            ничего не делает, читается как сломанная. */}
+        {unreadIds.length > 0 && (
+          <button
+            type="button"
+            onClick={() => void markRead(unreadIds)}
+            className={ACTION_LINK}
+          >
+            Mark all as read
+          </button>
+        )}
         <button
           type="button"
           disabled={busy}
           onClick={clearAll}
-          className="cursor-pointer text-sm font-medium text-zinc-500 transition-colors hover:text-zinc-950 disabled:cursor-not-allowed dark:text-zinc-400 dark:hover:text-zinc-50"
+          className={ACTION_LINK}
         >
           Clear all
         </button>
@@ -182,7 +208,8 @@ export function NotificationList({ items }: { items: Notification[] }) {
           <Row
             key={item.id}
             item={item}
-            dimmed={read}
+            unread={!item.readAt && !markedRead.has(item.id)}
+            onRead={() => void markRead([item.id])}
             onRemove={() => remove(item.id)}
           />
         ))}
@@ -216,15 +243,15 @@ export function EmptyState() {
 
 function Row({
   item,
-  dimmed,
+  unread,
+  onRead,
   onRemove,
 }: {
   item: Notification;
-  dimmed: boolean;
+  unread: boolean;
+  onRead: () => void;
   onRemove: () => void;
 }) {
-  const unread = !item.readAt && !dimmed;
-
   const body = (
     <div
       className={`flex gap-4 rounded-2xl border p-4 transition-colors ${
@@ -235,10 +262,12 @@ function Row({
     >
       <Icon kind={item.kind} />
       <div className="min-w-0 flex-1">
-        {/* Место под крестик держим паддингом справа, а не отдельной
-            колонкой: кнопка лежит поверх карточки (см. ниже), и без
-            запаса длинный заголовок уезжал бы прямо под неё. */}
-        <p className="pr-8 font-semibold text-zinc-950 dark:text-zinc-50">
+        {/* Место под кнопки держим паддингом справа, а не отдельной
+            колонкой: они лежат поверх карточки (см. ниже), и без запаса
+            длинный заголовок уезжал бы прямо под них. Запас на две —
+            крестик есть всегда, галочка появляется у непрочитанного, и
+            прыгать при её появлении заголовок не должен. */}
+        <p className="pr-16 font-semibold text-zinc-950 dark:text-zinc-50">
           {item.title}
         </p>
         {item.body && (
@@ -259,15 +288,41 @@ function Row({
   // Крестик — СОСЕДОМ ссылки, поверх карточки, а не внутри неё: кнопка
   // внутри <a> — невалидная разметка, и клик по ней всё равно уводил бы
   // по ссылке вместо удаления.
+  // Клик по карточке — это и есть «прочитал»: человек её открыл или хотя
+  // бы ткнул. У карточки со ссылкой отметка уходит по дороге, попутно с
+  // переходом; у карточки без ссылки клик не делает больше ничего, но
+  // отметку ставит — иначе непонятно, почему по одной кликнуть можно, а
+  // по другой нет.
+  //
+  // На карточке без ссылки onClick висит на <div>, и это сознательно: с
+  // клавиатуры и скринридером то же самое делает кнопка-галочка справа,
+  // у которой есть и роль, и подпись. Вешать сюда role="button" значило
+  // бы объявить кнопкой область с ссылками и текстом внутри.
   return (
     <li className="relative">
       {item.href ? (
-        <Link href={item.href} className="block">
+        <Link href={item.href} className="block" onClick={onRead}>
           {body}
         </Link>
       ) : (
-        body
+        <div onClick={unread ? onRead : undefined}>{body}</div>
       )}
+
+      {/* Отметить, не открывая: уведомление бывает и без ссылки, и с
+          ссылкой, по которой сейчас незачем идти. Стоит рядом с
+          крестиком — оба действия над карточкой в одном месте. */}
+      {unread && (
+        <button
+          type="button"
+          onClick={onRead}
+          aria-label="Mark as read"
+          title="Mark as read"
+          className="absolute right-10 top-3 cursor-pointer rounded-full p-1 text-zinc-400 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+        >
+          <Check size={16} weight="bold" />
+        </button>
+      )}
+
       <button
         type="button"
         onClick={onRemove}
