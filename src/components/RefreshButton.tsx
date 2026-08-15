@@ -23,10 +23,21 @@ import { ArrowsClockwise } from "@phosphor-icons/react";
 export function RefreshButton({
   label = "Refresh",
   className = "",
+  onRefresh,
 }: {
   /** Подпись для скринридера; на экране только иконка. */
   label?: string;
   className?: string;
+  /**
+   * Своё обновление вместо серверного перерендера.
+   *
+   * Нужно там, где страница уже держит данные на клиенте и умеет
+   * перечитать их сама (уведомления). Звать router.refresh() в таком
+   * месте бессмысленно: он привезёт новые пропсы, а состояние
+   * компонента их не заметит — ровно эта пара и выглядела как
+   * «кнопка не работает».
+   */
+  onRefresh?: () => void | Promise<void>;
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
@@ -38,6 +49,10 @@ export function RefreshButton({
   function refresh() {
     setSpinning(true);
     setTimeout(() => setSpinning(false), 500);
+    if (onRefresh) {
+      void onRefresh();
+      return;
+    }
     startTransition(() => router.refresh());
   }
 

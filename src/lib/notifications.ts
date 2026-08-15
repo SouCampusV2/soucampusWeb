@@ -8,49 +8,23 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 // под своей сессией: подмешивать сюда служебный ключ незачем, RLS уже
 // отфильтрует чужие строки.
 
-export type NotificationKind =
-  | "creator_application_submitted"
-  | "creator_approved"
-  | "creator_rejected"
-  | "creator_revoked"
-  | "map_approved"
-  | "map_rejected"
-  | "map_suspended"
-  | "map_sold"
-  | "purchase"
-  | "announcement";
+// Тип, разбор строки и лимит живут в notification-shape.ts — их читает и
+// браузер, а сюда ему нельзя (в шапке этого файла служебный ключ).
+// Реэкспорт оставлен, чтобы для остального кода ничего не менялось.
+export type {
+  Notification,
+  NotificationKind,
+} from "@/lib/notification-shape";
+export { NOTIFICATIONS_LIMIT } from "@/lib/notification-shape";
 
-export type Notification = {
-  id: string;
-  kind: NotificationKind;
-  title: string;
-  body: string | null;
-  href: string | null;
-  createdAt: string;
-  readAt: string | null;
-};
-
-type Row = {
-  id: string;
-  kind: NotificationKind;
-  title: string;
-  body: string | null;
-  href: string | null;
-  created_at: string;
-  read_at: string | null;
-};
-
-function toNotification(row: Row): Notification {
-  return {
-    id: row.id,
-    kind: row.kind,
-    title: row.title,
-    body: row.body,
-    href: row.href,
-    createdAt: row.created_at,
-    readAt: row.read_at,
-  };
-}
+import {
+  NOTIFICATION_COLUMNS,
+  NOTIFICATIONS_LIMIT,
+  toNotification,
+  type Notification,
+  type NotificationKind,
+  type NotificationRow,
+} from "@/lib/notification-shape";
 
 const MAX_TITLE = 160;
 const MAX_BODY = 1000;
@@ -197,9 +171,6 @@ export async function getAdminIds(): Promise<string[]> {
   }
 }
 
-/** Сколько страниц уведомлений показываем — дальше уже архив. */
-export const NOTIFICATIONS_LIMIT = 50;
-
 /** Свои уведомления, свежие сверху. Под сессией пользователя. */
 export async function getNotifications(
   supabase: SupabaseClient,
@@ -207,7 +178,7 @@ export async function getNotifications(
 ): Promise<Notification[]> {
   const { data, error } = await supabase
     .from("notifications")
-    .select("id, kind, title, body, href, created_at, read_at")
+    .select(NOTIFICATION_COLUMNS)
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
     .limit(NOTIFICATIONS_LIMIT);
@@ -218,7 +189,7 @@ export async function getNotifications(
     console.warn(`Уведомления недоступны: ${error.message}`);
     return [];
   }
-  return (data ?? []).map((row) => toNotification(row as Row));
+  return (data ?? []).map((row) => toNotification(row as NotificationRow));
 }
 
 /**

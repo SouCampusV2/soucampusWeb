@@ -28,6 +28,13 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 // только к своим строкам, а триггер в базе замораживает всё, кроме
 // read_at (см. миграцию 20260810120000). Route handler ради одной колонки
 // был бы лишним звеном.
+// Сколько держится оранжевая подсветка нового, прежде чем список
+// отметится прочитанным. Семь секунд — из вилки «5-10», которую назвал
+// владелец: меньше пяти не успеваешь прочитать заголовок, больше десяти
+// подсветка начинает выглядеть как состояние страницы, а не как «вот это
+// новое».
+const HIGHLIGHT_MS = 7000;
+
 export function NotificationList({ items }: { items: Notification[] }) {
   const [read, setRead] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -62,18 +69,37 @@ export function NotificationList({ items }: { items: Notification[] }) {
   useEffect(() => {
     if (items.every((item) => item.readAt)) return;
     let active = true;
-    (async () => {
-      const supabase = createSupabaseBrowser();
-      await supabase
-        .from("notifications")
-        .update({ read_at: new Date().toISOString() })
-        .is("read_at", null);
-      // Подсветку снимаем только после успешной записи — иначе она
-      // пропала бы и в случае, когда отметка не сохранилась.
-      if (active) setRead(true);
-    })();
+
+    // Пауза перед отметкой «прочитано» (замечание владельца: подсветка
+    // пропадала слишком быстро).
+    //
+    // Отмечали сразу при появлении списка, и оранжевое выделение вместе
+    // с бейджем гасли в тот же миг — то есть ровно тогда, когда человек
+    // ещё ищет глазами, ЧТО именно пришло. Подсветка нужна не для
+    // бухгалтерии, а чтобы показать новое среди старого, и жить она
+    // должна хотя бы несколько секунд.
+    //
+    // Задержка стоит перед самой записью, а не перед снятием подсветки:
+    // если человек ушёл со страницы за эти секунды, уведомление честно
+    // остаётся непрочитанным — он его и правда не разглядел. Таймер
+    // снимается при уходе (см. возврат ниже), поэтому запись в этом
+    // случае просто не случится.
+    const timer = setTimeout(() => {
+      void (async () => {
+        const supabase = createSupabaseBrowser();
+        await supabase
+          .from("notifications")
+          .update({ read_at: new Date().toISOString() })
+          .is("read_at", null);
+        // Подсветку снимаем только после успешной записи — иначе она
+        // пропала бы и в случае, когда отметка не сохранилась.
+        if (active) setRead(true);
+      })();
+    }, HIGHLIGHT_MS);
+
     return () => {
       active = false;
+      clearTimeout(timer);
     };
   }, [items]);
 
