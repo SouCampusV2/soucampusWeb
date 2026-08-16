@@ -20,12 +20,12 @@ export const dynamic = "force-dynamic";
 export default async function AdminProductsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; state?: string }>;
 }) {
-  const { q, status } = await searchParams;
+  const { q, state } = await searchParams;
   const rows = await getCatalog({
     q,
-    status: status as never,
+    state: state as never,
   });
   const stats = summarize(rows);
 
@@ -54,7 +54,7 @@ export default async function AdminProductsPage({
         <div className="mt-10 rounded-3xl border border-zinc-200 p-12 text-center dark:border-zinc-800">
           <Package size={40} weight="thin" className="mx-auto text-zinc-300 dark:text-zinc-700" />
           <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
-            {q || status ? "Nothing matches that." : "No maps yet."}
+            {q || state ? "Nothing matches that." : "No maps yet."}
           </p>
         </div>
       ) : (
@@ -115,9 +115,10 @@ function CatalogRowItem({ product }: { product: CatalogRow }) {
             {new Date(product.createdAt).toLocaleDateString()}
           </p>
 
-          {/* Открыть на витрине — только у живых: у остальных публичной
-              страницы не существует, ссылка вела бы в 404. */}
-          {product.isPublished && !product.deletedAt && (
+          {/* Открыть на витрине — только у тех, кто на ней есть: у
+              остальных публичной страницы не существует, ссылка вела бы в
+              404. Условие то же, что в политике чтения. */}
+          {product.state === "live" && product.creatorActive && (
             <Link
               href={`/marketplace/${product.slug}`}
               {...NEW_TAB}
@@ -133,7 +134,11 @@ function CatalogRowItem({ product }: { product: CatalogRow }) {
                   /api/admin/catalog), а называть удаление «снятием» —
                   врать самому себе при следующем разборе. */}
               <span className="font-semibold">
-                {product.deletedAt ? "Removed: " : "Taken down: "}
+                {product.state === "deleted"
+                  ? product.deletedBy === "creator"
+                    ? "Deleted by the author: "
+                    : "Removed by the site: "
+                  : "Taken down: "}
               </span>
               {product.suspensionReason}
             </p>
@@ -146,33 +151,82 @@ function CatalogRowItem({ product }: { product: CatalogRow }) {
   );
 }
 
+// Подписи состояний — в одном месте, чтобы каталог и кабинет автора не
+// разъезжались в словах об одном и том же.
+const STATE_BADGES: Record<
+  CatalogRow["state"],
+  { label: string; className: string }
+> = {
+  deleted: {
+    label: "Deleted",
+    className:
+      "bg-zinc-950/[0.06] text-zinc-600 dark:bg-zinc-50/[0.08] dark:text-zinc-400",
+  },
+  pending: {
+    label: "In review",
+    className:
+      "bg-zinc-950/[0.05] text-zinc-600 dark:bg-zinc-50/[0.06] dark:text-zinc-400",
+  },
+  rejected: {
+    label: "Rejected",
+    className: "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400",
+  },
+  suspended: {
+    label: "Taken down",
+    className:
+      "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
+  },
+  hidden: {
+    label: "Hidden by author",
+    className:
+      "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
+  },
+  live: {
+    label: "Live",
+    className:
+      "bg-lime-100 text-lime-700 dark:bg-lime-950 dark:text-lime-300",
+  },
+};
+
 function StatusBadge({ product }: { product: CatalogRow }) {
-  // Порядок проверок = порядок важности для владельца: удалённое важнее
-  // того, опубликовано ли оно, а «снял модератор» важнее «убрал автор».
-  if (product.deletedAt) {
-    return <Badge className="bg-zinc-950/[0.06] text-zinc-600 dark:bg-zinc-50/[0.08] dark:text-zinc-400">Deleted</Badge>;
-  }
-  if (product.status === "pending") {
-    return <Badge className="bg-zinc-950/[0.05] text-zinc-600 dark:bg-zinc-50/[0.06] dark:text-zinc-400">In review</Badge>;
-  }
-  if (product.status === "rejected") {
-    return <Badge className="bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400">Rejected</Badge>;
-  }
-  if (!product.isPublished) {
-    return (
-      <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300">
-        {/* «Creator revoked» отдельной подписью: иначе владелец видит
-            «Taken down» и идёт искать, за что снял ЭТУ карту, хотя решение
-            было про автора и вернётся она сама. */}
-        {product.hiddenBy === "moderator"
-          ? "Taken down"
-          : product.hiddenBy === "revoked"
-            ? "Creator revoked"
-            : "Hidden by author"}
+  // Кто удалил — видно СРАЗУ в списке, а не только в журнале.
+  //
+  // Колонка deleted_by завелась 2026-08-15 и доезжала сюда, но на экран
+  // не попадала: обе стороны показывались одним словом «Deleted». А это
+  // два разных события. «Автор передумал» — обычная жизнь каталога, и
+  // считать её вместе с нарушениями значит портить себе же статистику.
+  // «Убрала площадка» — решение модерации, у него есть причина и спор по
+  // нему разбирают.
+  if (product.state === "deleted") {
+    return product.deletedBy === "creator" ? (
+      <Badge className="bg-zinc-950/[0.06] text-zinc-600 dark:bg-zinc-50/[0.08] dark:text-zinc-400">
+        Deleted by author
+      </Badge>
+    ) : (
+      <Badge className="bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400">
+        Removed by site
       </Badge>
     );
   }
-  return <Badge className="bg-lime-100 text-lime-700 dark:bg-lime-950 dark:text-lime-300">Live</Badge>;
+
+  // «Creator revoked» — не состояние карты, а состояние её автора,
+  // поэтому проверяется отдельно и раньше остальных живых случаев. Иначе
+  // владелец видит «Live» у карты, которой на витрине нет, — или ищет, за
+  // что снял ИМЕННО ЭТУ карту, хотя решение было про человека и вернётся
+  // она сама вместе с его статусом.
+  //
+  // Удалённые сюда уже не доходят — они разобраны веткой выше, и там
+  // важнее, кто удалил, чем статус автора.
+  if (!product.creatorActive) {
+    return (
+      <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+        Creator revoked
+      </Badge>
+    );
+  }
+
+  const badge = STATE_BADGES[product.state];
+  return <Badge className={badge.className}>{badge.label}</Badge>;
 }
 
 function Badge({ children, className }: { children: React.ReactNode; className: string }) {

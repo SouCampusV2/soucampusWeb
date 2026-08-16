@@ -73,11 +73,36 @@ export const SHOP_NAV_LINKS: {
 // projects.ts/reviews.ts: снаружи — домен сайта (price как готовая
 // строка), внутри — устройство БД (price_label/price_cents). Перевод
 // одного в другое — rowToProduct ниже, чистая функция под тест.
-// Статус модерации (миграция 20260730120000). Отдельно от is_published:
-// status — очередь на проверку владельцем сайта, is_published — то, что
-// реально видит витрина. Черновик креатора = pending + не опубликован;
-// владелец публикует вручную через Table Editor.
-export type ProductStatus = "pending" | "published" | "rejected";
+/**
+ * Где карта находится — ОДНО значение на всё (колонка `state`, миграции
+ * 20260815130000 и 20260816120000).
+ *
+ * Раньше это описывали четыре независимых поля (`status`, `is_published`,
+ * `deleted_at`, `hidden_by`), из которых складывались десятки комбинаций
+ * при семи осмысленных. Невозможные состояния прекрасно записывались —
+ * так и появилось «уже не удалена, но всё ещё снята», из которого не было
+ * выхода. Теперь состояние одно, а разрешённые переходы стережёт триггер
+ * `guard_product_state` в базе, а не проверки в обработчиках.
+ *
+ *   pending    — в очереди на разбор
+ *   rejected   — отказано, причина в rejectionReason/rejectionFlags
+ *   live       — на витрине
+ *   hidden     — автор снял сам, сам же и вернёт
+ *   suspended  — сняла площадка, причина обязательна
+ *   deleted    — убрана из каталога мягко (файл и скриншоты целы)
+ *
+ * ВАЖНО: `live` ещё не значит «видно покупателю». Видимость — это
+ * `state === "live" И creatorActive`: карты автора, лишённого статуса,
+ * уходят с витрины, сохраняя своё состояние, и возвращаются вместе со
+ * статусом. Это же условие стоит в политике чтения.
+ */
+export type ProductState =
+  | "pending"
+  | "rejected"
+  | "live"
+  | "hidden"
+  | "suspended"
+  | "deleted";
 
 export type Product = {
   /** uuid — нужен как внешний ключ order_items.product_id (подэтап B). */
@@ -113,8 +138,6 @@ export type Product = {
   category: ProductCategory;
   /** Автор карты — profiles.id. null у карт, чей автор удалил аккаунт. */
   creatorId: string | null;
-  /** pending — ждёт ручной проверки владельцем; published — прошёл её. */
-  status: ProductStatus;
   /**
    * Профиль автора для показа на карточке. Опционален: приезжает
    * отдельным запросом (см. getCreatorsById — связать вложенной выборкой
@@ -210,7 +233,6 @@ type ProductRow = {
   creator_id?: string | null;
   /** Появились вместе с creator upload; у старых баз колонок нет. */
   category?: ProductCategory | null;
-  status?: ProductStatus | null;
   /**
    * Вложенная выборка PostgREST по внешнему ключу (product_images).
    * Опциональна: если миграции галереи ещё нет, Supabase вернёт строки
@@ -245,7 +267,6 @@ export function rowToProduct(row: ProductRow): Product {
     // старые строки без category — деривация из slug, тот же фоллбэк.
     category: row.category ?? deriveCategory(row.slug),
     creatorId: row.creator_id ?? null,
-    status: row.status ?? "published",
   };
 }
 
@@ -259,7 +280,7 @@ const PRODUCT_FIELDS_NO_IMAGES =
 // галереи. product_images(...) — PostgREST сам подтягивает связанные
 // строки по внешнему ключу одним запросом, без второго похода в базу и
 // без ручного join'а на нашей стороне.
-const PRODUCT_FIELDS = `${PRODUCT_FIELDS_NO_IMAGES}, creator_id, category, status, product_images(url, position)`;
+const PRODUCT_FIELDS = `${PRODUCT_FIELDS_NO_IMAGES}, creator_id, category, product_images(url, position)`;
 
 // Запасной путь на случай, когда миграции галереи/автора/upload в этой
 // базе ещё не прогнаны. PostgREST на незнакомую колонку или связь
@@ -271,20 +292,24 @@ function isMissingOptional(message: string): boolean {
   return (
     message.includes("product_images") ||
     message.includes("creator_id") ||
-    message.includes("category") ||
-    message.includes("status")
+    message.includes("category")
   );
 }
 
-// Фильтр is_published здесь — для ясности намерения; настоящая защита —
-// RLS-политика "public read published": анониму база неопубликованные
-// строки не отдаст, даже если этот фильтр однажды забудут.
+// Фильтр здесь — для ясности намерения; настоящая защита — RLS-политика
+// "public read live": анониму база отдаст только те же строки, даже если
+// этот фильтр однажды забудут.
+//
+// Условий два, и второе не декоративное: карта автора, лишённого статуса
+// креатора, остаётся `live` (чтобы вернуться туда же, когда статус
+// вернут), но покупателю не показывается — см. ProductState.
 export async function getAllProducts(): Promise<Product[]> {
   const query = (fields: string) =>
     getSupabase()
       .from("products")
       .select(fields)
-      .eq("is_published", true)
+      .eq("state", "live")
+      .eq("creator_active", true)
       .order("sort_order", { ascending: true });
 
   let { data, error } = await query(PRODUCT_FIELDS);
@@ -373,7 +398,8 @@ export async function getProduct(slug: string): Promise<Product | null> {
       .from("products")
       .select(fields)
       .eq("slug", slug)
-      .eq("is_published", true)
+      .eq("state", "live")
+      .eq("creator_active", true)
       // maybeSingle: нет строки — это 404 страницы, а не ошибка запроса.
       .maybeSingle();
 
@@ -417,10 +443,17 @@ export type CreateProductInput = {
   filePath: string;
 };
 
-// Черновик карты от креатора: status='pending', is_published=false —
-// невидим на витрине, пока владелец не одобрит вручную (Table Editor).
+// Черновик карты от креатора.
+//
+// Состояние здесь НЕ передаётся вовсе, и это осознанно: его назначает
+// триггер guard_product_insert (миграция 20260815160000) — новая карта
+// всегда встаёт в очередь на разбор, что бы ни прислали. Передавать
+// state: 'pending' отсюда значило бы делать вид, что решает эта строка
+// кода, хотя решает база; а если бы она НЕ решала, то же поле можно было
+// бы прислать запросом мимо этой функции и опубликовать себя сразу.
+//
 // RLS "creators insert own products" разрешает вставку только со своим
-// creator_id — эта функция сама ничего не проверяет, доверяет базе.
+// creator_id и только при активном статусе креатора без паузы на заявки.
 //
 // slug уникален (unique constraint) — при коллизии добавляем случайный
 // хвост и пробуем ещё раз, до 5 попыток (коллизия по одинаковому
@@ -449,8 +482,6 @@ export async function createProduct(
         file_path: input.filePath,
         category: input.category,
         creator_id: input.creatorId,
-        status: "pending",
-        is_published: false,
       })
       .select("id, slug")
       .single();

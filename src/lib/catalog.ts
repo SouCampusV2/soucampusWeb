@@ -1,15 +1,15 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import type { ProductCategory, ProductStatus } from "@/lib/products";
+import type { ProductCategory, ProductState } from "@/lib/products";
 
 // Каталог админки — ВСЕ карты, не только очередь разбора.
 //
-// Зачем отдельно от moderation.ts: там очередь (status = 'pending',
+// Зачем отдельно от moderation.ts: там очередь (state = 'pending',
 // подписанные ссылки на файлы, галереи — всё для решения «пускать ли»).
 // Здесь наоборот — плоский список для управления уже живущими картами,
 // и грузить ради него галереи и подписывать ссылки на файлы было бы
 // расточительно: строк тут со временем будут сотни.
 //
-// Читается служебным ключом: RLS отдаёт анониму только опубликованное, а
+// Читается служебным ключом: RLS отдаёт анониму только живые карты, а
 // смысл этой страницы ровно в том, чтобы видеть и снятое, и отклонённое,
 // и удалённое.
 
@@ -19,13 +19,18 @@ export type CatalogRow = {
   title: string;
   image: string;
   price: string;
-  status: ProductStatus;
-  isPublished: boolean;
+  /** Где карта находится — одно значение на всё (см. ProductState). */
+  state: ProductState;
+  /**
+   * Активен ли автор как креатор. Отдельно от state намеренно: карта
+   * остаётся `live`, а с витрины её держит закрытый доступ автора —
+   * поэтому в каталоге у неё бейдж «Creator revoked», а не «Taken down».
+   */
+  creatorActive: boolean;
   category: ProductCategory | null;
-  /** null — на витрине; иначе кто снял. */
-  hiddenBy: "creator" | "moderator" | "revoked" | null;
   suspensionReason: string | null;
-  deletedAt: string | null;
+  /** Кто увёл карту в deleted: сам автор или площадка. */
+  deletedBy: "creator" | "moderator" | null;
   createdAt: string;
   creator: { id: string; displayName: string } | null;
   /** Сколько раз купили — по оплаченным заказам. */
@@ -35,7 +40,7 @@ export type CatalogRow = {
 export type CatalogFilters = {
   /** Поиск по названию, slug и имени автора. */
   q?: string;
-  status?: ProductStatus | "hidden" | "deleted";
+  state?: ProductState;
   creatorId?: string;
 };
 
@@ -45,12 +50,11 @@ type Row = {
   title: string;
   image_url: string;
   price_label: string;
-  status: ProductStatus | null;
-  is_published: boolean;
+  state: ProductState;
+  creator_active: boolean;
   category: ProductCategory | null;
-  hidden_by: "creator" | "moderator" | null;
   suspension_reason: string | null;
-  deleted_at: string | null;
+  deleted_by: "creator" | "moderator" | null;
   created_at: string;
   creator_id: string | null;
 };
@@ -67,22 +71,21 @@ export async function getCatalog(filters: CatalogFilters = {}): Promise<CatalogR
   let query = db
     .from("products")
     .select(
-      "id, slug, title, image_url, price_label, status, is_published, category, hidden_by, suspension_reason, deleted_at, created_at, creator_id"
+      "id, slug, title, image_url, price_label, state, creator_active, category, suspension_reason, deleted_by, created_at, creator_id"
     )
     .order("created_at", { ascending: false });
 
-  if (filters.status === "deleted") {
-    query = query.not("deleted_at", "is", null);
+  // Фильтр стал одним сравнением. Раньше здесь были три ветки на четыре
+  // колонки, и «снятые» приходилось выражать как «status = published И
+  // не опубликована» — состояние, у которого не было своего имени.
+  // Теперь имя есть у каждого.
+  if (filters.state) {
+    query = query.eq("state", filters.state);
   } else {
-    query = query.is("deleted_at", null);
-
-    if (filters.status === "hidden") {
-      // «Снятые» — это не статус, а состояние витрины: карта разобрана и
-      // одобрена, но не показывается (см. миграцию 20260809120000).
-      query = query.eq("status", "published").eq("is_published", false);
-    } else if (filters.status) {
-      query = query.eq("status", filters.status);
-    }
+    // Без явного фильтра удалённые не показываем: обычно они шум. Но и
+    // прятать их совсем нельзя — тогда «удалена автором» становится
+    // состоянием, которого никто не видит, и концы теряются.
+    query = query.neq("state", "deleted");
   }
 
   if (filters.creatorId) query = query.eq("creator_id", filters.creatorId);
@@ -119,12 +122,11 @@ export async function getCatalog(filters: CatalogFilters = {}): Promise<CatalogR
     title: row.title,
     image: row.image_url,
     price: row.price_label,
-    status: row.status ?? "published",
-    isPublished: Boolean(row.is_published),
+    state: row.state,
+    creatorActive: row.creator_active !== false,
     category: row.category,
-    hiddenBy: row.hidden_by,
     suspensionReason: row.suspension_reason,
-    deletedAt: row.deleted_at,
+    deletedBy: row.deleted_by,
     createdAt: row.created_at,
     creator: row.creator_id
       ? { id: row.creator_id, displayName: names.get(row.creator_id) ?? "—" }
@@ -176,8 +178,12 @@ async function getSalesCounts(productIds: string[]): Promise<Map<string, number>
 export function summarize(rows: CatalogRow[]) {
   return {
     total: rows.length,
-    live: rows.filter((r) => r.isPublished && !r.deletedAt).length,
-    hidden: rows.filter((r) => !r.isPublished && r.status === "published").length,
+    // «На витрине» — это живая карта активного автора, ровно то же
+    // условие, что в политике чтения. Раньше здесь повторялась формула из
+    // двух колонок, и разойтись с политикой она могла молча.
+    live: rows.filter((r) => r.state === "live" && r.creatorActive).length,
+    hidden: rows.filter((r) => r.state === "hidden" || r.state === "suspended")
+      .length,
     sales: rows.reduce((sum, r) => sum + r.sales, 0),
   };
 }

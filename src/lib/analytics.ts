@@ -79,6 +79,10 @@ export type Overview = {
   accounts: number;
   liveMaps: number;
   pendingMaps: number;
+  /** Удалённые самим автором — обычная жизнь каталога. */
+  deletedByAuthor: number;
+  /** Удалённые площадкой — решение модерации, у него есть причина. */
+  deletedBySite: number;
   days: DayPoint[];
   range: Range;
   topProducts: { id: string; title: string; sales: number; revenueCents: number }[];
@@ -142,7 +146,7 @@ export async function getOverview(
           .select("order_id, product_id, unit_price_cents")
           .in("order_id", orderRows.map((o) => o.id))
       : Promise.resolve({ data: [] as ItemRow[], error: null }),
-    db.from("products").select("id, title, creator_id, status, is_published, deleted_at"),
+    db.from("products").select("id, title, creator_id, state, creator_active, deleted_by"),
     db.from("profiles").select("id, display_name, is_creator"),
   ]);
 
@@ -151,9 +155,9 @@ export async function getOverview(
     id: string;
     title: string;
     creator_id: string | null;
-    status: string | null;
-    is_published: boolean;
-    deleted_at: string | null;
+    state: string;
+    creator_active: boolean;
+    deleted_by: "creator" | "moderator" | null;
   }[];
   const profileRows = (profiles.data ?? []) as {
     id: string;
@@ -179,7 +183,7 @@ export async function getOverview(
 
   const perCreator = new Map<string, { sales: number; maps: number }>();
   for (const p of productRows) {
-    if (!p.creator_id || p.deleted_at) continue;
+    if (!p.creator_id || p.state === "deleted") continue;
     const current = perCreator.get(p.creator_id) ?? { sales: 0, maps: 0 };
     current.maps += 1;
     current.sales += perProduct.get(p.id)?.sales ?? 0;
@@ -199,8 +203,20 @@ export async function getOverview(
     buyers,
     creators: profileRows.filter((p) => p.is_creator).length,
     accounts: profileRows.length,
-    liveMaps: productRows.filter((p) => p.is_published && !p.deleted_at).length,
-    pendingMaps: productRows.filter((p) => p.status === "pending").length,
+    // «На витрине» — то же условие, что в политике чтения: живая карта
+    // активного автора.
+    liveMaps: productRows.filter((p) => p.state === "live" && p.creator_active)
+      .length,
+    pendingMaps: productRows.filter((p) => p.state === "pending").length,
+    // Удаления считаем РАЗДЕЛЬНО. «Автор передумал» и «убрала площадка» —
+    // два разных события, и одно число на оба портит картину в обе
+    // стороны: то ли у нас много нарушений, то ли авторы много удаляют.
+    deletedByAuthor: productRows.filter(
+      (p) => p.state === "deleted" && p.deleted_by === "creator"
+    ).length,
+    deletedBySite: productRows.filter(
+      (p) => p.state === "deleted" && p.deleted_by !== "creator"
+    ).length,
     days: [...byDay.values()],
     range,
     topProducts,

@@ -134,6 +134,24 @@ export default async function AdminHomePage({
         />
         <Stat label="Users" value={String(overview.accounts)} />
       </div>
+
+      {/* Удалённые — отдельной строкой и РАЗДЕЛЬНО по тому, кто удалил.
+          Одно число на оба случая ничего не значит: «авторы передумали»
+          и «мы сняли за нарушения» — разные события, и растут они по
+          разным причинам. Обе плитки ведут в каталог с готовым фильтром,
+          чтобы от числа можно было сразу перейти к списку. */}
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat
+          label="Deleted by authors"
+          value={String(overview.deletedByAuthor)}
+          href="/admin/products?state=deleted"
+        />
+        <Stat
+          label="Removed by site"
+          value={String(overview.deletedBySite)}
+          href="/admin/products?state=deleted"
+        />
+      </div>
     </div>
   );
 }
