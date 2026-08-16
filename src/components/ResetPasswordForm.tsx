@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRefresh } from "@/lib/useRefresh";
 import { Lock, CheckCircle } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { AuthField } from "@/components/AuthField";
@@ -20,7 +20,7 @@ import { passwordMeetsRules, friendlyAuthError } from "@/lib/password";
 // адрес) — тогда менять нечего, и честнее сказать это сразу, чем показать
 // форму, которая молча не сработает.
 export function ResetPasswordForm() {
-  const router = useRouter();
+  const refresh = useRefresh();
 
   const [checking, setChecking] = useState(true);
   const [hasSession, setHasSession] = useState(false);
@@ -70,7 +70,7 @@ export function ResetPasswordForm() {
     setDone(true);
     // Сессия уже действующая — обновляем серверные компоненты, чтобы
     // навбар и защищённые страницы увидели вошедшего пользователя.
-    router.refresh();
+    refresh();
   }
 
   if (checking) {

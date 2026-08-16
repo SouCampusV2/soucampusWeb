@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRefresh } from "@/lib/useRefresh";
 import { EyeSlash, Eye, Trash, ArrowCounterClockwise } from "@phosphor-icons/react";
 import { BUTTON_PILL, BUTTON_COLORS, DANGER_COLORS } from "@/components/Button";
 import {
@@ -27,7 +27,7 @@ import type { CatalogRow } from "@/lib/catalog";
 type Mode = "suspend" | "delete";
 
 export function CatalogActions({ product }: { product: CatalogRow }) {
-  const router = useRouter();
+  const refresh = useRefresh();
   const [busy, setBusy] = useState(false);
   const [asking, setAsking] = useState<Mode | null>(null);
   const [codes, setCodes] = useState<string[]>([]);
@@ -60,7 +60,7 @@ export function CatalogActions({ product }: { product: CatalogRow }) {
       reset();
       // Каталог — серверный компонент; refresh перерисовывает его свежими
       // данными, не перезагружая страницу целиком.
-      router.refresh();
+      refresh();
     } finally {
       setBusy(false);
     }
@@ -129,6 +129,19 @@ export function CatalogActions({ product }: { product: CatalogRow }) {
           </>
         )}
       </div>
+
+      {/* Ошибка действия БЕЗ диалога — «Publish again» и «Restore».
+          Раньше её негде было показать: текст ошибки отрисовывался только
+          внутри окна подтверждения, а эти две кнопки срабатывают сразу.
+          То есть сервер отвечал отказом, а на экране не менялось ничего,
+          и кнопка выглядела сломанной — ровно так и потерялся день на
+          поиск «почему Publish again не работает». Невидимая ошибка хуже
+          самой ошибки: она отправляет искать поломку не туда. */}
+      {!asking && error && (
+        <p className="mt-2 text-right text-sm text-red-600 dark:text-red-400">
+          {error}
+        </p>
+      )}
 
       {asking && (
         <ReasonDialog

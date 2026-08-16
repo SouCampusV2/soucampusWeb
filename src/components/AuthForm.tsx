@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useRefresh } from "@/lib/useRefresh";
 import Link from "next/link";
 import { EnvelopeSimple, Lock, User } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
@@ -15,6 +16,7 @@ type Mode = "login" | "signup";
 
 export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
   const router = useRouter();
+  const refresh = useRefresh();
   const isSignup = mode === "signup";
 
   // Куда вести после успеха — через общую проверку (см. safeNextPath):
@@ -81,7 +83,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
       // пользователь уже залогинен, письма нет, ведём в магазин. Если
       // включено — сессии нет, показываем «проверь почту».
       if (data.session) {
-        router.refresh();
+        refresh();
         router.push(target);
         return;
       }
@@ -98,7 +100,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
       setError(friendlyAuthError(error.message));
       return;
     }
-    router.refresh();
+    refresh();
     router.push(target);
   }
 

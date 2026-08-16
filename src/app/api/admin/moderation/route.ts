@@ -74,27 +74,25 @@ export async function POST(request: Request) {
   // (второй клик, две открытые вкладки) — .eq("status","pending") не
   // найдёт строку, и мы честно вернём 409 вместо тихой перезаписи чужого
   // решения.
+  // Пишем state, а не status/is_published: с миграции 20260815130000
+  // состояние карты держит одна колонка, а старые считает триггер —
+  // запись в них теперь ничего не значит.
   const update =
     (action as Action) === "approve"
       ? {
-          status: "published",
-          is_published: true,
+          state: "live",
           rejection_reason: null,
           rejection_flags: [],
-          // Одобрение снимает и пометку снятия. Карта могла прийти в
-          // очередь как возврат после take down (submission_kind =
+          // Одобрение снимает и претензию. Карта могла прийти в очередь
+          // как возврат после take down (submission_kind =
           // 'after_takedown'), и без этого она вышла бы на витрину, всё
           // ещё помеченная снятой: автор видел бы у живой карты плашку
-          // «Taken down» со старой причиной, а сам вернуть её не смог бы
-          // — /api/creator/product запрещает это при hidden_by =
-          // 'moderator'.
-          hidden_by: null,
+          // «Taken down» со старой причиной.
           suspension_reason: null,
           submission_kind: "first",
         }
       : {
-          status: "rejected",
-          is_published: false,
+          state: "rejected",
           rejection_reason: rejectionReason,
           rejection_flags: rejectionFlags,
         };
@@ -103,7 +101,7 @@ export async function POST(request: Request) {
     .from("products")
     .update(update)
     .eq("id", productId)
-    .eq("status", "pending")
+    .eq("state", "pending")
     .select("id, slug, title, creator_id")
     .maybeSingle();
 

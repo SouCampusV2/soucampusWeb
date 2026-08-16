@@ -73,13 +73,20 @@ export async function POST(request: Request) {
 
   const { data: product, error: readError } = await db
     .from("products")
-    .select("id, slug, title, creator_id, is_published, deleted_at, hidden_by")
+    .select("id, slug, title, creator_id, state, was_approved")
     .eq("id", productId)
     .maybeSingle();
 
   if (readError) {
+    // Текст ошибки отдаём НАРУЖУ, а не только в лог. Это админка: смотрит
+    // её владелец сайта, посторонний сюда не попадает вовсе (404 выше), а
+    // «read failed» без подробностей стоило нам полудня поисков не в той
+    // стороне.
     console.error("Каталог: чтение не удалось:", readError.message);
-    return NextResponse.json({ error: "read failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: `read failed: ${readError.message}` },
+      { status: 500 }
+    );
   }
   if (!product) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
@@ -103,32 +110,58 @@ export async function POST(request: Request) {
   const update: Record<string, unknown> = (() => {
     switch (action as Action) {
       case "suspend":
-        // hidden_by = 'moderator' — именно это отличает бан от «автор
-        // сам убрал»: вернуть такую карту креатор не сможет, проверка
-        // стоит в /api/creator/product.
-        return {
-          is_published: false,
-          hidden_by: "moderator",
-          suspension_reason: suspensionReason,
-        };
+        // Состояние 'suspended' и означает «сняла площадка»: вернуть
+        // такую карту автор не может, переход suspended → hidden базой
+        // не разрешён (миграция 20260815130000).
+        return { state: "suspended", suspension_reason: suspensionReason };
       case "unsuspend":
-        return { is_published: true, hidden_by: null, suspension_reason: null };
+        return { state: "live", suspension_reason: null };
       case "delete":
         // Мягко: строка остаётся, файл и скриншоты не трогаем — за них
         // заплачено, и покупатель продолжает скачивать.
         return {
-          is_published: false,
-          deleted_at: new Date().toISOString(),
-          hidden_by: "moderator",
+          state: "deleted",
+          deleted_by: "moderator",
           suspension_reason: suspensionReason,
         };
       case "restore":
-        // Возвращаем из удалённых СКРЫТОЙ, а не сразу на витрину:
-        // восстановление — это отмена ошибки, а публиковать заново пусть
-        // будет отдельным осознанным действием. Причина и hidden_by
-        // остаются: карта продолжает быть снятой модератором, просто уже
-        // не удалённой, и автор по-прежнему видит, за что.
-        return { deleted_at: null };
+        // Возвращаем карту АВТОРУ: не удалена, не снята, просто не на
+        // витрине — и он сам решает, когда её вернуть.
+        //
+        // Раньше здесь снималось только deleted_at, а hidden_by
+        // ('moderator') и причина оставались. Рассуждение было такое:
+        // «восстановление отменяет удаление, но не снятие». На бумаге
+        // стройно, на практике — тупик, найденный владельцем: карта
+        // возвращается, автор жмёт «вернуть на витрину» и читает «её
+        // сняла администрация, отсюда не вернуть, посмотрите причину», а
+        // причины на экране нет. Выхода из этого состояния у него не было
+        // вовсе, и что делать дальше — тоже непонятно.
+        //
+        // Дело не в тексте сообщения, а в самом состоянии: «уже не
+        // удалена, но всё ещё снята» — это третий, необъявленный статус,
+        // в который можно попасть, но нельзя выйти. Такого состояния
+        // просто не должно быть.
+        //
+        // Теперь у восстановления один понятный смысл: карта снова у
+        // автора. Если площадка всё ещё против неё — на это есть Take
+        // down, отдельное действие с причиной и уведомлением, а не
+        // молчаливый осадок от предыдущего.
+        //
+        // hidden_by = null, а не 'creator': писать «спрятал автор» про
+        // то, чего автор не делал, значит врать в данных ради удобства
+        // проверки. null и означает ровно то, что есть, — карту не
+        // снимал никто, она просто не опубликована.
+        //
+        // Куда именно возвращать — решает то, была ли карта одобрена.
+        // Уже побывавшую на витрине возвращаем спрятанной, автор сам
+        // опубликует. А заявку, удалённую прямо из очереди, — обратно в
+        // очередь: вернуть её «одобренной» значило бы дать автору
+        // выложить на витрину то, что никто не разбирал (миграция
+        // 20260815140000).
+        return {
+          state: product.was_approved ? "hidden" : "pending",
+          suspension_reason: null,
+        };
     }
   })();
 
@@ -138,8 +171,14 @@ export async function POST(request: Request) {
     .eq("id", productId);
 
   if (updateError) {
+    // Здесь особенно важно: именно сюда прилетают отказы триггера
+    // разрешённых переходов, и без текста они неотличимы от «база
+    // недоступна».
     console.error("Каталог: обновление не удалось:", updateError.message);
-    return NextResponse.json({ error: "update failed" }, { status: 500 });
+    return NextResponse.json(
+      { error: `update failed: ${updateError.message}` },
+      { status: 500 }
+    );
   }
 
   // Журнал — после успешного обновления. Ошибку журнала не превращаем в
@@ -154,9 +193,16 @@ export async function POST(request: Request) {
   if (logError) console.error("Журнал модерации:", logError.message);
 
   // Автору сообщаем обо всём, что делает с картой НЕ он: сняли, вернули,
-  // удалили. Удаление здесь — действие модератора (своё собственное автор
-  // делает в /api/creator/product и уведомлять его о нём незачем), и
-  // молчать о нём нельзя: карта просто исчезает из его списка.
+  // удалили, восстановили. Удаление здесь — действие модератора (своё
+  // собственное автор делает в /api/creator/product и уведомлять его о
+  // нём незачем), и молчать о нём нельзя: карта просто исчезает из его
+  // списка.
+  //
+  // Про восстановление раньше молчали: считалось, что снаружи это не
+  // событие — карта возвращается в том же снятом виде, с той же
+  // причиной. Теперь возвращается она не снятой, а в распоряжение
+  // автора, и это как раз событие: он в прошлый раз получил «карта
+  // удалена» и без второго письма так и остался бы с этим.
   //
   // «Восстановили» не шлём: снаружи это не событие — карта возвращается
   // в том же снятом виде, с той же причиной, что автор уже прочитал.
@@ -175,12 +221,17 @@ export async function POST(request: Request) {
         href: `/marketplace/${product.slug}`,
       },
       delete: {
-        kind: "map_suspended" as const,
+        kind: "map_deleted" as const,
         title: `“${product.title}” was removed from the marketplace`,
         body: suspensionReason,
         href: "/resources",
       },
-      restore: null,
+      restore: {
+        kind: "map_approved" as const,
+        title: `“${product.title}” is back in your resources`,
+        body: "It is off the marketplace for now — publish it again whenever you are ready.",
+        href: "/resources",
+      },
     }[action as Action];
 
     if (message) await notify(product.creator_id as string, message);

@@ -221,6 +221,17 @@ function ResourceRow({ product }: { product: OwnProduct }) {
 function ReasonNote({ product }: { product: OwnProduct }) {
   const note = (() => {
     if (product.deletedAt) {
+      // Своё удаление сюда не доходит — такие карты в список не
+      // попадают вовсе (см. getOwnProducts). Ветка на него всё равно
+      // есть: подпись «удалила площадка» под собственным решением
+      // автора — это обвинение на пустом месте, и оно не должно стать
+      // возможным, если фильтр когда-нибудь изменят.
+      if (product.deletedBy === "creator") {
+        return {
+          label: "You deleted this map:",
+          text: "It is off the marketplace. The file is still kept — write to support if you need it back.",
+        };
+      }
       return {
         label: "Removed by the site team:",
         text:

@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRefresh } from "@/lib/useRefresh";
 import { Prohibit } from "@phosphor-icons/react";
 import { Button, BUTTON_PILL, BUTTON_COLORS } from "@/components/Button";
 import { REVOCATION_TEMPLATES, buildReasonMessage } from "@/lib/rejection";
@@ -27,7 +27,7 @@ export function RevokeCreatorButton({
   userId: string;
   displayName: string;
 }) {
-  const router = useRouter();
+  const refresh = useRefresh();
   const [asking, setAsking] = useState(false);
   const [codes, setCodes] = useState<string[]>([]);
   const [note, setNote] = useState("");
@@ -62,7 +62,7 @@ export function RevokeCreatorButton({
         return;
       }
       reset();
-      router.refresh();
+      refresh();
     } finally {
       setBusy(false);
     }

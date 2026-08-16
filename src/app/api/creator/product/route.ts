@@ -1,16 +1,18 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { notify } from "@/lib/notifications";
 
 // Автор распоряжается своей картой: спрятать с витрины, вернуть обратно,
 // удалить совсем.
 //
 // Почему через сервер, а не запросом из браузера: RLS разрешает креатору
-// править свою строку, но триггер guard_product_publication (миграция
-// 20260730160000) откатывает любую его попытку тронуть is_published и
-// status — иначе автор публиковал бы себя сам, минуя очередь. Триггер
-// пропускает только служебную роль, поэтому «спрятать» обязано идти
-// отсюда, а право на действие подтверждается сессией.
+// править свою строку, но триггеры базы возвращают state на место при
+// любой его попытке сменить состояние самому (guard_product_publication
+// на update, guard_product_insert на insert) — иначе автор публиковал бы
+// себя сам, минуя очередь. Триггеры пропускают только служебную роль,
+// поэтому «спрятать» обязано идти отсюда, а право на действие
+// подтверждается сессией.
 //
 // Delete тоже здесь и по той же причине: DELETE-политики у products нет
 // и заводить её не хочется — удаление слишком дорогая ошибка, чтобы
@@ -18,6 +20,23 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 export const dynamic = "force-dynamic";
 
 type Action = "hide" | "unhide" | "delete";
+
+// Почему кнопка не сработала — по состоянию карты.
+//
+// Текст на каждое состояние свой: «нельзя» без причины читается как
+// поломка сайта, особенно когда человек жмёт по видимой строке в
+// собственном списке. Прятать тут нечего — это его карта, он на неё и
+// смотрит.
+const HIDE_ERRORS: Record<string, string> = {
+  pending: "This map is waiting to be reviewed. You can take it off the marketplace once it is approved.",
+  rejected: "This map has not been approved yet, so it is not on the marketplace.",
+  suspended:
+    "This map was taken off the marketplace by the site team. Edit it and it goes back for review — the reason is on the map.",
+  deleted:
+    "This map was removed by the site team, so it can't be changed from here.",
+};
+
+const FALLBACK_HIDE_ERROR = "This map can't be changed right now.";
 
 export async function POST(request: Request) {
   const supabase = await createSupabaseServer();
@@ -67,11 +86,18 @@ export async function POST(request: Request) {
 
   const { data: product, error } = await db
     .from("products")
-    .select("id, title, status, is_published, creator_id, hidden_by, deleted_at")
+    .select("id, title, state, creator_id")
     .eq("id", productId)
     .maybeSingle();
 
   if (error) {
+    // Текст ошибки базы — только в лог. Час назад он отдавался наружу:
+    // я добавил это, когда без него не удавалось понять, что происходит,
+    // и это своё дело сделало. Но здесь, в отличие от админки, на другом
+    // конце ЛЮБОЙ креатор, а сообщения PostgREST рассказывают про имена
+    // колонок, ограничения и политики — то есть про устройство базы.
+    // Диагностику оставлять во включённом виде нельзя: она полезна ровно
+    // в тот час, когда ей пользуешься.
     console.error("Управление картой: чтение не удалось:", error.message);
     return NextResponse.json({ error: "read failed" }, { status: 500 });
   }
@@ -91,7 +117,7 @@ export async function POST(request: Request) {
   // ответ на клик по видимой строке читается как поломка сайта, а не как
   // решение модерации. Прятать существование имеет смысл от постороннего
   // (проверка владения выше), а не от хозяина карты.
-  if (product.deleted_at) {
+  if (product.state === "deleted") {
     return NextResponse.json(
       {
         error:
@@ -102,42 +128,30 @@ export async function POST(request: Request) {
   }
 
   if (action === "hide" || action === "unhide") {
-    // Прятать и возвращать имеет смысл только у карты, ПРОШЕДШЕЙ разбор.
-    // У заявки в очереди витрины и так нет, и «вернуть» её значило бы
-    // опубликовать без модерации — ровно то, что запрещает триггер.
-    if (product.status !== "published") {
-      return NextResponse.json(
-        { error: "Only an approved map can be hidden or brought back." },
-        { status: 409 }
-      );
-    }
-
-    // Вернуть автор может ТОЛЬКО то, что спрятал сам, — иначе бан
-    // отменялся бы одной кнопкой в его же кабинете, и снятие с витрины не
-    // значило бы ничего. Разница ровно в hidden_by (миграции 20260809120000
-    // и 20260814120000).
+    // Вот ради чего заводилась колонка state (миграция 20260815130000).
     //
-    // Условие «не creator», а не «moderator»: значений теперь три, и
-    // перечислять запрещённые — способ однажды забыть новое. Разрешаем
-    // единственное, про которое точно известно, что его поставил автор.
-    if (action === "unhide" && product.hidden_by !== "creator") {
+    // Раньше здесь стояли две проверки по трём полям: «карта прошла
+    // разбор» по status и «спрятал её автор, а не площадка» по hidden_by,
+    // со списком разрешённых значений и оговоркой про null. Ошибиться в
+    // такой проверке легко, что и произошло: восстановленная из
+    // удалённых карта не подходила ни под одно разрешённое значение и
+    // застревала навсегда.
+    //
+    // Теперь вопрос ровно один — в каком состоянии карта. Спрятать можно
+    // живую, вернуть можно спрятанную, и всё. Снятую площадкой автор не
+    // вернёт не потому, что мы это здесь запрещаем, а потому что
+    // перехода suspended → live у него нет: его не пропустит база.
+    const allowed = action === "hide" ? "live" : "hidden";
+    if (product.state !== allowed) {
       return NextResponse.json(
-        {
-          error:
-            "This map was taken off the marketplace by the site team, so it can't be brought back from here. Check the reason on the map and reply to it.",
-        },
-        { status: 403 }
+        { error: HIDE_ERRORS[product.state as string] ?? FALLBACK_HIDE_ERROR },
+        { status: 409 }
       );
     }
 
     const { error: updateError } = await db
       .from("products")
-      .update({
-        is_published: action === "unhide",
-        // Помечаем, что скрыл автор: без этого его собственное «спрятать»
-        // было бы неотличимо от бана, и вернуть карту он бы уже не смог.
-        hidden_by: action === "hide" ? "creator" : null,
-      })
+      .update({ state: action === "hide" ? "hidden" : "live" })
       .eq("id", productId);
 
     if (updateError) {
@@ -161,10 +175,20 @@ export async function POST(request: Request) {
     );
   }
 
-  // Купленную карту не удаляем НИКОГДА. Покупатель скачивает файл по
-  // подписанной ссылке, которая строится из products.file_path — снеся
-  // строку, мы отняли бы у него оплаченное. Автору вместо этого
-  // предлагаем спрятать: с витрины уходит, покупки живут.
+  // Купленную карту автор не удаляет.
+  //
+  // Изначально запрет был техническим: удаление сносило строку, а
+  // покупатель скачивает файл по подписанной ссылке из
+  // products.file_path — снеся строку, мы отняли бы у него оплаченное.
+  // С мягким удалением (миграция 20260815150000) эта причина отпала:
+  // строка и файл остаются, скачивание работает.
+  //
+  // Запрет оставлен как ПРАВИЛО, а не как ограничение движка, и ждёт
+  // решения владельца (вопрос задан 2026-08-15). Довод за то, чтобы
+  // оставить: у купленной карты есть вторая сторона, и её страница
+  // «My purchases» ссылается на товар — исчезновение из каталога делает
+  // покупку безымянной. Довод за то, чтобы снять: это карта автора, а
+  // доступ покупателей теперь ничем не рискует.
   const { count: soldCount, error: soldError } = await db
     .from("order_items")
     .select("id", { count: "exact", head: true })
@@ -186,21 +210,53 @@ export async function POST(request: Request) {
     );
   }
 
-  // Галерея — отдельной таблицей; сносим её первой, чтобы не зависеть от
-  // того, настроен ли каскад по внешнему ключу.
-  await db.from("product_images").delete().eq("product_id", productId);
-
-  const { error: deleteError } = await db.from("products").delete().eq("id", productId);
+  // Удаление автором тоже МЯГКОЕ (замечание владельца 2026-08-15).
+  //
+  // Раньше здесь сносилась строка вместе с галереей. Разница с удалением
+  // модератором была случайной — просто писалось раньше и другим кодом,
+  // — а последствия у неё серьёзные: карту, которую заметили, автор мог
+  // стереть одним кликом, и в moderation_log осталась бы ссылка в
+  // никуда. Спор после этого разбирать не по чему.
+  //
+  // Теперь у обоих один переход, а различает их deleted_by (миграция
+  // 20260815150000): у автора это «передумал», у площадки «нарушение».
+  // Карта остаётся в каталоге админки в разделе удалённых, откуда её
+  // можно вернуть.
+  const { error: deleteError } = await db
+    .from("products")
+    .update({ state: "deleted", deleted_by: "creator" })
+    .eq("id", productId);
 
   if (deleteError) {
     console.error("Управление картой: delete не удался:", deleteError.message);
     return NextResponse.json({ error: "delete failed" }, { status: 500 });
   }
 
-  // Файлы в Storage подчистит существующая уборка (/api/creator/cleanup-storage):
-  // после удаления строк на эти объекты не ссылается ничто, и она
-  // соберёт их как обычный мусор. Отдельного кода здесь не нужно —
-  // именно ради этого уборка написана как «что не используется», а не
-  // «удали вот этот путь».
+  // Уведомление самому себе — и это не описка (просьба владельца
+  // 2026-08-15).
+  //
+  // Обычно про свои же действия человеку не пишут: он и так знает, что
+  // сделал. Здесь другое. Удаление выглядит окончательным, а на деле
+  // мягкое, и без этого письма автор просто не узнает, что карту можно
+  // вернуть, — а спросит он, скорее всего, тогда, когда уже пожалеет.
+  // Уведомление и есть то место, где эта возможность записана, вместе с
+  // адресом, по которому просить.
+  //
+  // Полноценной «заявки на восстановление» пока нет: очередь заявок,
+  // сроки хранения и решение по каждой — отдельная работа, а до тех пор
+  // честнее отправить в поддержку, чем нарисовать кнопку, за которой
+  // ничего не стоит. Заведено в docs/IDEAS.md.
+  await notify(user.id, {
+    kind: "map_deleted",
+    title: `You deleted “${product.title}”`,
+    body: "It is off the marketplace and out of your resources. The file is still kept — write to support if you need it back.",
+    href: "/support",
+  });
+
+  // Файл и скриншоты НЕ трогаем: строка жива и продолжает на них
+  // ссылаться, а уборка (/api/creator/cleanup-storage) собирает только
+  // то, на что не ссылается ничто. Отдельного кода не нужно — ровно
+  // ради этого она и написана как «что не используется», а не «удали
+  // вот этот путь».
   return NextResponse.json({ ok: true, deleted: true });
 }
