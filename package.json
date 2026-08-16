@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "test": "vitest run",
-    "check:views": "node scripts/check-views.mjs"
+    "check:views": "node scripts/check-views.mjs",
+    "clear:storage": "node scripts/clear-product-storage.mjs"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
