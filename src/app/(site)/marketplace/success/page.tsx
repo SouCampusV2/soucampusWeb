@@ -8,7 +8,7 @@ import {
   downloadFileName,
   type PaidOrder,
 } from "@/lib/orders";
-import { Button } from "@/components/Button";
+import { Button, INLINE_LINK } from "@/components/Button";
 import { ClearCartOnSuccess } from "@/components/ClearCartOnSuccess";
 import { DISCORD_INVITE } from "@/lib/site";
 
@@ -174,7 +174,7 @@ export default async function SuccessPage({
                     href={DISCORD_INVITE}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="font-medium text-orange-600 underline decoration-2 underline-offset-4"
+                    className={`font-medium ${INLINE_LINK}`}
                   >
                     Discord
                   </a>
@@ -188,7 +188,7 @@ export default async function SuccessPage({
           Lost the link?{" "}
           <Link
             href="/contact"
-            className="font-medium text-orange-600 underline decoration-2 underline-offset-4"
+            className={`font-medium ${INLINE_LINK}`}
           >
             Contact us
           </Link>{" "}

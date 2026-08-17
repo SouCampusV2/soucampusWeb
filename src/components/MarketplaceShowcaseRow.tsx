@@ -6,6 +6,7 @@ import { Unbounded } from "next/font/google";
 import type { Product } from "@/lib/products";
 import { ProductCard } from "@/components/ProductCard";
 import { ArrowButton } from "@/components/ArrowButton";
+import { TERTIARY_COLORS, TERTIARY_UNDERLINE } from "@/components/Button";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -82,7 +83,7 @@ export function MarketplaceShowcaseRow({
           {viewAllHref && (
             <Link
               href={viewAllHref}
-              className="text-sm font-medium text-orange-600 underline decoration-2 underline-offset-4 hover:text-orange-700 dark:text-orange-400 dark:hover:text-orange-300"
+              className={`text-sm font-medium ${TERTIARY_COLORS} ${TERTIARY_UNDERLINE}`}
             >
               {viewAllLabel}
             </Link>

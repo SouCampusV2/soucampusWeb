@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useRefresh } from "@/lib/useRefresh";
 import { Check, X } from "@phosphor-icons/react";
-import { BUTTON_COLORS, BUTTON_PILL } from "@/components/Button";
+import { BUTTON_COLORS, BUTTON_PILL, DANGER_COLORS } from "@/components/Button";
 import { REJECTION_TEMPLATES, buildRejectionMessage } from "@/lib/rejection";
 
 // Кнопки разбора одной заявки. Клиентский компонент — потому что здесь
@@ -151,7 +151,7 @@ export function ModerationActions({ productId }: { productId: string }) {
             type="button"
             onClick={() => send("reject")}
             disabled={pending || !canSubmit}
-            className={`${BUTTON_PILL} bg-red-600 text-white hover:bg-red-700`}
+            className={`${BUTTON_PILL} ${DANGER_COLORS.solid}`}
           >
             {pending ? "Rejecting…" : "Send rejection"}
           </button>
@@ -191,7 +191,7 @@ export function ModerationActions({ productId }: { productId: string }) {
           type="button"
           onClick={() => setRejecting(true)}
           disabled={pending}
-          className={`${BUTTON_PILL} border-2 border-red-600 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30`}
+          className={`${BUTTON_PILL} ${DANGER_COLORS.quiet}`}
         >
           <X size={16} weight="bold" />
           Reject
