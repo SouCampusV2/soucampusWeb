@@ -6,6 +6,7 @@ import { CatalogFilterBar } from "@/components/CatalogFilterBar";
 import { RefreshButton } from "@/components/RefreshButton";
 import { INLINE_LINK, NEW_TAB } from "@/components/Button";
 import { creatorHref } from "@/lib/creators";
+import { formatDate } from "@/lib/dates";
 
 // Полный каталог: ВСЕ карты, а не только очередь разбора.
 //
@@ -112,7 +113,7 @@ function CatalogRowItem({ product }: { product: CatalogRow }) {
             )}{" "}
             · {product.price} · {product.category ?? "no category"} ·{" "}
             {product.sales} {product.sales === 1 ? "purchase" : "purchases"} ·{" "}
-            {new Date(product.createdAt).toLocaleDateString()}
+            {formatDate(product.createdAt)}
           </p>
 
           {/* Открыть на витрине — только у тех, кто на ней есть: у

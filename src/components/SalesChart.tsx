@@ -1,4 +1,5 @@
 import { formatMoney, type DayPoint, type Range } from "@/lib/analytics";
+import { formatDate, formatDayMonth } from "@/lib/dates";
 
 // Продажи по дням — инлайновый SVG, без библиотеки графиков.
 //
@@ -222,7 +223,7 @@ export function SalesChart({
                   className="border-t border-zinc-200 dark:border-zinc-800"
                 >
                   <td className="py-1 text-zinc-700 dark:text-zinc-300">
-                    {new Date(day.date).toLocaleDateString()}
+                    {formatDate(day.date)}
                   </td>
                   <td className="py-1 text-zinc-700 dark:text-zinc-300">
                     {day.orders}
@@ -286,13 +287,9 @@ function Tooltip({ x, text }: { x: number; text: string }) {
   );
 }
 
-/** «2026-08-14» → «Aug 14». Год не пишем: он есть в подписи периода. */
+/** «2026-08-14» → «14 Aug». Год не пишем: он есть в подписи периода. */
 function formatDay(key: string): string {
-  return new Date(`${key}T00:00:00Z`).toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    timeZone: "UTC",
-  });
+  return formatDayMonth(`${key}T00:00:00Z`);
 }
 
 /** Ближайшее «круглое» число вверх: 1·10ⁿ, 2·10ⁿ или 5·10ⁿ. */

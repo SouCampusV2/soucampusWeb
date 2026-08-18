@@ -6,6 +6,7 @@ import { RevokeCreatorButton } from "@/components/RevokeCreatorButton";
 import { INLINE_LINK, NEW_TAB } from "@/components/Button";
 import { RefreshButton } from "@/components/RefreshButton";
 import { creatorHref } from "@/lib/creators";
+import { formatDate } from "@/lib/dates";
 
 // Очередь заявок на статус креатора.
 //
@@ -65,7 +66,7 @@ export default async function AdminApplicationsPage() {
                   </Link>
                 </h2>
                 <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                  {new Date(application.createdAt).toLocaleDateString()}
+                  {formatDate(application.createdAt)}
                 </span>
               </div>
 

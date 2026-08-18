@@ -4,6 +4,7 @@ import { SalesChart } from "@/components/SalesChart";
 import { PeriodPicker } from "@/components/PeriodPicker";
 import { INLINE_LINK, NEW_TAB } from "@/components/Button";
 import { creatorHref } from "@/lib/creators";
+import { formatDayMonthYear } from "@/lib/dates";
 
 // Сводка — она же корневая страница админки.
 //
@@ -156,15 +157,9 @@ export default async function AdminHomePage({
   );
 }
 
-/** «Aug 1 – Aug 14, 2026 · 14 days» — период словами под заголовком. */
+/** «1 Aug 2026 – 14 Aug 2026 · 14 days» — период словами под заголовком. */
 function formatRange(range: Range): string {
-  const day = (key: string) =>
-    new Date(`${key}T00:00:00Z`).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      timeZone: "UTC",
-    });
+  const day = (key: string) => formatDayMonthYear(`${key}T00:00:00Z`);
 
   return `${day(range.from)} – ${day(range.to)} · ${range.days} ${
     range.days === 1 ? "day" : "days"
