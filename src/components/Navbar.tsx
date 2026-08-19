@@ -14,6 +14,7 @@ import {
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
+import { isMarketplaceRoute } from "@/lib/marketplace-routes";
 import { useCart } from "@/lib/cart-context";
 import { useUser } from "@/lib/useUser";
 import { SHOP_NAV_LINKS } from "@/lib/products";
@@ -76,28 +77,11 @@ export function Navbar() {
   // переход между режимами не дёргает высоту.
   // Вернуться на сайт — через лого SouCampus (оно всегда ведёт на "/"),
   // отдельной ссылки "назад" в магазине нет.
-  const isMarketplaceActive =
-    pathname === "/marketplace" ||
-    pathname.startsWith("/marketplace/") ||
-    pathname === "/cart" ||
-    pathname === "/support" ||
-    // Вход/регистрация/профиль — часть флоу магазина (покупка требует
-    // аккаунта), поэтому на них тоже магазинный навбар, а не портфолио.
-    // Сюда же обе страницы сброса пароля: попадают на них с формы входа,
-    // и переключение навбара посреди «войти → забыл → задать новый»
-    // выглядело бы так, будто человека выкинуло на другой сайт.
-    pathname === "/login" ||
-    pathname === "/signup" ||
-    pathname === "/forgot-password" ||
-    pathname === "/reset-password" ||
-    pathname === "/link-expired" ||
-    pathname.startsWith("/profile") ||
-    pathname === "/settings" ||
-    pathname === "/purchases" ||
-    pathname === "/notifications" ||
-    pathname.startsWith("/resources") ||
-    // Профиль продавца — часть магазина (его витрина), тот же навбар.
-    pathname.startsWith("/creator");
+  // Список адресов жил здесь, пока ответ на «это страница магазина?» нужен
+  // был одному навбару. Теперь тот же вопрос задаёт PricingSection, поэтому
+  // список один и лежит в lib/marketplace-routes.ts (там же и почему
+  // вход с кабинетом считаются магазином).
+  const isMarketplaceActive = isMarketplaceRoute(pathname);
 
   // PageTransition intercepts nav-link clicks in the capture phase and
   // calls stopPropagation (see PageTransition.tsx) so its own delayed
