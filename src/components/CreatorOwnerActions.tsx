@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/Button";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { CREATOR_SIGNUPS_OPEN } from "@/lib/flags";
 
 // Дополнительные кнопки, которые видит ТОЛЬКО сам владелец страницы
 // креатора: обычный посетитель их не должен видеть вовсе.
@@ -65,7 +66,23 @@ export function CreatorOwnerActions({
 
   // Ещё не креатор — ведём на /resources, где лежит форма заявки
   // (CreatorStatusCard), а не на форму загрузки: туда его не пустят.
+  //
+  // Пока приём заморожен, «стать автором» не предлагается вовсе — не
+  // отключённой кнопкой и не текстом «пока закрыто». О возможности,
+  // которой сейчас нет, человек знать не должен: обещание, которое
+  // площадка не выполнит сегодня, хуже, чем его отсутствие. Вместо него
+  // единственное, что ему тут и нужно, — витрина.
   if (variant === "empty") {
+    if (!isCreator && !CREATOR_SIGNUPS_OPEN) {
+      return (
+        <div className="mt-6">
+          <Button href="/marketplace" size="md">
+            Browse maps
+          </Button>
+        </div>
+      );
+    }
+
     return (
       <div className="mt-6">
         <Button href={isCreator ? "/creator/upload" : "/resources"} size="md">
@@ -85,13 +102,20 @@ export function CreatorOwnerActions({
       <Button href="/settings" size="sm" variant="secondary" pageTransition>
         Edit profile
       </Button>
-      <Button
-        href={isCreator ? "/creator/upload" : "/resources"}
-        size="sm"
-        variant="secondary"
-      >
-        {isCreator ? "Add a map" : "Become a creator"}
-      </Button>
+      {/* Вторая кнопка есть только у автора. У остального — одна
+          «Edit profile»: предлагать «стать автором», когда приём
+          закрыт, значит вести на страницу, которая ответит отказом. */}
+      {isCreator ? (
+        <Button href="/creator/upload" size="sm" variant="secondary">
+          Add a map
+        </Button>
+      ) : (
+        CREATOR_SIGNUPS_OPEN && (
+          <Button href="/resources" size="sm" variant="secondary">
+            Become a creator
+          </Button>
+        )
+      )}
     </div>
   );
 }

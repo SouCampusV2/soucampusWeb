@@ -16,6 +16,7 @@ import {
   isCreator,
   getSubmissionBlock,
 } from "@/lib/creator-applications";
+import { CREATOR_SIGNUPS_OPEN } from "@/lib/flags";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -51,6 +52,18 @@ export default async function ResourcesPage() {
     getOwnApplication(supabase, user.id),
     getSubmissionBlock(supabase, user.id),
   ]);
+
+  // Приём авторов заморожен — постороннему здесь нечего делать. Ссылок
+  // сюда не осталось (пункт убран из навбара, кнопка с профиля тоже),
+  // но адрес знают закладки и старые уведомления, и по нему человек
+  // упёрся бы в форму заявки, которую база всё равно не примет.
+  //
+  // Уводим на витрину, а не показываем «пока закрыто»: объяснение — это
+  // тот же анонс возможности, только другими словами. Автора (владельца)
+  // редирект не касается, у него isCreator = true.
+  if (!creator && !CREATOR_SIGNUPS_OPEN) {
+    redirect("/marketplace");
+  }
 
   return (
     <main className="relative w-full overflow-x-clip px-6">

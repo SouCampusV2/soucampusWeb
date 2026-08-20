@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { revalidatePath } from "next/cache";
 import { getAdminUser } from "@/lib/admin";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { CREATOR_SIGNUPS_OPEN } from "@/lib/flags";
 import { notify } from "@/lib/notifications";
 
 // Решение по заявке на статус креатора и отзыв уже выданного статуса.
@@ -128,6 +129,31 @@ export async function POST(request: Request) {
 
   if (typeof applicationId !== "string" || applicationId.length === 0) {
     return NextResponse.json({ error: "bad applicationId" }, { status: 400 });
+  }
+
+  // Приём авторов заморожен (src/lib/flags.ts) — одобрять нечего.
+  //
+  // Кнопка в очереди намеренно осталась на месте: очередь и сами заявки
+  // видны, чтобы владелец понимал, кто просился, когда придёт время
+  // размораживать. Отказ стоит ЗДЕСЬ, до update, — иначе заявка успела
+  // бы получить статус approved, а прав человек всё равно не получил бы:
+  // ровно то «худшее из состояний», от которого ниже страхуется откат
+  // при grantError.
+  //
+  // Уведомление не шлём НИКАКОЕ (решение владельца 2026-08-20): и
+  // «одобрено», и «отказано» одинаково сообщают человеку, что заявку
+  // прочитали и решение принято. Решения нет — заявка просто ждёт
+  // разморозки. Сообщение об отказе здесь было бы неправдой.
+  //
+  // Проверка в коде, а не в базе, и это тот редкий раз, когда так
+  // правильно: этот роут ходит служебным ключом, то есть МИМО политик,
+  // и снятая политика вставки его не касается. Мимо кода сюда не
+  // попасть — гейт админки стоит выше.
+  if (action === "approve" && !CREATOR_SIGNUPS_OPEN) {
+    return NextResponse.json(
+      { error: "creator signups are frozen" },
+      { status: 409 }
+    );
   }
 
   let rejectionReason: string | null = null;
