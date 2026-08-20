@@ -23,12 +23,9 @@ import { CREATOR_SIGNUPS_OPEN } from "@/lib/flags";
 // показ лишней кнопки ничего не открывает.
 export function CreatorOwnerActions({
   creatorId,
-  variant = "header",
 }: {
   /** profiles.id владельца открытой страницы. */
   creatorId: string;
-  /** "header" — кнопки в шапке профиля; "empty" — призыв в пустом списке. */
-  variant?: "header" | "empty";
 }) {
   const [isOwner, setIsOwner] = useState(false);
   // Право загружать. Пока неизвестно — null: рисовать «Add a map» до
@@ -63,39 +60,6 @@ export function CreatorOwnerActions({
   }, [creatorId]);
 
   if (!isOwner || isCreator === null) return null;
-
-  // Ещё не креатор — ведём на /resources, где лежит форма заявки
-  // (CreatorStatusCard), а не на форму загрузки: туда его не пустят.
-  //
-  // Пока приём заморожен, «стать автором» не предлагается вовсе — не
-  // отключённой кнопкой и не текстом «пока закрыто». О возможности,
-  // которой сейчас нет, человек знать не должен: обещание, которое
-  // площадка не выполнит сегодня, хуже, чем его отсутствие. Вместо него
-  // единственное, что ему тут и нужно, — витрина.
-  if (variant === "empty") {
-    if (!isCreator && !CREATOR_SIGNUPS_OPEN) {
-      return (
-        <div className="mt-6">
-          <Button href="/marketplace" size="md">
-            Browse maps
-          </Button>
-        </div>
-      );
-    }
-
-    return (
-      <div className="mt-6">
-        <Button href={isCreator ? "/creator/upload" : "/resources"} size="md">
-          {isCreator ? "Add your first map" : "Become a creator"}
-        </Button>
-        <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
-          {isCreator
-            ? "Submitted maps are reviewed before they go live on the marketplace."
-            : "Apply once — after that you can upload maps to the marketplace."}
-        </p>
-      </div>
-    );
-  }
 
   return (
     <div className="mt-4 flex flex-wrap justify-center gap-3 sm:justify-start">

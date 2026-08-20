@@ -200,23 +200,22 @@ export default async function CreatorPage({
         </div>
       </section>
 
-      {/* Карты продавца */}
+      {/* Карты продавца — секции нет вовсе, пока карт нет.
+          Раньше пустой профиль печатал заголовок «Maps by <ник>» и под
+          ним «No maps published yet»: три строки, чтобы сообщить, что
+          сообщать нечего. У обычного участника — а с заморозкой
+          креаторства это все, кроме владельца, — карт не будет никогда,
+          и постоянный пустой раздел про них выглядит поломкой профиля.
+          Владельцу кнопка добавления и так лежит выше, в шапке
+          (CreatorOwnerActions, вариант header). */}
+      {products.length > 0 && (
       <section className="mt-14">
         <h2
           className={`${displayFont.className} text-2xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-3xl`}
         >
           Maps by {creator.displayName}
         </h2>
-        {products.length === 0 ? (
-          <>
-            <p className="mt-6 text-zinc-600 dark:text-zinc-400">
-              No maps published yet.
-            </p>
-            {/* Владельцу пустой список — это не «пусто», а «начни»:
-                ему тут же предлагается кнопка добавления. */}
-            <CreatorOwnerActions creatorId={creator.id} variant="empty" />
-          </>
-        ) : (
+        {(
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {products.map((product) => (
               <ProductCard
@@ -233,6 +232,7 @@ export default async function CreatorPage({
           </div>
         )}
       </section>
+      )}
       </div>
     </main>
   );
