@@ -1,3 +1,4 @@
+import { cache } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
@@ -11,7 +12,33 @@ import { BackLink } from "@/components/BackLink";
 import { INLINE_LINK } from "@/components/Button";
 import { StarRating } from "@/components/StarRating";
 
+// Одна карта — один поход в базу за рендер.
+//
+// Next вызывает generateMetadata и сам компонент страницы отдельно, и оба
+// просят одну и ту же карту по одному и тому же slug. Без обёртки это два
+// последовательных запроса к Supabase ради одинакового ответа: на сборке
+// они умножаются на число карт в каталоге, а при рендере по требованию
+// человек ждёт оба.
+//
+// cache() дедуплицирует в пределах ОДНОГО рендера: второй вызов с тем же
+// аргументом получает результат первого, между разными запросами ничего
+// не хранится. Ровно тот же приём и по той же причине уже применён к
+// getUser() в lib/current-user.ts.
+//
+// Обёртка стоит здесь, а не на самом getProduct в lib/products.ts,
+// намеренно: тот модуль импортируют семь клиентских компонентов (им нужны
+// типы и категории), а cache() — серверный API React, и тащить его в
+// клиентский бандл незачем.
+//
+// Разбор и что делать с каталогом дальше — docs/ARCHITECTURE.md § 7.1.
+const getProductOnce = cache(getProduct);
+
 // Страницы товаров собираются заранее, как и работы портфолио.
+//
+// ⚠️ Отдаём ВЕСЬ каталог: на десяти картах это незаметно, на тысяче станет
+// заметно, на десяти тысячах — дорого. Варианты (отдавать только ходовые,
+// перевести на revalidatePath) с замерами — docs/ARCHITECTURE.md § 7.1.
+// Сознательно не трогаем, пока карт десяток.
 export async function generateStaticParams() {
   const products = await getAllProducts();
   return products.map((p) => ({ slug: p.slug }));
@@ -23,7 +50,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getProduct(slug);
+  const product = await getProductOnce(slug);
   if (!product) return { title: "Not found" };
 
   const description = `${product.summary} ${product.price} — instant download.`;
@@ -56,7 +83,7 @@ export default async function ProductPage({
   params: Promise<{ slug: string }>;
 }) {
   const { slug } = await params;
-  const product = await getProduct(slug);
+  const product = await getProductOnce(slug);
   if (!product) notFound();
 
   // Агрегаты для этого товара (оценки/покупки). Устойчиво: если статистика

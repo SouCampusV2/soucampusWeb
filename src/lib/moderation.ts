@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { signedDownloadUrl, downloadFileName } from "@/lib/orders";
-import type { ProductCategory, ProductStatus } from "@/lib/products";
+import type { ProductCategory, ProductState } from "@/lib/products";
 
 // Очередь модерации и «мои заявки» креатора.
 //
@@ -69,9 +69,10 @@ export async function getPendingProducts(): Promise<PendingProduct[]> {
     .select(
       "id, slug, title, summary, description, image_url, price_label, category, file_path, created_at, creator_id, submission_kind, suspension_reason, product_images(url, position)"
     )
-    .eq("status", "pending")
-    // Удалённые в очередь не попадают: разбирать нечего, карты уже нет.
-    .is("deleted_at", null)
+    // Одно сравнение вместо двух: «удалена» больше не отдельная метка
+    // поверх статуса, а самостоятельное состояние — значит в pending
+    // удалённая карта не попадёт по построению.
+    .eq("state", "pending")
     .order("created_at", { ascending: true });
 
   if (error) throw new Error(`Не удалось загрузить очередь: ${error.message}`);
@@ -136,20 +137,23 @@ export type OwnProduct = {
   title: string;
   image: string;
   price: string;
-  status: ProductStatus;
-  isPublished: boolean;
+  /**
+   * Где карта находится. Автору важна разница между «спрятал сам»
+   * (hidden — вернёт одной кнопкой) и «сняла площадка» (suspended —
+   * вернуть можно только правкой, она же отправляет на повторный разбор).
+   */
+  state: ProductState;
+  /**
+   * Активен ли автор как креатор. Если нет — его живые карты с витрины
+   * ушли, но состояния не сменили: вернётся статус, вернутся и они.
+   * Отсюда отдельный бейдж «Paused» вместо «Taken down» — дело в доступе,
+   * а не в карте.
+   */
+  creatorActive: boolean;
   rejectionReason: string | null;
   rejectionFlags: string[];
-  /**
-   * Кто убрал карту с витрины: 'creator' — сам автор, 'moderator' — мы,
-   * null — она на витрине. Разница видна автору: своё «спрятать» он
-   * отменяет сам, снятое модератором — нет.
-   */
-  hiddenBy: "creator" | "moderator" | "revoked" | null;
   /** За что сняли или удалили. Автор обязан это видеть, а не догадываться. */
   suspensionReason: string | null;
-  /** Не null — карта удалена (мягко). Кем именно — в deletedBy. */
-  deletedAt: string | null;
   /** Кто удалил: площадка или сам автор. */
   deletedBy: "creator" | "moderator" | null;
   createdAt: string;
@@ -162,7 +166,7 @@ export async function getOwnProducts(
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, slug, title, image_url, price_label, status, is_published, rejection_reason, rejection_flags, hidden_by, suspension_reason, deleted_at, deleted_by, created_at"
+      "id, slug, title, image_url, price_label, state, creator_active, rejection_reason, rejection_flags, suspension_reason, deleted_by, created_at"
     )
     .eq("creator_id", userId)
     // Своё же удаление автор в списке не видит: он его и сделал, а
@@ -190,13 +194,11 @@ export async function getOwnProducts(
     title: row.title,
     image: row.image_url,
     price: row.price_label,
-    status: row.status ?? "published",
-    isPublished: Boolean(row.is_published),
+    state: row.state as ProductState,
+    creatorActive: row.creator_active !== false,
     rejectionReason: row.rejection_reason ?? null,
     rejectionFlags: row.rejection_flags ?? [],
-    hiddenBy: row.hidden_by ?? null,
     suspensionReason: row.suspension_reason ?? null,
-    deletedAt: row.deleted_at ?? null,
     deletedBy: row.deleted_by ?? null,
     createdAt: row.created_at,
   }));
@@ -215,8 +217,7 @@ export type EditableProduct = {
   images: string[];
   priceCents: number;
   category: ProductCategory | null;
-  status: ProductStatus;
-  isPublished: boolean;
+  state: ProductState;
   rejectionReason: string | null;
   rejectionFlags: string[];
   filePath: string | null;
@@ -230,7 +231,7 @@ export async function getOwnProduct(
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, slug, title, summary, description, image_url, price_cents, category, status, is_published, rejection_reason, rejection_flags, file_path, product_images(url, position)"
+      "id, slug, title, summary, description, image_url, price_cents, category, state, rejection_reason, rejection_flags, file_path, product_images(url, position)"
     )
     .eq("creator_id", userId)
     .eq("slug", slug)
@@ -251,8 +252,7 @@ export async function getOwnProduct(
     image_url: string;
     price_cents: number;
     category: ProductCategory | null;
-    status: ProductStatus | null;
-    is_published: boolean;
+    state: ProductState;
     rejection_reason: string | null;
     rejection_flags: string[] | null;
     file_path: string | null;
@@ -276,8 +276,7 @@ export async function getOwnProduct(
     images: [row.image_url, ...extra],
     priceCents: Number(row.price_cents),
     category: row.category,
-    status: row.status ?? "published",
-    isPublished: Boolean(row.is_published),
+    state: row.state,
     rejectionReason: row.rejection_reason ?? null,
     rejectionFlags: row.rejection_flags ?? [],
     filePath: row.file_path,

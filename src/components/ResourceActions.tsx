@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useRefresh } from "@/lib/useRefresh";
 import { DotsThree, EyeSlash, Eye, Trash } from "@phosphor-icons/react";
 import { BUTTON_PILL, DANGER_COLORS } from "@/components/Button";
+import type { ProductState } from "@/lib/products";
 
 // Что автор может сделать со своей картой помимо правки: спрятать её с
 // витрины и удалить совсем.
@@ -18,16 +19,15 @@ import { BUTTON_PILL, DANGER_COLORS } from "@/components/Button";
 export function ResourceActions({
   productId,
   title,
-  status,
-  isPublished,
-  deleted = false,
+  state,
 }: {
   productId: string;
   title: string;
-  status: "pending" | "published" | "rejected";
-  isPublished: boolean;
-  /** Карту убрал из каталога владелец сайта — распоряжаться ею нечем. */
-  deleted?: boolean;
+  /**
+   * Состояние карты — одно значение вместо трёх пропсов, которые раньше
+   * приходилось согласовывать между собой на каждой странице.
+   */
+  state: ProductState;
 }) {
   const refresh = useRefresh();
   const [open, setOpen] = useState(false);
@@ -96,14 +96,14 @@ export function ResourceActions({
     refresh();
   }
 
-  // Прятать можно только одобренную карту: у заявки в очереди витрины
-  // и так нет (сервер отвечает на это 409, здесь просто не показываем
-  // бессмысленный пункт).
-  const canHide = status === "published";
+  // Спрятать можно живую, вернуть — спрятанную автором. Ровно те же два
+  // условия проверяет сервер, и ровно те переходы разрешает база: карту
+  // в очереди прятать не с чего, а снятую площадкой автор не возвращает.
+  const canHide = state === "live" || state === "hidden";
   // У удалённой карты меню не показываем вовсе: обе его кнопки упёрлись
   // бы в отказ сервера. Пустая кнопка «⋯», открывающая список из двух
   // нерабочих пунктов, хуже её отсутствия.
-  if (deleted) return null;
+  if (state === "deleted") return null;
   // Сверяем без регистра и краевых пробелов — ровно как сервер.
   const titleMatches = typed.trim().toLowerCase() === title.toLowerCase();
 
@@ -124,12 +124,12 @@ export function ResourceActions({
           {canHide && (
             <button
               type="button"
-              onClick={() => send(isPublished ? "hide" : "unhide")}
+              onClick={() => send(state === "live" ? "hide" : "unhide")}
               disabled={pending}
               className="flex w-full cursor-pointer items-center gap-2 rounded-xl px-3 py-2.5 text-left text-sm text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] disabled:opacity-60 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06]"
             >
-              {isPublished ? <EyeSlash size={16} /> : <Eye size={16} />}
-              {isPublished
+              {state === "live" ? <EyeSlash size={16} /> : <Eye size={16} />}
+              {state === "live"
                 ? "Hide from the marketplace"
                 : "Show in the marketplace"}
             </button>

@@ -19,7 +19,7 @@ It's also my hands-on way of learning modern web development — going from "I k
 - [Stripe](https://stripe.com) — Checkout for the digital build shop (`/marketplace`, `/cart`), webhook-verified, signed downloads from a private Storage bucket
 - [Tiptap](https://tiptap.dev) — the rich-text editor creators write map descriptions in (images and tables inline, not a bare textarea)
 - [sanitize-html](https://github.com/apostrophecms/sanitize-html) — descriptions are creator-authored HTML, so they go through an explicit tag allowlist before they reach a visitor's browser. It parses the markup itself; DOMPurify (used until 2026-08-08) needs a browser DOM, and the jsdom stand-in it falls back to on the server does not load on Vercel
-- [Vitest](https://vitest.dev) — unit tests for the pure logic (pricing formula, DB-row mapping, cookie signing, path allowlist, Stripe session → order mapping)
+- [Vitest](https://vitest.dev) — 100 unit tests across 14 files, covering the pure logic (pricing formula, DB-row mapping, cookie signing, path allowlist, rejection cooldowns, Stripe session → order mapping)
 - [Vercel Analytics](https://vercel.com/analytics) — traffic/page views
 - Deployed on [Vercel](https://vercel.com) at [soucampus.online](https://soucampus.online) — `master` auto-deploys to production on every push, `dev` gets its own Preview URL
 - CI via GitHub Actions — lint + tests + build on every push/PR to `master` and `dev`
@@ -27,10 +27,10 @@ It's also my hands-on way of learning modern web development — going from "I k
 
 **Planned, not wired up yet:**
 
-- A full content admin — `/admin/moderation` exists for reviewing submitted maps, but portfolio, reviews and stats are still edited through the Supabase Table Editor
-- Malware scanning for uploaded files — signatures are checked, contents aren't, and those files go to buyers
-- Upload quotas, subscriptions, Google sign-in
-- Docker, once there's an actual reason for it
+- 🔴 Malware scanning for uploaded files — signatures are checked, contents aren't, and those files go to buyers. This is the top open item
+- 🔴 Upload quotas, subscriptions, Google sign-in, a real 404 page, Minecraft version fields
+- 🟡 A full content admin — the owner-facing screens exist (`/admin` overview with a sales chart, the moderation queue, the whole catalog, creator applications, announcements), but portfolio, reviews and stats are still edited through the Supabase Table Editor on purpose
+- 🔴 Docker, once there's an actual reason for it
 
 ## Getting started
 
@@ -46,7 +46,7 @@ Day-to-day work happens on the `dev` branch (Vercel gives it its own Preview URL
 ## Project structure
 
 - `src/app/(site)/` — public pages (Next.js App Router): home, `/portfolio`, `/portfolio/[slug]`, `/reviews/[slug]`, `/about`, `/contact`, `/support`, `/marketplace`, `/marketplace/[slug]`, `/marketplace/success`, `/cart`, `/creator/[username]` (public seller profile), `/creator/upload`, `/settings`, `/purchases`, `/resources` (a creator's own maps, including ones awaiting review), `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/terms`. The `(site)` group exists so these share a layout the future admin will not inherit
-- `src/app/admin/` — owner-only area, deliberately outside the `(site)` group so it inherits no navbar, pricing block or footer. `/admin/moderation` is the review queue for submitted maps
+- `src/app/admin/` — owner-only area, deliberately outside the `(site)` group so it inherits no navbar, pricing block or footer: `/admin` (sales overview), `/admin/moderation` (review queue), `/admin/products` (the whole catalog — search, filters, take down or delete at any time), `/admin/applications` (creator applications), `/admin/announce` (broadcast a notification)
 - `src/app/api/view/` — the visitor-counter endpoint
 - `src/app/api/admin/moderation/`, `src/app/api/creator/cleanup-storage/` — approve/reject a submission, and collect Storage objects nothing references any more. Both run under the service key on the server; the cleanup one accepts no path from the browser and works out what's in use from the database
 - `src/app/api/checkout/`, `src/app/api/stripe/webhook/` — Stripe Checkout session creation and the payment webhook (signature-verified, records orders atomically via a Postgres function)
@@ -55,10 +55,12 @@ Day-to-day work happens on the `dev` branch (Vercel gives it its own Preview URL
 - `src/lib/` — data access and pure logic: Supabase clients, `projects`/`reviews`/`stats` (each with a `rowTo*` mapper that keeps DB column names out of the components), the pricing formula, cookie signing
 - `supabase/` — `migrations/` (the schema, in git so it is reproducible rather than living only in the cloud) and `seed.sql` (the one-off content transfer, kept as a record)
 - `scripts/check-views.mjs` — manual integration pass over the running view counter (`npm run check:views`); not part of `npm test`, it drives real HTTP and cleans up after itself
+- `scripts/clear-product-storage.mjs` — empties the `product-files` and `product-images` buckets (`npm run clear:storage`), the companion to `supabase/cleanup_products_2026-08-16.sql`. Storage cannot be cleared from SQL: Supabase blocks `delete from storage.objects`, and rightly so — the row is only the bookkeeping entry, the file itself lives elsewhere, so deleting the row would leave a paid-for file nothing can reach
 - `reports/` — weekly design/structure check reports, auto-generated by a scheduled Claude Code cloud routine (worth skimming — catches drift from `DESIGN.md`/`CLAUDE.md` and summarizes the week's work)
 - `.claude/skills/` — custom Claude Code skills used to review this repo (`design-check`, `structure-check`)
 - `CLAUDE.md` — active plan and current status (the entry point, kept in root; links out to the `docs/` files below)
 - `docs/RULES.md` — mandatory per-session rules: how to explain code, git workflow, commit authorship, performance, legal
+- `docs/ARCHITECTURE.md` — how data moves through the system: the three layers, the three paths to the database, the main flows step by step, and a security map
 - `docs/ROADMAP.md` — long-term vision, the stack and why, stages 1-5, how to learn
 - `docs/SHOP.md` — the marketplace vision and phased build order for the shop (creators, storefront, profiles, ratings)
 - `docs/IDEAS.md` — backlog of ideas outside the current sprint (subscriptions, PostHog, custom admin, Discord bot)
@@ -69,10 +71,10 @@ Day-to-day work happens on the `dev` branch (Vercel gives it its own Preview URL
 
 ## Roadmap
 
-1. ~~Working portfolio site~~ — done
-2. ~~Deploy on Vercel~~ — done
-3. ~~Real content everywhere~~ — done (Discord invite, portfolio, reviews, About me, FAQ, stats, pricing); only the author's photo is still a placeholder
-4. ~~Mobile/tablet responsive pass~~ — done (see `docs/RESPONSIVE_PLAN.md` for the full breakdown; rules still need porting into `docs/DESIGN.md`)
-5. Mini content admin backed by Supabase — **in progress**: the site reads everything from Postgres. `/admin/moderation` is the first real admin screen (reviewing creator submissions, where the Table Editor genuinely could not do the job — you cannot judge a map from a table row). Portfolio, reviews and stats are still edited in the Table Editor on purpose, so the requirements are observed rather than guessed
-6. Shop: ~~catalog~~, ~~cart~~, ~~Stripe checkout~~, ~~Supabase Auth + accounts~~, ~~"my purchases" + downloads~~, ~~marketplace storefront (Most popular row, redesigned cards, categories, real ratings & purchase counts)~~, ~~multi-creator profiles + product galleries~~, ~~creator self-serve uploads + moderation queue~~ — all live in production and verified by the owner. Buying requires an account, every user has a public creator profile, creators upload their own maps and the owner reviews them at `/admin/moderation`. Search covers titles, descriptions and creator names. Next: a full catalog view in the admin (today it only shows the pending queue, so an approved map cannot be taken down), then applying for creator status, then subscription
-7. Docker, ~~tests~~ (unit suite in CI since 2026-07-20), deeper analytics (e.g. PostHog)
+1. 🟢 ~~Working portfolio site~~ — done
+2. 🟢 ~~Deploy on Vercel~~ — done
+3. 🟢 ~~Real content everywhere~~ — done (Discord invite, portfolio, reviews, About me, FAQ, stats, pricing); only the author's photo is still a placeholder
+4. 🟡 ~~Mobile/tablet responsive pass~~ — done for everything that existed in July; the account, upload and marketplace screens built since then have not been checked on a phone (see `docs/RESPONSIVE_PLAN.md` for the full breakdown; rules still need porting into `docs/DESIGN.md`)
+5. 🟡 Mini content admin backed by Supabase — **in progress**: the site reads everything from Postgres. `/admin/moderation` is the first real admin screen (reviewing creator submissions, where the Table Editor genuinely could not do the job — you cannot judge a map from a table row). Portfolio, reviews and stats are still edited in the Table Editor on purpose, so the requirements are observed rather than guessed
+6. Shop: ~~catalog~~, ~~cart~~, ~~Stripe checkout~~, ~~Supabase Auth + accounts~~, ~~"my purchases" + downloads~~, ~~marketplace storefront (Most popular row, redesigned cards, categories, real ratings & purchase counts)~~, ~~multi-creator profiles + product galleries~~, ~~creator self-serve uploads + moderation queue~~ — all live in production and verified by the owner. Buying requires an account, every user has a public creator profile, creators upload their own maps and the owner reviews them at `/admin/moderation`. Search covers titles, descriptions and creator names. Since then: 🟢 the admin got a full catalog view (an approved map can be taken down or deleted at any time, with a reason and a log), 🟢 creator status is applied for and can be revoked, 🟢 notifications arrive on their own over Supabase Realtime, and 🟢 a map's state became a single guarded column instead of four flags. Next: 🔴 route every database write through the server (see `docs/ARCHITECTURE.md`) — malware scanning and rate limits both depend on it, since uploads currently go from the browser straight to storage; then real payments, then subscription
+7. 🟡 ~~tests~~ (unit suite in CI since 2026-07-20) — done; 🔴 Docker and deeper analytics (e.g. PostHog) — not started

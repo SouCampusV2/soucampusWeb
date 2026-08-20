@@ -66,7 +66,7 @@ export function CatalogActions({ product }: { product: CatalogRow }) {
     }
   }
 
-  const deleted = Boolean(product.deletedAt);
+  const deleted = product.state === "deleted";
   const templates = asking === "delete" ? DELETION_TEMPLATES : TAKEDOWN_TEMPLATES;
   const reason = buildReasonMessage(templates, codes, note);
   // Сверяем без регистра и краевых пробелов — ровно как сервер.
@@ -90,7 +90,7 @@ export function CatalogActions({ product }: { product: CatalogRow }) {
           </button>
         ) : (
           <>
-            {product.isPublished ? (
+            {product.state === "live" ? (
               <button
                 type="button"
                 disabled={busy}
@@ -101,10 +101,11 @@ export function CatalogActions({ product }: { product: CatalogRow }) {
                 Take down
               </button>
             ) : (
-              // Вернуть можно только разобранную карту: у pending и
-              // rejected «вернуть на витрину» означало бы публикацию
-              // мимо очереди.
-              product.status === "published" && (
+              // Вернуть можно только снятую нами карту: у pending и
+              // rejected «вернуть на витрину» означало бы публикацию мимо
+              // очереди, а спрятанную автором возвращает сам автор —
+              // перехода hidden → live у площадки нет и не должно быть.
+              product.state === "suspended" && (
                 <button
                   type="button"
                   disabled={busy}

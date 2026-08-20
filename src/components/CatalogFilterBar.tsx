@@ -4,17 +4,23 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MagnifyingGlass, X } from "@phosphor-icons/react";
 
-// Поиск и фильтр статуса для каталога админки.
+// Поиск и фильтр состояния для каталога админки.
 //
-// Состояние живёт в адресе (?q=, ?status=), а не в компоненте: так
+// Состояние живёт в адресе (?q=, ?state=), а не в компоненте: так
 // отфильтрованный список можно оставить открытым во вкладке, вернуться к
 // нему кнопкой «назад» и переслать себе ссылкой. Страница серверная и
 // читает те же параметры.
+//
+// Значения — ровно те же слова, что в колонке `state`. Раньше их было
+// пять на четыре колонки, и два из них («hidden», «published») в базе не
+// существовали вовсе: страница переводила их в условия по двум полям.
+// Теперь фильтр и база говорят на одном языке.
 const FILTERS = [
   { value: "", label: "All" },
-  { value: "published", label: "Live" },
+  { value: "live", label: "Live" },
   { value: "pending", label: "In review" },
-  { value: "hidden", label: "Taken down" },
+  { value: "suspended", label: "Taken down" },
+  { value: "hidden", label: "Hidden by author" },
   { value: "rejected", label: "Rejected" },
   { value: "deleted", label: "Deleted" },
 ];
@@ -27,11 +33,11 @@ const SEARCH_DEBOUNCE_MS = 250;
 export function CatalogFilterBar() {
   const router = useRouter();
   const params = useSearchParams();
-  const currentStatus = params.get("status") ?? "";
+  const currentState = params.get("state") ?? "";
   const urlQuery = params.get("q") ?? "";
   const [query, setQuery] = useState(urlQuery);
 
-  function apply(next: { q?: string; status?: string }) {
+  function apply(next: { q?: string; state?: string }) {
     const search = new URLSearchParams(params.toString());
 
     for (const [key, value] of Object.entries(next)) {
@@ -59,21 +65,21 @@ export function CatalogFilterBar() {
     const timer = setTimeout(() => {
       const search = new URLSearchParams();
       if (trimmed) search.set("q", trimmed);
-      if (currentStatus) search.set("status", currentStatus);
+      if (currentState) search.set("state", currentState);
       // replace, а не push: иначе каждая буква становится шагом истории
       // и «назад» приходится жать столько раз, сколько символов набрал.
       router.replace(`/admin/products?${search.toString()}`);
     }, SEARCH_DEBOUNCE_MS);
 
     return () => clearTimeout(timer);
-  }, [query, urlQuery, currentStatus, router]);
+  }, [query, urlQuery, currentState, router]);
 
   return (
     <div className="mt-8 flex flex-wrap items-center gap-3">
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          apply({ q: query, status: currentStatus });
+          apply({ q: query, state: currentState });
         }}
         className="relative min-w-[16rem] flex-1"
       >
@@ -98,7 +104,7 @@ export function CatalogFilterBar() {
             type="button"
             onClick={() => {
               setQuery("");
-              apply({ q: "", status: currentStatus });
+              apply({ q: "", state: currentState });
             }}
             aria-label="Clear search"
             className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
@@ -113,9 +119,9 @@ export function CatalogFilterBar() {
           <button
             key={f.value}
             type="button"
-            onClick={() => apply({ q: query, status: f.value })}
+            onClick={() => apply({ q: query, state: f.value })}
             className={`cursor-pointer rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
-              currentStatus === f.value
+              currentState === f.value
                 ? "bg-orange-500 text-zinc-950 dark:bg-orange-400"
                 : "text-zinc-600 hover:bg-zinc-950/[0.05] dark:text-zinc-400 dark:hover:bg-zinc-50/[0.06]"
             }`}

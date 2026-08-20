@@ -3,6 +3,7 @@
 import { usePathname } from "next/navigation";
 import { FadeIn } from "@/components/FadeIn";
 import { ArrowCircle } from "@/components/ArrowCircle";
+import { isMarketplaceRoute } from "@/lib/marketplace-routes";
 
 // PricingSection is global (rendered once in layout.tsx, right after
 // {children}, on every page), so this is the only place that can react to
@@ -72,6 +73,21 @@ const PLANS = [
 
 export function PricingSection() {
   const pathname = usePathname();
+
+  // В магазине тарифов нет — решение владельца 2026-08-19.
+  //
+  // Блок обещает пять планов подписки с ценами (5.99€/мес и далее), а
+  // подписки не существует: купить нельзя ни один. На страницах
+  // портфолио это ещё читается как «что планируется», но в магазине,
+  // где рядом лежит настоящая кнопка покупки за настоящие деньги, оно
+  // выглядит товаром — и человек, дошедший до корзины, вправе решить,
+  // что тарифы тоже можно оплатить.
+  //
+  // Убрано именно отсюда, а не из layout: PricingSection и так уже
+  // единственное место, знающее про свои страницы (см. NO_TOP_DIVIDER_ROUTES
+  // выше), и разносить это знание по двум файлам незачем.
+  if (isMarketplaceRoute(pathname)) return null;
+
   const noTopDivider = NO_TOP_DIVIDER_ROUTES.includes(pathname);
 
   return (

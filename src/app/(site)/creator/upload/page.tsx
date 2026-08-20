@@ -66,8 +66,8 @@ export default async function UploadMapPage() {
   }
 
   const own = await getOwnProducts(supabase, user.id);
-  const rejected = own.filter((p) => p.status === "rejected");
-  const pending = own.filter((p) => p.status === "pending");
+  const rejected = own.filter((p) => p.state === "rejected");
+  const pending = own.filter((p) => p.state === "pending");
 
   return (
     <main className="relative w-full overflow-x-clip px-6">

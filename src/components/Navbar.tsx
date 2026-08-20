@@ -14,8 +14,10 @@ import {
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
+import { isMarketplaceRoute } from "@/lib/marketplace-routes";
 import { useCart } from "@/lib/cart-context";
 import { useUser } from "@/lib/useUser";
+import { CREATOR_SIGNUPS_OPEN } from "@/lib/flags";
 import { SHOP_NAV_LINKS } from "@/lib/products";
 import { creatorHref } from "@/lib/creators";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
@@ -76,28 +78,11 @@ export function Navbar() {
   // переход между режимами не дёргает высоту.
   // Вернуться на сайт — через лого SouCampus (оно всегда ведёт на "/"),
   // отдельной ссылки "назад" в магазине нет.
-  const isMarketplaceActive =
-    pathname === "/marketplace" ||
-    pathname.startsWith("/marketplace/") ||
-    pathname === "/cart" ||
-    pathname === "/support" ||
-    // Вход/регистрация/профиль — часть флоу магазина (покупка требует
-    // аккаунта), поэтому на них тоже магазинный навбар, а не портфолио.
-    // Сюда же обе страницы сброса пароля: попадают на них с формы входа,
-    // и переключение навбара посреди «войти → забыл → задать новый»
-    // выглядело бы так, будто человека выкинуло на другой сайт.
-    pathname === "/login" ||
-    pathname === "/signup" ||
-    pathname === "/forgot-password" ||
-    pathname === "/reset-password" ||
-    pathname === "/link-expired" ||
-    pathname.startsWith("/profile") ||
-    pathname === "/settings" ||
-    pathname === "/purchases" ||
-    pathname === "/notifications" ||
-    pathname.startsWith("/resources") ||
-    // Профиль продавца — часть магазина (его витрина), тот же навбар.
-    pathname.startsWith("/creator");
+  // Список адресов жил здесь, пока ответ на «это страница магазина?» нужен
+  // был одному навбару. Теперь тот же вопрос задаёт PricingSection, поэтому
+  // список один и лежит в lib/marketplace-routes.ts (там же и почему
+  // вход с кабинетом считаются магазином).
+  const isMarketplaceActive = isMarketplaceRoute(pathname);
 
   // PageTransition intercepts nav-link clicks in the capture phase and
   // calls stopPropagation (see PageTransition.tsx) so its own delayed
@@ -254,13 +239,26 @@ export function Navbar() {
                           </Link>
                           {/* Свои карты — управление, а не публичная
                               витрина: раньше пункт вёл на /creator/<ник>,
-                              где ничего нельзя было отредактировать. */}
-                          <Link
-                            href="/resources"
-                            className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
-                          >
-                            Your resources
-                          </Link>
+                              где ничего нельзя было отредактировать.
+
+                              Пока приём авторов заморожен, пункта нет ни
+                              у кого — включая владельца. Причина не в
+                              правах (у владельца они есть), а в том, что
+                              меню одно на всех и знать, кто его открыл,
+                              оно не может: useUser отдаёт пользователя, а
+                              не is_creator. Дотягивать флаг запросом —
+                              лишний поход в базу на каждой странице ради
+                              одного человека, который дойдёт по адресу
+                              /resources напрямую. При разморозке пункт
+                              возвращается как был. */}
+                          {CREATOR_SIGNUPS_OPEN && (
+                            <Link
+                              href="/resources"
+                              className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+                            >
+                              Your resources
+                            </Link>
+                          )}
                           {/* Покупки — отдельным пунктом (просьба владельца
                               2026-07-27): раньше они прятались за
                               «Settings», хотя это разные вещи. */}

@@ -16,7 +16,7 @@ import { checkPortfolioUrl, checkDiscord } from "@/lib/contact-links";
 // не нужен: ему нечего обходить.
 //
 // Сравни с публикацией карты: там нужен route handler, потому что ставить
-// is_published не разрешено ни одной политикой и не должно быть.
+// публикация не разрешена ни одной политикой и не должна быть.
 const MAX_ABOUT = 2000;
 
 export function CreatorApplicationForm({ userId }: { userId: string }) {

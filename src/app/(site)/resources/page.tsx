@@ -16,6 +16,7 @@ import {
   isCreator,
   getSubmissionBlock,
 } from "@/lib/creator-applications";
+import { CREATOR_SIGNUPS_OPEN } from "@/lib/flags";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -51,6 +52,18 @@ export default async function ResourcesPage() {
     getOwnApplication(supabase, user.id),
     getSubmissionBlock(supabase, user.id),
   ]);
+
+  // Приём авторов заморожен — постороннему здесь нечего делать. Ссылок
+  // сюда не осталось (пункт убран из навбара, кнопка с профиля тоже),
+  // но адрес знают закладки и старые уведомления, и по нему человек
+  // упёрся бы в форму заявки, которую база всё равно не примет.
+  //
+  // Уводим на витрину, а не показываем «пока закрыто»: объяснение — это
+  // тот же анонс возможности, только другими словами. Автора (владельца)
+  // редирект не касается, у него isCreator = true.
+  if (!creator && !CREATOR_SIGNUPS_OPEN) {
+    redirect("/marketplace");
+  }
 
   return (
     <main className="relative w-full overflow-x-clip px-6">
@@ -167,10 +180,11 @@ function ResourceRow({ product }: { product: OwnProduct }) {
         </div>
 
         <div className="flex shrink-0 gap-2">
-          {/* Смотреть на витрине — только у опубликованной: у остальных
-              публичной страницы просто не существует (RLS отдаёт лишь
-              is_published), ссылка вела бы в 404. */}
-          {product.isPublished && (
+          {/* Смотреть на витрине — только у той, что на витрине и есть:
+              у остальных публичной страницы просто не существует (RLS
+              отдаёт лишь live-карты активных авторов), ссылка вела бы в
+              404. */}
+          {product.state === "live" && product.creatorActive && (
             <Link
               href={`/marketplace/${product.slug}`}
               className={`${BUTTON_PILL} text-zinc-600 hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50`}
@@ -181,7 +195,7 @@ function ResourceRow({ product }: { product: OwnProduct }) {
           )}
           {/* Правку удалённой карты не предлагаем: форма всё равно её не
               сохранит, а кнопка обещает обратное. */}
-          {!product.deletedAt && (
+          {product.state !== "deleted" && (
             <Link
               href={`/resources/${product.slug}/edit`}
               className={`${BUTTON_PILL} ${BUTTON_COLORS.secondary}`}
@@ -193,9 +207,7 @@ function ResourceRow({ product }: { product: OwnProduct }) {
           <ResourceActions
             productId={product.id}
             title={product.title}
-            status={product.status}
-            isPublished={product.isPublished}
-            deleted={Boolean(product.deletedAt)}
+            state={product.state}
           />
         </div>
       </div>
@@ -220,7 +232,7 @@ function ResourceRow({ product }: { product: OwnProduct }) {
  */
 function ReasonNote({ product }: { product: OwnProduct }) {
   const note = (() => {
-    if (product.deletedAt) {
+    if (product.state === "deleted") {
       // Своё удаление сюда не доходит — такие карты в список не
       // попадают вовсе (см. getOwnProducts). Ветка на него всё равно
       // есть: подпись «удалила площадка» под собственным решением
@@ -239,22 +251,24 @@ function ReasonNote({ product }: { product: OwnProduct }) {
           "No reason was recorded. Get in touch with support.",
       };
     }
-    if (product.status === "rejected" && product.rejectionReason) {
+    if (product.state === "rejected" && product.rejectionReason) {
       return { label: "Why it was rejected:", text: product.rejectionReason };
     }
     // Своё собственное «спрятать» объяснять не надо — автор сам это сделал.
-    if (product.hiddenBy === "moderator" && product.suspensionReason) {
+    if (product.state === "suspended" && product.suspensionReason) {
       return { label: "Why it was taken down:", text: product.suspensionReason };
     }
     // Карта ушла не за себя, а вместе со статусом автора. Подпись другая
     // именно поэтому: «за что сняли ЭТУ карту» здесь ответа не имеет, и
     // претензия к карте сбивала бы с толку — исправлять в ней нечего.
-    if (product.hiddenBy === "revoked") {
+    //
+    // Проверяется последней: если карту вдобавок сняли за её собственную
+    // провинность, автору важнее прочитать претензию к карте — та
+    // останется и после того, как доступ вернут.
+    if (!product.creatorActive) {
       return {
         label: "Off the marketplace while your creator access is closed:",
-        text:
-          product.suspensionReason ??
-          "No reason was recorded. Get in touch with support.",
+        text: "Nothing is wrong with this map — it comes back with your creator status.",
       };
     }
     return null;
@@ -271,17 +285,18 @@ function ReasonNote({ product }: { product: OwnProduct }) {
 }
 
 function StatusBadge({ product }: { product: OwnProduct }) {
-  // Опубликованность и статус — разные вещи (см. миграцию модерации):
-  // карта может быть одобрена, но снята с витрины. Показываем то, что
-  // важнее автору прямо сейчас.
-  if (product.status === "pending") {
+  // Порядок веток = что важнее автору прямо сейчас. Раньше здесь
+  // сравнивались три поля в шести ветках; теперь состояние одно, и
+  // отдельной проверки требует только статус самого автора — он про
+  // человека, а не про карту.
+  if (product.state === "pending") {
     return (
       <Badge className="bg-zinc-950/[0.05] text-zinc-600 dark:bg-zinc-50/[0.06] dark:text-zinc-400">
         In review
       </Badge>
     );
   }
-  if (product.status === "rejected") {
+  if (product.state === "rejected") {
     return (
       <Badge className="bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400">
         Rejected
@@ -291,28 +306,33 @@ function StatusBadge({ product }: { product: OwnProduct }) {
   // «Hidden» на всё подряд было неинформативно: автор видел одно и то же
   // слово и когда прятал карту сам, и когда её снял модератор, и когда её
   // удалили из каталога. Три разных положения — три разных подписи.
-  if (product.deletedAt) {
+  if (product.state === "deleted") {
     return (
       <Badge className="bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400">
         Removed
       </Badge>
     );
   }
-  if (!product.isPublished) {
-    if (product.hiddenBy === "revoked") {
-      return (
-        <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300">
-          Paused
-        </Badge>
-      );
-    }
-    return product.hiddenBy === "moderator" ? (
+  if (product.state === "suspended") {
+    return (
       <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300">
         Taken down
       </Badge>
-    ) : (
+    );
+  }
+  if (product.state === "hidden") {
+    return (
       <Badge className="bg-zinc-950/[0.05] text-zinc-600 dark:bg-zinc-50/[0.06] dark:text-zinc-400">
         Hidden by you
+      </Badge>
+    );
+  }
+  // Дальше карта живая — но на витрине её может не быть, если закрыт
+  // доступ автора. «Paused», а не «Taken down»: претензии к карте нет.
+  if (!product.creatorActive) {
+    return (
+      <Badge className="bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300">
+        Paused
       </Badge>
     );
   }

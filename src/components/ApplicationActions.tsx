@@ -35,7 +35,12 @@ export function ApplicationActions({ applicationId }: { applicationId: string })
         setError(
           data?.error === "already handled"
             ? "Someone already decided this one."
-            : "Could not save the decision."
+            : // Приём авторов заморожен (src/lib/flags.ts). Говорим
+              // прямо, что дело не в заявке и не в сбое: иначе владелец
+              // будет жать ещё раз и искать поломку.
+              data?.error === "creator signups are frozen"
+              ? "Creator signups are frozen — this one has to wait."
+              : "Could not save the decision."
         );
         return;
       }

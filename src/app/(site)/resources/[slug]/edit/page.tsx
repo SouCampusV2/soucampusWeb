@@ -57,7 +57,7 @@ export default async function EditResourcePage({
           {/* Причина отказа — на самом верху формы: человек пришёл сюда
               именно чтобы её исправить, и искать её на другой странице
               он не должен. */}
-          {product.status === "rejected" && product.rejectionReason && (
+          {product.state === "rejected" && product.rejectionReason && (
             <p className="mt-6 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
               <span className="font-semibold">Why it was rejected: </span>
               {product.rejectionReason}

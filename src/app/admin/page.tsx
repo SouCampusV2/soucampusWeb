@@ -4,6 +4,7 @@ import { SalesChart } from "@/components/SalesChart";
 import { PeriodPicker } from "@/components/PeriodPicker";
 import { INLINE_LINK, NEW_TAB } from "@/components/Button";
 import { creatorHref } from "@/lib/creators";
+import { formatDayMonthYear } from "@/lib/dates";
 
 // Сводка — она же корневая страница админки.
 //
@@ -134,19 +135,31 @@ export default async function AdminHomePage({
         />
         <Stat label="Users" value={String(overview.accounts)} />
       </div>
+
+      {/* Удалённые — отдельной строкой и РАЗДЕЛЬНО по тому, кто удалил.
+          Одно число на оба случая ничего не значит: «авторы передумали»
+          и «мы сняли за нарушения» — разные события, и растут они по
+          разным причинам. Обе плитки ведут в каталог с готовым фильтром,
+          чтобы от числа можно было сразу перейти к списку. */}
+      <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <Stat
+          label="Deleted by authors"
+          value={String(overview.deletedByAuthor)}
+          href="/admin/products?state=deleted"
+        />
+        <Stat
+          label="Removed by site"
+          value={String(overview.deletedBySite)}
+          href="/admin/products?state=deleted"
+        />
+      </div>
     </div>
   );
 }
 
-/** «Aug 1 – Aug 14, 2026 · 14 days» — период словами под заголовком. */
+/** «1 Aug 2026 – 14 Aug 2026 · 14 days» — период словами под заголовком. */
 function formatRange(range: Range): string {
-  const day = (key: string) =>
-    new Date(`${key}T00:00:00Z`).toLocaleDateString(undefined, {
-      month: "short",
-      day: "numeric",
-      year: "numeric",
-      timeZone: "UTC",
-    });
+  const day = (key: string) => formatDayMonthYear(`${key}T00:00:00Z`);
 
   return `${day(range.from)} – ${day(range.to)} · ${range.days} ${
     range.days === 1 ? "day" : "days"

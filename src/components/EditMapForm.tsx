@@ -274,7 +274,7 @@ export function EditMapForm({
       const coverUrl = uploads[coverIndex];
       const galleryUrls = uploads.filter((_, i) => i !== coverIndex);
 
-      // 3) Сама строка. is_published/status намеренно НЕ передаём: их
+      // 3) Сама строка. Состояние (state) намеренно НЕ передаём: его
       // всё равно вернёт на место триггер (публиковать себя сам креатор
       // не может), а отправлять поля, которые будут проигнорированы —
       // значит врать читателю кода.
@@ -345,7 +345,7 @@ export function EditMapForm({
       {/* Чек-лист из отказа — первым делом: человек пришёл сюда чинить
           именно это. Пункты, которые мы проверим при отправке, помечены
           отдельно, чтобы отказ не выглядел набором пожеланий. */}
-      {product.status === "rejected" && product.rejectionFlags.length > 0 && (
+      {product.state === "rejected" && product.rejectionFlags.length > 0 && (
         <div className="rounded-2xl border border-red-200 bg-red-50 p-4 dark:border-red-900 dark:bg-red-950/30">
           <p className="text-sm font-semibold text-red-800 dark:text-red-200">
             Fix these before resubmitting
@@ -378,7 +378,7 @@ export function EditMapForm({
 
       {/* Предупреждение о повторной модерации — до того, как человек
           выберет новый файл, а не после отправки формы. */}
-      {product.isPublished && (
+      {product.state === "live" && (
         <p className="flex gap-2.5 rounded-2xl bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:bg-orange-950/40 dark:text-orange-200">
           <Warning size={18} weight="fill" className="mt-0.5 shrink-0" />
           <span>
@@ -540,7 +540,7 @@ export function EditMapForm({
         <Button type="submit" variant="primary" disabled={pending} className="flex-1">
           {pending
             ? "Saving…"
-            : product.status === "rejected"
+            : product.state === "rejected" || product.state === "suspended"
               ? "Resubmit for review"
               : "Save changes"}
         </Button>
