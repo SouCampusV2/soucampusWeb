@@ -79,6 +79,23 @@ export default async function CreatorPage({
   const ratingVotes = rated.reduce((sum, p) => sum + (p.ratingCount ?? 0), 0);
   const avgRating = ratingVotes > 0 ? ratingTotal / ratingVotes : 0;
 
+  const role = roleOf(creator);
+
+  // Что посмотреть, если карт у человека нет. Раньше на этом месте
+  // печаталось «No maps published yet» — страница честно сообщала, что
+  // показать нечего, и на том заканчивалась. С заморозкой креаторства
+  // это профиль КАЖДОГО, кроме владельца, то есть тупик по умолчанию.
+  //
+  // Берём из уже загруженного каталога: второго запроса не нужно, all
+  // прочитан выше ради карт самого профиля.
+  const recommended =
+    products.length === 0
+      ? all
+          .filter((p) => p.creatorId !== creator.id)
+          .sort((a, b) => (b.salesCount ?? 0) - (a.salesCount ?? 0))
+          .slice(0, 4)
+      : [];
+
   return (
     // Клип — на полноширинном <main>, max-w — на обёртке внутри (см. PageGlow).
     <main className="relative w-full flex-1 overflow-x-clip">
@@ -129,7 +146,14 @@ export default async function CreatorPage({
             <h1
               className={`${displayFont.className} flex items-center justify-center gap-2 text-4xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:justify-start sm:text-5xl`}
             >
-              {creator.displayName}
+              {/* Цвет ника — привилегия купивших (миграция 20260820130000).
+                  style, а не класс: цвет свободный, и в Tailwind его не
+                  выразить. Форма значения проверена дважды — ограничением
+                  в базе и isHexColor на выходе, — потому что отсюда оно
+                  попадает прямо в разметку. */}
+              <span style={creator.nameColor ? { color: creator.nameColor } : undefined}>
+                {creator.displayName}
+              </span>
               {/* Галочка — только у подтверждённых (is_verified в БД). */}
               {creator.isVerified && (
                 <SealCheck
@@ -147,14 +171,8 @@ export default async function CreatorPage({
                 карт список тоже пуст. Галочка (is_verified) отвечает на
                 другой вопрос — «это точно он», — и роль ею не заменяется. */}
             <p className="mt-2 flex justify-center sm:justify-start">
-              <span
-                className={`rounded-full px-2.5 py-1 text-xs font-medium ${
-                  creator.isCreator
-                    ? "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300"
-                    : "bg-zinc-950/[0.05] text-zinc-600 dark:bg-zinc-50/[0.06] dark:text-zinc-400"
-                }`}
-              >
-                {creator.isCreator ? "Creator" : "Member"}
+              <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${role.className}`}>
+                {role.label}
               </span>
             </p>
 
@@ -233,9 +251,66 @@ export default async function CreatorPage({
         )}
       </section>
       )}
+
+      {/* Рекомендации — вместо пустоты у того, кто ничего не выкладывает.
+          Показываются ТОЛЬКО когда своих карт нет: у автора с картами
+          рекламировать чужие посреди его витрины — недружественно к
+          нему. Порядок — по числу покупок: «что берут» честнее любой
+          выдуманной персонализации, пока о человеке ничего не известно. */}
+      {recommended.length > 0 && (
+        <section className="mt-14">
+          <h2
+            className={`${displayFont.className} text-2xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-3xl`}
+          >
+            Popular right now
+          </h2>
+          <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+            Maps other players are picking up.
+          </p>
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {recommended.map((product) => (
+              <ProductCard key={product.slug} product={product} className="h-full" />
+            ))}
+          </div>
+        </section>
+      )}
       </div>
     </main>
   );
+}
+
+/**
+ * Роль на профиле — ОДНА, самая старшая из подходящих.
+ *
+ * Порядок не алфавитный и не случайный: Creator говорит о человеке
+ * больше всего (он делает то, чем живёт площадка), Client — что он в ней
+ * участвовал деньгами, Member — что он просто есть. Автор почти всегда
+ * ещё и покупатель, и показывать ему «Client» вместо «Creator» значило
+ * бы назвать его менее важной из двух правд.
+ *
+ * Бейдж не заменяет галочку: is_verified отвечает на другой вопрос —
+ * «это точно он», а не «кто он».
+ */
+function roleOf(creator: { isCreator: boolean; isClient: boolean }) {
+  if (creator.isCreator) {
+    return {
+      label: "Creator",
+      className:
+        "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
+    };
+  }
+  if (creator.isClient) {
+    return {
+      label: "Client",
+      className:
+        "bg-lime-100 text-lime-800 dark:bg-lime-950 dark:text-lime-300",
+    };
+  }
+  return {
+    label: "Member",
+    className:
+      "bg-zinc-950/[0.05] text-zinc-600 dark:bg-zinc-50/[0.06] dark:text-zinc-400",
+  };
 }
 
 function Stat({ value, label }: { value: string; label: string }) {

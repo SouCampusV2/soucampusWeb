@@ -25,6 +25,8 @@ export function ProfileEditForm({
   const [firstName, setFirstName] = useState(initial.firstName ?? "");
   const [lastName, setLastName] = useState(initial.lastName ?? "");
   const [bio, setBio] = useState(initial.bio ?? "");
+  // Цвет ника. Пустая строка — «не выбран»; в базу уходит null.
+  const [nameColor, setNameColor] = useState(initial.nameColor ?? "");
 
   // Аватар: текущий URL из БД + опционально выбранный новый файл и его
   // локальный превью (object URL, живёт до сохранения).
@@ -110,6 +112,12 @@ export function ProfileEditForm({
         // «биография из нуля символов» на странице выглядели бы одинаково,
         // а в БД были бы разными состояниями.
         bio: bio.trim() || null,
+        // Цвет отправляем ТОЛЬКО у покупателя. Не ради защиты — её
+        // держит триггер protect_name_color в базе, и он молча вернёт
+        // прежнее значение кому угодно ещё, — а чтобы не слать поле,
+        // которого человек не видел: у обычного участника оно осталось
+        // бы пустой строкой и стёрло бы цвет, если тот когда-то был.
+        ...(initial.isClient ? { name_color: nameColor || null } : {}),
         avatar_url: nextAvatarUrl,
       })
       .eq("id", userId);
@@ -217,6 +225,58 @@ export function ProfileEditForm({
             {bio.length}/500
           </p>
         </div>
+
+        {/* Цвет ника — только у купивших. Тем, у кого права нет, поле не
+            показывается вовсе: предлагать выбор, который база отвергнет,
+            хуже, чем не предлагать. Настоящий запрет — триггер
+            protect_name_color (миграция 20260820130000). */}
+        {initial.isClient && (
+          <div>
+            <label
+              htmlFor="nameColor"
+              className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            >
+              Name colour{" "}
+              <span className="font-normal text-zinc-500 dark:text-zinc-400">
+                — yours because you bought a map
+              </span>
+            </label>
+            <div className="flex flex-wrap items-center gap-3">
+              <input
+                id="nameColor"
+                type="color"
+                value={nameColor || "#f97316"}
+                onChange={(e) => setNameColor(e.target.value)}
+                className="h-11 w-16 cursor-pointer rounded-xl border border-zinc-950/[0.08] bg-transparent p-1 dark:border-zinc-50/[0.08]"
+              />
+              {/* Предпросмотр на обоих фонах сразу. Цвет свободный
+                  (решение владельца), а значит легко выбрать такой, что
+                  читается в одной теме и пропадает в другой — пусть это
+                  будет видно ДО сохранения, а не на своём профиле потом. */}
+              <span className="flex items-center gap-2">
+                <span className="rounded-lg bg-[#fbfbff] px-3 py-1.5 text-sm font-semibold">
+                  <span style={nameColor ? { color: nameColor } : undefined}>
+                    {displayName || "Your name"}
+                  </span>
+                </span>
+                <span className="rounded-lg bg-zinc-950 px-3 py-1.5 text-sm font-semibold">
+                  <span style={nameColor ? { color: nameColor } : { color: "#fafafa" }}>
+                    {displayName || "Your name"}
+                  </span>
+                </span>
+              </span>
+              {nameColor && (
+                <button
+                  type="button"
+                  onClick={() => setNameColor("")}
+                  className="text-sm text-zinc-500 underline underline-offset-4 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
+          </div>
+        )}
       </div>
 
       {error && (
