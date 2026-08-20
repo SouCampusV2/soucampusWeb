@@ -7,6 +7,8 @@ import { RefreshButton } from "@/components/RefreshButton";
 import { INLINE_LINK, NEW_TAB } from "@/components/Button";
 import { creatorHref } from "@/lib/creators";
 import { formatDate } from "@/lib/dates";
+import { createSupabaseServer } from "@/lib/supabase-server";
+import { getCurrentUser } from "@/lib/current-user";
 
 // Полный каталог: ВСЕ карты, а не только очередь разбора.
 //
@@ -24,6 +26,15 @@ export default async function AdminProductsPage({
   searchParams: Promise<{ q?: string; state?: string }>;
 }) {
   const { q, state } = await searchParams;
+
+  // Кто смотрит — нужно, чтобы решить, показывать ли ссылку на правку.
+  // Форма правки живёт на /resources/[slug]/edit и пускает по ВЛАДЕНИЮ
+  // (getOwnProduct ищет строку с creator_id = текущий пользователь), а
+  // не по правам админа. То есть на чужую карту ссылка вела бы в 404 —
+  // поэтому её там и не рисуем.
+  const supabase = await createSupabaseServer();
+  const viewer = await getCurrentUser(supabase);
+
   const rows = await getCatalog({
     q,
     state: state as never,
@@ -61,7 +72,11 @@ export default async function AdminProductsPage({
       ) : (
         <ul className="mt-6 space-y-3">
           {rows.map((product) => (
-            <CatalogRowItem key={product.id} product={product} />
+            <CatalogRowItem
+              key={product.id}
+              product={product}
+              viewerId={viewer?.id ?? null}
+            />
           ))}
         </ul>
       )}
@@ -80,7 +95,18 @@ function Stat({ label, value }: { label: string; value: number }) {
   );
 }
 
-function CatalogRowItem({ product }: { product: CatalogRow }) {
+function CatalogRowItem({
+  product,
+  viewerId,
+}: {
+  product: CatalogRow;
+  viewerId: string | null;
+}) {
+  // Своя карта — значит форма правки её откроет. Проверка тут только для
+  // ВИДА ссылки; настоящее «моё ли это» решает getOwnProduct на самой
+  // странице правки, по creator_id.
+  const canEdit = Boolean(viewerId) && product.creator?.id === viewerId;
+
   return (
     <li className="rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
       <div className="flex flex-wrap items-start gap-4">
@@ -119,15 +145,40 @@ function CatalogRowItem({ product }: { product: CatalogRow }) {
           {/* Открыть на витрине — только у тех, кто на ней есть: у
               остальных публичной страницы не существует, ссылка вела бы в
               404. Условие то же, что в политике чтения. */}
-          {product.state === "live" && product.creatorActive && (
-            <Link
-              href={`/marketplace/${product.slug}`}
-              {...NEW_TAB}
-              className={`mt-1 inline-block text-sm ${INLINE_LINK}`}
-            >
-              Open in the marketplace
-            </Link>
-          )}
+          <span className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+            {product.state === "live" && product.creatorActive && (
+              <Link
+                href={`/marketplace/${product.slug}`}
+                {...NEW_TAB}
+                className={INLINE_LINK}
+              >
+                Open in the marketplace
+              </Link>
+            )}
+            {/* Правка содержимого — название, описание, цена, галерея,
+                файл. Раньше попасть в неё можно было только через
+                «Your resources», а этот пункт убран из навбара вместе с
+                заморозкой креаторства (src/lib/flags.ts) — функционал
+                остался, дверь пропала. Здесь она и нужна: каталог админки
+                это единственное место, где владелец видит все свои карты
+                разом.
+
+                Отдельного редактора для админа сознательно НЕ заводим:
+                это был бы второй путь записи в products со своими
+                правами и своими дырами, а формы правки уже есть и
+                проверены. Ссылка ведёт в существующую.
+
+                Удалённую карту не правят — форма её и не откроет. */}
+            {canEdit && product.state !== "deleted" && (
+              <Link
+                href={`/resources/${product.slug}/edit`}
+                {...NEW_TAB}
+                className={INLINE_LINK}
+              >
+                Edit
+              </Link>
+            )}
+          </span>
 
           {product.suspensionReason && (
             <p className="mt-2 whitespace-pre-line rounded-xl bg-orange-50 px-3 py-2 text-sm text-orange-800 dark:bg-orange-950/40 dark:text-orange-200">
