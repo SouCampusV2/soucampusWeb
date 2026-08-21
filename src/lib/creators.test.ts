@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { toHandle, creatorHref, isHexColor } from "./creators";
+import { NAME_COLORS } from "./name-colors";
 
 // Чистые функции-границы: отображение «ник → адрес». В сеть не ходят,
 // гоняются в CI без ключей (тот же подход, что в products.test.ts).
@@ -67,5 +68,43 @@ describe("isHexColor", () => {
     expect(isHexColor(null)).toBe(false);
     expect(isHexColor(undefined)).toBe(false);
     expect(isHexColor("")).toBe(false);
+  });
+});
+
+describe("NAME_COLORS", () => {
+  it("хранит только тот формат, который принимает база", () => {
+    // Ограничение в БД — ^#[0-9a-fA-F]{6}$. Палитра, которая ему не
+    // соответствует, показала бы человеку цвет, не сохраняемый при
+    // нажатии «Save».
+    for (const colour of NAME_COLORS) {
+      expect(isHexColor(colour.value)).toBe(true);
+    }
+  });
+
+  it("не содержит повторов", () => {
+    const values = NAME_COLORS.map((c) => c.value);
+    expect(new Set(values).size).toBe(values.length);
+  });
+
+  it("держит контраст не ниже 3.0 на обеих темах", () => {
+    // Порог 3.0 — WCAG для КРУПНОГО текста, а ник на профиле именно
+    // такой. Тест стоит затем, чтобы девятый цвет, добавленный на глаз,
+    // не проехал незамеченным: посчитать контраст руками забудут.
+    const luminance = (hex: string) => {
+      const channels = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
+      const [r, g, b] = channels.map((v) =>
+        v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4
+      );
+      return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+    };
+    const ratio = (a: string, b: string) => {
+      const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
+      return (hi + 0.05) / (lo + 0.05);
+    };
+
+    for (const colour of NAME_COLORS) {
+      expect(ratio(colour.value, "#fbfbff")).toBeGreaterThanOrEqual(3);
+      expect(ratio(colour.value, "#09090b")).toBeGreaterThanOrEqual(3);
+    }
   });
 });

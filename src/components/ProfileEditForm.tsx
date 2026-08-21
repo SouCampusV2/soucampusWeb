@@ -8,6 +8,7 @@ import { UserCircle, Camera, Key } from "@phosphor-icons/react";
 import { Button, BUTTON_COLORS } from "@/components/Button";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import type { Profile } from "@/lib/profiles";
+import { NAME_COLORS } from "@/lib/name-colors";
 
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024; // 2 МБ
 
@@ -229,51 +230,74 @@ export function ProfileEditForm({
         {/* Цвет ника — только у купивших. Тем, у кого права нет, поле не
             показывается вовсе: предлагать выбор, который база отвергнет,
             хуже, чем не предлагать. Настоящий запрет — триггер
-            protect_name_color (миграция 20260820130000). */}
+            protect_name_color (миграция 20260820130000).
+
+            Выборка, а не пипетка (решение владельца 2026-08-20): в двух
+            темах фон под ником противоположный, и свободный цвет легко
+            выбрать так, что во второй теме он пропадёт. Почему именно
+            эти восемь и какой у них контраст — в lib/name-colors.ts. */}
         {initial.isClient && (
           <div>
-            <label
-              htmlFor="nameColor"
-              className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
-            >
+            <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Name colour{" "}
               <span className="font-normal text-zinc-500 dark:text-zinc-400">
                 — yours because you bought a map
               </span>
-            </label>
-            <div className="flex flex-wrap items-center gap-3">
-              <input
-                id="nameColor"
-                type="color"
-                value={nameColor || "#f97316"}
-                onChange={(e) => setNameColor(e.target.value)}
-                className="h-11 w-16 cursor-pointer rounded-xl border border-zinc-950/[0.08] bg-transparent p-1 dark:border-zinc-50/[0.08]"
-              />
-              {/* Предпросмотр на обоих фонах сразу. Цвет свободный
-                  (решение владельца), а значит легко выбрать такой, что
-                  читается в одной теме и пропадает в другой — пусть это
-                  будет видно ДО сохранения, а не на своём профиле потом. */}
-              <span className="flex items-center gap-2">
-                <span className="rounded-lg bg-[#fbfbff] px-3 py-1.5 text-sm font-semibold">
-                  <span style={nameColor ? { color: nameColor } : undefined}>
-                    {displayName || "Your name"}
-                  </span>
-                </span>
-                <span className="rounded-lg bg-zinc-950 px-3 py-1.5 text-sm font-semibold">
-                  <span style={nameColor ? { color: nameColor } : { color: "#fafafa" }}>
-                    {displayName || "Your name"}
-                  </span>
+            </span>
+
+            {/* radiogroup, а не набор кнопок: выбор ОДИН из списка, и
+                клавиатура со средством чтения должны понимать это сами. */}
+            <div role="radiogroup" aria-label="Name colour" className="flex flex-wrap items-center gap-2">
+              {/* «Без цвета» стоит первым и всегда доступен: отказаться
+                  от украшения должно быть так же просто, как выбрать. */}
+              <button
+                type="button"
+                role="radio"
+                aria-checked={nameColor === ""}
+                aria-label="Default"
+                onClick={() => setNameColor("")}
+                className={`h-9 w-9 rounded-full border-2 text-xs font-semibold transition ${
+                  nameColor === ""
+                    ? "border-zinc-950 dark:border-zinc-50"
+                    : "border-transparent hover:border-zinc-300 dark:hover:border-zinc-700"
+                } bg-zinc-950/[0.06] text-zinc-600 dark:bg-zinc-50/[0.08] dark:text-zinc-300`}
+              >
+                A
+              </button>
+
+              {NAME_COLORS.map((colour) => (
+                <button
+                  key={colour.value}
+                  type="button"
+                  role="radio"
+                  aria-checked={nameColor === colour.value}
+                  aria-label={colour.label}
+                  title={colour.label}
+                  onClick={() => setNameColor(colour.value)}
+                  className={`h-9 w-9 rounded-full border-2 transition ${
+                    nameColor === colour.value
+                      ? "border-zinc-950 dark:border-zinc-50"
+                      : "border-transparent hover:border-zinc-300 dark:hover:border-zinc-700"
+                  }`}
+                  style={{ backgroundColor: colour.value }}
+                />
+              ))}
+            </div>
+
+            {/* Предпросмотр на обоих фонах сразу. Палитра подобрана так,
+                что читается в обеих темах, — но увидеть это своими
+                глазами всё равно полезнее, чем поверить на слово. */}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="rounded-lg bg-[#fbfbff] px-3 py-1.5 text-sm font-semibold">
+                <span style={nameColor ? { color: nameColor } : { color: "#09090b" }}>
+                  {displayName || "Your name"}
                 </span>
               </span>
-              {nameColor && (
-                <button
-                  type="button"
-                  onClick={() => setNameColor("")}
-                  className="text-sm text-zinc-500 underline underline-offset-4 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
-                >
-                  Reset
-                </button>
-              )}
+              <span className="rounded-lg bg-zinc-950 px-3 py-1.5 text-sm font-semibold">
+                <span style={nameColor ? { color: nameColor } : { color: "#fafafa" }}>
+                  {displayName || "Your name"}
+                </span>
+              </span>
             </div>
           </div>
         )}
