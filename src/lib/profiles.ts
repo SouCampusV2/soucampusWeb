@@ -9,6 +9,14 @@ export type Profile = {
    * ника, и смена подписи уносила с собой все ссылки на профиль.
    */
   username: string;
+  /**
+   * Когда username меняли в последний раз; null — ни разу.
+   * Менять можно раз в 30 дней, и стережёт это триггер
+   * guard_username_change (миграция 20260821140000), а не форма.
+   * Форме дата нужна, чтобы сказать «до какого числа нельзя», ДО того
+   * как человек нажмёт «Сохранить» и получит отказ.
+   */
+  usernameChangedAt: string | null;
   /** Как человека видно. Повторы РАЗРЕШЕНЫ — различает людей username. */
   displayName: string;
   firstName: string | null;
@@ -36,7 +44,7 @@ export async function readProfile(
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "username, display_name, first_name, last_name, avatar_url, bio, name_color"
+      "username, username_changed_at, display_name, first_name, last_name, avatar_url, bio, name_color"
     )
     .eq("id", userId)
     .maybeSingle();
@@ -54,6 +62,7 @@ export async function readProfile(
 
   return {
     username: data.username,
+    usernameChangedAt: data.username_changed_at ?? null,
     displayName: data.display_name,
     firstName: data.first_name,
     lastName: data.last_name,
