@@ -11,6 +11,7 @@ import { RICH_TEXT_CLASS } from "@/lib/rich-text";
 import { BackLink } from "@/components/BackLink";
 import { INLINE_LINK } from "@/components/Button";
 import { StarRating } from "@/components/StarRating";
+import { ProductSpecs } from "@/components/ProductSpecs";
 
 // Одна карта — один поход в базу за рендер.
 //
@@ -210,6 +211,17 @@ export default async function ProductPage({
               </div>
             </dl>
           </div>
+
+          {/* Характеристики — ПОД карточкой покупки, а не над ней.
+              Порядок отвечает на вопросы в том порядке, в каком их
+              задают: сначала «сколько и как купить», потом «а подойдёт
+              ли мне». Блок сам решает, что показывать: пустые поля не
+              рисуются вовсе (см. ProductSpecs). */}
+          <ProductSpecs
+            specs={product.specs}
+            updatedAt={product.updatedAt}
+            salesCount={salesCount}
+          />
         </aside>
       </div>
     </main>

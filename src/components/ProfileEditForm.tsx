@@ -8,7 +8,8 @@ import { UserCircle, Camera, Key } from "@phosphor-icons/react";
 import { Button, BUTTON_COLORS } from "@/components/Button";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import type { Profile } from "@/lib/profiles";
-import { NAME_COLORS } from "@/lib/name-colors";
+import { NameColorPicker } from "@/components/NameColorPicker";
+import { revalidateProfile } from "@/app/(site)/settings/actions";
 
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024; // 2 МБ
 
@@ -22,6 +23,7 @@ export function ProfileEditForm({
   const router = useRouter();
   const refresh = useRefresh();
 
+  const [username, setUsername] = useState(initial.username);
   const [displayName, setDisplayName] = useState(initial.displayName);
   const [firstName, setFirstName] = useState(initial.firstName ?? "");
   const [lastName, setLastName] = useState(initial.lastName ?? "");
@@ -62,21 +64,35 @@ export function ProfileEditForm({
 
     const supabase = createSupabaseBrowser();
 
-    // Ник изменился — проверяем, что свободен (та же функция, что на
-    // регистрации). Если не менялся, проверять незачем: он уже наш.
-    if (displayName !== initial.displayName) {
+    // Ник (display_name) больше НЕ проверяется на занятость: с
+    // 2026-08-21 повторы разрешены, различает людей username.
+    //
+    // Форму адреса проверяем здесь только ради внятного сообщения —
+    // настоящее правило стоит в базе (ограничение
+    // profiles_username_format). Форма, повторяющая правило базы, ничего
+    // не защищает: запись идёт из браузера прямо в profiles.
+    const nextUsername = username.trim().toLowerCase();
+    if (nextUsername !== initial.username) {
+      if (!/^[a-z0-9_]{3,32}$/.test(nextUsername)) {
+        setPending(false);
+        setError(
+          "Profile address can only use lowercase letters, numbers and underscores (3–32 characters)."
+        );
+        return;
+      }
+
       const { data: available, error: rpcError } = await supabase.rpc(
-        "display_name_available",
-        { name: displayName }
+        "username_available",
+        { name: nextUsername }
       );
       if (rpcError) {
         setPending(false);
-        setError("Couldn't check the display name. Please try again.");
+        setError("Couldn't check the profile address. Please try again.");
         return;
       }
       if (!available) {
         setPending(false);
-        setError(`The display name “${displayName}” is already taken.`);
+        setError(`The address “${nextUsername}” is already taken.`);
         return;
       }
     }
@@ -106,6 +122,7 @@ export function ProfileEditForm({
     const { error: updateError } = await supabase
       .from("profiles")
       .update({
+        username: nextUsername,
         display_name: displayName,
         first_name: firstName.trim() || null,
         last_name: lastName.trim() || null,
@@ -125,10 +142,12 @@ export function ProfileEditForm({
 
     if (updateError) {
       setPending(false);
-      // Уникальный индекс по нику мог отклонить на гонке — покажем по-людски.
+      // Уникальный индекс по адресу мог отклонить на гонке: между
+      // проверкой выше и записью адрес мог занять кто-то другой. Ровно
+      // поэтому проверка в форме — удобство, а гарантия — индекс.
       setError(
         updateError.message.toLowerCase().includes("duplicate")
-          ? "That display name is already taken."
+          ? "That profile address is already taken."
           : `Couldn't save: ${updateError.message}`
       );
       return;
@@ -139,8 +158,26 @@ export function ProfileEditForm({
     // показывал бы старый ник после смены. updateUser поднимает событие
     // USER_UPDATED → useUser обновляет навбар сразу, без перезагрузки.
     await supabase.auth.updateUser({
-      data: { display_name: displayName, avatar_url: nextAvatarUrl },
+      data: {
+        display_name: displayName,
+        // Копия адреса — из неё навбар строит ссылку «мой профиль», не
+        // ходя за ней в базу на каждой странице (см. Navbar).
+        username: nextUsername,
+        avatar_url: nextAvatarUrl,
+      },
     });
+
+    // Публичный профиль — заранее собранная статика с revalidate = 60, и
+    // сбросить её после записи из браузера больше некому: наш сервер в
+    // этом пути не участвует. Без этого человек до минуты видит на своей
+    // странице старые данные и считает, что не сохранилось.
+    //
+    // Оба адреса: при смене username старая страница тоже должна
+    // перестать показывать этот профиль.
+    await revalidateProfile(nextUsername);
+    if (initial.username && initial.username !== nextUsername) {
+      await revalidateProfile(initial.username);
+    }
 
     setPending(false);
     setAvatarUrl(nextAvatarUrl);
@@ -168,7 +205,7 @@ export function ProfileEditForm({
             <img
               src={shownAvatar}
               alt="Avatar"
-              className="h-full w-full object-cover"
+              className="h-full w-full object-cover object-top"
             />
           ) : (
             <UserCircle
@@ -193,7 +230,70 @@ export function ProfileEditForm({
       </div>
 
       <div className="mt-6 space-y-4">
-        <Field id="displayName" label="Display name" value={displayName} onChange={setDisplayName} required />
+        {/* Ник и квадратик цвета — одной строкой. Цвет относится именно
+            к нику, и стоять он должен рядом с ним, а не отдельной
+            секцией ниже: так связь видна без подписи. */}
+        <div className="flex items-end gap-3">
+          <div className="min-w-0 flex-1">
+            <Field
+              id="displayName"
+              label="Display name"
+              value={displayName}
+              onChange={setDisplayName}
+              required
+            />
+          </div>
+
+          {/* Тем, у кого права нет, квадратик не показывается вовсе:
+              предлагать выбор, который база отвергнет, хуже, чем не
+              предлагать. Настоящий запрет — триггер protect_name_color
+              (миграция 20260820130000). */}
+          {initial.isClient && (
+            <NameColorPicker
+              value={nameColor}
+              onChange={setNameColor}
+              previewName={displayName}
+            />
+          )}
+        </div>
+
+        {/* Адрес профиля — отдельное поле с 2026-08-21 (миграция
+            20260821120000). Раньше его роль тянул ник, и оттого смену
+            ника приходилось бы запрещать: она уносила с собой адрес
+            страницы, а освободившееся имя мог занять кто угодно.
+            Теперь подпись меняется свободно, а адрес — осознанно.
+
+            ⚠️ Ссылки на старый адрес после смены НЕ переезжают, и старое
+            имя освобождается: пауза между сменами и резерв отпущенных
+            имён обсуждены, но сознательно не сделаны (см. комментарий
+            в самой миграции). Подпись под полем говорит об этом прямо. */}
+        <div>
+          <label
+            htmlFor="username"
+            className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+          >
+            Profile address{" "}
+            <span className="font-normal text-zinc-500 dark:text-zinc-400">
+              — soucampus.online/creator/{username || "…"}
+            </span>
+          </label>
+          <input
+            id="username"
+            type="text"
+            value={username}
+            // Приводим к нижнему регистру прямо при вводе, а не при
+            // сохранении: иначе человек печатает «SouCampus», видит
+            // «SouCampus», а сохраняется другое — и он вправе счесть это
+            // поломкой.
+            onChange={(e) => setUsername(e.target.value.toLowerCase())}
+            required
+            className="w-full rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500"
+          />
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+            Lowercase letters, numbers and underscores. Changing it breaks
+            existing links to your profile.
+          </p>
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <Field id="firstName" label="First name" value={firstName} onChange={setFirstName} />
           <Field id="lastName" label="Last name" value={lastName} onChange={setLastName} />
@@ -227,80 +327,6 @@ export function ProfileEditForm({
           </p>
         </div>
 
-        {/* Цвет ника — только у купивших. Тем, у кого права нет, поле не
-            показывается вовсе: предлагать выбор, который база отвергнет,
-            хуже, чем не предлагать. Настоящий запрет — триггер
-            protect_name_color (миграция 20260820130000).
-
-            Выборка, а не пипетка (решение владельца 2026-08-20): в двух
-            темах фон под ником противоположный, и свободный цвет легко
-            выбрать так, что во второй теме он пропадёт. Почему именно
-            эти восемь и какой у них контраст — в lib/name-colors.ts. */}
-        {initial.isClient && (
-          <div>
-            <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-              Name colour{" "}
-              <span className="font-normal text-zinc-500 dark:text-zinc-400">
-                — yours because you bought a map
-              </span>
-            </span>
-
-            {/* radiogroup, а не набор кнопок: выбор ОДИН из списка, и
-                клавиатура со средством чтения должны понимать это сами. */}
-            <div role="radiogroup" aria-label="Name colour" className="flex flex-wrap items-center gap-2">
-              {/* «Без цвета» стоит первым и всегда доступен: отказаться
-                  от украшения должно быть так же просто, как выбрать. */}
-              <button
-                type="button"
-                role="radio"
-                aria-checked={nameColor === ""}
-                aria-label="Default"
-                onClick={() => setNameColor("")}
-                className={`h-9 w-9 rounded-full border-2 text-xs font-semibold transition ${
-                  nameColor === ""
-                    ? "border-zinc-950 dark:border-zinc-50"
-                    : "border-transparent hover:border-zinc-300 dark:hover:border-zinc-700"
-                } bg-zinc-950/[0.06] text-zinc-600 dark:bg-zinc-50/[0.08] dark:text-zinc-300`}
-              >
-                A
-              </button>
-
-              {NAME_COLORS.map((colour) => (
-                <button
-                  key={colour.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={nameColor === colour.value}
-                  aria-label={colour.label}
-                  title={colour.label}
-                  onClick={() => setNameColor(colour.value)}
-                  className={`h-9 w-9 rounded-full border-2 transition ${
-                    nameColor === colour.value
-                      ? "border-zinc-950 dark:border-zinc-50"
-                      : "border-transparent hover:border-zinc-300 dark:hover:border-zinc-700"
-                  }`}
-                  style={{ backgroundColor: colour.value }}
-                />
-              ))}
-            </div>
-
-            {/* Предпросмотр на обоих фонах сразу. Палитра подобрана так,
-                что читается в обеих темах, — но увидеть это своими
-                глазами всё равно полезнее, чем поверить на слово. */}
-            <div className="mt-3 flex flex-wrap items-center gap-2">
-              <span className="rounded-lg bg-[#fbfbff] px-3 py-1.5 text-sm font-semibold">
-                <span style={nameColor ? { color: nameColor } : { color: "#09090b" }}>
-                  {displayName || "Your name"}
-                </span>
-              </span>
-              <span className="rounded-lg bg-zinc-950 px-3 py-1.5 text-sm font-semibold">
-                <span style={nameColor ? { color: nameColor } : { color: "#fafafa" }}>
-                  {displayName || "Your name"}
-                </span>
-              </span>
-            </div>
-          </div>
-        )}
       </div>
 
       {error && (

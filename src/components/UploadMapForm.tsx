@@ -48,6 +48,7 @@ import {
   safeExtension,
   MAP_FILE_ACCEPT,
 } from "@/lib/upload-limits";
+import { SpecFields, EMPTY_SPECS, type EditableSpecs } from "@/components/SpecFields";
 
 
 // Категории формы = все, кроме "free" — бесплатность определяется ценой
@@ -86,6 +87,10 @@ export function UploadMapForm({ userId }: { userId: string }) {
   const imageInput = useRef<HTMLInputElement>(null);
 
   const [mapFile, setMapFile] = useState<File | null>(null);
+  // Характеристики карты (миграция 20260821130000). Пустые по умолчанию:
+  // ни одна из них не обязательна, и заставлять отмечать двенадцать тем
+  // ради публикации — верный способ получить отмеченные наугад.
+  const [specs, setSpecs] = useState<EditableSpecs>(EMPTY_SPECS);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const [error, setError] = useState<string | null>(null);
@@ -295,6 +300,10 @@ export function UploadMapForm({ userId }: { userId: string }) {
         priceCents: Math.round(priceEuros * 100),
         category: category as Exclude<ProductCategory, "free">,
         filePath,
+        specs,
+        // Вес берём из самого файла, а не спрашиваем: спрошенное число
+        // разъедется с реальностью при первой же замене файла.
+        fileSizeBytes: mapFile.size,
       });
       await addProductImages(supabase, id, galleryUrls);
 
@@ -402,6 +411,11 @@ export function UploadMapForm({ userId }: { userId: string }) {
 
         <PriceField value={priceInput} onChange={setPriceInput} />
       </div>
+
+      {/* Характеристики. Стоят ДО описания намеренно: пока автор их
+          отмечает, он вспоминает про карту то, что потом опишет
+          словами. Обратный порядок заставлял бы возвращаться наверх. */}
+      <SpecFields value={specs} onChange={setSpecs} />
 
       {/* Description — Tiptap WYSIWYG */}
       <div>

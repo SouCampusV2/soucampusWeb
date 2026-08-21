@@ -1,6 +1,10 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import { getCreatorsById } from "@/lib/creators";
+import {
+  specsToColumns,
+  type EditableSpecs,
+} from "@/components/SpecFields";
 
 // Категории витрины. ВРЕМЕННО: пока в БД нет колонки category, категорию
 // выводим детерминированно из slug (deriveCategory ниже) — «случайно, но
@@ -72,7 +76,7 @@ export const SHOP_NAV_LINKS: {
   // этого лого было ЕДИНСТВЕННОЙ дверью наружу, и, забрав её, надо было
   // дать другую. Стоит последним намеренно — это выход, а не раздел
   // магазина.
-  { href: "/", label: "Main site" },
+  { href: "/", label: "Studio" },
 ];
 
 // Товар, каким его видит сайт. Тот же паттерн границы, что у
@@ -128,6 +132,8 @@ export type Product = {
   images: string[];
   /** ISO-дата добавления — по ней строится подборка «Recently added». */
   createdAt: string;
+  /** Когда карту правили в последний раз — products.updated_at. */
+  updatedAt: string;
   /** Готовая строка для показа: "€15". */
   price: string;
   /**
@@ -159,6 +165,35 @@ export type Product = {
   ratingCount?: number;
   /** Сколько раз куплен (оплаченные заказы). */
   salesCount?: number;
+
+  /**
+   * Характеристики карты (миграция 20260821130000). Отдельными полями, а
+   * не текстом в описании: написанное прозой нельзя ни отфильтровать, ни
+   * показать одинаково у двух авторов. Словари допустимых значений — в
+   * product-specs.ts, база стережёт только объём.
+   *
+   * Все необязательны: у карт, залитых до миграции, они пусты, и
+   * страница товара просто не показывает пустую строку.
+   */
+  specs: ProductSpecs;
+};
+
+/** См. Product.specs. Вынесено типом — набор ездит целиком. */
+export type ProductSpecs = {
+  /** Версии Minecraft ПО СЛОВАМ АВТОРА — площадка их не проверяет. */
+  mcVersions: string[];
+  /** Чем карта является: Spawn, Hub… Одно значение. */
+  mapType: string | null;
+  gameModes: string[];
+  themes: string[];
+  /** Масштаб словами: Small…Huge. */
+  mapSize: string | null;
+  fileFormats: string[];
+  tags: string[];
+  /** Вес файла в байтах — считается из файла, автор его не вводит. */
+  fileSizeBytes: number | null;
+  /** Когда карта впервые вышла на витрину; null — ещё не выходила. */
+  publishedAt: string | null;
 };
 
 // «Случайная, но стабильная» категория из slug: маленький хеш → одна из
@@ -235,6 +270,7 @@ type ProductRow = {
   price_cents: number;
   price_currency: string;
   created_at: string;
+  updated_at: string;
   /** Появилась вместе с мульти-креатором; у старых баз колонки нет. */
   creator_id?: string | null;
   /** Появились вместе с creator upload; у старых баз колонок нет. */
@@ -245,6 +281,16 @@ type ProductRow = {
    * без этого поля — товар всё равно соберётся, просто с одной обложкой.
    */
   product_images?: { url: string; position: number }[] | null;
+  /** Все восемь — из 20260821130000; у баз без неё колонок нет. */
+  mc_versions?: string[] | null;
+  map_type?: string | null;
+  game_modes?: string[] | null;
+  themes?: string[] | null;
+  map_size?: string | null;
+  file_formats?: string[] | null;
+  tags?: string[] | null;
+  file_size_bytes?: number | string | null;
+  published_at?: string | null;
 };
 
 export function rowToProduct(row: ProductRow): Product {
@@ -266,6 +312,7 @@ export function rowToProduct(row: ProductRow): Product {
     image: row.image_url,
     images: [row.image_url, ...extra],
     createdAt: row.created_at,
+    updatedAt: row.updated_at,
     price: row.price_label,
     priceCents: Number(row.price_cents),
     currency: row.price_currency,
@@ -273,6 +320,23 @@ export function rowToProduct(row: ProductRow): Product {
     // старые строки без category — деривация из slug, тот же фоллбэк.
     category: row.category ?? deriveCategory(row.slug),
     creatorId: row.creator_id ?? null,
+    specs: {
+      mcVersions: row.mc_versions ?? [],
+      mapType: row.map_type ?? null,
+      gameModes: row.game_modes ?? [],
+      themes: row.themes ?? [],
+      mapSize: row.map_size ?? null,
+      fileFormats: row.file_formats ?? [],
+      tags: row.tags ?? [],
+      // bigint приезжает из PostgREST строкой: в JSON число такой
+      // разрядности не помещается без потерь, и драйвер честно отдаёт
+      // текст. Number здесь безопасен — вес файла до 2^53 не дорастёт.
+      fileSizeBytes:
+        row.file_size_bytes === null || row.file_size_bytes === undefined
+          ? null
+          : Number(row.file_size_bytes),
+      publishedAt: row.published_at ?? null,
+    },
   };
 }
 
@@ -280,13 +344,19 @@ export function rowToProduct(row: ProductRow): Product {
 // разъедутся между собой (тот же приём, что PROJECT_FIELDS).
 // Колонки, которые есть в products с самого начала.
 const PRODUCT_FIELDS_NO_IMAGES =
-  "id, slug, title, summary, description, image_url, price_label, price_cents, price_currency, created_at";
+  "id, slug, title, summary, description, image_url, price_label, price_cents, price_currency, created_at, updated_at";
 
 // Полный набор: то же плюс автор (creator_id) и вложенная выборка
 // галереи. product_images(...) — PostgREST сам подтягивает связанные
 // строки по внешнему ключу одним запросом, без второго похода в базу и
 // без ручного join'а на нашей стороне.
-const PRODUCT_FIELDS = `${PRODUCT_FIELDS_NO_IMAGES}, creator_id, category, product_images(url, position)`;
+// Характеристики (20260821130000). Отдельной строкой, чтобы её было
+// легко снять целиком, если база окажется без миграции, — см.
+// isMissingOptional ниже.
+const PRODUCT_SPEC_FIELDS =
+  "mc_versions, map_type, game_modes, themes, map_size, file_formats, tags, file_size_bytes, published_at";
+
+const PRODUCT_FIELDS = `${PRODUCT_FIELDS_NO_IMAGES}, creator_id, category, product_images(url, position), ${PRODUCT_SPEC_FIELDS}`;
 
 // Запасной путь на случай, когда миграции галереи/автора/upload в этой
 // базе ещё не прогнаны. PostgREST на незнакомую колонку или связь
@@ -298,7 +368,18 @@ function isMissingOptional(message: string): boolean {
   return (
     message.includes("product_images") ||
     message.includes("creator_id") ||
-    message.includes("category")
+    message.includes("category") ||
+    // Характеристики (20260821130000): пока миграция не прогнана,
+    // спрашивать эти колонки — значит уронить витрину целиком.
+    message.includes("mc_versions") ||
+    message.includes("map_type") ||
+    message.includes("game_modes") ||
+    message.includes("themes") ||
+    message.includes("map_size") ||
+    message.includes("file_formats") ||
+    message.includes("tags") ||
+    message.includes("file_size_bytes") ||
+    message.includes("published_at")
   );
 }
 
@@ -447,6 +528,14 @@ export type CreateProductInput = {
   priceCents: number;
   category: Exclude<ProductCategory, "free">;
   filePath: string;
+  /**
+   * Характеристики карты (миграция 20260821130000). То, что заполняет
+   * человек; published_at и file_size_bytes сюда не входят — первое
+   * ставит база, второе приходит отдельным полем ниже.
+   */
+  specs: EditableSpecs;
+  /** Вес загруженного файла в байтах — берётся из самого File. */
+  fileSizeBytes: number;
 };
 
 // Черновик карты от креатора.
@@ -488,6 +577,8 @@ export async function createProduct(
         file_path: input.filePath,
         category: input.category,
         creator_id: input.creatorId,
+        ...specsToColumns(input.specs),
+        file_size_bytes: input.fileSizeBytes,
       })
       .select("id, slug")
       .single();

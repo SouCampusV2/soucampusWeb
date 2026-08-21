@@ -128,7 +128,7 @@ function CatalogRowItem({
           <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
             {product.creator ? (
               <Link
-                href={creatorHref(product.creator.displayName)}
+                href={creatorHref(product.creator.username)}
                 {...NEW_TAB}
                 className={`font-medium ${INLINE_LINK}`}
               >

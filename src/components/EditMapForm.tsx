@@ -27,6 +27,7 @@ import {
 import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
 import type { EditableProduct } from "@/lib/moderation";
 import { templateFor } from "@/lib/rejection";
+import { SpecFields, specsToColumns } from "@/components/SpecFields";
 import {
   MAX_IMAGES,
   IMAGES_TOTAL_MAX_BYTES,
@@ -88,6 +89,10 @@ export function EditMapForm({
 
   // Новый файл карты — необязателен: не тронул, значит остаётся старый.
   const [mapFile, setMapFile] = useState<File | null>(null);
+  // Характеристики — тем же компонентом, что и на загрузке (SpecFields).
+  // Набор обязан совпадать до последнего пункта: разъедутся — автор при
+  // первой правке потеряет то, что отметил при загрузке.
+  const [specs, setSpecs] = useState(product.specs);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const [error, setError] = useState<string | null>(null);
@@ -289,6 +294,10 @@ export function EditMapForm({
           price_label: `€${priceEuros.toFixed(2)}`,
           category,
           file_path: filePath,
+          ...specsToColumns(specs),
+          // Вес пишем ТОЛЬКО когда файл заменили: иначе правка описания
+          // затирала бы верный размер нулём.
+          ...(mapFile ? { file_size_bytes: mapFile.size } : {}),
         })
         .eq("id", product.id);
 
@@ -481,6 +490,10 @@ export function EditMapForm({
         />
         <PriceField value={priceInput} onChange={setPriceInput} />
       </div>
+
+      {/* Характеристики — на том же месте и в том же порядке, что в
+          форме загрузки: правка не должна выглядеть другой формой. */}
+      <SpecFields value={specs} onChange={setSpecs} />
 
       <div>
         <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
