@@ -22,6 +22,7 @@ describe("rowToProduct", () => {
     price_cents: 1500,
     price_currency: "EUR",
     created_at: "2026-07-22T12:00:00.000Z",
+    updated_at: "2026-07-22T12:00:00.000Z",
   };
 
   it("переводит колонки БД в форму сайта", () => {
@@ -35,11 +36,27 @@ describe("rowToProduct", () => {
       // Без product_images галерея — это одна обложка.
       images: ["/marketplace/medieval-spawn.jpg"],
       createdAt: "2026-07-22T12:00:00.000Z",
+      updatedAt: "2026-07-22T12:00:00.000Z",
       price: "€15",
       priceCents: 1500,
       currency: "EUR",
       // creator_id в строке нет — карта без автора.
       creatorId: null,
+      // Характеристик в строке нет — база без миграции 20260821130000
+      // или карта, залитая до неё. Пустой набор, а не undefined:
+      // страница товара решает, что показывать, по длине списков, и
+      // отсутствующее поле заставило бы её проверять ещё и это.
+      specs: {
+        mcVersions: [],
+        mapType: null,
+        gameModes: [],
+        themes: [],
+        mapSize: null,
+        fileFormats: [],
+        tags: [],
+        fileSizeBytes: null,
+        publishedAt: null,
+      },
       // category — производная от slug: в строке колонки нет (старые
       // товары, заведённые до миграции 20260730120000).
       category: deriveCategory("medieval-spawn"),
@@ -101,6 +118,7 @@ describe("filterByCategory", () => {
     price_label: "€20",
     price_currency: "EUR",
     created_at: "2026-07-22T12:00:00.000Z",
+    updated_at: "2026-07-22T12:00:00.000Z",
   };
   const make = (slug: string, priceCents: number): Product =>
     rowToProduct({ ...base, slug, price_cents: priceCents });

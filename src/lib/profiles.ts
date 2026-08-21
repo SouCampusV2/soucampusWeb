@@ -3,11 +3,18 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 // Профиль пользователя, каким его показывает/редактирует сайт. Граница
 // БД↔домен, как rowToProduct: снаружи camelCase, в БД snake_case.
 export type Profile = {
+  /**
+   * Адрес профиля и логин: /creator/<username>. Отдельно от ника с
+   * 2026-08-21 (миграция 20260821120000) — до неё адрес считался из
+   * ника, и смена подписи уносила с собой все ссылки на профиль.
+   */
+  username: string;
+  /** Как человека видно. Повторы РАЗРЕШЕНЫ — различает людей username. */
   displayName: string;
   firstName: string | null;
   lastName: string | null;
   avatarUrl: string | null;
-  /** Текст «о себе» на публичной странице /creator/<ник>. */
+  /** Текст «о себе» на публичной странице /creator/<username>. */
   bio: string | null;
   /**
    * Цвет ника (#rrggbb) или null. Ставить его вправе только купивший —
@@ -28,7 +35,9 @@ export async function readProfile(
 ): Promise<Profile | null> {
   const { data, error } = await supabase
     .from("profiles")
-    .select("display_name, first_name, last_name, avatar_url, bio, name_color")
+    .select(
+      "username, display_name, first_name, last_name, avatar_url, bio, name_color"
+    )
     .eq("id", userId)
     .maybeSingle();
 
@@ -44,6 +53,7 @@ export async function readProfile(
   });
 
   return {
+    username: data.username,
     displayName: data.display_name,
     firstName: data.first_name,
     lastName: data.last_name,

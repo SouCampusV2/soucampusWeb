@@ -52,15 +52,22 @@ export function Navbar() {
     (user?.user_metadata?.display_name as string | undefined) ?? user?.email;
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
 
-  // Ссылка на СВОЙ публичный профиль — /creator/<ник в нижнем регистре>
-  // (см. creatorHref). Раньше здесь стоял захардкоженный
-  // /creator/soucampus, из-за чего любой залогиненный уходил на витрину
-  // бренда вместо своей страницы (баг, найденный владельцем 2026-07-27).
-  // Если ника в метаданных нет (старый аккаунт, где их ещё не
-  // синхронизировали), вести некуда — падаем на /profile, это в любом
-  // случае своя страница.
-  const nickname = user?.user_metadata?.display_name as string | undefined;
-  const ownProfileHref = nickname ? creatorHref(nickname) : "/profile";
+  // Ссылка на СВОЙ публичный профиль — /creator/<username>.
+  //
+  // ⚠️ Строится из username, а НЕ из ника: с 2026-08-21 это разные вещи
+  // (миграция 20260821120000), и ник в адресе больше не значит ничего.
+  // До этого здесь стоял creatorHref(display_name), а ещё раньше —
+  // захардкоженный /creator/soucampus, из-за чего любой залогиненный
+  // уходил на витрину бренда (баг владельца 2026-07-27).
+  //
+  // Метаданные, а не запрос в БД: навбар рисуется на каждой странице, и
+  // поход в базу ради одной ссылки стоил бы дороже всего остального
+  // навбара. Копию username кладёт туда форма настроек и регистрация.
+  // У аккаунта, который с 21.08 ещё не сохранялся, копии нет — тогда
+  // ведём на /profile: это в любом случае своя страница, просто личная
+  // вместо публичной.
+  const handle = user?.user_metadata?.username as string | undefined;
+  const ownProfileHref = handle ? creatorHref(handle) : "/profile";
 
   // Внутри магазина (каталог, страница товара, корзина, поддержка, а также
   // вход/регистрация — покупка требует аккаунта, это часть флоу магазина)
@@ -86,7 +93,7 @@ export function Navbar() {
   // него — /marketplace.
   //
   // Дверь наружу при этом никуда не делась, иначе получилась бы ловушка:
-  // из магазина не выйти. Её роль перешла к пункту "Main site" в
+  // из магазина не выйти. Её роль перешла к пункту "Studio" в
   // SHOP_NAV_LINKS (последним в списке) — он же попадает и в мобильное
   // меню, потому что оба рисуются из одного массива.
   // Список адресов жил здесь, пока ответ на «это страница магазина?» нужен
@@ -139,7 +146,7 @@ export function Navbar() {
                   Раньше здесь стояло «только на выходе через лого
                   SouCampus» — с 2026-08-20 неверно: лого в магазине никуда
                   не выходит, оно ведёт на витрину. Выход — пункт
-                  "Main site", последний в SHOP_NAV_LINKS. */}
+                  "Studio", последний в SHOP_NAV_LINKS. */}
               <div className="flex shrink-0 items-center gap-1 text-sm font-medium text-zinc-600 dark:text-zinc-300">
                 {SHOP_NAV_LINKS.map((link) =>
                   link.soon ? (
@@ -548,7 +555,7 @@ function AccountAvatar({
       src={avatarUrl}
       alt=""
       style={{ height: size - 2, width: size - 2 }}
-      className="shrink-0 rounded-full object-cover"
+      className="shrink-0 rounded-full object-cover object-top"
     />
   );
 }

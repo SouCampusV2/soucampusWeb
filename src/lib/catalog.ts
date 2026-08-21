@@ -32,7 +32,7 @@ export type CatalogRow = {
   /** Кто увёл карту в deleted: сам автор или площадка. */
   deletedBy: "creator" | "moderator" | null;
   createdAt: string;
-  creator: { id: string; displayName: string } | null;
+  creator: { id: string; displayName: string; username: string } | null;
   /** Сколько раз купили — по оплаченным заказам. */
   sales: number;
 };
@@ -105,13 +105,18 @@ export async function getCatalog(filters: CatalogFilters = {}): Promise<CatalogR
   const creatorIds = Array.from(
     new Set(rows.map((r) => r.creator_id).filter((id): id is string => Boolean(id)))
   );
-  const names = new Map<string, string>();
+  // Ник И адрес профиля: с 2026-08-21 это разные колонки, и ссылку
+  // строит username (см. creators.ts → creatorHref). Считать адрес из
+  // ника здесь было бы восстановлением ровно того бага, ради которого
+  // колонки и разъехались.
+  const names = new Map<string, { displayName: string; username: string }>();
   if (creatorIds.length > 0) {
     const { data: profiles } = await db
       .from("profiles")
-      .select("id, display_name")
+      .select("id, display_name, username")
       .in("id", creatorIds);
-    for (const p of profiles ?? []) names.set(p.id, p.display_name);
+    for (const p of profiles ?? [])
+      names.set(p.id, { displayName: p.display_name, username: p.username });
   }
 
   const sales = await getSalesCounts(rows.map((r) => r.id));
@@ -129,7 +134,11 @@ export async function getCatalog(filters: CatalogFilters = {}): Promise<CatalogR
     deletedBy: row.deleted_by,
     createdAt: row.created_at,
     creator: row.creator_id
-      ? { id: row.creator_id, displayName: names.get(row.creator_id) ?? "—" }
+      ? {
+          id: row.creator_id,
+          displayName: names.get(row.creator_id)?.displayName ?? "—",
+          username: names.get(row.creator_id)?.username ?? "",
+        }
       : null,
     sales: sales.get(row.id) ?? 0,
   }));

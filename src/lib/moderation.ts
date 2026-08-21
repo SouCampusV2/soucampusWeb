@@ -1,6 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { signedDownloadUrl, downloadFileName } from "@/lib/orders";
+import type { EditableSpecs } from "@/components/SpecFields";
 import type { ProductCategory, ProductState } from "@/lib/products";
 
 // Очередь модерации и «мои заявки» креатора.
@@ -22,7 +23,7 @@ export type PendingProduct = {
   createdAt: string;
   /** Подписанная ссылка на файл карты; null — файла нет или подпись не удалась. */
   fileUrl: string | null;
-  creator: { id: string; displayName: string } | null;
+  creator: { id: string; displayName: string; username: string } | null;
   /**
    * Откуда карта пришла в очередь (колонка submission_kind, миграция
    * 20260811150000). Первая заявка, исправление после отказа и возврат
@@ -83,13 +84,18 @@ export async function getPendingProducts(): Promise<PendingProduct[]> {
   const creatorIds = Array.from(
     new Set(rows.map((r) => r.creator_id).filter((id): id is string => Boolean(id)))
   );
-  const names = new Map<string, string>();
+  // Ник И адрес профиля: с 2026-08-21 это разные колонки, и ссылку
+  // строит username (см. creators.ts → creatorHref). Считать адрес из
+  // ника здесь было бы восстановлением ровно того бага, ради которого
+  // колонки и разъехались.
+  const names = new Map<string, { displayName: string; username: string }>();
   if (creatorIds.length > 0) {
     const { data: profiles } = await db
       .from("profiles")
-      .select("id, display_name")
+      .select("id, display_name, username")
       .in("id", creatorIds);
-    for (const p of profiles ?? []) names.set(p.id, p.display_name);
+    for (const p of profiles ?? [])
+      names.set(p.id, { displayName: p.display_name, username: p.username });
   }
 
   return Promise.all(
@@ -116,7 +122,11 @@ export async function getPendingProducts(): Promise<PendingProduct[]> {
             )
           : null,
         creator: row.creator_id
-          ? { id: row.creator_id, displayName: names.get(row.creator_id) ?? "—" }
+          ? {
+          id: row.creator_id,
+          displayName: names.get(row.creator_id)?.displayName ?? "—",
+          username: names.get(row.creator_id)?.username ?? "",
+        }
           : null,
         submissionKind: row.submission_kind ?? "first",
         suspensionReason: row.suspension_reason,
@@ -221,6 +231,8 @@ export type EditableProduct = {
   rejectionReason: string | null;
   rejectionFlags: string[];
   filePath: string | null;
+  /** Характеристики карты (20260821130000) — то, что правит автор. */
+  specs: EditableSpecs;
 };
 
 export async function getOwnProduct(
@@ -231,7 +243,7 @@ export async function getOwnProduct(
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, slug, title, summary, description, image_url, price_cents, category, state, rejection_reason, rejection_flags, file_path, product_images(url, position)"
+      "id, slug, title, summary, description, image_url, price_cents, category, state, rejection_reason, rejection_flags, file_path, product_images(url, position), mc_versions, map_type, game_modes, themes, map_size, file_formats"
     )
     .eq("creator_id", userId)
     .eq("slug", slug)
@@ -257,6 +269,12 @@ export async function getOwnProduct(
     rejection_flags: string[] | null;
     file_path: string | null;
     product_images: { url: string; position: number }[] | null;
+    mc_versions: string[] | null;
+    map_type: string | null;
+    game_modes: string[] | null;
+    themes: string[] | null;
+    map_size: string | null;
+    file_formats: string[] | null;
   };
 
   // Обложка первой, остальные по position — та же сборка галереи, что в
@@ -279,6 +297,14 @@ export async function getOwnProduct(
     state: row.state,
     rejectionReason: row.rejection_reason ?? null,
     rejectionFlags: row.rejection_flags ?? [],
+    specs: {
+      mcVersions: row.mc_versions ?? [],
+      mapType: row.map_type ?? null,
+      gameModes: row.game_modes ?? [],
+      themes: row.themes ?? [],
+      mapSize: row.map_size ?? null,
+      fileFormats: row.file_formats ?? [],
+    },
     filePath: row.file_path,
   };
 }

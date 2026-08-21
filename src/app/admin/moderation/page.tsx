@@ -96,7 +96,7 @@ export default async function ModerationPage() {
                     by{" "}
                     {product.creator ? (
                       <Link
-                        href={creatorHref(product.creator.displayName)}
+                        href={creatorHref(product.creator.username)}
                         {...NEW_TAB}
                         className={`font-medium ${INLINE_LINK}`}
                       >

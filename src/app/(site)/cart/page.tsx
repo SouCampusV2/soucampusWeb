@@ -19,6 +19,7 @@ import { useCart, type CartItem } from "@/lib/cart-context";
 import { useUser } from "@/lib/useUser";
 import { Button, BUTTON_COLORS } from "@/components/Button";
 import { PageGlow } from "@/components/PageGlow";
+import { CartRecommendations } from "@/components/CartRecommendations";
 
 // Клиентская страница целиком (нужен localStorage через useCart) — как
 // у /marketplace/[slug], metadata живёт в соседнем layout.tsx, потому что
@@ -180,6 +181,13 @@ export default function CartPage() {
                 Free maps
               </Button>
             </div>
+
+            {/* Рекомендации — сразу под кнопками, ВЫШЕ списка обещаний.
+                Порядок по тому, что человеку сейчас нужнее: он пришёл в
+                пустую корзину, значит ещё ничего не выбрал, и товар
+                полезнее, чем рассказ об условиях доставки. Список
+                приходит из layout — см. CartRecommendations. */}
+            <CartRecommendations />
 
             {/* Те же обещания, что и в Order summary у полной корзины —
                 здесь они отвечают на «а что вообще будет, если куплю»

@@ -58,7 +58,7 @@ export default async function AdminApplicationsPage() {
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <h2 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
                   <Link
-                    href={creatorHref(application.displayName)}
+                    href={creatorHref(application.username)}
                     {...NEW_TAB}
                     className={INLINE_LINK}
                   >
@@ -143,7 +143,7 @@ export default async function AdminApplicationsPage() {
             >
               <div className="min-w-0">
                 <Link
-                  href={creatorHref(creator.displayName)}
+                  href={creatorHref(creator.username)}
                   {...NEW_TAB}
                   className={`font-medium ${INLINE_LINK}`}
                 >

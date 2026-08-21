@@ -45,24 +45,17 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
     const supabase = createSupabaseBrowser();
 
     if (isSignup) {
-      // Заранее проверяем, свободен ли ник — таблицу profiles аноним
-      // читать не может (RLS), поэтому спрашиваем функцию из БД
-      // display_name_available (см. миграцию). Так пользователь видит
-      // понятное «ник занят», а не сырую ошибку триггера.
-      const { data: available, error: rpcError } = await supabase.rpc(
-        "display_name_available",
-        { name: displayName }
-      );
-      if (rpcError) {
-        setPending(false);
-        setError("Couldn't check the display name. Please try again.");
-        return;
-      }
-      if (!available) {
-        setPending(false);
-        setError(`The display name “${displayName}” is already taken.`);
-        return;
-      }
+      // Занятость ника здесь БОЛЬШЕ НЕ ПРОВЕРЯЕТСЯ, и это не упущение.
+      // С 2026-08-21 (миграция 20260821120000) display_name перестал
+      // быть уникальным: двое вправе называться одинаково, различает их
+      // username. Адрес профиля новичку подбирает база (handle_new_user)
+      // — из ника, а если такой уже занят, с хвостом из id. Поменять его
+      // можно в настройках.
+      //
+      // Спрашивать адрес на регистрации отдельным полем сознательно не
+      // стали: это третье поле подряд, которое человек обязан придумать,
+      // ещё не увидев сайта. Цена — у части аккаунтов адрес будет с
+      // хвостом, пока они его не поправят.
 
       const { data, error } = await supabase.auth.signUp({
         email,

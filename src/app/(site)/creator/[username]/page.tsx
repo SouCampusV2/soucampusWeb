@@ -126,7 +126,7 @@ export default async function CreatorPage({
                 className={
                   creator.avatarUrl.startsWith("/")
                     ? "h-full w-full object-contain p-2"
-                    : "h-full w-full object-cover"
+                    : "h-full w-full object-cover object-top"
                 }
               />
             ) : (

@@ -30,6 +30,10 @@ export default async function SettingsPage() {
   // Фоллбэк на метаданные — на случай аккаунтов до появления таблицы.
   const profile: Profile =
     (await readProfile(supabase, user.id)) ?? {
+      // Строки нет — адреса профиля тоже нет. Пустая строка честнее
+      // выдуманного значения: форма покажет поле пустым и потребует
+      // заполнить, а не сохранит молча что-то из ника.
+      username: "",
       displayName: user.displayName ?? "",
       firstName: null,
       lastName: null,

@@ -94,7 +94,7 @@ export default async function AdminHomePage({
               {overview.topCreators.map((c) => (
                 <li key={c.id} className="flex items-baseline justify-between gap-3 text-sm">
                   <Link
-                    href={creatorHref(c.displayName)}
+                    href={creatorHref(c.username)}
                     {...NEW_TAB}
                     className={`min-w-0 truncate ${INLINE_LINK}`}
                   >

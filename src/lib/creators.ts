@@ -7,9 +7,16 @@ import { getSupabase } from "@/lib/supabase";
 // колонок. Личные поля (имя/фамилия/discord) сюда не попадают вовсе.
 export type Creator = {
   id: string;
-  /** Публичный ник, как его ввёл пользователь: "SouCampus". */
+  /**
+   * Как человека видно: "SouCampus". МОЖЕТ ПОВТОРЯТЬСЯ — с 2026-08-21
+   * уникальности у ника нет, различает людей username.
+   */
   displayName: string;
-  /** Он же в адресе — ник в нижнем регистре: /creator/soucampus. */
+  /**
+   * Адрес профиля и логин: /creator/soucampus. Отдельная колонка с
+   * 20260821120000; до неё считался из ника на лету, и оттого смена
+   * ника ломала все ссылки на профиль.
+   */
   handle: string;
   avatarUrl: string | null;
   bio: string | null;
@@ -35,6 +42,8 @@ export type Creator = {
 
 type CreatorRow = {
   id: string;
+  /** Из 20260821120000; у баз без неё колонки нет — см. fallback ниже. */
+  username?: string | null;
   display_name: string;
   avatar_url: string | null;
   bio: string | null;
@@ -46,24 +55,32 @@ type CreatorRow = {
   name_color?: string | null;
 };
 
-// Хэндл = ник в нижнем регистре. Ники уникальны РЕГИСТРОНЕЗАВИСИМО
-// (уникальный индекс по lower(display_name)), поэтому такое отображение
-// однозначно: двух профилей с одинаковым хэндлом быть не может.
-export function toHandle(displayName: string): string {
-  return displayName.toLowerCase();
-}
-
-export function creatorHref(displayName: string): string {
-  // encodeURIComponent — ник может содержать пробел или юникод, а он
-  // едет в адрес.
-  return `/creator/${encodeURIComponent(toHandle(displayName))}`;
+/**
+ * Адрес профиля.
+ *
+ * ⚠️ Принимает username, а НЕ ник. До 2026-08-21 здесь стоял
+ * `toHandle(displayName)` — ник, приведённый к нижнему регистру, — и это
+ * была главная причина, по которой ник нельзя было менять: смена уносила
+ * с собой адрес профиля, а освободившееся имя мог занять кто угодно.
+ * Теперь адрес — собственная колонка, и от подписи он не зависит.
+ *
+ * encodeURIComponent оставлен нарочно, хотя ограничение
+ * profiles_username_format уже не пускает в username ничего, кроме
+ * [a-z0-9_]: экранирование того, что и так безопасно, ничего не стоит,
+ * а полагаться на то, что ограничение в базе никогда не ослабят, —
+ * стоит. Сюда значение приезжает из БД, то есть это ввод пользователя.
+ */
+export function creatorHref(handle: string): string {
+  return `/creator/${encodeURIComponent(handle)}`;
 }
 
 function rowToCreator(row: CreatorRow): Creator {
   return {
     id: row.id,
     displayName: row.display_name,
-    handle: toHandle(row.display_name),
+    // Фоллбэк на ник — только для базы без миграции 20260821120000.
+    // Совпадает со старым поведением, поэтому ссылки там не ломаются.
+    handle: row.username ?? row.display_name.toLowerCase(),
     avatarUrl: row.avatar_url,
     bio: row.bio,
     isVerified: row.is_verified,
@@ -84,7 +101,7 @@ export function isHexColor(value: unknown): value is string {
 }
 
 const CREATOR_FIELDS =
-  "id, display_name, avatar_url, bio, is_verified, is_creator, name_color, is_client";
+  "id, username, display_name, avatar_url, bio, is_verified, is_creator, name_color, is_client";
 
 // Тот же набор без is_creator — запасной путь, пока миграция
 // 20260811120000 не прогнана. PostgREST на незнакомую колонку отвечает
@@ -100,7 +117,8 @@ function isMissingRole(message: string): boolean {
   return (
     message.includes("is_creator") ||
     message.includes("is_client") ||
-    message.includes("name_color")
+    message.includes("name_color") ||
+    message.includes("username")
   );
 }
 
@@ -129,19 +147,30 @@ export async function getAllCreators(): Promise<Creator[]> {
 }
 
 export async function getCreatorByHandle(handle: string): Promise<Creator | null> {
-  // ilike без подстановочных знаков — это обычное сравнение, только
-  // регистронезависимое: ровно то, что нужно, раз хэндл в адресе
-  // строчный, а ник хранится как введён.
+  // eq по username, а не ilike по нику. Раньше сравнивали
+  // регистронезависимо, потому что хэндл считался из ника; теперь
+  // username хранится уже строчным (ограничение profiles_username_format),
+  // и точное сравнение — не придирчивость, а единственно верный вариант:
+  // ilike заставил бы базу игнорировать уникальный индекс.
+  //
+  // Адрес приводим к нижнему регистру сами: /creator/SouCampus набирают
+  // руками и присылают в ссылках, и отдавать за это 404 было бы
+  // придиркой к посетителю.
   const query = (fields: string) =>
     getSupabase()
       .from("public_profiles")
       .select(fields)
-      .ilike("display_name", handle)
+      .eq("username", handle.toLowerCase())
       .maybeSingle();
 
   let { data, error } = await query(CREATOR_FIELDS);
   if (error && isMissingRole(error.message)) {
-    ({ data, error } = await query(CREATOR_FIELDS_NO_ROLE));
+    // База без 20260821120000: username там нет, и хэндл — это ник.
+    ({ data, error } = await getSupabase()
+      .from("public_profiles")
+      .select(CREATOR_FIELDS_NO_ROLE)
+      .ilike("display_name", handle)
+      .maybeSingle());
   }
 
   if (error) {
