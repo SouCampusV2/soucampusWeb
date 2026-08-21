@@ -1,0 +1,275 @@
+"use client";
+
+import { useEffect, useRef, useState } from "react";
+import { Trash } from "@phosphor-icons/react";
+import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { formatDayMonthYear } from "@/lib/dates";
+import { Button } from "@/components/Button";
+// Из comment-shape.ts, а НЕ из lib/comments.ts: тот тянет служебный
+// ключ (supabase-admin), и импорт значения оттуда утащил бы его в
+// браузерный бандл. Тот же файл и та же причина, что у
+// notification-shape.ts.
+import {
+  COMMENT_COLUMNS,
+  commentAuthors,
+  rowToComment,
+  type Comment,
+  type CommentRow,
+} from "@/lib/comment-shape";
+
+// Комментарии под картой.
+//
+// КТО МОЖЕТ ПИСАТЬ — решает БАЗА (политика "insert own comment if bought"
+// через has_purchased). Здесь поле лишь блокируется, если человек не
+// купил: это удобство, а не защита. Форма пишет в таблицу прямо из
+// браузера, и разблокировать поле из инструментов разработчика — дело
+// секунды; отказ придёт от базы, а не отсюда.
+//
+// ⚠️ Купившим считается и тот, кто скачал БЕСПЛАТНУЮ карту: заказ на
+// нулевую сумму — тоже оплаченный заказ (миграция 20260812120000).
+// Решение владельца 21.08, разбор — в миграции комментариев.
+//
+// ПОЧЕМУ ЛЕНТА ДОГРУЖАЕТСЯ, А НЕ ПРИХОДИТ ГОТОВОЙ. Первый экран как раз
+// приходит с сервера (initial) — страница карты статическая, и он верен
+// на момент сборки. Но «купил ли я» и свежие комментарии зависят от
+// того, кто смотрит и когда, поэтому уточняются после загрузки. Тот же
+// приём и та же причина, что у AddToCartButton и ReactionButton.
+
+const MAX_LENGTH = 1000;
+
+export function CommentSection({
+  productId,
+  initial,
+  creatorId,
+}: {
+  productId: string;
+  initial: Comment[];
+  /** Автор карты — он вправе удалять комментарии под своей работой. */
+  creatorId: string | null;
+}) {
+  const [comments, setComments] = useState(initial);
+  const [body, setBody] = useState("");
+  const [userId, setUserId] = useState<string | null>(null);
+  const [canWrite, setCanWrite] = useState(false);
+  const [checked, setChecked] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const busy = useRef(false);
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      const supabase = createSupabaseBrowser();
+      // getSession, а не getUser: сессия читается из локального хранилища
+      // мгновенно, без похода по сети. Права всё равно за базой.
+      const { data: session } = await supabase.auth.getSession();
+      const id = session.session?.user?.id ?? null;
+
+      if (!id) {
+        if (alive) setChecked(true);
+        return;
+      }
+
+      // Ту же функцию зовёт политика вставки — так интерфейс и база
+      // отвечают на один вопрос одним способом и не могут разойтись.
+      const { data: bought } = await supabase.rpc("has_purchased", {
+        p_product_id: productId,
+      });
+
+      if (!alive) return;
+      setUserId(id);
+      setCanWrite(Boolean(bought));
+      setChecked(true);
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, [productId]);
+
+  async function reload() {
+    const supabase = createSupabaseBrowser();
+    const { data } = await supabase
+      .from("product_comments")
+      .select(COMMENT_COLUMNS)
+      .eq("product_id", productId)
+      .order("created_at", { ascending: false });
+    if (!data) return;
+
+    // Подписи — той же функцией, что на сервере: имя и цвет живут в
+    // public_profiles, а не в строке комментария.
+    const authors = await commentAuthors(
+      supabase,
+      [...new Set(data.map((r) => r.user_id as string))]
+    );
+
+    // Тот же разбор строки, что на сервере (comment-shape.ts). Своя
+    // копия здесь была ровно до первой правки: два способа читать одну
+    // таблицу расходятся всегда — так уже расходились семь копий
+    // градиента и семь форматов даты.
+    setComments(
+      (data as unknown as CommentRow[]).map((row) =>
+        rowToComment(row, authors.get(row.user_id))
+      )
+    );
+  }
+
+  async function submit(event: React.FormEvent) {
+    event.preventDefault();
+    if (busy.current) return;
+
+    const text = body.trim();
+    if (!text) return;
+
+    busy.current = true;
+    setPending(true);
+    setError(null);
+
+    const supabase = createSupabaseBrowser();
+    const { error: insertError } = await supabase
+      .from("product_comments")
+      .insert({ product_id: productId, user_id: userId, body: text });
+
+    if (insertError) {
+      // Текст ошибки базы наружу не отдаём — он рассказывает о схеме.
+      // Ожидаемый отказ здесь ровно один: не купил.
+      setError("Couldn't post your comment. Only buyers can comment.");
+    } else {
+      setBody("");
+      await reload();
+    }
+
+    setPending(false);
+    busy.current = false;
+  }
+
+  async function remove(id: string) {
+    const supabase = createSupabaseBrowser();
+    // Метку «кто удалил» ставит сама база по тому, кто позвал функцию:
+    // передавать её отсюда значило бы позволить автору карты пометить
+    // чужое удаление как «передумал сам».
+    const { error: rpcError } = await supabase.rpc("soft_delete_comment", {
+      p_comment_id: id,
+    });
+    if (!rpcError) await reload();
+  }
+
+  const liveCount = comments.filter((c) => !c.deletedBy).length;
+
+  return (
+    <section className="mt-12">
+      <h2 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
+        Comments{liveCount > 0 && ` (${liveCount})`}
+      </h2>
+
+      {/* Форма показывается всегда — спрятать её от некупивших значило бы
+          не объяснить, почему писать нельзя. Заблокированное поле с
+          подписью говорит об этом прямо. */}
+      <form onSubmit={submit} className="mt-4">
+        <textarea
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          rows={3}
+          maxLength={MAX_LENGTH}
+          disabled={!canWrite}
+          placeholder={
+            !checked
+              ? "…"
+              : canWrite
+                ? "What did you think of this map?"
+                : "Only buyers can comment on this map"
+          }
+          className="w-full resize-y rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500"
+        />
+        <div className="mt-2 flex items-center justify-between gap-3">
+          <span className="text-xs text-zinc-500 dark:text-zinc-400">
+            {body.length}/{MAX_LENGTH}
+          </span>
+          <Button
+            type="submit"
+            size="sm"
+            disabled={!canWrite || pending || !body.trim()}
+          >
+            {pending ? "Posting…" : "Post comment"}
+          </Button>
+        </div>
+        {error && (
+          <p className="mt-2 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
+            {error}
+          </p>
+        )}
+      </form>
+
+      {comments.length === 0 ? (
+        <p className="mt-6 text-sm text-zinc-500 dark:text-zinc-400">
+          No comments yet.
+        </p>
+      ) : (
+        <ul className="mt-6 space-y-5">
+          {comments.map((comment) => (
+            <li
+              key={comment.id}
+              className="border-t border-zinc-950/[0.06] pt-5 dark:border-white/10"
+            >
+              <div className="flex items-baseline justify-between gap-3">
+                <div className="flex items-baseline gap-2">
+                  <span
+                    className="text-sm font-semibold text-zinc-950 dark:text-zinc-50"
+                    // Цвет ника — привилегия купивших. style, а не класс:
+                    // значение произвольное, в Tailwind его не выразить.
+                    style={
+                      comment.nameColor ? { color: comment.nameColor } : undefined
+                    }
+                  >
+                    {comment.username}
+                  </span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
+                    {formatDayMonthYear(comment.createdAt)}
+                    {comment.edited && " · edited"}
+                  </span>
+                </div>
+
+                {/* Кнопка удаления — только у тех, кто вправе. Право
+                    проверяет функция в базе; здесь мы лишь не показываем
+                    заведомо бесполезную кнопку. */}
+                {!comment.deletedBy &&
+                  userId &&
+                  (userId === comment.userId || userId === creatorId) && (
+                    <button
+                      type="button"
+                      onClick={() => remove(comment.id)}
+                      aria-label="Delete comment"
+                      title="Delete comment"
+                      className="shrink-0 text-zinc-400 transition hover:text-red-600 dark:hover:text-red-400"
+                    >
+                      <Trash size={16} />
+                    </button>
+                  )}
+              </div>
+
+              {comment.deletedBy ? (
+                // Строка остаётся на месте без текста. Иначе работал бы
+                // приём: написал гадость, получил ответ, стёр своё — и
+                // чужой ответ висит беспричинной агрессией.
+                <p className="mt-1.5 text-sm italic text-zinc-400 dark:text-zinc-500">
+                  {comment.deletedBy === "author"
+                    ? "Comment deleted by its author"
+                    : "Comment removed"}
+                </p>
+              ) : (
+                // Текст, а не HTML: комментарий пишется без разметки, и
+                // React экранирует его сам. dangerouslySetInnerHTML здесь
+                // не нужен и не появится — санитайзер существует для
+                // описаний карт, где разметка нужна по делу.
+                <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+                  {comment.body}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </section>
+  );
+}

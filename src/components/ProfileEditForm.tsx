@@ -189,11 +189,18 @@ export function ProfileEditForm({
       // Уникальный индекс по username мог отклонить на гонке: между
       // проверкой выше и записью имя мог занять кто-то другой. Ровно
       // поэтому проверка в форме — удобство, а гарантия — индекс.
-      setError(
-        updateError.message.toLowerCase().includes("duplicate")
-          ? "That username is already taken."
-          : `Couldn't save: ${updateError.message}`
-      );
+      const message = updateError.message.toLowerCase();
+      if (message.includes("duplicate") || message.includes("username_reserved")) {
+        setError("That username is already taken.");
+        return;
+      }
+
+      // Текст ошибки базы наружу НЕ отдаём: он рассказывает о схеме —
+      // имена колонок, ограничений, триггеров. В консоль пишем полностью,
+      // человеку — что делать. Правило из CLAUDE.md, здесь оно нарушалось
+      // с самого появления формы.
+      console.warn(`Профиль не сохранился: ${updateError.message}`);
+      setError("Couldn't save your changes. Please try again.");
       return;
     }
 
