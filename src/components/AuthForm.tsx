@@ -72,10 +72,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
         email,
         password,
         options: {
-          // display_name дублируем, пока колонка жива: на проде ещё
-          // работает код, который читает имя из метаданных под старым
-          // ключом. Уйдёт вместе с колонкой.
-          data: { username, display_name: username },
+          data: { username },
           // Ссылка из письма ведёт в наш route handler /auth/callback,
           // который обменивает код на сессию и логинит (см. тот файл).
           emailRedirectTo: `${window.location.origin}/auth/callback`,

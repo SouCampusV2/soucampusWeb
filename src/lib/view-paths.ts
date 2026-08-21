@@ -15,6 +15,13 @@
 export const VIEW_PATHS = {
   portfolio: "/portfolio",
   project: (slug: string) => `/portfolio/${slug}`,
+  /**
+   * Страница карты. Просмотры по ней считались С САМОГО НАЧАЛА — шаблон
+   * ниже пропускает /marketplace/<slug>, а трекер висит в layout группы
+   * (site), — но нигде не показывались. То есть числа за всё время
+   * витрины уже лежат в page_views, показ добавлен 2026-08-21.
+   */
+  product: (slug: string) => `/marketplace/${slug}`,
 } as const;
 
 // Статические страницы сайта. Динамические (работы и отзывы) проверяются

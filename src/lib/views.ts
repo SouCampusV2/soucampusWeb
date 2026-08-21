@@ -60,6 +60,39 @@ export async function getViewCounts(): Promise<Record<string, number>> {
 }
 
 /**
+ * Счётчик одной страницы.
+ *
+ * Отдельная функция, а не `(await getViewCounts())[path]`: тот тянет
+ * строку на КАЖДЫЙ считаемый адрес сайта, а странице карты нужен один.
+ * На двадцати картах разница незаметна, на тысяче — это тысяча строк
+ * ради одного числа. Хвост из аудита 2026-07-22, закрыт 2026-08-21,
+ * когда счётчик понадобился на деталке.
+ *
+ * Ноль при любой беде — счётчик украшение, а не содержание страницы
+ * (тот же довод, что у getViewCounts).
+ *
+ * ТОЛЬКО для серверных компонентов: внутри служебный ключ.
+ */
+export async function getViewCount(path: string): Promise<number> {
+  try {
+    const { data, error } = await getSupabaseAdmin()
+      .from("page_view_counts")
+      .select("views")
+      .eq("path", path)
+      .maybeSingle();
+
+    if (error) throw new Error(error.message);
+    return data ? Number(data.views) : 0;
+  } catch (e) {
+    console.warn(
+      `Счётчик просмотров ${path} недоступен:`,
+      e instanceof Error ? e.message : e
+    );
+    return 0;
+  }
+}
+
+/**
  * Уникальные посетители всего сайта за четыре периода.
  *
  * Возвращаются все четыре числа сразу, одним запросом, хотя показывается

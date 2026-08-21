@@ -47,12 +47,9 @@ export type Creator = {
 
 type CreatorRow = {
   id: string;
-  /** Из 20260821120000; у баз без неё колонки нет — см. fallback ниже. */
-  username?: string | null;
-  /** Из 20260821150000 — вычисляемая база.lower(username). */
+  username: string;
+  /** Вычисляемая базой lower(username) — 20260821150000. */
   username_lower?: string | null;
-  /** ⚠️ Живёт до отдельной миграции: удаление идёт ПОСЛЕ деплоя. */
-  display_name: string;
   avatar_url: string | null;
   bio: string | null;
   is_verified: boolean;
@@ -92,11 +89,12 @@ export function creatorHref(handle: string): string {
 function rowToCreator(row: CreatorRow): Creator {
   return {
     id: row.id,
-    // Фоллбэк на display_name — только для базы без миграции
-    // 20260821120000. Совпадает со старым поведением, поэтому ссылки
-    // там не ломаются.
-    username: row.username ?? row.display_name,
-    handle: (row.username_lower ?? row.username ?? row.display_name).toLowerCase(),
+    username: row.username,
+    // Фоллбэк на само имя — не «на всякий случай», а на один конкретный
+    // случай: username_lower считает база, и у строки, вставленной до
+    // 20260821150000 в открытой вкладке, её ещё может не быть в кэше
+    // схемы PostgREST. lower() здесь даёт ровно то же значение.
+    handle: (row.username_lower ?? row.username).toLowerCase(),
     avatarUrl: row.avatar_url,
     bio: row.bio,
     isVerified: row.is_verified,
@@ -117,14 +115,14 @@ export function isHexColor(value: unknown): value is string {
 }
 
 const CREATOR_FIELDS =
-  "id, username, username_lower, display_name, avatar_url, bio, is_verified, is_creator, name_color, is_client";
+  "id, username, username_lower, avatar_url, bio, is_verified, is_creator, name_color, is_client";
 
 // Тот же набор без is_creator — запасной путь, пока миграция
 // 20260811120000 не прогнана. PostgREST на незнакомую колонку отвечает
 // ошибкой и НЕ отдаёт строки вовсе, то есть профили и авторы на
 // карточках витрины исчезли бы целиком из-за одной подписи под ником.
 // Тот же принцип, что у PRODUCT_FIELDS_NO_IMAGES в products.ts.
-const CREATOR_FIELDS_NO_ROLE = "id, display_name, avatar_url, bio, is_verified";
+const CREATOR_FIELDS_NO_ROLE = "id, username, avatar_url, bio, is_verified";
 
 function isMissingRole(message: string): boolean {
   // Любая из трёх колонок, добавленных представлению позже: PostgREST на
@@ -183,11 +181,14 @@ export async function getCreatorByHandle(handle: string): Promise<Creator | null
 
   let { data, error } = await query(CREATOR_FIELDS);
   if (error && isMissingRole(error.message)) {
-    // База без 20260821120000: username там нет, и хэндл — это ник.
+    // База без части колонок представления: ищем по самому имени.
+    // ilike без подстановочных знаков — обычное сравнение, только
+    // регистронезависимое; индекс оно не использует, но это запасной
+    // путь, а не рабочий.
     ({ data, error } = await getSupabase()
       .from("public_profiles")
       .select(CREATOR_FIELDS_NO_ROLE)
-      .ilike("display_name", handle)
+      .ilike("username", handle)
       .maybeSingle());
   }
 
