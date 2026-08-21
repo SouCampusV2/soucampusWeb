@@ -205,9 +205,6 @@ export function ProfileEditForm({
       data: {
         // Копия имени — из неё навбар берёт и подпись, и ссылку «мой
         // профиль», не ходя за ними в базу на каждой странице.
-        // display_name дублируем, пока колонка жива: на проде ещё
-        // работает код, который читает её из метаданных.
-        display_name: nextUsername,
         username: nextUsername,
         avatar_url: nextAvatarUrl,
       },

@@ -79,7 +79,7 @@ export async function getAdminUser(): Promise<AdminUser | null> {
   if (!data.is_admin) {
     return deny(
       `у пользователя ${user.email} is_admin = false. ` +
-        "Проверить: select p.display_name, p.is_admin from profiles p join auth.users u on u.id = p.id where u.email = '" +
+        "Проверить: select p.username, p.is_admin from profiles p join auth.users u on u.id = p.id where u.email = '" +
         user.email +
         "';"
     );

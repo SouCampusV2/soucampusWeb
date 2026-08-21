@@ -6,6 +6,7 @@ import { sanitizeDescription } from "@/lib/sanitize";
 import { SealCheck } from "@phosphor-icons/react/dist/ssr";
 import { getAllProducts, getProduct, getProductStats } from "@/lib/products";
 import { creatorHref, getCreatorsById } from "@/lib/creators";
+import { getViewCount, VIEW_PATHS } from "@/lib/views";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductGallery } from "@/components/ProductGallery";
 import { RICH_TEXT_CLASS } from "@/lib/rich-text";
@@ -101,6 +102,15 @@ export default async function ProductPage({
   const creator = product.creatorId
     ? (await getCreatorsById()).get(product.creatorId)
     : undefined;
+
+  // Просмотры. Считаются с самого появления витрины — трекер в layout
+  // группы (site) шлёт сюда сигнал, а /marketplace/<slug> и так стоит в
+  // белом списке (view-paths.ts). Не хватало только показа, поэтому
+  // число сразу непустое, а не начинается с нуля.
+  //
+  // Один посетитель — единица, сколько бы раз ни открыл: строка в
+  // page_views уникальна по тройке (страница, посетитель, день).
+  const views = await getViewCount(VIEW_PATHS.product(slug));
   const rating = stats?.rating ?? 0;
   const ratingCount = stats?.ratingCount ?? 0;
   const salesCount = stats?.salesCount ?? 0;
@@ -239,6 +249,7 @@ export default async function ProductPage({
             specs={product.specs}
             updatedAt={product.updatedAt}
             salesCount={salesCount}
+            views={views}
           />
         </aside>
       </div>

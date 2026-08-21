@@ -106,8 +106,7 @@ export async function getCatalog(filters: CatalogFilters = {}): Promise<CatalogR
     new Set(rows.map((r) => r.creator_id).filter((id): id is string => Boolean(id)))
   );
   // Имя человека — ОДНО (миграция 20260821150000): оно же логин, оно же
-  // адрес профиля. display_name живёт в базе до отдельной миграции
-  // (удаление идёт после деплоя) и повторяет username триггером.
+  // адрес профиля.
   const names = new Map<string, string>();
   if (creatorIds.length > 0) {
     const { data: profiles } = await db

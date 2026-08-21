@@ -53,15 +53,26 @@ export function ProductSpecs({
   specs,
   updatedAt,
   salesCount,
+  views,
 }: {
   specs: Specs;
   /** Когда карту правили в последний раз (products.updated_at). */
   updatedAt: string | null;
   salesCount: number;
+  /** Уникальные посетители страницы карты; 0 — счётчик недоступен. */
+  views: number;
 }) {
   const fileSize = formatFileSize(specs.fileSizeBytes);
 
   const tiles: { value: string; label: string }[] = [];
+
+  // Просмотры первыми: это единственное число, которое есть у КАЖДОЙ
+  // карты с первого дня, — остальные плитки у новой карты пусты.
+  // Ноль не показываем: он значит не «никто не заходил» (кто-то уже
+  // открыл эту самую страницу), а «счётчик недоступен».
+  if (views > 0) {
+    tiles.push({ value: views.toLocaleString("en-GB"), label: "Views" });
+  }
   if (specs.publishedAt) {
     tiles.push({ value: formatDayMonthYear(specs.publishedAt), label: "Published" });
   }
