@@ -8,6 +8,7 @@ import { getCurrentUser } from "@/lib/current-user";
 import { getOwnProducts } from "@/lib/moderation";
 import { isCreator, getSubmissionBlock } from "@/lib/creator-applications";
 import { UploadMapForm } from "@/components/UploadMapForm";
+import { getReactionOptions } from "@/lib/reactions";
 import { PageGlow } from "@/components/PageGlow";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
@@ -64,6 +65,11 @@ export default async function UploadMapPage() {
   if (await getSubmissionBlock(supabase, user.id)) {
     redirect("/resources");
   }
+
+  // Список реакций читаем ЗДЕСЬ: форма клиентская, а список живёт в
+  // базе. Тянуть его из браузера значило бы лишний запрос при каждом
+  // открытии формы ради данных, которые страница и так получает.
+  const reactionOptions = await getReactionOptions();
 
   const own = await getOwnProducts(supabase, user.id);
   const rejected = own.filter((p) => p.state === "rejected");
@@ -139,7 +145,7 @@ export default async function UploadMapPage() {
           )}
 
           <div className="mt-10">
-            <UploadMapForm userId={user.id} />
+            <UploadMapForm userId={user.id} reactionOptions={reactionOptions} />
           </div>
         </div>
       </section>

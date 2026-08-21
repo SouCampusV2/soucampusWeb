@@ -226,6 +226,8 @@ export type EditableProduct = {
   filePath: string | null;
   /** Характеристики карты (20260821130000) — то, что правит автор. */
   specs: EditableSpecs;
+  /** Выбранная реакция (20260821170000); null — карта без реакции. */
+  reactionOptionId: string | null;
 };
 
 export async function getOwnProduct(
@@ -236,7 +238,7 @@ export async function getOwnProduct(
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, slug, title, summary, description, image_url, price_cents, category, state, rejection_reason, rejection_flags, file_path, product_images(url, position), mc_versions, map_type, game_modes, themes, map_size, file_formats"
+      "id, slug, title, summary, description, image_url, price_cents, category, state, rejection_reason, rejection_flags, file_path, product_images(url, position), mc_versions, map_type, game_modes, themes, map_size, file_formats, reaction_option_id"
     )
     .eq("creator_id", userId)
     .eq("slug", slug)
@@ -268,6 +270,7 @@ export async function getOwnProduct(
     themes: string[] | null;
     map_size: string | null;
     file_formats: string[] | null;
+    reaction_option_id: string | null;
   };
 
   // Обложка первой, остальные по position — та же сборка галереи, что в
@@ -298,6 +301,7 @@ export async function getOwnProduct(
       mapSize: row.map_size ?? null,
       fileFormats: row.file_formats ?? [],
     },
+    reactionOptionId: row.reaction_option_id ?? null,
     filePath: row.file_path,
   };
 }

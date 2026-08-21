@@ -176,6 +176,13 @@ export type Product = {
    * страница товара просто не показывает пустую строку.
    */
   specs: ProductSpecs;
+  /**
+   * Реакция карты — id строки из reaction_options; null, если автор её
+   * не выбрал. Сам смайлик/картинка приезжает отдельно (getReactionOptions):
+   * дублировать их в каждой карте значило бы завести второе место, где
+   * живёт ответ на «как выглядит эта реакция».
+   */
+  reactionOptionId: string | null;
 };
 
 /** См. Product.specs. Вынесено типом — набор ездит целиком. */
@@ -291,6 +298,8 @@ type ProductRow = {
   tags?: string[] | null;
   file_size_bytes?: number | string | null;
   published_at?: string | null;
+  /** Из 20260821170000. */
+  reaction_option_id?: string | null;
 };
 
 export function rowToProduct(row: ProductRow): Product {
@@ -337,6 +346,7 @@ export function rowToProduct(row: ProductRow): Product {
           : Number(row.file_size_bytes),
       publishedAt: row.published_at ?? null,
     },
+    reactionOptionId: row.reaction_option_id ?? null,
   };
 }
 
@@ -354,7 +364,7 @@ const PRODUCT_FIELDS_NO_IMAGES =
 // легко снять целиком, если база окажется без миграции, — см.
 // isMissingOptional ниже.
 const PRODUCT_SPEC_FIELDS =
-  "mc_versions, map_type, game_modes, themes, map_size, file_formats, tags, file_size_bytes, published_at";
+  "mc_versions, map_type, game_modes, themes, map_size, file_formats, tags, file_size_bytes, published_at, reaction_option_id";
 
 const PRODUCT_FIELDS = `${PRODUCT_FIELDS_NO_IMAGES}, creator_id, category, product_images(url, position), ${PRODUCT_SPEC_FIELDS}`;
 
@@ -379,7 +389,8 @@ function isMissingOptional(message: string): boolean {
     message.includes("file_formats") ||
     message.includes("tags") ||
     message.includes("file_size_bytes") ||
-    message.includes("published_at")
+    message.includes("published_at") ||
+    message.includes("reaction_option_id")
   );
 }
 
@@ -536,6 +547,8 @@ export type CreateProductInput = {
   specs: EditableSpecs;
   /** Вес загруженного файла в байтах — берётся из самого File. */
   fileSizeBytes: number;
+  /** Выбранная автором реакция; null — карта без реакции. */
+  reactionOptionId: string | null;
 };
 
 // Черновик карты от креатора.
@@ -579,6 +592,7 @@ export async function createProduct(
         creator_id: input.creatorId,
         ...specsToColumns(input.specs),
         file_size_bytes: input.fileSizeBytes,
+        reaction_option_id: input.reactionOptionId,
       })
       .select("id, slug")
       .single();
