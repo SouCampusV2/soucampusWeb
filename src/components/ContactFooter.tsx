@@ -100,8 +100,14 @@ export function ContactFooter() {
 
           <div className="flex flex-wrap gap-10 sm:gap-16">
             <div>
+              {/* «Studio», а не «Navigate» (2026-08-21). Заголовок теперь
+                  называет РАЗДЕЛ САЙТА, ровно как соседние «Marketplace» и
+                  «Legal», — и тем самым сам объясняет, что студия и магазин
+                  это две разные части. Прежнее «Navigate» описывало действие
+                  («перемещайся»), а не содержимое, и в ряду из трёх
+                  заголовков выбивалось. */}
               <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
-                Navigate
+                Studio
               </h3>
               <ul className="mt-3 space-y-2 text-sm text-zinc-500 dark:text-zinc-400">
                 {NAV_LINKS.map((link) => (
@@ -125,8 +131,16 @@ export function ContactFooter() {
               <ul className="mt-3 space-y-2 text-sm text-zinc-500 dark:text-zinc-400">
                 {/* Тот же список, что в навбаре (SHOP_NAV_LINKS) — раньше
                     категории здесь были неактивными заглушками «Coming soon»
-                    и отстали от навбара, где давно работают. */}
-                {SHOP_NAV_LINKS.map((link) => (
+                    и отстали от навбара, где давно работают.
+
+                    Кроме выхода наружу: в навбаре пункт «Studio» — это
+                    единственная дверь из магазина, и он там обязателен. В
+                    футере обе двери и так стоят рядом двумя колонками, и
+                    ссылка на студию внутри колонки «Marketplace» читалась
+                    бы как раздел магазина. Отбираем по href, а не по
+                    позиции в массиве: «последний» перестанет быть тем
+                    пунктом при первом же добавлении раздела. */}
+                {SHOP_NAV_LINKS.filter((link) => link.href !== "/").map((link) => (
                   <li key={link.href}>
                     {link.soon ? (
                       <span

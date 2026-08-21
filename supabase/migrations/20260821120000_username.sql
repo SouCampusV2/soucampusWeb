@@ -178,18 +178,30 @@ $$;
 -- username публичен по своей природе — он стоит в адресе профиля.
 -- Прятать его в представлении было бы самообманом.
 
+-- ⚠️ username ДОПИСАН В КОНЕЦ, и переставлять его нельзя.
+--
+-- `create or replace view` умеет только ДОБАВЛЯТЬ колонки в хвост: имена
+-- и порядок уже существующих обязаны совпасть один в один. Поставленный
+-- вторым (по смыслу — рядом с display_name) он давал
+--   ERROR 42P16: cannot change name of view column "display_name" to "username"
+-- — Postgres читает список позиционно и понимает это как переименование
+-- второй колонки. Чтобы расставить их «красиво», представление пришлось
+-- бы удалить и создать заново, а удаление сносит и права (grant), и всё,
+-- что на него ссылается. Порядок колонок в представлении не значит
+-- ничего: код выбирает их по имени.
+
 create or replace view public.public_profiles
 with (security_invoker = false) as
   select
     id,
-    username,
     display_name,
     avatar_url,
     bio,
     is_verified,
     is_creator,
     name_color,
-    public.profile_is_client(id) as is_client
+    public.profile_is_client(id) as is_client,
+    username
   from public.profiles;
 
 grant select on public.public_profiles to anon, authenticated;
