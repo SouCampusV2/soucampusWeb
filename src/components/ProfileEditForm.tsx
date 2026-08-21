@@ -9,9 +9,18 @@ import { Button, BUTTON_COLORS } from "@/components/Button";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import type { Profile } from "@/lib/profiles";
 import { NameColorPicker } from "@/components/NameColorPicker";
+import { formatDayMonthYear } from "@/lib/dates";
 import { revalidateProfile } from "@/app/(site)/settings/actions";
 
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024; // 2 МБ
+
+// Столько же, сколько в guard_username_change (миграция 20260821140000).
+// ⚠️ Число живёт в двух местах, и это осознанно: здесь оно нужно, чтобы
+// назвать дату ДО нажатия «Сохранить», а вычислять её запросом в базу
+// ради подписи под полем — дороже, чем держать копию. Настоящее правило
+// всё равно одно, и оно в триггере: разъедутся — сайт покажет неверную
+// дату, но лишней смены не пропустит.
+const USERNAME_COOLDOWN_DAYS = 30;
 
 export function ProfileEditForm({
   initial,
@@ -24,6 +33,17 @@ export function ProfileEditForm({
   const refresh = useRefresh();
 
   const [username, setUsername] = useState(initial.username);
+
+  // До какой даты username менять нельзя (30 дней с прошлой смены).
+  // Считаем ЗДЕСЬ только для подписи под полем — настоящий запрет стоит
+  // в триггере guard_username_change, и он же отказал бы, соври мы тут.
+  // null — менять можно прямо сейчас (ни разу не меняли или месяц вышел).
+  const lockedUntil = (() => {
+    if (!initial.usernameChangedAt) return null;
+    const until = new Date(initial.usernameChangedAt);
+    until.setUTCDate(until.getUTCDate() + USERNAME_COOLDOWN_DAYS);
+    return until > new Date() ? until : null;
+  })();
   const [displayName, setDisplayName] = useState(initial.displayName);
   const [firstName, setFirstName] = useState(initial.firstName ?? "");
   const [lastName, setLastName] = useState(initial.lastName ?? "");
@@ -76,7 +96,7 @@ export function ProfileEditForm({
       if (!/^[a-z0-9_]{3,32}$/.test(nextUsername)) {
         setPending(false);
         setError(
-          "Profile address can only use lowercase letters, numbers and underscores (3–32 characters)."
+          "Username can only use lowercase letters, numbers and underscores (3–32 characters)."
         );
         return;
       }
@@ -87,12 +107,12 @@ export function ProfileEditForm({
       );
       if (rpcError) {
         setPending(false);
-        setError("Couldn't check the profile address. Please try again.");
+        setError("Couldn't check the username. Please try again.");
         return;
       }
       if (!available) {
         setPending(false);
-        setError(`The address “${nextUsername}” is already taken.`);
+        setError(`The username “${nextUsername}” is already taken.`);
         return;
       }
     }
@@ -142,12 +162,31 @@ export function ProfileEditForm({
 
     if (updateError) {
       setPending(false);
-      // Уникальный индекс по адресу мог отклонить на гонке: между
-      // проверкой выше и записью адрес мог занять кто-то другой. Ровно
+
+      // Пауза на смену username. Триггер guard_username_change кладёт
+      // дату прямо в текст ошибки (`username_cooldown:2026-09-20`) —
+      // разбираем её здесь, чтобы не считать то же самое второй раз и не
+      // показать человеку сырую ошибку Postgres.
+      //
+      // Это НЕ дублирование блокировки поля выше: поле блокируется по
+      // дате, прочитанной при загрузке страницы, а вкладка могла провисеть
+      // открытой сутки. Последнее слово всегда за базой.
+      const cooldown = /username_cooldown:(\d{4}-\d{2}-\d{2})/.exec(
+        updateError.message
+      );
+      if (cooldown) {
+        setError(
+          `You can change your username again on ${formatDayMonthYear(cooldown[1])}.`
+        );
+        return;
+      }
+
+      // Уникальный индекс по username мог отклонить на гонке: между
+      // проверкой выше и записью имя мог занять кто-то другой. Ровно
       // поэтому проверка в форме — удобство, а гарантия — индекс.
       setError(
         updateError.message.toLowerCase().includes("duplicate")
-          ? "That profile address is already taken."
+          ? "That username is already taken."
           : `Couldn't save: ${updateError.message}`
       );
       return;
@@ -272,7 +311,7 @@ export function ProfileEditForm({
             htmlFor="username"
             className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
           >
-            Profile address{" "}
+            Username{" "}
             <span className="font-normal text-zinc-500 dark:text-zinc-400">
               — soucampus.online/creator/{username || "…"}
             </span>
@@ -287,11 +326,31 @@ export function ProfileEditForm({
             // поломкой.
             onChange={(e) => setUsername(e.target.value.toLowerCase())}
             required
-            className="w-full rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500"
+            // Заблокировано, пока идёт месячная пауза. Это удобство, а не
+            // защита: настоящий отказ даёт триггер guard_username_change,
+            // и он же сработает, если поле разблокировать из инструментов
+            // разработчика. Смысл блокировки в другом — не дать человеку
+            // напечатать новое имя и узнать об отказе только после
+            // нажатия «Сохранить».
+            disabled={lockedUntil !== null}
+            className="w-full rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500"
           />
           <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            Lowercase letters, numbers and underscores. Changing it breaks
-            existing links to your profile.
+            {lockedUntil ? (
+              <>
+                You changed it recently — next change available on{" "}
+                <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                  {formatDayMonthYear(lockedUntil)}
+                </span>
+                .
+              </>
+            ) : (
+              <>
+                Lowercase letters, numbers and underscores. This is your login
+                and your profile link — you can change it once every{" "}
+                {USERNAME_COOLDOWN_DAYS} days, and old links stop working.
+              </>
+            )}
           </p>
         </div>
         <div className="grid grid-cols-2 gap-3">

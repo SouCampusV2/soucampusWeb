@@ -34,6 +34,7 @@ export default async function SettingsPage() {
       // выдуманного значения: форма покажет поле пустым и потребует
       // заполнить, а не сохранит молча что-то из ника.
       username: "",
+      usernameChangedAt: null,
       displayName: user.displayName ?? "",
       firstName: null,
       lastName: null,
