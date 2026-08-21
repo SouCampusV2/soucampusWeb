@@ -4,9 +4,9 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 // БД↔домен, как rowToProduct: снаружи camelCase, в БД snake_case.
 export type Profile = {
   /**
-   * Адрес профиля и логин: /creator/<username>. Отдельно от ника с
-   * 2026-08-21 (миграция 20260821120000) — до неё адрес считался из
-   * ника, и смена подписи уносила с собой все ссылки на профиль.
+   * ЕДИНСТВЕННОЕ имя человека: логин, адрес профиля /@<username> и то,
+   * что видно везде. Уникально без учёта регистра, хранится как введено.
+   * Менять можно раз в 30 дней (guard_username_change).
    */
   username: string;
   /**
@@ -17,12 +17,10 @@ export type Profile = {
    * как человек нажмёт «Сохранить» и получит отказ.
    */
   usernameChangedAt: string | null;
-  /** Как человека видно. Повторы РАЗРЕШЕНЫ — различает людей username. */
-  displayName: string;
   firstName: string | null;
   lastName: string | null;
   avatarUrl: string | null;
-  /** Текст «о себе» на публичной странице /creator/<username>. */
+  /** Текст «о себе» на публичной странице /@<username>. */
   bio: string | null;
   /**
    * Цвет ника (#rrggbb) или null. Ставить его вправе только купивший —
@@ -44,7 +42,7 @@ export async function readProfile(
   const { data, error } = await supabase
     .from("profiles")
     .select(
-      "username, username_changed_at, display_name, first_name, last_name, avatar_url, bio, name_color"
+      "username, username_changed_at, first_name, last_name, avatar_url, bio, name_color"
     )
     .eq("id", userId)
     .maybeSingle();
@@ -63,7 +61,6 @@ export async function readProfile(
   return {
     username: data.username,
     usernameChangedAt: data.username_changed_at ?? null,
-    displayName: data.display_name,
     firstName: data.first_name,
     lastName: data.last_name,
     avatarUrl: data.avatar_url,

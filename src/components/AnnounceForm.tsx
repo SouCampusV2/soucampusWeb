@@ -47,7 +47,7 @@ export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
       const recipient = recipients.find((r) => r.id === userId);
       setResult(
         userId
-          ? `Sent to ${recipient?.displayName ?? "the account"}. It's in their notifications now — they'll see the bell marked next time they open the site.`
+          ? `Sent to ${recipient?.username ?? "the account"}. It's in their notifications now — they'll see the bell marked next time they open the site.`
           : `Sent to ${sent} ${sent === 1 ? "account" : "accounts"} — everyone registered. It's in their notifications now; there's no way to take it back.`,
       );
       setTitle("");
@@ -79,7 +79,7 @@ export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
           <option value="">Everyone ({recipients.length} accounts)</option>
           {recipients.map((recipient) => (
             <option key={recipient.id} value={recipient.id}>
-              {recipient.displayName}
+              {recipient.username}
             </option>
           ))}
         </select>

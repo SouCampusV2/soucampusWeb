@@ -123,7 +123,7 @@ export async function notifyEveryone(
 }
 
 /** Аккаунт в выпадашке «кому» на странице рассылки. */
-export type Recipient = { id: string; displayName: string };
+export type Recipient = { id: string; username: string };
 
 /**
  * Все аккаунты — для выбора адресата в админке. Служебным ключом: чужие
@@ -138,8 +138,8 @@ export async function getRecipients(): Promise<Recipient[]> {
   try {
     const { data, error } = await getSupabaseAdmin()
       .from("profiles")
-      .select("id, display_name")
-      .order("display_name");
+      .select("id, username")
+      .order("username");
 
     if (error) {
       console.warn(`Список получателей недоступен: ${error.message}`);
@@ -147,7 +147,7 @@ export async function getRecipients(): Promise<Recipient[]> {
     }
     return (data ?? []).map((row) => ({
       id: row.id as string,
-      displayName: row.display_name as string,
+      username: row.username as string,
     }));
   } catch {
     return [];

@@ -98,7 +98,7 @@ export default async function AdminHomePage({
                     {...NEW_TAB}
                     className={`min-w-0 truncate ${INLINE_LINK}`}
                   >
-                    {c.displayName}
+                    {c.username}
                   </Link>
                   <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
                     {c.sales} sold · {c.maps}{" "}

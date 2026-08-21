@@ -62,7 +62,7 @@ export default async function AdminApplicationsPage() {
                     {...NEW_TAB}
                     className={INLINE_LINK}
                   >
-                    {application.displayName}
+                    {application.username}
                   </Link>
                 </h2>
                 <span className="text-sm text-zinc-500 dark:text-zinc-400">
@@ -147,7 +147,7 @@ export default async function AdminApplicationsPage() {
                   {...NEW_TAB}
                   className={`font-medium ${INLINE_LINK}`}
                 >
-                  {creator.displayName}
+                  {creator.username}
                 </Link>
                 <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
                   {creator.maps} {creator.maps === 1 ? "map" : "maps"}
@@ -155,7 +155,7 @@ export default async function AdminApplicationsPage() {
               </div>
               <RevokeCreatorButton
                 userId={creator.id}
-                displayName={creator.displayName}
+                username={creator.username}
               />
             </li>
           ))}

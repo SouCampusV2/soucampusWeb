@@ -1,6 +1,6 @@
 import { getSupabase } from "@/lib/supabase";
 
-// Публичный профиль пользователя — то, что видно на /creator/[handle].
+// Публичный профиль пользователя — то, что видно на /@<username>.
 // Читается из представления public_profiles (см. миграцию
 // 20260727130000_creators.sql): сама таблица profiles закрыта RLS
 // «только своя строка», наружу отдаётся ровно безопасный поднабор
@@ -8,14 +8,19 @@ import { getSupabase } from "@/lib/supabase";
 export type Creator = {
   id: string;
   /**
-   * Как человека видно: "SouCampus". МОЖЕТ ПОВТОРЯТЬСЯ — с 2026-08-21
-   * уникальности у ника нет, различает людей username.
+   * ЕДИНСТВЕННОЕ имя человека: "SouCampus". Оно же логин, оно же адрес
+   * профиля, оно же то, что видно везде. Уникально без учёта регистра.
+   *
+   * Двух имён у профиля было ровно полдня (20260821120000 разделила ник
+   * и адрес, 20260821150000 свела обратно): свободная повторяемая
+   * подпись давала «10000 SouCampus», а мелкий хэндл под крупным именем
+   * не читает никто.
    */
-  displayName: string;
+  username: string;
   /**
-   * Адрес профиля и логин: /creator/soucampus. Отдельная колонка с
-   * 20260821120000; до неё считался из ника на лету, и оттого смена
-   * ника ломала все ссылки на профиль.
+   * Оно же в нижнем регистре — для адреса /@soucampus и для поиска.
+   * Приезжает из вычисляемой колонки username_lower, а не считается
+   * здесь: сравнение должно попадать в индекс.
    */
   handle: string;
   avatarUrl: string | null;
@@ -44,6 +49,9 @@ type CreatorRow = {
   id: string;
   /** Из 20260821120000; у баз без неё колонки нет — см. fallback ниже. */
   username?: string | null;
+  /** Из 20260821150000 — вычисляемая база.lower(username). */
+  username_lower?: string | null;
+  /** ⚠️ Живёт до отдельной миграции: удаление идёт ПОСЛЕ деплоя. */
   display_name: string;
   avatar_url: string | null;
   bio: string | null;
@@ -56,31 +64,39 @@ type CreatorRow = {
 };
 
 /**
- * Адрес профиля.
+ * Адрес профиля: /@soucampus.
  *
- * ⚠️ Принимает username, а НЕ ник. До 2026-08-21 здесь стоял
- * `toHandle(displayName)` — ник, приведённый к нижнему регистру, — и это
- * была главная причина, по которой ник нельзя было менять: смена уносила
- * с собой адрес профиля, а освободившееся имя мог занять кто угодно.
- * Теперь адрес — собственная колонка, и от подписи он не зависит.
+ * ⚠️ Принимает handle — имя в НИЖНЕМ регистре. Само имя хранится как
+ * введено ("SouCampus"), но адрес строчный: два адреса на один профиль
+ * поисковику незачем.
+ *
+ * Почему `/@`, а не `/creator/`: адрес называл РОЛЬ, а роль меняется —
+ * сегодня клиент, завтра автор, — профиль же остаётся тем же. Старый
+ * адрес живёт редиректом в next.config.ts (тот же приём, что у
+ * /shop → /marketplace).
+ *
+ * ⚠️ В файловой системе маршрут лежит по пути /u/[username], а не по
+ * `@`: в App Router папка, начинающаяся с @, — это параллельный слот,
+ * а не сегмент адреса. Красивый адрес даёт rewrite в next.config.ts.
  *
  * encodeURIComponent оставлен нарочно, хотя ограничение
- * profiles_username_format уже не пускает в username ничего, кроме
- * [a-z0-9_]: экранирование того, что и так безопасно, ничего не стоит,
- * а полагаться на то, что ограничение в базе никогда не ослабят, —
- * стоит. Сюда значение приезжает из БД, то есть это ввод пользователя.
+ * profiles_username_format уже не пускает в имя ничего, кроме
+ * [A-Za-z0-9_]: экранирование того, что и так безопасно, ничего не
+ * стоит, а полагаться на то, что ограничение в базе никогда не ослабят,
+ * — стоит. Сюда значение приезжает из БД, то есть это ввод пользователя.
  */
 export function creatorHref(handle: string): string {
-  return `/creator/${encodeURIComponent(handle)}`;
+  return `/@${encodeURIComponent(handle)}`;
 }
 
 function rowToCreator(row: CreatorRow): Creator {
   return {
     id: row.id,
-    displayName: row.display_name,
-    // Фоллбэк на ник — только для базы без миграции 20260821120000.
-    // Совпадает со старым поведением, поэтому ссылки там не ломаются.
-    handle: row.username ?? row.display_name.toLowerCase(),
+    // Фоллбэк на display_name — только для базы без миграции
+    // 20260821120000. Совпадает со старым поведением, поэтому ссылки
+    // там не ломаются.
+    username: row.username ?? row.display_name,
+    handle: (row.username_lower ?? row.username ?? row.display_name).toLowerCase(),
     avatarUrl: row.avatar_url,
     bio: row.bio,
     isVerified: row.is_verified,
@@ -101,7 +117,7 @@ export function isHexColor(value: unknown): value is string {
 }
 
 const CREATOR_FIELDS =
-  "id, username, display_name, avatar_url, bio, is_verified, is_creator, name_color, is_client";
+  "id, username, username_lower, display_name, avatar_url, bio, is_verified, is_creator, name_color, is_client";
 
 // Тот же набор без is_creator — запасной путь, пока миграция
 // 20260811120000 не прогнана. PostgREST на незнакомую колонку отвечает
@@ -147,20 +163,22 @@ export async function getAllCreators(): Promise<Creator[]> {
 }
 
 export async function getCreatorByHandle(handle: string): Promise<Creator | null> {
-  // eq по username, а не ilike по нику. Раньше сравнивали
-  // регистронезависимо, потому что хэндл считался из ника; теперь
-  // username хранится уже строчным (ограничение profiles_username_format),
-  // и точное сравнение — не придирчивость, а единственно верный вариант:
-  // ilike заставил бы базу игнорировать уникальный индекс.
+  // eq по username_lower — вычисляемой колонке (миграция 20260821150000).
   //
-  // Адрес приводим к нижнему регистру сами: /creator/SouCampus набирают
-  // руками и присылают в ссылках, и отдавать за это 404 было бы
-  // придиркой к посетителю.
+  // Само имя хранится КАК ВВЕДЕНО ("SouCampus"), потому что оно видимое,
+  // а уникально оно без учёта регистра. Сравнивать поэтому надо
+  // приведённые значения — но `where lower(username) = $1` из клиента не
+  // выразить: PostgREST фильтрует только по колонкам. Остался бы ilike,
+  // а он функциональный индекс не использует и читал бы таблицу целиком
+  // на каждый заход в профиль. Отсюда и колонка.
+  //
+  // Адрес приводим к нижнему регистру сами: /@SouCampus набирают руками
+  // и присылают в ссылках, и отдавать за это 404 было бы придиркой.
   const query = (fields: string) =>
     getSupabase()
       .from("public_profiles")
       .select(fields)
-      .eq("username", handle.toLowerCase())
+      .eq("username_lower", handle.toLowerCase())
       .maybeSingle();
 
   let { data, error } = await query(CREATOR_FIELDS);

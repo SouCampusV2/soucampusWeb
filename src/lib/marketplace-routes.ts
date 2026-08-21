@@ -26,7 +26,20 @@ const EXACT = new Set([
   "/notifications",
 ]);
 
-const PREFIXES = ["/marketplace/", "/profile", "/resources", "/creator"];
+// "/@" и "/u/" — профиль. Оба, потому что адрес у него один снаружи и
+// другой внутри: /@soucampus это rewrite на /u/soucampus (next.config.ts).
+// usePathname() отдаёт то, что видит человек, то есть «/@…», — но зайти
+// напрямую по /u/… тоже можно, и навбар там обязан выглядеть так же.
+// "/creator" остаётся ради /creator/upload — сама страница профиля с
+// этого адреса ушла 2026-08-21.
+const PREFIXES = [
+  "/marketplace/",
+  "/profile",
+  "/resources",
+  "/creator",
+  "/@",
+  "/u/",
+];
 
 export function isMarketplaceRoute(pathname: string): boolean {
   if (EXACT.has(pathname)) return true;

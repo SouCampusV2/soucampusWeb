@@ -44,7 +44,6 @@ export function ProfileEditForm({
     until.setUTCDate(until.getUTCDate() + USERNAME_COOLDOWN_DAYS);
     return until > new Date() ? until : null;
   })();
-  const [displayName, setDisplayName] = useState(initial.displayName);
   const [firstName, setFirstName] = useState(initial.firstName ?? "");
   const [lastName, setLastName] = useState(initial.lastName ?? "");
   const [bio, setBio] = useState(initial.bio ?? "");
@@ -84,27 +83,34 @@ export function ProfileEditForm({
 
     const supabase = createSupabaseBrowser();
 
-    // Ник (display_name) больше НЕ проверяется на занятость: с
-    // 2026-08-21 повторы разрешены, различает людей username.
-    //
-    // Форму адреса проверяем здесь только ради внятного сообщения —
-    // настоящее правило стоит в базе (ограничение
-    // profiles_username_format). Форма, повторяющая правило базы, ничего
+    // Имя проверяем здесь только ради внятного сообщения — настоящие
+    // правила стоят в базе: форма (profiles_username_format), занятость
+    // (уникальный индекс по lower(username)), пауза
+    // (guard_username_change) и зарезервированные имена
+    // (guard_reserved_username). Форма, повторяющая правило базы, ничего
     // не защищает: запись идёт из браузера прямо в profiles.
-    const nextUsername = username.trim().toLowerCase();
+    //
+    // Регистр СОХРАНЯЕМ: имя видимое, и «SouCampus» должен остаться
+    // «SouCampus». Уникальность при этом без учёта регистра — за неё
+    // отвечает индекс, а не эта строка.
+    const nextUsername = username.trim();
+    const renamed = nextUsername.toLowerCase() !== initial.username.toLowerCase();
+
     if (nextUsername !== initial.username) {
-      if (!/^[a-z0-9_]{3,32}$/.test(nextUsername)) {
+      if (!/^[A-Za-z0-9_]{3,32}$/.test(nextUsername)) {
         setPending(false);
         setError(
-          "Username can only use lowercase letters, numbers and underscores (3–32 characters)."
+          "Username can only use letters, numbers and underscores (3–32 characters)."
         );
         return;
       }
 
-      const { data: available, error: rpcError } = await supabase.rpc(
-        "username_available",
-        { name: nextUsername }
-      );
+      // Только при настоящем переименовании: смена регистра своего же
+      // имени («soucampus» → «SouCampus») занятой его не делает, а
+      // проверка сказала бы, что имя занято — им самим.
+      const { data: available, error: rpcError } = renamed
+        ? await supabase.rpc("username_available", { name: nextUsername })
+        : { data: true, error: null };
       if (rpcError) {
         setPending(false);
         setError("Couldn't check the username. Please try again.");
@@ -143,7 +149,6 @@ export function ProfileEditForm({
       .from("profiles")
       .update({
         username: nextUsername,
-        display_name: displayName,
         first_name: firstName.trim() || null,
         last_name: lastName.trim() || null,
         // Пустое поле — это null, а не пустая строка: «биографии нет» и
@@ -198,9 +203,11 @@ export function ProfileEditForm({
     // USER_UPDATED → useUser обновляет навбар сразу, без перезагрузки.
     await supabase.auth.updateUser({
       data: {
-        display_name: displayName,
-        // Копия адреса — из неё навбар строит ссылку «мой профиль», не
-        // ходя за ней в базу на каждой странице (см. Navbar).
+        // Копия имени — из неё навбар берёт и подпись, и ссылку «мой
+        // профиль», не ходя за ними в базу на каждой странице.
+        // display_name дублируем, пока колонка жива: на проде ещё
+        // работает код, который читает её из метаданных.
+        display_name: nextUsername,
         username: nextUsername,
         avatar_url: nextAvatarUrl,
       },
@@ -269,17 +276,39 @@ export function ProfileEditForm({
       </div>
 
       <div className="mt-6 space-y-4">
-        {/* Ник и квадратик цвета — одной строкой. Цвет относится именно
-            к нику, и стоять он должен рядом с ним, а не отдельной
-            секцией ниже: так связь видна без подписи. */}
+        {/* ОДНО имя, и квадратик цвета рядом с ним.
+            До вечера 21.08 здесь было два поля — «Display name» и
+            «Profile address», — и это была ошибка: человеку незачем
+            придумывать два имени. Второе поле убрано вместе с колонкой
+            (миграция 20260821150000). */}
         <div className="flex items-end gap-3">
           <div className="min-w-0 flex-1">
-            <Field
-              id="displayName"
-              label="Display name"
-              value={displayName}
-              onChange={setDisplayName}
+            <label
+              htmlFor="username"
+              className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
+            >
+              Username{" "}
+              <span className="font-normal text-zinc-500 dark:text-zinc-400">
+                — soucampus.online/@{username.toLowerCase() || "…"}
+              </span>
+            </label>
+            <input
+              id="username"
+              type="text"
+              value={username}
+              // Регистр НЕ трогаем: имя видимое, и «SouCampus» должен
+              // остаться «SouCampus». Строчным его делает только адрес
+              // (подпись выше), а уникальность и так без учёта регистра.
+              onChange={(e) => setUsername(e.target.value)}
               required
+              // Заблокировано, пока идёт месячная пауза. Это удобство, а
+              // не защита: настоящий отказ даёт триггер
+              // guard_username_change, и он сработает, даже если поле
+              // разблокировать из инструментов разработчика. Смысл в
+              // другом — не дать человеку напечатать новое имя и узнать
+              // об отказе только после нажатия «Сохранить».
+              disabled={lockedUntil !== null}
+              className="w-full rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500"
             />
           </div>
 
@@ -291,75 +320,36 @@ export function ProfileEditForm({
             <NameColorPicker
               value={nameColor}
               onChange={setNameColor}
-              previewName={displayName}
+              previewName={username}
             />
           )}
         </div>
 
-        {/* Адрес профиля — отдельное поле с 2026-08-21 (миграция
-            20260821120000). Раньше его роль тянул ник, и оттого смену
-            ника приходилось бы запрещать: она уносила с собой адрес
-            страницы, а освободившееся имя мог занять кто угодно.
-            Теперь подпись меняется свободно, а адрес — осознанно.
-
-            ⚠️ Ссылки на старый адрес после смены НЕ переезжают, и старое
-            имя освобождается: пауза между сменами и резерв отпущенных
-            имён обсуждены, но сознательно не сделаны (см. комментарий
-            в самой миграции). Подпись под полем говорит об этом прямо. */}
-        <div>
-          <label
-            htmlFor="username"
-            className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
-          >
-            Username{" "}
-            <span className="font-normal text-zinc-500 dark:text-zinc-400">
-              — soucampus.online/creator/{username || "…"}
-            </span>
-          </label>
-          <input
-            id="username"
-            type="text"
-            value={username}
-            // Приводим к нижнему регистру прямо при вводе, а не при
-            // сохранении: иначе человек печатает «SouCampus», видит
-            // «SouCampus», а сохраняется другое — и он вправе счесть это
-            // поломкой.
-            onChange={(e) => setUsername(e.target.value.toLowerCase())}
-            required
-            // Заблокировано, пока идёт месячная пауза. Это удобство, а не
-            // защита: настоящий отказ даёт триггер guard_username_change,
-            // и он же сработает, если поле разблокировать из инструментов
-            // разработчика. Смысл блокировки в другом — не дать человеку
-            // напечатать новое имя и узнать об отказе только после
-            // нажатия «Сохранить».
-            disabled={lockedUntil !== null}
-            className="w-full rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 disabled:cursor-not-allowed disabled:opacity-60 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500"
-          />
-          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-            {lockedUntil ? (
-              <>
-                You changed it recently — next change available on{" "}
-                <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                  {formatDayMonthYear(lockedUntil)}
-                </span>
-                .
-              </>
-            ) : (
-              <>
-                Lowercase letters, numbers and underscores. This is your login
-                and your profile link — you can change it once every{" "}
-                {USERNAME_COOLDOWN_DAYS} days, and old links stop working.
-              </>
-            )}
-          </p>
-        </div>
+        <p className="-mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+          {lockedUntil ? (
+            <>
+              You changed it recently — next change available on{" "}
+              <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                {formatDayMonthYear(lockedUntil)}
+              </span>
+              .
+            </>
+          ) : (
+            <>
+              Letters, numbers and underscores. This is your name, your login
+              and your profile link at once — you can change it once every{" "}
+              {USERNAME_COOLDOWN_DAYS} days, and the old one is then free for
+              anyone else to take.
+            </>
+          )}
+        </p>
         <div className="grid grid-cols-2 gap-3">
           <Field id="firstName" label="First name" value={firstName} onChange={setFirstName} />
           <Field id="lastName" label="Last name" value={lastName} onChange={setLastName} />
         </div>
 
         {/* Bio — единственное публичное поле формы: оно показывается всем
-            на /creator/<ник>, в отличие от имени/фамилии. Отдельная
+            на /@<username>, в отличие от имени/фамилии. Отдельная
             подпись об этом, чтобы никто не написал сюда личное по
             привычке. */}
         <div>

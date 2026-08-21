@@ -48,26 +48,33 @@ export function Navbar() {
 
   // Ник и аватар — из user_metadata (их синхронизирует ProfileEditForm),
   // чтобы навбар не ходил в БД на каждой странице.
+  // Одно имя на всё (миграция 20260821150000): им подписан профиль, из
+  // него же строится ссылка. display_name читаем запасным вариантом —
+  // у вкладок, открытых до деплоя, в метаданных лежит только он.
   const displayName =
-    (user?.user_metadata?.display_name as string | undefined) ?? user?.email;
+    (user?.user_metadata?.username as string | undefined) ??
+    (user?.user_metadata?.display_name as string | undefined) ??
+    user?.email;
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
 
-  // Ссылка на СВОЙ публичный профиль — /creator/<username>.
+  // Ссылка на СВОЙ публичный профиль — /@<username>.
   //
-  // ⚠️ Строится из username, а НЕ из ника: с 2026-08-21 это разные вещи
-  // (миграция 20260821120000), и ник в адресе больше не значит ничего.
-  // До этого здесь стоял creatorHref(display_name), а ещё раньше —
-  // захардкоженный /creator/soucampus, из-за чего любой залогиненный
-  // уходил на витрину бренда (баг владельца 2026-07-27).
+  // Раньше здесь стоял захардкоженный /creator/soucampus, из-за чего
+  // любой залогиненный уходил на витрину бренда (баг владельца
+  // 2026-07-27).
   //
   // Метаданные, а не запрос в БД: навбар рисуется на каждой странице, и
   // поход в базу ради одной ссылки стоил бы дороже всего остального
-  // навбара. Копию username кладёт туда форма настроек и регистрация.
+  // навбара. Копию имени кладут туда форма настроек и регистрация.
   // У аккаунта, который с 21.08 ещё не сохранялся, копии нет — тогда
   // ведём на /profile: это в любом случае своя страница, просто личная
   // вместо публичной.
-  const handle = user?.user_metadata?.username as string | undefined;
-  const ownProfileHref = handle ? creatorHref(handle) : "/profile";
+  //
+  // toLowerCase: имя хранится как введено («SouCampus»), адрес строчный.
+  const handle =
+    (user?.user_metadata?.username as string | undefined) ??
+    (user?.user_metadata?.display_name as string | undefined);
+  const ownProfileHref = handle ? creatorHref(handle.toLowerCase()) : "/profile";
 
   // Внутри магазина (каталог, страница товара, корзина, поддержка, а также
   // вход/регистрация — покупка требует аккаунта, это часть флоу магазина)

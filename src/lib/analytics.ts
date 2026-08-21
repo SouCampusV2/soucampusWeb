@@ -86,13 +86,7 @@ export type Overview = {
   days: DayPoint[];
   range: Range;
   topProducts: { id: string; title: string; sales: number; revenueCents: number }[];
-  topCreators: {
-    id: string;
-    displayName: string;
-    username: string;
-    sales: number;
-    maps: number;
-  }[];
+  topCreators: { id: string; username: string; sales: number; maps: number }[];
 };
 
 type OrderRow = { id: string; total_cents: number; customer_email: string; created_at: string };
@@ -153,7 +147,7 @@ export async function getOverview(
           .in("order_id", orderRows.map((o) => o.id))
       : Promise.resolve({ data: [] as ItemRow[], error: null }),
     db.from("products").select("id, title, creator_id, state, creator_active, deleted_by"),
-    db.from("profiles").select("id, display_name, username, is_creator"),
+    db.from("profiles").select("id, username, is_creator"),
   ]);
 
   const itemRows = (items.data ?? []) as ItemRow[];
@@ -167,16 +161,12 @@ export async function getOverview(
   }[];
   const profileRows = (profiles.data ?? []) as {
     id: string;
-    display_name: string;
     username: string;
     is_creator: boolean | null;
   }[];
 
   const titles = new Map(productRows.map((p) => [p.id, p.title]));
-  // Ник для показа и username для ссылки — разные колонки с 2026-08-21.
-  const names = new Map(
-    profileRows.map((p) => [p.id, { displayName: p.display_name, username: p.username }])
-  );
+  const names = new Map(profileRows.map((p) => [p.id, p.username]));
 
   const perProduct = new Map<string, { sales: number; revenueCents: number }>();
   for (const item of itemRows) {
@@ -201,12 +191,7 @@ export async function getOverview(
   }
 
   const topCreators = [...perCreator.entries()]
-    .map(([id, v]) => ({
-      id,
-      displayName: names.get(id)?.displayName ?? "—",
-      username: names.get(id)?.username ?? "",
-      ...v,
-    }))
+    .map(([id, v]) => ({ id, username: names.get(id) ?? "—", ...v }))
     .sort((a, b) => b.sales - a.sales || b.maps - a.maps)
     .slice(0, 5);
 
