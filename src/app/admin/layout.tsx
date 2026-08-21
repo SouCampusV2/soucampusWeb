@@ -83,6 +83,12 @@ export default async function AdminLayout({
               Creators
             </Link>
             <Link
+              href="/admin/comments"
+              className="shrink-0 whitespace-nowrap font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+            >
+              Comments
+            </Link>
+            <Link
               href="/admin/announce"
               className="shrink-0 whitespace-nowrap font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
             >

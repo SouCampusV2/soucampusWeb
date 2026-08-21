@@ -8,6 +8,8 @@ import { getAllProducts, getProduct, getProductStats } from "@/lib/products";
 import { creatorHref, getCreatorsById } from "@/lib/creators";
 import { getViewCount, VIEW_PATHS } from "@/lib/views";
 import { getReactionCounts, getReactionOptions } from "@/lib/reactions";
+import { getComments } from "@/lib/comments";
+import { CommentSection } from "@/components/CommentSection";
 import { ReactionButton } from "@/components/ReactionButton";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductGallery } from "@/components/ProductGallery";
@@ -125,6 +127,10 @@ export default async function ProductPage({
   const reactionCount = reaction
     ? ((await getReactionCounts([product.id])).get(product.id) ?? 0)
     : 0;
+
+  // Первый экран ленты — с сервера: он верен на момент сборки страницы.
+  // Дальше её перечитывает сам компонент (см. CommentSection).
+  const comments = await getComments(product.id);
   const rating = stats?.rating ?? 0;
   const ratingCount = stats?.ratingCount ?? 0;
   const salesCount = stats?.salesCount ?? 0;
@@ -205,6 +211,15 @@ export default async function ProductPage({
           <div
             className={`mt-4 leading-7 text-zinc-700 dark:text-zinc-300 ${RICH_TEXT_CLASS}`}
             dangerouslySetInnerHTML={{ __html: sanitizeDescription(product.description) }}
+          />
+
+          {/* Комментарии — в левой колонке, под описанием: это часть
+              разговора о карте, а не действие над ней. Правая колонка
+              отдана покупке и характеристикам. */}
+          <CommentSection
+            productId={product.id}
+            initial={comments}
+            creatorId={product.creatorId}
           />
         </div>
 
