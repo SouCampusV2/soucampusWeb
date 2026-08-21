@@ -22,10 +22,10 @@ import { REVOCATION_TEMPLATES, buildReasonMessage } from "@/lib/rejection";
 // разу, а приписка остаётся для частностей.
 export function RevokeCreatorButton({
   userId,
-  displayName,
+  username,
 }: {
   userId: string;
-  displayName: string;
+  username: string;
 }) {
   const refresh = useRefresh();
   const [asking, setAsking] = useState(false);
@@ -84,7 +84,7 @@ export function RevokeCreatorButton({
   return (
     <div className="w-full rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800">
       <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300">
-        Why is {displayName} losing creator access?
+        Why is {username} losing creator access?
       </p>
       {/* Что произойдёт — до кнопки, а не после. Раньше здесь стояло
           «карты остаются на витрине, снимайте отдельно»; теперь всё

@@ -23,7 +23,7 @@ export type PendingProduct = {
   createdAt: string;
   /** Подписанная ссылка на файл карты; null — файла нет или подпись не удалась. */
   fileUrl: string | null;
-  creator: { id: string; displayName: string; username: string } | null;
+  creator: { id: string; username: string } | null;
   /**
    * Откуда карта пришла в очередь (колонка submission_kind, миграция
    * 20260811150000). Первая заявка, исправление после отказа и возврат
@@ -84,18 +84,16 @@ export async function getPendingProducts(): Promise<PendingProduct[]> {
   const creatorIds = Array.from(
     new Set(rows.map((r) => r.creator_id).filter((id): id is string => Boolean(id)))
   );
-  // Ник И адрес профиля: с 2026-08-21 это разные колонки, и ссылку
-  // строит username (см. creators.ts → creatorHref). Считать адрес из
-  // ника здесь было бы восстановлением ровно того бага, ради которого
-  // колонки и разъехались.
-  const names = new Map<string, { displayName: string; username: string }>();
+  // Имя человека — ОДНО (миграция 20260821150000): оно же логин, оно же
+  // адрес профиля. display_name живёт в базе до отдельной миграции
+  // (удаление идёт после деплоя) и повторяет username триггером.
+  const names = new Map<string, string>();
   if (creatorIds.length > 0) {
     const { data: profiles } = await db
       .from("profiles")
-      .select("id, display_name, username")
+      .select("id, username")
       .in("id", creatorIds);
-    for (const p of profiles ?? [])
-      names.set(p.id, { displayName: p.display_name, username: p.username });
+    for (const p of profiles ?? []) names.set(p.id, p.username);
   }
 
   return Promise.all(
@@ -122,11 +120,7 @@ export async function getPendingProducts(): Promise<PendingProduct[]> {
             )
           : null,
         creator: row.creator_id
-          ? {
-          id: row.creator_id,
-          displayName: names.get(row.creator_id)?.displayName ?? "—",
-          username: names.get(row.creator_id)?.username ?? "",
-        }
+          ? { id: row.creator_id, username: names.get(row.creator_id) ?? "—" }
           : null,
         submissionKind: row.submission_kind ?? "first",
         suspensionReason: row.suspension_reason,

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 // Сброс кэша публичного профиля после правки.
 //
-// ЗАЧЕМ ЭТО ВООБЩЕ СУЩЕСТВУЕТ. Страница /creator/[username] собирается
+// ЗАЧЕМ ЭТО ВООБЩЕ СУЩЕСТВУЕТ. Страница профиля собирается
 // заранее (generateStaticParams) и живёт с revalidate = 60, унаследованным
 // от группы (site). А форма настроек пишет в profiles ПРЯМО ИЗ БРАУЗЕРА —
 // нашего серверного кода в этом пути нет вовсе. Значит, и сбросить кэш
@@ -24,5 +24,8 @@ import { revalidatePath } from "next/cache";
 // которая и так пересобирается раз в минуту.
 export async function revalidateProfile(username: string) {
   if (!username) return;
-  revalidatePath(`/creator/${username}`);
+  // ⚠️ Путь МАРШРУТА, а не тот, что видит человек. Красивый /@<имя> —
+  // это rewrite на /u/<имя> (next.config.ts), а revalidatePath работает
+  // с реальным маршрутом: сбросить «/@soucampus» значит сбросить ничего.
+  revalidatePath(`/u/${username.toLowerCase()}`);
 }

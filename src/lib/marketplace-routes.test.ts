@@ -42,8 +42,12 @@ describe("isMarketplaceRoute", () => {
   });
 
   it("профиль продавца — витрина магазина", () => {
-    expect(isMarketplaceRoute("/creator/soucampus")).toBe(true);
     expect(isMarketplaceRoute("/creator/upload")).toBe(true);
+    // Профиль. Оба адреса, потому что снаружи он /@name, а внутри
+    // /u/name (rewrite в next.config.ts): usePathname() отдаёт первый,
+    // но зайти напрямую можно и по второму.
+    expect(isMarketplaceRoute("/@soucampus")).toBe(true);
+    expect(isMarketplaceRoute("/u/soucampus")).toBe(true);
   });
 
   it("старые адреса профиля, оставленные редиректами", () => {

@@ -52,7 +52,7 @@ export function ProductCard({
     creator ??
     (product.creator
       ? {
-          name: product.creator.displayName,
+          name: product.creator.username,
           href: `/creator/${encodeURIComponent(product.creator.handle)}`,
           isVerified: product.creator.isVerified,
         }

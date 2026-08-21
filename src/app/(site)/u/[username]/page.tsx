@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import { SealCheck, Star, UserCircle } from "@phosphor-icons/react/dist/ssr";
 import { getAllProductsWithStats } from "@/lib/products";
-import { getAllCreators, getCreatorByHandle } from "@/lib/creators";
+import { getAllCreators, getCreatorByHandle, creatorHref } from "@/lib/creators";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/Button";
 import { PageGlow } from "@/components/PageGlow";
@@ -18,7 +18,7 @@ const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 // поднабор колонок, см. lib/creators.ts), карты фильтруются по
 // products.creator_id.
 //
-// Хэндл в адресе — ник в нижнем регистре (/creator/soucampus). Ники
+// Хэндл в адресе — имя в нижнем регистре (/@soucampus). Имена
 // уникальны регистронезависимо, так что отображение однозначно.
 
 // Заранее собираем страницы тех, у кого есть карты: их открывают чаще
@@ -47,11 +47,11 @@ export async function generateMetadata({
   if (!creator) return { title: "Creator not found" };
 
   const description =
-    creator.bio ?? `${creator.displayName} on SouCampus builds.`;
+    creator.bio ?? `${creator.username} on SouCampus builds.`;
   return {
-    title: `${creator.displayName} — creator`,
+    title: `${creator.username} — creator`,
     description,
-    alternates: { canonical: `/creator/${creator.handle}` },
+    alternates: { canonical: creatorHref(creator.handle) },
   };
 }
 
@@ -116,7 +116,7 @@ export default async function CreatorPage({
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={creator.avatarUrl}
-                alt={creator.displayName}
+                alt={creator.username}
                 // Аватар-фото кадрируем (object-cover), а лого из public/
                 // показываем целиком с полями: у знака есть собственные
                 // границы, и обрезать его под кружок нельзя. Отличаем по
@@ -152,7 +152,7 @@ export default async function CreatorPage({
                   в базе и isHexColor на выходе, — потому что отсюда оно
                   попадает прямо в разметку. */}
               <span style={creator.nameColor ? { color: creator.nameColor } : undefined}>
-                {creator.displayName}
+                {creator.username}
               </span>
               {/* Галочка — только у подтверждённых (is_verified в БД). */}
               {creator.isVerified && (
@@ -231,7 +231,7 @@ export default async function CreatorPage({
         <h2
           className={`${displayFont.className} text-2xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-3xl`}
         >
-          Maps by {creator.displayName}
+          Maps by {creator.username}
         </h2>
         {(
           <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -240,8 +240,8 @@ export default async function CreatorPage({
                 key={product.slug}
                 product={product}
                 creator={{
-                  name: creator.displayName,
-                  href: `/creator/${creator.handle}`,
+                  name: creator.username,
+                  href: creatorHref(creator.handle),
                   isVerified: creator.isVerified,
                 }}
                 className="h-full"

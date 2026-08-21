@@ -5,6 +5,7 @@ import type { Metadata } from "next";
 import { sanitizeDescription } from "@/lib/sanitize";
 import { SealCheck } from "@phosphor-icons/react/dist/ssr";
 import { getAllProducts, getProduct, getProductStats } from "@/lib/products";
+import { creatorHref, getCreatorsById } from "@/lib/creators";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductGallery } from "@/components/ProductGallery";
 import { RICH_TEXT_CLASS } from "@/lib/rich-text";
@@ -90,6 +91,16 @@ export default async function ProductPage({
   // Агрегаты для этого товара (оценки/покупки). Устойчиво: если статистика
   // недоступна — нули, страница не падает.
   const stats = (await getProductStats()).get(product.id);
+
+  // Автор. getProduct отдаёт только creatorId — связать products с
+  // profiles вложенной выборкой PostgREST нельзя (внешний ключ ведёт на
+  // закрытую RLS таблицу, см. lib/creators.ts), поэтому профиль
+  // приезжает отдельным запросом. На витрине это же делает
+  // getAllProductsWithStats; здесь карта одна, и тянуть ради неё
+  // весь каталог незачем.
+  const creator = product.creatorId
+    ? (await getCreatorsById()).get(product.creatorId)
+    : undefined;
   const rating = stats?.rating ?? 0;
   const ratingCount = stats?.ratingCount ?? 0;
   const salesCount = stats?.salesCount ?? 0;
@@ -101,16 +112,23 @@ export default async function ProductPage({
       <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl">
         {product.title}
       </h1>
-      <p className="mt-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-        by{" "}
-        <Link
-          href="/creator/soucampus"
-          className={`inline-flex items-center gap-1 ${INLINE_LINK}`}
-        >
-          SouCampus
-          <SealCheck size={13} weight="fill" aria-hidden />
-        </Link>
-      </p>
+      {/* Автор берётся из самой карты, а не пишется здесь руками.
+          До 2026-08-21 тут стояло захардкоженное «SouCampus» со ссылкой
+          на его профиль: пока автор один, это работало и выглядело
+          правдой. С первым чужим автором стало бы прямым враньём —
+          чужая карта под нашим именем. */}
+      {creator && (
+        <p className="mt-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+          by{" "}
+          <Link
+            href={creatorHref(creator.handle)}
+            className={`inline-flex items-center gap-1 ${INLINE_LINK}`}
+          >
+            {creator.username}
+            {creator.isVerified && <SealCheck size={13} weight="fill" aria-hidden />}
+          </Link>
+        </p>
+      )}
       <p className="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400">{product.summary}</p>
 
       {/* Рейтинг + покупки — под заголовком, как на витрине. */}

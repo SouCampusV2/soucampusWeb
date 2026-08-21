@@ -132,7 +132,7 @@ function CatalogRowItem({
                 {...NEW_TAB}
                 className={`font-medium ${INLINE_LINK}`}
               >
-                {product.creator.displayName}
+                {product.creator.username}
               </Link>
             ) : (
               "—"

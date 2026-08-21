@@ -136,8 +136,7 @@ export async function getSubmissionBlock(
 /** Действующий креатор в списке админки. */
 export type CreatorRow = {
   id: string;
-  displayName: string;
-  /** Адрес профиля. Отдельно от ника с 2026-08-21 — см. creatorHref. */
+  /** Единственное имя человека — оно же адрес профиля (20260821150000). */
   username: string;
   maps: number;
 };
@@ -154,20 +153,16 @@ export async function getCreators(): Promise<CreatorRow[]> {
 
   const { data, error } = await db
     .from("profiles")
-    .select("id, display_name, username")
+    .select("id, username")
     .eq("is_creator", true)
-    .order("display_name");
+    .order("username");
 
   if (error) {
     console.warn(`Список креаторов недоступен: ${error.message}`);
     return [];
   }
 
-  const rows = (data ?? []) as {
-    id: string;
-    display_name: string;
-    username: string;
-  }[];
+  const rows = (data ?? []) as { id: string; username: string }[];
   if (rows.length === 0) return [];
 
   // Карты — одним запросом на весь список, а не по запросу на человека.
@@ -187,7 +182,6 @@ export async function getCreators(): Promise<CreatorRow[]> {
 
   return rows.map((row) => ({
     id: row.id,
-    displayName: row.display_name,
     username: row.username,
     maps: counts.get(row.id) ?? 0,
   }));
@@ -198,11 +192,7 @@ export async function getCreators(): Promise<CreatorRow[]> {
  * RLS, а модератор как раз не автор (тот же случай, что у очереди карт).
  */
 export async function getPendingApplications(): Promise<
-  (CreatorApplication & {
-    displayName: string;
-    username: string;
-    email: string | null;
-  })[]
+  (CreatorApplication & { username: string; email: string | null })[]
 > {
   const db = getSupabaseAdmin();
 
@@ -225,14 +215,13 @@ export async function getPendingApplications(): Promise<
   // Ники — одним запросом на всю очередь.
   const { data: profiles } = await db
     .from("profiles")
-    .select("id, display_name, username")
+    .select("id, username")
     .in(
       "id",
       rows.map((r) => r.user_id)
     );
-  const names = new Map<string, { displayName: string; username: string }>();
-  for (const p of profiles ?? [])
-    names.set(p.id, { displayName: p.display_name, username: p.username });
+  const names = new Map<string, string>();
+  for (const p of profiles ?? []) names.set(p.id, p.username);
 
   // Адрес берём из auth.users: в profiles его нет, а владельцу он нужен —
   // по нему он и ответит человеку, пока нет раздела сообщений.
@@ -244,8 +233,7 @@ export async function getPendingApplications(): Promise<
 
   return rows.map((row) => ({
     ...toApplication(row),
-    displayName: names.get(row.user_id)?.displayName ?? "—",
-    username: names.get(row.user_id)?.username ?? "",
+    username: names.get(row.user_id) ?? "—",
     email: emails.get(row.user_id) ?? null,
   }));
 }

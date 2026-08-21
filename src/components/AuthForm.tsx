@@ -26,7 +26,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [displayName, setDisplayName] = useState("");
+  const [username, setUsername] = useState("");
   const [pwTouched, setPwTouched] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
@@ -45,23 +45,37 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
     const supabase = createSupabaseBrowser();
 
     if (isSignup) {
-      // Занятость ника здесь БОЛЬШЕ НЕ ПРОВЕРЯЕТСЯ, и это не упущение.
-      // С 2026-08-21 (миграция 20260821120000) display_name перестал
-      // быть уникальным: двое вправе называться одинаково, различает их
-      // username. Адрес профиля новичку подбирает база (handle_new_user)
-      // — из ника, а если такой уже занят, с хвостом из id. Поменять его
-      // можно в настройках.
+      // Имя проверяем на занятость ДО регистрации: profiles аноним читать
+      // не может (RLS), поэтому спрашиваем функцию username_available.
+      // Так человек видит понятное «имя занято», а не сырую ошибку
+      // триггера — и, главное, не теряет уже введённые пароль и почту.
       //
-      // Спрашивать адрес на регистрации отдельным полем сознательно не
-      // стали: это третье поле подряд, которое человек обязан придумать,
-      // ещё не увидев сайта. Цена — у части аккаунтов адрес будет с
-      // хвостом, пока они его не поправят.
+      // Настоящую уникальность держит индекс по lower(username): между
+      // этой проверкой и вставкой имя может занять кто-то другой. Тогда
+      // сработает он, и регистрация откатится целиком.
+      const { data: available, error: rpcError } = await supabase.rpc(
+        "username_available",
+        { name: username }
+      );
+      if (rpcError) {
+        setPending(false);
+        setError("Couldn't check the username. Please try again.");
+        return;
+      }
+      if (!available) {
+        setPending(false);
+        setError(`The username “${username}” is already taken.`);
+        return;
+      }
 
       const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: { display_name: displayName },
+          // display_name дублируем, пока колонка жива: на проде ещё
+          // работает код, который читает имя из метаданных под старым
+          // ключом. Уйдёт вместе с колонкой.
+          data: { username, display_name: username },
           // Ссылка из письма ведёт в наш route handler /auth/callback,
           // который обменивает код на сессию и логинит (см. тот файл).
           emailRedirectTo: `${window.location.origin}/auth/callback`,
@@ -135,14 +149,14 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
       <div className="space-y-4">
         {isSignup && (
           <AuthField
-            id="displayName"
-            label="Display name"
+            id="username"
+            label="Username"
             icon={<User size={18} />}
-            value={displayName}
-            onChange={setDisplayName}
+            value={username}
+            onChange={setUsername}
             type="text"
-            placeholder="How others will see you"
-            autoComplete="nickname"
+            placeholder="Your name on the site"
+            autoComplete="username"
             required
           />
         )}

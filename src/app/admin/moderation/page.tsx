@@ -100,7 +100,7 @@ export default async function ModerationPage() {
                         {...NEW_TAB}
                         className={`font-medium ${INLINE_LINK}`}
                       >
-                        {product.creator.displayName}
+                        {product.creator.username}
                       </Link>
                     ) : (
                       "—"

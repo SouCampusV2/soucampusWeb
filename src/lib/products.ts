@@ -155,7 +155,7 @@ export type Product = {
    * отдельным запросом (см. getCreatorsById — связать вложенной выборкой
    * нельзя, profiles закрыта RLS) и подмешивается только там, где нужен.
    */
-  creator?: { displayName: string; handle: string; isVerified: boolean };
+  creator?: { username: string; handle: string; isVerified: boolean };
   // Агрегаты витрины (оценки/покупки). Опциональны: приезжают отдельным
   // запросом get_product_stats() и подмешиваются в getAllProductsWithStats.
   // Без них (детальная страница, тесты) карточка просто их не показывает.
@@ -243,7 +243,7 @@ export function filterBySearch(products: Product[], query: string): Product[] {
       p.title,
       p.summary,
       stripHtml(p.description),
-      p.creator?.displayName ?? "",
+      p.creator?.username ?? "",
     ].some((field) => field.toLowerCase().includes(q)),
   );
 }
@@ -469,7 +469,7 @@ export async function getAllProductsWithStats(): Promise<Product[]> {
       ...(c
         ? {
             creator: {
-              displayName: c.displayName,
+              username: c.username,
               handle: c.handle,
               isVerified: c.isVerified,
             },
