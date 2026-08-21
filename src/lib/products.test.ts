@@ -57,6 +57,10 @@ describe("rowToProduct", () => {
         fileSizeBytes: null,
         publishedAt: null,
       },
+      // Реакции в строке нет — автор её не выбрал (или база без
+      // миграции 20260821170000). Карта тогда просто не показывает
+      // кнопку рядом с «Add to cart».
+      reactionOptionId: null,
       // category — производная от slug: в строке колонки нет (старые
       // товары, заведённые до миграции 20260730120000).
       category: deriveCategory("medieval-spawn"),

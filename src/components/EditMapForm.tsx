@@ -28,6 +28,8 @@ import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
 import type { EditableProduct } from "@/lib/moderation";
 import { templateFor } from "@/lib/rejection";
 import { SpecFields, specsToColumns } from "@/components/SpecFields";
+import { ReactionPicker } from "@/components/ReactionPicker";
+import type { ReactionOption } from "@/lib/reactions";
 import {
   MAX_IMAGES,
   IMAGES_TOTAL_MAX_BYTES,
@@ -66,9 +68,12 @@ function imageSrc(image: GalleryImage): string {
 export function EditMapForm({
   product,
   userId,
+  reactionOptions,
 }: {
   product: EditableProduct;
   userId: string;
+  /** Список реакций из базы — читает его страница, форма клиентская. */
+  reactionOptions: ReactionOption[];
 }) {
   const router = useRouter();
   const refresh = useRefresh();
@@ -93,6 +98,7 @@ export function EditMapForm({
   // Набор обязан совпадать до последнего пункта: разъедутся — автор при
   // первой правке потеряет то, что отметил при загрузке.
   const [specs, setSpecs] = useState(product.specs);
+  const [reactionOptionId, setReactionOptionId] = useState(product.reactionOptionId);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const [error, setError] = useState<string | null>(null);
@@ -295,6 +301,7 @@ export function EditMapForm({
           category,
           file_path: filePath,
           ...specsToColumns(specs),
+          reaction_option_id: reactionOptionId,
           // Вес пишем ТОЛЬКО когда файл заменили: иначе правка описания
           // затирала бы верный размер нулём.
           ...(mapFile ? { file_size_bytes: mapFile.size } : {}),
@@ -494,6 +501,12 @@ export function EditMapForm({
       {/* Характеристики — на том же месте и в том же порядке, что в
           форме загрузки: правка не должна выглядеть другой формой. */}
       <SpecFields value={specs} onChange={setSpecs} />
+
+      <ReactionPicker
+        options={reactionOptions}
+        value={reactionOptionId}
+        onChange={setReactionOptionId}
+      />
 
       <div>
         <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">

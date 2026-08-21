@@ -7,6 +7,8 @@ import { SealCheck } from "@phosphor-icons/react/dist/ssr";
 import { getAllProducts, getProduct, getProductStats } from "@/lib/products";
 import { creatorHref, getCreatorsById } from "@/lib/creators";
 import { getViewCount, VIEW_PATHS } from "@/lib/views";
+import { getReactionCounts, getReactionOptions } from "@/lib/reactions";
+import { ReactionButton } from "@/components/ReactionButton";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductGallery } from "@/components/ProductGallery";
 import { RICH_TEXT_CLASS } from "@/lib/rich-text";
@@ -111,6 +113,18 @@ export default async function ProductPage({
   // Один посетитель — единица, сколько бы раз ни открыл: строка в
   // page_views уникальна по тройке (страница, посетитель, день).
   const views = await getViewCount(VIEW_PATHS.product(slug));
+
+  // Реакция карты. Автор выбирает ОДНУ при публикации, посетители жмут
+  // по ней как по лайку. Число здесь — то, что было верным на момент
+  // сборки страницы; свежее подтянет сама кнопка после загрузки (см.
+  // ReactionButton). Отдавать в статике заведомо устаревающее число
+  // всё равно правильнее, чем пустое место, которое потом дёрнется.
+  const reaction = product.reactionOptionId
+    ? (await getReactionOptions()).find((o) => o.id === product.reactionOptionId)
+    : undefined;
+  const reactionCount = reaction
+    ? ((await getReactionCounts([product.id])).get(product.id) ?? 0)
+    : 0;
   const rating = stats?.rating ?? 0;
   const ratingCount = stats?.ratingCount ?? 0;
   const salesCount = stats?.salesCount ?? 0;
@@ -214,6 +228,21 @@ export default async function ProductPage({
                 }}
               />
             </div>
+
+            {/* Реакция — сразу под кнопкой покупки, там же, где решают.
+                Карта без выбранной реакции не показывает ничего: пустая
+                кнопка «0» ни о чём не говорит и только занимает место. */}
+            {reaction && (
+              <div className="mt-4">
+                <ReactionButton
+                  productId={product.id}
+                  emoji={reaction.emoji}
+                  imageUrl={reaction.imageUrl}
+                  label={reaction.label}
+                  initialCount={reactionCount}
+                />
+              </div>
+            )}
 
             <dl className="mt-6 space-y-3 border-t border-zinc-200 pt-6 text-sm dark:border-zinc-800">
               <div className="flex items-center justify-between">

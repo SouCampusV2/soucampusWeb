@@ -5,6 +5,7 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { getCurrentUser } from "@/lib/current-user";
 import { getOwnProduct } from "@/lib/moderation";
 import { EditMapForm } from "@/components/EditMapForm";
+import { getReactionOptions } from "@/lib/reactions";
 import { PageGlow } from "@/components/PageGlow";
 import { BackLink } from "@/components/BackLink";
 
@@ -41,6 +42,10 @@ export default async function EditResourcePage({
   const product = await getOwnProduct(supabase, user.id, slug);
   if (!product) notFound();
 
+  // Список реакций живёт в базе, а форма клиентская — читаем здесь
+  // (тот же довод, что на /creator/upload).
+  const reactionOptions = await getReactionOptions();
+
   return (
     <main className="relative w-full overflow-x-clip px-6">
       <PageGlow color="rgba(249,115,22,0.28)" />
@@ -65,7 +70,11 @@ export default async function EditResourcePage({
           )}
 
           <div className="mt-8">
-            <EditMapForm product={product} userId={user.id} />
+            <EditMapForm
+              product={product}
+              userId={user.id}
+              reactionOptions={reactionOptions}
+            />
           </div>
         </div>
       </section>

@@ -49,6 +49,8 @@ import {
   MAP_FILE_ACCEPT,
 } from "@/lib/upload-limits";
 import { SpecFields, EMPTY_SPECS, type EditableSpecs } from "@/components/SpecFields";
+import { ReactionPicker } from "@/components/ReactionPicker";
+import type { ReactionOption } from "@/lib/reactions";
 
 
 // Категории формы = все, кроме "free" — бесплатность определяется ценой
@@ -73,7 +75,14 @@ type PickedImage = {
  * не одобрит вручную. Поэтому отдельный откат при частичном сбое не
  * нужен — просто показываем ошибку и даём попробовать ещё раз.
  */
-export function UploadMapForm({ userId }: { userId: string }) {
+export function UploadMapForm({
+  userId,
+  reactionOptions,
+}: {
+  userId: string;
+  /** Список реакций из базы — читает его страница, форма клиентская. */
+  reactionOptions: ReactionOption[];
+}) {
   const router = useRouter();
 
   const [title, setTitle] = useState("");
@@ -91,6 +100,9 @@ export function UploadMapForm({ userId }: { userId: string }) {
   // ни одна из них не обязательна, и заставлять отмечать двенадцать тем
   // ради публикации — верный способ получить отмеченные наугад.
   const [specs, setSpecs] = useState<EditableSpecs>(EMPTY_SPECS);
+  // Реакция карты. Необязательна — карта без реакции просто не показывает
+  // кнопку рядом с «Add to cart».
+  const [reactionOptionId, setReactionOptionId] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
   const [error, setError] = useState<string | null>(null);
@@ -304,6 +316,7 @@ export function UploadMapForm({ userId }: { userId: string }) {
         // Вес берём из самого файла, а не спрашиваем: спрошенное число
         // разъедется с реальностью при первой же замене файла.
         fileSizeBytes: mapFile.size,
+        reactionOptionId,
       });
       await addProductImages(supabase, id, galleryUrls);
 
@@ -416,6 +429,12 @@ export function UploadMapForm({ userId }: { userId: string }) {
           отмечает, он вспоминает про карту то, что потом опишет
           словами. Обратный порядок заставлял бы возвращаться наверх. */}
       <SpecFields value={specs} onChange={setSpecs} />
+
+      <ReactionPicker
+        options={reactionOptions}
+        value={reactionOptionId}
+        onChange={setReactionOptionId}
+      />
 
       {/* Description — Tiptap WYSIWYG */}
       <div>
