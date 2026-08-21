@@ -46,6 +46,10 @@ export function AddToCartButton({
 }) {
   const { items, addItem } = useCart();
   const [notice, setNotice] = useState<Notice | null>(null);
+  // «Покупаю прямо сейчас» — пока идёт создание сессии Stripe и переход
+  // на неё. Своё состояние, а не общее с корзиной: добавление в корзину
+  // мгновенно, а этот путь уходит в сеть и может не вернуться.
+  const [buying, setBuying] = useState(false);
 
   // Ответ проверки владения и сам «запрос в полёте». Держим в ref, а не в
   // состоянии: перерисовывать из-за них нечего (кнопка не меняется), а
@@ -137,10 +141,90 @@ export function AddToCartButton({
     });
   };
 
+  // Покупка одной картой, мимо корзины.
+  //
+  // Тот же самый роут /api/checkout, что и у корзины, — просто с одной
+  // позицией. Заводить ради этого второй путь оплаты было бы худшим из
+  // возможных решений: денежный путь должен быть ОДИН, иначе проверять и
+  // чинить придётся два, и однажды они разойдутся.
+  //
+  // Наружу уходит ТОЛЬКО slug. Цену, название и валюту сервер берёт из
+  // своей базы — принимать их отсюда значило бы дать любому посетителю
+  // купить карту за €0.01 через инструменты разработчика.
+  const buyNow = async () => {
+    if (buying) return;
+    setBuying(true);
+
+    // Уже купленную не даём купить второй раз — та же проверка, что у
+    // добавления в корзину, и по той же причине.
+    const owned = await checkOwnership();
+    if (owned === "yes") {
+      setBuying(false);
+      setNotice({
+        tone: "info",
+        text: "You already own this map.",
+        href: "/purchases",
+        linkLabel: "Download it",
+      });
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/checkout", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ items: [{ slug: product.slug }] }),
+      });
+
+      // Покупка требует аккаунта. Сессия могла истечь между открытием
+      // страницы и нажатием — возвращаем сюда же после входа.
+      if (response.status === 401) {
+        window.location.assign(
+          `/login?next=${encodeURIComponent(`/marketplace/${product.slug}`)}`
+        );
+        return;
+      }
+      if (!response.ok) throw new Error(`checkout failed: ${response.status}`);
+
+      const { url } = await response.json();
+      // Проверяем, куда нас отправляют, хотя адрес пришёл от нашего же
+      // сервера: window.location.assign уводит человека куда угодно, и
+      // единственная проверка на этом пути — вот эта.
+      if (typeof url !== "string" || !url.startsWith("https://")) {
+        throw new Error("checkout returned no url");
+      }
+      window.location.assign(url);
+    } catch (e) {
+      console.error("Не удалось начать оплату:", e);
+      setBuying(false);
+      setNotice({
+        tone: "info",
+        text: "Couldn't start the checkout. Please try again.",
+      });
+    }
+  };
+
   return (
     <div>
-      <Button size="lg" onClick={handleClick}>
-        Add to cart — {product.price}
+      {/* Цена из подписи убрана (решение владельца 2026-08-21): она стоит
+          крупным шрифтом прямо над кнопкой, и повторять её значит
+          удлинять кнопку ради того, что человек и так видит. */}
+      <Button size="lg" onClick={handleClick} className="w-full">
+        Add to cart
+      </Button>
+
+      {/* Покупка одной кнопкой — вторичная намеренно. Основной путь у нас
+          корзина: она позволяет докупить вторую карту и оформить всё
+          одним заказом. «Buy now» для тех, кто пришёл за одной картой и
+          не хочет лишнего шага. */}
+      <Button
+        size="lg"
+        variant="secondary"
+        onClick={buyNow}
+        disabled={buying}
+        className="mt-3 w-full"
+      >
+        {buying ? "Redirecting…" : "Buy now"}
       </Button>
 
       {/* min-h резервирует место под сообщение, чтобы его появление не
