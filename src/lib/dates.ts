@@ -52,3 +52,33 @@ export function formatDayMonthYear(value: string | Date): string {
     timeZone: "UTC",
   });
 }
+
+/**
+ * ISO-время → «14 Aug 2026, 19:03». Дата и час, разделённые запятой.
+ *
+ * ⚠️ ЧАС ПОКАЗЫВАЕТСЯ ПО UTC, А НЕ ПО ЧАСАМ ЧИТАТЕЛЯ, и это осознанный
+ * размен, а не недосмотр. Живое время читателя посчитать нельзя без
+ * поломки: сервер собирает страницу на Vercel (UTC), браузер пересчитал
+ * бы её в свой пояс, React сверил бы два текста посимвольно и уронил
+ * гидратацию — ровно ошибка #418, описанная в шапке этого файла и
+ * стоившая полдня на уведомлениях.
+ *
+ * Обойти это можно: рисовать час только после гидратации через
+ * useHydrated (тот же приём, что у AddToCartButton и ReactionButton).
+ * Пока не делаем — у комментариев точный час не решает ничего, а лишний
+ * механизм решает.
+ *
+ * hour12: false — 19:03, а не 7:03 PM. Сутки без «AM/PM» короче и не
+ * зависят от того, к какому формату привык читатель.
+ */
+export function formatDayMonthYearTime(value: string | Date): string {
+  return new Date(value).toLocaleString(LOCALE, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "UTC",
+  });
+}

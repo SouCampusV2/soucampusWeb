@@ -1,9 +1,11 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 import { Trash } from "@phosphor-icons/react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
-import { formatDayMonthYear } from "@/lib/dates";
+import { formatDayMonthYearTime } from "@/lib/dates";
+import { Avatar } from "@/components/Avatar";
 import { Button } from "@/components/Button";
 // Из comment-shape.ts, а НЕ из lib/comments.ts: тот тянет служебный
 // ключ (supabase-admin), и импорт значения оттуда утащил бы его в
@@ -132,9 +134,24 @@ export function CommentSection({
       .insert({ product_id: productId, user_id: userId, body: text });
 
     if (insertError) {
-      // Текст ошибки базы наружу не отдаём — он рассказывает о схеме.
-      // Ожидаемый отказ здесь ровно один: не купил.
-      setError("Couldn't post your comment. Only buyers can comment.");
+      // Текст ошибки базы наружу не отдаём — он рассказывает о схеме. Но
+      // метки, которые триггеры ставят САМИ (20260822130000_rate_limits),
+      // — наш собственный словарь, а не внутренности Postgres: они затем и
+      // заведены, чтобы форма могла объяснить отказ человеку.
+      //
+      // Отказ без объяснения хуже отсутствия ограничения: человек видит
+      // «не работает» и жмёт ещё, то есть давит ровно туда, куда мы его не пускаем.
+      const message = insertError.message ?? "";
+      if (message.includes("comment_too_fast")) {
+        setError("Slow down a little — one comment every 20 seconds.");
+      } else if (message.includes("comment_rate_limit")) {
+        const perHour = message.split("comment_rate_limit:")[1]?.match(/\d+/)?.[0];
+        setError(
+          `You've hit the limit of ${perHour ?? 10} comments per hour. Try again later.`
+        );
+      } else {
+        setError("Couldn't post your comment. Only buyers can comment.");
+      }
     } else {
       setBody("");
       await reload();
@@ -186,8 +203,12 @@ export function CommentSection({
           <span className="text-xs text-zinc-500 dark:text-zinc-400">
             {body.length}/{MAX_LENGTH}
           </span>
+          {/* tertiary, а не primary: отправка комментария — не главное
+              действие на странице. Главное здесь одно — «Add to cart», и две
+              залитые кнопки на одном экране спорят за внимание. */}
           <Button
             type="submit"
+            variant="tertiary"
             size="sm"
             disabled={!canWrite || pending || !body.trim()}
           >
@@ -212,20 +233,44 @@ export function CommentSection({
               key={comment.id}
               className="border-t border-zinc-950/[0.06] pt-5 dark:border-white/10"
             >
-              <div className="flex items-baseline justify-between gap-3">
-                <div className="flex items-baseline gap-2">
-                  <span
-                    className="text-sm font-semibold text-zinc-950 dark:text-zinc-50"
-                    // Цвет ника — привилегия купивших. style, а не класс:
-                    // значение произвольное, в Tailwind его не выразить.
-                    style={
-                      comment.nameColor ? { color: comment.nameColor } : undefined
-                    }
-                  >
-                    {comment.username}
-                  </span>
-                  <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                    {formatDayMonthYear(comment.createdAt)}
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2">
+                  {/* Аватар и имя — ОДНА ссылка, а не две рядом.
+                      Две ссылки на один адрес — две остановки при ходьбе
+                      табом и два одинаковых пункта у экранного диктора.
+
+                      Адрес профиля — /@<имя>. Когда имени нет (профиль
+                      недоступен, rowToComment подставляет «—»), ссылки нет
+                      вовсе: вести на /@— значило бы вести в 404. */}
+                  {comment.username === "—" ? (
+                    <span className="flex min-w-0 items-center gap-2">
+                      <Avatar avatarUrl={comment.avatarUrl} size={28} />
+                      <span className="truncate text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+                        {comment.username}
+                      </span>
+                    </span>
+                  ) : (
+                    <Link
+                      href={`/@${comment.username}`}
+                      className="flex min-w-0 items-center gap-2 transition hover:opacity-75"
+                    >
+                      <Avatar avatarUrl={comment.avatarUrl} size={28} />
+                      <span
+                        className="truncate text-sm font-semibold text-zinc-950 dark:text-zinc-50"
+                        // Цвет ника — привилегия купивших. style, а не
+                        // класс: значение произвольное, в Tailwind не выразить.
+                        style={
+                          comment.nameColor
+                            ? { color: comment.nameColor }
+                            : undefined
+                        }
+                      >
+                        {comment.username}
+                      </span>
+                    </Link>
+                  )}
+                  <span className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">
+                    {formatDayMonthYearTime(comment.createdAt)}
                     {comment.edited && " · edited"}
                   </span>
                 </div>
@@ -252,7 +297,7 @@ export function CommentSection({
                 // Строка остаётся на месте без текста. Иначе работал бы
                 // приём: написал гадость, получил ответ, стёр своё — и
                 // чужой ответ висит беспричинной агрессией.
-                <p className="mt-1.5 text-sm italic text-zinc-400 dark:text-zinc-500">
+                <p className="mt-1.5 pl-9 text-sm italic text-zinc-400 dark:text-zinc-500">
                   {comment.deletedBy === "author"
                     ? "Comment deleted by its author"
                     : "Comment removed"}
@@ -262,7 +307,7 @@ export function CommentSection({
                 // React экранирует его сам. dangerouslySetInnerHTML здесь
                 // не нужен и не появится — санитайзер существует для
                 // описаний карт, где разметка нужна по делу.
-                <p className="mt-1.5 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
+                <p className="mt-1.5 pl-9 whitespace-pre-wrap text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
                   {comment.body}
                 </p>
               )}
