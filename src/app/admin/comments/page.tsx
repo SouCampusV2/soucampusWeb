@@ -4,7 +4,7 @@ import { getAllComments } from "@/lib/comments";
 import { AdminCommentActions } from "@/components/AdminCommentActions";
 import { INLINE_LINK, NEW_TAB } from "@/components/Button";
 import { RefreshButton } from "@/components/RefreshButton";
-import { formatDate } from "@/lib/dates";
+import { LocalTime } from "@/components/LocalTime";
 
 // Комментарии всего сайта — одним списком.
 //
@@ -70,7 +70,7 @@ export default async function AdminCommentsPage() {
                     {comment.username}
                   </span>
                   <span className="text-zinc-500 dark:text-zinc-400">
-                    {formatDate(comment.createdAt)}
+                    <LocalTime value={comment.createdAt} shape="date" />
                   </span>
                   <span className="text-zinc-400 dark:text-zinc-600" aria-hidden>
                     ·

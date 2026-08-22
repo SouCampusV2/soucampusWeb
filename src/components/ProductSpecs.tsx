@@ -1,6 +1,6 @@
-import { formatDayMonthYear } from "@/lib/dates";
 import { formatFileSize } from "@/lib/product-specs";
 import type { ProductSpecs as Specs } from "@/lib/products";
+import { LocalTime } from "@/components/LocalTime";
 
 // Характеристики карты в правой колонке страницы товара.
 //
@@ -40,7 +40,15 @@ function SpecRow({ label, values }: { label: string; values: string[] }) {
 }
 
 /** Плитка с числом. Крупная цифра, мелкая подпись — как в Stats. */
-function Tile({ value, label }: { value: string; label: string }) {
+// value — ReactNode, а не string: часть плиток показывает МОМЕНТ, а его
+// рисует <LocalTime> (пояс читателя), то есть разметку.
+function Tile({
+  value,
+  label,
+}: {
+  value: React.ReactNode;
+  label: string;
+}) {
   return (
     <div className="rounded-xl border border-zinc-200 px-3 py-2.5 dark:border-zinc-800">
       <p className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">{value}</p>
@@ -64,7 +72,10 @@ export function ProductSpecs({
 }) {
   const fileSize = formatFileSize(specs.fileSizeBytes);
 
-  const tiles: { value: string; label: string }[] = [];
+  // value — ReactNode, а не string: две плитки из пяти показывают
+  // МОМЕНТ, а момент рисует <LocalTime> (пояс читателя, см. его
+  // шапку), то есть разметку, а не готовый текст.
+  const tiles: { value: React.ReactNode; label: string }[] = [];
 
   // Просмотры первыми: это единственное число, которое есть у КАЖДОЙ
   // карты с первого дня, — остальные плитки у новой карты пусты.
@@ -74,10 +85,13 @@ export function ProductSpecs({
     tiles.push({ value: views.toLocaleString("en-GB"), label: "Views" });
   }
   if (specs.publishedAt) {
-    tiles.push({ value: formatDayMonthYear(specs.publishedAt), label: "Published" });
+    tiles.push({
+      value: <LocalTime value={specs.publishedAt} />,
+      label: "Published",
+    });
   }
   if (updatedAt) {
-    tiles.push({ value: formatDayMonthYear(updatedAt), label: "Updated" });
+    tiles.push({ value: <LocalTime value={updatedAt} />, label: "Updated" });
   }
   if (fileSize) tiles.push({ value: fileSize, label: "File size" });
   tiles.push({

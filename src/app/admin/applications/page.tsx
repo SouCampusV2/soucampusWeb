@@ -6,7 +6,7 @@ import { RevokeCreatorButton } from "@/components/RevokeCreatorButton";
 import { INLINE_LINK, NEW_TAB } from "@/components/Button";
 import { RefreshButton } from "@/components/RefreshButton";
 import { creatorHref } from "@/lib/creators";
-import { formatDate } from "@/lib/dates";
+import { LocalTime } from "@/components/LocalTime";
 
 // Очередь заявок на статус креатора.
 //
@@ -66,7 +66,7 @@ export default async function AdminApplicationsPage() {
                   </Link>
                 </h2>
                 <span className="text-sm text-zinc-500 dark:text-zinc-400">
-                  {formatDate(application.createdAt)}
+                  <LocalTime value={application.createdAt} shape="date" />
                 </span>
               </div>
 
