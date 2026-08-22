@@ -4,7 +4,13 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { sanitizeDescription } from "@/lib/sanitize";
 import { SealCheck } from "@phosphor-icons/react/dist/ssr";
-import { getAllProducts, getProduct, getProductStats } from "@/lib/products";
+import {
+  getAllProducts,
+  getAllProductsWithStats,
+  getProduct,
+  getProductStats,
+} from "@/lib/products";
+import { pickSimilar } from "@/lib/similar";
 import { creatorHref, getCreatorsById } from "@/lib/creators";
 import { getViewCount, VIEW_PATHS } from "@/lib/views";
 import { getReactionCounts, getReactionOptions } from "@/lib/reactions";
@@ -18,6 +24,7 @@ import { BackLink } from "@/components/BackLink";
 import { INLINE_LINK } from "@/components/Button";
 import { StarRating } from "@/components/StarRating";
 import { ProductSpecs } from "@/components/ProductSpecs";
+import { SimilarMaps } from "@/components/SimilarMaps";
 
 // Одна карта — один поход в базу за рендер.
 //
@@ -127,6 +134,20 @@ export default async function ProductPage({
   const reactionCount = reaction
     ? ((await getReactionCounts([product.id])).get(product.id) ?? 0)
     : 0;
+
+  // Похожие карты. Считаем поверх всего каталога витрины — на СБОРКЕ, а
+  // не на каждого посетителя: страница статическая, и цена платится один
+  // раз. Формула и её тесты — в lib/similar.ts.
+  //
+  // getAllProductsWithStats, а не getAllProducts: карточка показывает
+  // оценку, число покупок и автора, и без них она выглядит беднее любой
+  // такой же карточки на витрине.
+  //
+  // ⚠️ Когда карт станет заметно больше сотни, «прочитать весь каталог
+  // ради четырёх карточек» перестанет быть бесплатным даже на сборке —
+  // тогда подбор переезжает в SQL. Порог тот же, что у остального
+  // каталога: docs/ARCHITECTURE.md § 7.1.
+  const similar = pickSimilar(product, await getAllProductsWithStats());
 
   // Первый экран ленты — с сервера: он верен на момент сборки страницы.
   // Дальше её перечитывает сам компонент (см. CommentSection).
@@ -297,6 +318,14 @@ export default async function ProductPage({
           />
         </aside>
       </div>
+
+      {/* ПОД обеими колонками, во всю ширину: «похожие» — это переход к
+          другой карте, то есть следующий шаг, а не часть разговора об
+          этой. Внутри колонки они читались бы как её продолжение.
+
+          Блока может не быть вовсе — когда похожих не нашлось. Это
+          ответ, а не сбой (см. SimilarMaps). */}
+      <SimilarMaps products={similar} />
     </main>
   );
 }
