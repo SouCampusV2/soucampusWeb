@@ -8,7 +8,7 @@ import { ModerationGallery } from "@/components/ModerationGallery";
 import { RICH_TEXT_CLASS } from "@/lib/rich-text";
 import { BUTTON_COLORS, BUTTON_PILL, INLINE_LINK, NEW_TAB } from "@/components/Button";
 import { creatorHref } from "@/lib/creators";
-import { formatDate } from "@/lib/dates";
+import { LocalTime } from "@/components/LocalTime";
 
 // Очередь всегда свежая: список меняется от каждого решения, кэшировать
 // его нечего и незачем.
@@ -106,7 +106,7 @@ export default async function ModerationPage() {
                       "—"
                     )}{" "}
                     · {product.price} · {product.category ?? "no category"} ·{" "}
-                    {formatDate(product.createdAt)}
+                    <LocalTime value={product.createdAt} shape="date" />
                   </p>
                   <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
                     {product.summary}

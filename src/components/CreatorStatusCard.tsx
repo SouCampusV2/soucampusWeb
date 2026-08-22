@@ -3,7 +3,7 @@ import { Clock, XCircle, SealCheck } from "@phosphor-icons/react/dist/ssr";
 import { CreatorApplicationForm } from "@/components/CreatorApplicationForm";
 import { INLINE_LINK } from "@/components/Button";
 import type { CreatorApplication } from "@/lib/creator-applications";
-import { formatDate } from "@/lib/dates";
+import { LocalTime } from "@/components/LocalTime";
 
 // «Стать креатором» — на /resources, вместо списка карт у того, кому
 // загружать ещё нельзя.
@@ -31,7 +31,7 @@ export function CreatorStatusCard({
           Application sent
         </h2>
         <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-600 dark:text-zinc-400">
-          Sent {formatDate(application.createdAt)}. We read
+          Sent <LocalTime value={application.createdAt} shape="date" />. We read
           every one — the answer shows up right here.
         </p>
       </Card>

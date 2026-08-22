@@ -4,13 +4,13 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Trash } from "@phosphor-icons/react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
-import { formatDayMonthYearTime } from "@/lib/dates";
 import { Avatar } from "@/components/Avatar";
 import { Button } from "@/components/Button";
 // Из comment-shape.ts, а НЕ из lib/comments.ts: тот тянет служебный
 // ключ (supabase-admin), и импорт значения оттуда утащил бы его в
 // браузерный бандл. Тот же файл и та же причина, что у
 // notification-shape.ts.
+import { LocalTime } from "@/components/LocalTime";
 import {
   COMMENT_COLUMNS,
   commentAuthors,
@@ -270,7 +270,7 @@ export function CommentSection({
                     </Link>
                   )}
                   <span className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">
-                    {formatDayMonthYearTime(comment.createdAt)}
+                    <LocalTime value={comment.createdAt} shape="dayMonthYearTime" />
                     {comment.edited && " · edited"}
                   </span>
                 </div>

@@ -18,67 +18,118 @@
 //    исполнителя, и западнее Гринвича полночь 14-го — это ещё 13-е.
 //    Дата уезжает на сутки, и не в тестах, а у покупателя в отчёте.
 //
-// Поэтому здесь пришпилено и то и другое. Побочная выгода: формат дат на
-// сайте перестаёт зависеть от того, где выполнился код, — раньше он был
-// не выбран, а унаследован от настроек Vercel.
+// Поэтому здесь пришпилена локаль, а пояс задаётся ЯВНО на каждом
+// вызове — двумя наборами функций, см. ниже.
 //
 // Локаль en-GB: она уже выбрана в проекте явно (пауза на заявки в
 // /resources, письмо отказа, запасной текст в уведомлениях). Сайт
 // англоязычный, день впереди месяца — однозначно читается и не путается
 // с американским порядком.
+//
+// ============================================================
+// ⚠️ ДВА НАБОРА ФУНКЦИЙ, И ВЫБОР МЕЖДУ НИМИ — НЕ ВКУСОВОЙ
+// (решение владельца 2026-08-22: «время показывать местное»)
+//
+// *Utc — для ДНЕЙ-КЛЮЧЕЙ вида «2026-08-14». Это не момент времени, а
+// НАЗВАНИЕ СУТОК, посчитанное в базе по UTC: столбик графика продаж,
+// граница периода, строка отчёта. У такого значения нет часа, и
+// пересчитывать его в чей-то пояс — значит сдвинуть подпись на сутки.
+// Ровно это и случилось до 18.08: подписи оси в SalesChart и строки
+// таблицы под ними расходились на день.
+//
+// *Local — для НАСТОЯЩИХ МОМЕНТОВ (timestamptz): когда написан
+// комментарий, когда подана заявка, когда карта опубликована. У такого
+// значения есть точный час, и показывать его читателю в UTC незачем —
+// он живёт не там.
+//
+// ⚠️ МЕСТНОЕ ВРЕМЯ НЕЛЬЗЯ ПЕЧАТАТЬ ПРЯМО В РАЗМЕТКУ. Сервер собирает
+// страницу в UTC, браузер посчитал бы её в своём поясе, и React уронил
+// бы гидратацию (причина 1 выше). Поэтому *Local зовёт не страница, а
+// компонент <LocalTime> — он рисует UTC на сервере и на первом
+// клиентском рендере, а после гидратации заменяет на местное. Звать
+// *Local напрямую можно ТОЛЬКО там, где рендер заведомо после
+// гидратации (обработчик события, ответ на действие человека).
+// ============================================================
 
 const LOCALE = "en-GB";
 
-/** ISO-время или «2026-08-14» → «14/08/2026». */
-export function formatDate(value: string | Date): string {
-  return new Date(value).toLocaleDateString(LOCALE, { timeZone: "UTC" });
-}
-
-/** «2026-08-14» → «14 Aug». Без года: он есть в подписи периода. */
-export function formatDayMonth(value: string | Date): string {
-  return new Date(value).toLocaleDateString(LOCALE, {
-    day: "numeric",
-    month: "short",
-    timeZone: "UTC",
-  });
-}
-
-/** «2026-08-14» → «14 Aug 2026». */
-export function formatDayMonthYear(value: string | Date): string {
-  return new Date(value).toLocaleDateString(LOCALE, {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-    timeZone: "UTC",
-  });
-}
-
-/**
- * ISO-время → «14 Aug 2026, 19:03». Дата и час, разделённые запятой.
- *
- * ⚠️ ЧАС ПОКАЗЫВАЕТСЯ ПО UTC, А НЕ ПО ЧАСАМ ЧИТАТЕЛЯ, и это осознанный
- * размен, а не недосмотр. Живое время читателя посчитать нельзя без
- * поломки: сервер собирает страницу на Vercel (UTC), браузер пересчитал
- * бы её в свой пояс, React сверил бы два текста посимвольно и уронил
- * гидратацию — ровно ошибка #418, описанная в шапке этого файла и
- * стоившая полдня на уведомлениях.
- *
- * Обойти это можно: рисовать час только после гидратации через
- * useHydrated (тот же приём, что у AddToCartButton и ReactionButton).
- * Пока не делаем — у комментариев точный час не решает ничего, а лишний
- * механизм решает.
- *
- * hour12: false — 19:03, а не 7:03 PM. Сутки без «AM/PM» короче и не
- * зависят от того, к какому формату привык читатель.
- */
-export function formatDayMonthYearTime(value: string | Date): string {
-  return new Date(value).toLocaleString(LOCALE, {
+/** Наборы полей. Один на оба пояса — иначе форматы разъедутся. */
+const SHAPES = {
+  /**
+   * «14/08/2026».
+   *
+   * Поля перечислены ЯВНО, хотя у en-GB такой же вид получается и на
+   * пустых настройках. Пустой набор молча означает «дата И время», как
+   * только уходишь с toLocaleDateString на toLocaleString — на этом
+   * формат один раз уже уехал в «14/08/2026, 12:00:00», и поймали это
+   * не глаза, а dates.test.ts.
+   */
+  date: { day: "2-digit", month: "2-digit", year: "numeric" },
+  /** «14 Aug» — без года: он есть в подписи периода. */
+  dayMonth: { day: "numeric", month: "short" },
+  /** «14 Aug 2026» */
+  dayMonthYear: { day: "numeric", month: "short", year: "numeric" },
+  /**
+   * «14 Aug 2026, 19:03». hour12: false — сутки без «AM/PM» короче и не
+   * зависят от того, к какому формату привык читатель.
+   */
+  dayMonthYearTime: {
     day: "numeric",
     month: "short",
     year: "numeric",
     hour: "2-digit",
     minute: "2-digit",
     hour12: false,
-    timeZone: "UTC",
-  });
+  },
+} satisfies Record<string, Intl.DateTimeFormatOptions>;
+
+/** Какие формы бывают — им же параметризуется <LocalTime>. */
+export type DateShape = keyof typeof SHAPES;
+
+function render(
+  value: string | Date,
+  shape: DateShape,
+  timeZone: string | undefined
+): string {
+  const options = { ...SHAPES[shape], ...(timeZone ? { timeZone } : {}) };
+  // toLocaleString, а не toLocaleDateString: у формы с часом второй
+  // просто выбросил бы время молча.
+  return new Date(value).toLocaleString(LOCALE, options);
+}
+
+// ------------------------------------------------------------
+// UTC — для дней-ключей. Пояс пришпилен.
+
+/** «2026-08-14» → «14/08/2026». */
+export function formatDate(value: string | Date): string {
+  return render(value, "date", "UTC");
+}
+
+/** «2026-08-14» → «14 Aug». */
+export function formatDayMonth(value: string | Date): string {
+  return render(value, "dayMonth", "UTC");
+}
+
+/** «2026-08-14» → «14 Aug 2026». */
+export function formatDayMonthYear(value: string | Date): string {
+  return render(value, "dayMonthYear", "UTC");
+}
+
+/** «…T19:03Z» → «14 Aug 2026, 19:03» по UTC. Заготовка для <LocalTime>. */
+export function formatDayMonthYearTime(value: string | Date): string {
+  return render(value, "dayMonthYearTime", "UTC");
+}
+
+/** То же по форме, но в UTC — то, что <LocalTime> рисует до гидратации. */
+export function formatUtc(value: string | Date, shape: DateShape): string {
+  return render(value, shape, "UTC");
+}
+
+// ------------------------------------------------------------
+// Местное время — пояс НЕ задан, значит берётся у читателя.
+//
+// ⚠️ Звать только после гидратации. См. большой блок вверху файла.
+
+export function formatLocal(value: string | Date, shape: DateShape): string {
+  return render(value, shape, undefined);
 }

@@ -11,9 +11,9 @@ import {
   BUTTON_COLORS,
 } from "@/components/Button";
 import { creatorHref } from "@/lib/creators";
-import { formatDate } from "@/lib/dates";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getCurrentUser } from "@/lib/current-user";
+import { LocalTime } from "@/components/LocalTime";
 
 // Полный каталог: ВСЕ карты, а не только очередь разбора.
 //
@@ -162,7 +162,7 @@ function CatalogRowItem({
             )}{" "}
             · {product.price} · {product.category ?? "no category"} ·{" "}
             {product.sales} {product.sales === 1 ? "purchase" : "purchases"} ·{" "}
-            {formatDate(product.createdAt)}
+            <LocalTime value={product.createdAt} shape="date" />
           </p>
 
           {/* Открыть на витрине — только у тех, кто на ней есть: у
