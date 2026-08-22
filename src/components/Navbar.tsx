@@ -139,16 +139,36 @@ export function Navbar() {
             раньше получалось само: 4.5rem (72px) мобильный, 5rem (80px)
             от sm — навбар всегда одной высоты, чем бы ни было заполнено. */}
         <nav className="flex h-[4.5rem] items-center justify-between gap-4 px-6 sm:h-20">
-          <Link
-            href={isMarketplaceActive ? "/marketplace" : "/"}
-            className={`${displayFont.className} shrink-0 text-lg tracking-tight text-orange-500`}
-            data-page-transition="true"
+          {/* ⚠️ ОБЁРТКА ЕСТЬ ТОЛЬКО В МАГАЗИНЕ, и она несущая, а не
+              декоративная. Чтобы средний блок стоял по центру ПИЛЮЛИ, а
+              не по центру промежутка между соседями, боковые колонки
+              обязаны быть одной ширины — это и делает flex-1 basis-0 с
+              обеих сторон. Без обёртки левая колонка равна ширине слова
+              «SouCampus», правая — пяти иконкам, и центр уезжает влево
+              ровно на половину разницы.
+
+              В портфолио-режиме — display:contents: обёртка исчезает из
+              раскладки целиком, и <nav> видит ссылку своим прямым
+              ребёнком, как было. Там центрировать нечего: у nav трое
+              детей и justify-between уже ставит средний посередине. */}
+          <div
+            className={
+              isMarketplaceActive
+                ? "flex min-w-0 flex-1 basis-0 items-center"
+                : "contents"
+            }
           >
-            SouCampus
-          </Link>
+            <Link
+              href={isMarketplaceActive ? "/marketplace" : "/"}
+              className={`${displayFont.className} shrink-0 text-lg tracking-tight text-orange-500`}
+              data-page-transition="true"
+            >
+              SouCampus
+            </Link>
+          </div>
 
           {isMarketplaceActive ? (
-            <div className="ml-6 hidden min-w-0 flex-1 items-center justify-between gap-4 min-[760px]:flex">
+            <>
               {/* Категории + Support — навигация магазина. Без
                   data-page-transition: внутри магазина анимации-волны нет.
                   Раньше здесь стояло «только на выходе через лого
@@ -168,7 +188,7 @@ export function Navbar() {
                   whitespace-nowrap обязателен: flex-1 разрешает не только расти,
                   но и сжиматься, а «What’s new» на узком экране порвалось бы
                   на две строки и раздуло пилюлю по высоте. */}
-              <div className="flex flex-1 items-center justify-center gap-1 whitespace-nowrap text-sm font-medium text-zinc-600 dark:text-zinc-300">
+              <div className="hidden shrink-0 items-center justify-center gap-1 whitespace-nowrap text-sm font-medium text-zinc-600 dark:text-zinc-300 min-[760px]:flex">
                 {SHOP_NAV_LINKS.map((link) =>
                   link.soon ? (
                     <span
@@ -191,8 +211,11 @@ export function Navbar() {
                 )}
               </div>
 
-              {/* Поиск + иконки — вместе справа. */}
-              <div className="flex min-w-0 items-center gap-3 text-zinc-600 dark:text-zinc-300">
+              {/* Правая колонка. flex-1 basis-0 — тот же вес, что у
+                  колонки с лого: две одинаковые боковые колонки и есть
+                  весь механизм центрирования средней. justify-end
+                  прижимает иконки к краю пилюли. */}
+              <div className="hidden min-w-0 flex-1 basis-0 items-center justify-end gap-3 text-zinc-600 dark:text-zinc-300 min-[760px]:flex">
                 {/* Иконки: gap-1 + p-2 на каждой — крупная зона нажатия. */}
                 <div className="flex shrink-0 items-center gap-1">
                   <button
@@ -331,7 +354,7 @@ export function Navbar() {
                   )}
                 </div>
               </div>
-            </div>
+            </>
           ) : (
             <ul className="ml-6 hidden items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 min-[760px]:flex">
               {NAV_LINKS.map((link) => (
