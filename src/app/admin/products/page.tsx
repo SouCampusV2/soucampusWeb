@@ -1,10 +1,15 @@
 import Link from "next/link";
-import { Package } from "@phosphor-icons/react/dist/ssr";
+import { Package, Plus } from "@phosphor-icons/react/dist/ssr";
 import { getCatalog, summarize, type CatalogRow } from "@/lib/catalog";
 import { CatalogActions } from "@/components/CatalogActions";
 import { CatalogFilterBar } from "@/components/CatalogFilterBar";
 import { RefreshButton } from "@/components/RefreshButton";
-import { INLINE_LINK, NEW_TAB } from "@/components/Button";
+import {
+  INLINE_LINK,
+  NEW_TAB,
+  BUTTON_PILL,
+  BUTTON_COLORS,
+} from "@/components/Button";
 import { creatorHref } from "@/lib/creators";
 import { formatDate } from "@/lib/dates";
 import { createSupabaseServer } from "@/lib/supabase-server";
@@ -47,7 +52,25 @@ export default async function AdminProductsPage({
         <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
           Catalog
         </h1>
-        <RefreshButton label="Reload the catalog" />
+        <div className="flex items-center gap-2">
+          {/* Дверь к загрузке новой карты. До 2026-08-22 её тут не было
+              вовсе, и попасть на форму было НЕОТКУДА: пункт «Your
+              resources» убран из навбара вместе с заморозкой креаторства
+              (src/lib/flags.ts), а вход в /creator/upload висел только
+              там. Форма всё это время работала — просто без двери.
+
+              Ведёт в существующую форму автора, а не в новую админскую:
+              тот же довод, что у кнопки Edit ниже — второй путь записи в
+              products означал бы вторые права и вторые дыры. */}
+          <Link
+            href="/creator/upload"
+            className={`${BUTTON_PILL} ${BUTTON_COLORS.primary}`}
+          >
+            <Plus size={16} weight="bold" />
+            Add a map
+          </Link>
+          <RefreshButton label="Reload the catalog" />
+        </div>
       </div>
       <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
         Every map on the site, whatever its state.
@@ -56,7 +79,7 @@ export default async function AdminProductsPage({
       <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Shown" value={stats.total} />
         <Stat label="Live" value={stats.live} />
-        <Stat label="Taken down" value={stats.hidden} />
+        <Stat label="Off the shelf" value={stats.hidden} />
         <Stat label="Purchases" value={stats.sales} />
       </div>
 
@@ -155,29 +178,6 @@ function CatalogRowItem({
                 Open in the marketplace
               </Link>
             )}
-            {/* Правка содержимого — название, описание, цена, галерея,
-                файл. Раньше попасть в неё можно было только через
-                «Your resources», а этот пункт убран из навбара вместе с
-                заморозкой креаторства (src/lib/flags.ts) — функционал
-                остался, дверь пропала. Здесь она и нужна: каталог админки
-                это единственное место, где владелец видит все свои карты
-                разом.
-
-                Отдельного редактора для админа сознательно НЕ заводим:
-                это был бы второй путь записи в products со своими
-                правами и своими дырами, а формы правки уже есть и
-                проверены. Ссылка ведёт в существующую.
-
-                Удалённую карту не правят — форма её и не откроет. */}
-            {canEdit && product.state !== "deleted" && (
-              <Link
-                href={`/resources/${product.slug}/edit`}
-                {...NEW_TAB}
-                className={INLINE_LINK}
-              >
-                Edit
-              </Link>
-            )}
           </span>
 
           {product.suspensionReason && (
@@ -197,7 +197,7 @@ function CatalogRowItem({
           )}
         </div>
 
-        <CatalogActions product={product} />
+        <CatalogActions product={product} own={canEdit} />
       </div>
     </li>
   );

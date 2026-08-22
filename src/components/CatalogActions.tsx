@@ -1,11 +1,17 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { useRefresh } from "@/lib/useRefresh";
-import { EyeSlash, Eye, Trash, ArrowCounterClockwise } from "@phosphor-icons/react";
+import {
+  EyeSlash,
+  Eye,
+  Trash,
+  ArrowCounterClockwise,
+  PencilSimple,
+} from "@phosphor-icons/react";
 import { BUTTON_PILL, BUTTON_COLORS, DANGER_COLORS } from "@/components/Button";
 import {
-  TAKEDOWN_TEMPLATES,
   DELETION_TEMPLATES,
   buildReasonMessage,
   type ReasonTemplate,
@@ -24,9 +30,21 @@ import type { CatalogRow } from "@/lib/catalog";
 // ширина, те же отступы). Раньше это были две разные врезки, съезжавшие
 // вниз по-разному в зависимости от того, что нажали.
 
-type Mode = "suspend" | "delete";
+// Раньше здесь было два режима — "suspend" | "delete". Окно снятия
+// убрано (решение владельца 2026-08-22): с одним продавцом
+// «снять чужую карту за нарушение» — действие без адресата. Сам
+// обработчик жив и ждёт разморозки креаторства — разбор в
+// /api/admin/catalog.
+type Mode = "delete";
 
-export function CatalogActions({ product }: { product: CatalogRow }) {
+export function CatalogActions({
+  product,
+  own,
+}: {
+  product: CatalogRow;
+  /** Карта смотрящего. Свою можно править и прятать, чужую — нет. */
+  own: boolean;
+}) {
   const refresh = useRefresh();
   const [busy, setBusy] = useState(false);
   const [asking, setAsking] = useState<Mode | null>(null);
@@ -67,7 +85,7 @@ export function CatalogActions({ product }: { product: CatalogRow }) {
   }
 
   const deleted = product.state === "deleted";
-  const templates = asking === "delete" ? DELETION_TEMPLATES : TAKEDOWN_TEMPLATES;
+  const templates = DELETION_TEMPLATES;
   const reason = buildReasonMessage(templates, codes, note);
   // Сверяем без регистра и краевых пробелов — ровно как сервер.
   const titleMatches = typed.trim().toLowerCase() === product.title.toLowerCase();
@@ -90,32 +108,73 @@ export function CatalogActions({ product }: { product: CatalogRow }) {
           </button>
         ) : (
           <>
-            {product.state === "live" ? (
+            {/* Правка — кнопка, а не ссылка в строке под названием.
+                Ссылка там была с постройки каталога, и владелец её не
+                нашёл: мелкий текст рядом с «Open in the marketplace»
+                читался как справка, а не как действие. Действия живут в
+                этой колонке — значит и правка здесь.
+
+                Ведёт в СУЩЕСТВУЮЩУЮ форму автора. Своего редактора для
+                админки не заводим сознательно: это был бы второй путь
+                записи в products со своими правами и своими дырами. */}
+            {own && (
+              <Link
+                href={`/resources/${product.slug}/edit`}
+                className={`${BUTTON_PILL} ${BUTTON_COLORS.secondary}`}
+              >
+                <PencilSimple size={16} weight="bold" />
+                Edit
+              </Link>
+            )}
+
+            {/* Спрятать и вернуть — только СВОЮ карту. Состояние hidden
+                база подписывает «убрал автор» (триггер из миграции
+                20260815130000), и на чужой карте такая подпись была бы
+                неправдой — та же ошибка, от которой заведены deleted_by
+                у карт и soft_delete_comment у комментариев.
+
+                ⚠️ Запрет стоит НА СЕРВЕРЕ (/api/admin/catalog). Здесь мы
+                лишь не рисуем заведомо бесполезную кнопку: спрятанная
+                кнопка не защищает ничего — это правило проекта выяснялось
+                пять раз за 20–21 августа. */}
+            {own && product.state === "live" && (
               <button
                 type="button"
                 disabled={busy}
-                onClick={() => setAsking("suspend")}
+                onClick={() => run("hide")}
                 className={`${BUTTON_PILL} ${BUTTON_COLORS.secondary}`}
               >
                 <EyeSlash size={16} weight="bold" />
-                Take down
+                Hide
               </button>
-            ) : (
-              // Вернуть можно только снятую нами карту: у pending и
-              // rejected «вернуть на витрину» означало бы публикацию мимо
-              // очереди, а спрятанную автором возвращает сам автор —
-              // перехода hidden → live у площадки нет и не должно быть.
-              product.state === "suspended" && (
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => run("unsuspend")}
-                  className={`${BUTTON_PILL} ${BUTTON_COLORS.secondary}`}
-                >
-                  <Eye size={16} weight="bold" />
-                  Publish again
-                </button>
-              )
+            )}
+
+            {own && product.state === "hidden" && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => run("unhide")}
+                className={`${BUTTON_PILL} ${BUTTON_COLORS.secondary}`}
+              >
+                <Eye size={16} weight="bold" />
+                Publish again
+              </button>
+            )}
+
+            {/* Снятую площадкой возвращаем независимо от того, чья она:
+                это решение площадки, и отменять его ей же. Кнопки «Take
+                down» больше нет, но карты, снятые ею раньше, остаться
+                могли — без этой кнопки они заперты навсегда. */}
+            {product.state === "suspended" && (
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => run("unsuspend")}
+                className={`${BUTTON_PILL} ${BUTTON_COLORS.secondary}`}
+              >
+                <Eye size={16} weight="bold" />
+                Publish again
+              </button>
             )}
 
             <button

@@ -11,6 +11,7 @@ import {
   ChatCircleDots,
   UserCircle,
 } from "@phosphor-icons/react";
+import { Avatar } from "@/components/Avatar";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
@@ -222,7 +223,7 @@ export function Navbar() {
                         title={displayName}
                         className="flex max-w-[11rem] items-center gap-2 rounded-full px-2.5 py-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
                       >
-                        <AccountAvatar avatarUrl={avatarUrl ?? null} size={22} />
+                        <Avatar avatarUrl={avatarUrl ?? null} size={22} />
                         <span className="truncate text-sm font-medium">
                           {displayName}
                         </span>
@@ -385,7 +386,7 @@ export function Navbar() {
                   title={displayName}
                   className="flex items-center justify-center rounded-full p-2"
                 >
-                  <AccountAvatar avatarUrl={avatarUrl ?? null} size={24} />
+                  <Avatar avatarUrl={avatarUrl ?? null} size={24} />
                 </Link>
               ) : (
                 <Link
@@ -543,26 +544,5 @@ function CartLink({
         </span>
       )}
     </Link>
-  );
-}
-
-// Аватар пользователя: настоящая картинка, если она загружена, иначе
-// иконка-заглушка того же размера.
-function AccountAvatar({
-  avatarUrl,
-  size,
-}: {
-  avatarUrl: string | null;
-  size: number;
-}) {
-  if (!avatarUrl) return <UserCircle size={size} className="shrink-0" />;
-  return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={avatarUrl}
-      alt=""
-      style={{ height: size - 2, width: size - 2 }}
-      className="shrink-0 rounded-full object-cover object-top"
-    />
   );
 }

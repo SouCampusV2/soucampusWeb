@@ -20,8 +20,46 @@ export const dynamic = "force-dynamic";
 
 const MAX_REASON_LENGTH = 500;
 
-type Action = "suspend" | "unsuspend" | "delete" | "restore";
-const ACTIONS: Action[] = ["suspend", "unsuspend", "delete", "restore"];
+type Action =
+  | "suspend"
+  | "unsuspend"
+  | "hide"
+  | "unhide"
+  | "delete"
+  | "restore";
+const ACTIONS: Action[] = [
+  "suspend",
+  "unsuspend",
+  "hide",
+  "unhide",
+  "delete",
+  "restore",
+];
+
+// ⚠️ HIDE И SUSPEND — РАЗНЫЕ СОБЫТИЯ, А НЕ ДВА НАЗВАНИЯ ОДНОГО.
+//
+//   hidden    — «автор убрал сам». Сам же и вернёт, причина не нужна.
+//   suspended — «сняла площадка». Причина обязательна, автор не вернёт.
+//
+// Состояние hidden триггер помечает как hidden_by = 'creator'
+// (миграция 20260815130000). Значит спрятать ЧУЖУЮ карту этим
+// действием — значит записать в базу, что её убрал автор, когда её
+// убрала площадка. Это та же ошибка, от которой заведены
+// deleted_by у карт и soft_delete_comment у комментариев: кто сделал —
+// часть события, а не мелочь.
+//
+// Поэтому hide/unhide разрешены ТОЛЬКО на СВОИХ картах. Сейчас
+// карты на площадке только владельца (креаторство заморожено), то
+// есть ограничение ничего не отнимает, а когда авторы вернутся —
+// окажется на месте заранее.
+//
+// ⚠️ SUSPEND ОСТАЁТСЯ В КОДЕ, ХОТЯ КНОПКИ У НЕГО БОЛЬШЕ НЕТ
+// (решение владельца 2026-08-22). С одним продавцом «снять чужую
+// карту за нарушение» — действие без адресата. Удалять его всё равно
+// нельзя: это единственный инструмент модерации на тот день, когда
+// креаторство разморозят, а всё строится с расчётом на этот возврат
+// (CLAUDE.md). Снести обработчик сейчас значило бы писать его заново
+// потом — вместе с его проверками и его дырами.
 
 export async function POST(request: Request) {
   const admin = await getAdminUser();
@@ -94,6 +132,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
+  // Спрятать и вернуть можно ТОЛЬКО СВОЮ карту — разбор выше,
+  // рядом с ACTIONS. Коротко: состояние hidden база подписывает
+  // «убрал автор», и применить его к чужой карте значило бы записать
+  // ложь о том, кто что сделал.
+  if (
+    (action === "hide" || action === "unhide") &&
+    product.creator_id !== admin.id
+  ) {
+    return NextResponse.json(
+      { error: "Only the author can hide their own map. Use Delete instead." },
+      { status: 403 }
+    );
+  }
+
   // Название вводится руками и сверяется ЗДЕСЬ, а не только в форме:
   // проверка в браузере защищает от случайного клика, серверная — от
   // запроса мимо формы. Без учёта регистра и краевых пробелов: смысл
@@ -117,6 +169,14 @@ export async function POST(request: Request) {
         // не разрешён (миграция 20260815130000).
         return { state: "suspended", suspension_reason: suspensionReason };
       case "unsuspend":
+        return { state: "live", suspension_reason: null };
+      case "hide":
+        // Без причины и без уведомления: человек убирает СВОЮ
+        // карту с витрины — объясняться не перед кем и сообщать
+        // некому. suspension_reason гасим: осадок от прошлого
+        // снятия в новом состоянии значил бы неправду.
+        return { state: "hidden", suspension_reason: null };
+      case "unhide":
         return { state: "live", suspension_reason: null };
       case "delete":
         // Мягко: строка остаётся, файл и скриншоты не трогаем — за них
@@ -230,6 +290,11 @@ export async function POST(request: Request) {
         body: "It is off the marketplace for now — publish it again whenever you are ready.",
         href: "/resources",
       },
+      // Ничего не шлём: эти два разрешены только на СВОЕЙ карте
+      // (проверка выше), а уведомлять человека о том, что он только
+      // что сделал сам, — шум, а не сообщение.
+      hide: null,
+      unhide: null,
     }[action as Action];
 
     if (message) await notify(product.creator_id as string, message);

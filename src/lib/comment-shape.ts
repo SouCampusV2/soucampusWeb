@@ -41,6 +41,8 @@ export type Comment = {
   username: string;
   /** Цвет ника — привилегия купивших; null у остальных. */
   nameColor: string | null;
+  /** Аватар написавшего; null — рисуем заглушку того же размера. */
+  avatarUrl: string | null;
 };
 
 export type CommentRow = {
@@ -54,7 +56,11 @@ export type CommentRow = {
 };
 
 /** Подпись под комментарием — приезжает из public_profiles отдельно. */
-export type CommentAuthor = { username: string; nameColor: string | null };
+export type CommentAuthor = {
+  username: string;
+  nameColor: string | null;
+  avatarUrl: string | null;
+};
 
 /**
  * Подписи под комментариями — одной пачкой на всю ленту.
@@ -75,7 +81,7 @@ export async function commentAuthors(
 
   const { data } = await db
     .from("public_profiles")
-    .select("id, username, name_color")
+    .select("id, username, name_color, avatar_url")
     .in("id", userIds);
 
   for (const p of data ?? []) {
@@ -86,6 +92,15 @@ export async function commentAuthors(
       // значение из базы всё равно остаётся вводом пользователя. Ровно
       // тот же рубеж, что у rowToCreator (creators.ts).
       nameColor: isHexColor(p.name_color) ? p.name_color : null,
+      // Адрес картинки в атрибут src кладётся как есть — но приезжает он
+      // из profiles, то есть это ввод пользователя. Пускаем только то,
+      // что похоже на обычную ссылку: строку, а не javascript: и не
+      // data:. Тот же рубеж «база стережёт запись, код стережёт вывод»,
+      // что строкой выше у цвета.
+      avatarUrl:
+        typeof p.avatar_url === "string" && /^https?:\/\//.test(p.avatar_url)
+          ? p.avatar_url
+          : null,
     });
   }
   return map;
@@ -125,5 +140,6 @@ export function rowToComment(
         1000,
     username: author?.username ?? "—",
     nameColor: author?.nameColor ?? null,
+    avatarUrl: author?.avatarUrl ?? null,
   };
 }
