@@ -122,16 +122,39 @@ export default function CartPage() {
       <PageGlow color="rgba(249,115,22,0.28)" />
 
       <div className="mx-auto max-w-5xl pb-28 pt-20">
+        {/* «Пусто» сказано ОДИН раз — в заголовке (просьба владельца
+            2026-08-22). Раньше то же самое стояло трижды подряд: «Your
+            cart» / «Nothing here yet.» / «Your cart is empty» — три
+            строки, отвечающие на один вопрос, читаются не как забота, а
+            как заикание. Иконка переехала сюда же, из блока ниже: она
+            часть этого утверждения, а не отдельная иллюстрация к нему. */}
         <h1
-          className={`${displayFont.className} text-center text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
+          className={`${displayFont.className} flex items-center justify-center gap-3 text-center text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
         >
-          Your cart
+          {items.length === 0 ? (
+            <>
+              <ShoppingCartSimple
+                size={40}
+                weight="duotone"
+                // Размер через классы, а не только через size: у него
+                // нет отзывчивого варианта, а иконка обязана расти
+                // вместе с заголовком (text-4xl → sm:text-5xl).
+                className="h-9 w-9 shrink-0 text-orange-500 dark:text-orange-400 sm:h-12 sm:w-12"
+              />
+              Your cart is empty
+            </>
+          ) : (
+            "Your cart"
+          )}
         </h1>
-        <p className="mt-3 text-center text-sm text-zinc-600 dark:text-zinc-400">
-          {items.length === 0
-            ? "Nothing here yet."
-            : `${items.length} ${items.length === 1 ? "map" : "maps"} ready to download.`}
-        </p>
+
+        {/* Подпись — только когда есть что считать. У пустой корзины
+            заголовок уже всё сказал. */}
+        {items.length > 0 && (
+          <p className="mt-3 text-center text-sm text-zinc-600 dark:text-zinc-400">
+            {`${items.length} ${items.length === 1 ? "map" : "maps"} ready to download.`}
+          </p>
+        )}
 
         {undo && (
           <div className="mx-auto mt-6 flex max-w-md items-center justify-between gap-3 rounded-full border border-zinc-200 bg-[#fbfbff] py-2 pl-5 pr-2 text-sm dark:border-zinc-800 dark:bg-zinc-950">
@@ -162,16 +185,11 @@ export default function CartPage() {
           // плита стояла ровно под свечением и гасила его в самом ярком
           // месте, а стеклянный вариант мы попробовали и отвергли. Контент
           // просто лежит на странице.
-          <div className="mt-10 px-6 py-14 text-center">
-            <ShoppingCartSimple
-              size={40}
-              weight="duotone"
-              className="mx-auto text-orange-500 dark:text-orange-400"
-            />
-            <h2 className="mt-5 text-xl font-bold text-zinc-950 dark:text-zinc-50">
-              Your cart is empty
-            </h2>
-            <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+          <div className="px-6 pb-14 pt-8 text-center">
+            {/* Иконка и заголовок «Your cart is empty» переехали В
+                <h1> выше — см. разбор там. Здесь остались только ответ
+                на «и что теперь» и кнопки. */}
+            <p className="mx-auto max-w-sm text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
               Pick a map from the marketplace — or start with the free ones, they download exactly the
               same way.
             </p>

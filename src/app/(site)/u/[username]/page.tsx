@@ -104,7 +104,17 @@ export default async function CreatorPage({
       <div className="mx-auto max-w-[120rem] px-6 py-16 sm:px-10 sm:py-24 lg:px-16 xl:px-24 2xl:px-[120px]">
       {/* Шапка профиля продавца */}
       <section className="relative">
-        <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-center sm:gap-8 sm:text-left">
+        {/* sm:items-start, а НЕ items-center (просьба владельца
+            2026-08-22). По центру аватар равнялся на ВЕСЬ блок сразу —
+            имя, бейдж, био, цифры и три кнопки, — и потому оказывался
+            где-то на уровне описания. Чем длиннее био, тем ниже уезжал
+            — то есть положение лица зависело от того, сколько человек
+            написал о себе.
+
+            По верху он встаёт рядом с именем и там и остаётся: аватар и
+            имя — одно утверждение «кто это», остальное под ним —
+            подробности. */}
+        <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-start sm:gap-8 sm:text-left">
           <div className="relative flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-[#fbfbff] dark:border-zinc-800 dark:bg-zinc-900">
             {creator.avatarUrl ? (
               // Обычный <img>, а не next/image: аватары лежат в Supabase

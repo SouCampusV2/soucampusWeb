@@ -155,7 +155,20 @@ export function Navbar() {
                   SouCampus» — с 2026-08-20 неверно: лого в магазине никуда
                   не выходит, оно ведёт на витрину. Выход — пункт
                   "Studio", последний в SHOP_NAV_LINKS. */}
-              <div className="flex shrink-0 items-center gap-1 text-sm font-medium text-zinc-600 dark:text-zinc-300">
+              {/* flex-1 + justify-center — чтобы ссылки стояли ПО ЦЕНТРУ,
+                  как в портфолио-режиме (просьба владельца 2026-08-22).
+                  Раньше стоял shrink-0, и группа прижималась к лого.
+
+                  Почему в портфолио это вышло само: там у <nav> трое детей
+                  (лого, список, кнопка) и justify-between — средний оказывается
+                  ровно посередине между крайними. В магазине ссылки и иконки
+                  лежат внутри ОДНОГО ребёнка, то есть среднего детя нет вовсе —
+                  распорка его и заменяет.
+
+                  whitespace-nowrap обязателен: flex-1 разрешает не только расти,
+                  но и сжиматься, а «What’s new» на узком экране порвалось бы
+                  на две строки и раздуло пилюлю по высоте. */}
+              <div className="flex flex-1 items-center justify-center gap-1 whitespace-nowrap text-sm font-medium text-zinc-600 dark:text-zinc-300">
                 {SHOP_NAV_LINKS.map((link) =>
                   link.soon ? (
                     <span
