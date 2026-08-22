@@ -3,7 +3,12 @@ import { notFound } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import { SealCheck, Star, UserCircle } from "@phosphor-icons/react/dist/ssr";
 import { getAllProductsWithStats } from "@/lib/products";
-import { getAllCreators, getCreatorByHandle, creatorHref } from "@/lib/creators";
+import {
+  getAllCreators,
+  getCreatorByHandle,
+  creatorHref,
+  creatorRole,
+} from "@/lib/creators";
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/Button";
 import { PageGlow } from "@/components/PageGlow";
@@ -79,7 +84,7 @@ export default async function CreatorPage({
   const ratingVotes = rated.reduce((sum, p) => sum + (p.ratingCount ?? 0), 0);
   const avgRating = ratingVotes > 0 ? ratingTotal / ratingVotes : 0;
 
-  const role = roleOf(creator);
+  const role = creatorRole(creator);
 
   // Что посмотреть, если карт у человека нет. Раньше на этом месте
   // печаталось «No maps published yet» — страница честно сообщала, что
@@ -289,40 +294,7 @@ export default async function CreatorPage({
   );
 }
 
-/**
- * Роль на профиле — ОДНА, самая старшая из подходящих.
- *
- * Порядок не алфавитный и не случайный: Creator говорит о человеке
- * больше всего (он делает то, чем живёт площадка), Client — что он в ней
- * участвовал деньгами, Member — что он просто есть. Автор почти всегда
- * ещё и покупатель, и показывать ему «Client» вместо «Creator» значило
- * бы назвать его менее важной из двух правд.
- *
- * Бейдж не заменяет галочку: is_verified отвечает на другой вопрос —
- * «это точно он», а не «кто он».
- */
-function roleOf(creator: { isCreator: boolean; isClient: boolean }) {
-  if (creator.isCreator) {
-    return {
-      label: "Creator",
-      className:
-        "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
-    };
-  }
-  if (creator.isClient) {
-    return {
-      label: "Client",
-      className:
-        "bg-lime-100 text-lime-800 dark:bg-lime-950 dark:text-lime-300",
-    };
-  }
-  return {
-    label: "Member",
-    className:
-      "bg-zinc-950/[0.05] text-zinc-600 dark:bg-zinc-50/[0.06] dark:text-zinc-400",
-  };
-}
-
+/** Число + подпись в строке под био: «2 maps», «5 purchases». */
 function Stat({ value, label }: { value: string; label: string }) {
   return (
     <span className="text-zinc-500 dark:text-zinc-400">

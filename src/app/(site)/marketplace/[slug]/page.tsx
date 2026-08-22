@@ -3,7 +3,6 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { sanitizeDescription } from "@/lib/sanitize";
-import { SealCheck } from "@phosphor-icons/react/dist/ssr";
 import {
   getAllProducts,
   getAllProductsWithStats,
@@ -11,7 +10,7 @@ import {
   getProductStats,
 } from "@/lib/products";
 import { pickSimilar } from "@/lib/similar";
-import { creatorHref, getCreatorsById } from "@/lib/creators";
+import { getCreatorsById } from "@/lib/creators";
 import { getViewCount, VIEW_PATHS } from "@/lib/views";
 import { getReactionCounts, getReactionOptions } from "@/lib/reactions";
 import { getComments } from "@/lib/comments";
@@ -24,6 +23,7 @@ import { BackLink } from "@/components/BackLink";
 import { INLINE_LINK } from "@/components/Button";
 import { StarRating } from "@/components/StarRating";
 import { ProductSpecs } from "@/components/ProductSpecs";
+import { CreatorCard } from "@/components/CreatorCard";
 import { SimilarMaps } from "@/components/SimilarMaps";
 
 // Одна карта — один поход в базу за рендер.
@@ -163,40 +163,22 @@ export default async function ProductPage({
       <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl">
         {product.title}
       </h1>
-      {/* Автор берётся из самой карты, а не пишется здесь руками.
-          До 2026-08-21 тут стояло захардкоженное «SouCampus» со ссылкой
-          на его профиль: пока автор один, это работало и выглядело
-          правдой. С первым чужим автором стало бы прямым враньём —
-          чужая карта под нашим именем. */}
-      {creator && (
-        <p className="mt-2 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-          by{" "}
-          <Link
-            href={creatorHref(creator.handle)}
-            className={`inline-flex items-center gap-1 ${INLINE_LINK}`}
-          >
-            {creator.username}
-            {creator.isVerified && <SealCheck size={13} weight="fill" aria-hidden />}
-          </Link>
-        </p>
-      )}
+      {/* Строчки «by <автор>» здесь больше нет (решение владельца
+          2026-08-22) — автор переехал в правую колонку, в CreatorCard.
+          Довод: чьё это — довод в пользу покупки, а доводы стоят рядом с
+          ценой и кнопкой, а не теряются между названием и описанием. */}
       <p className="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400">{product.summary}</p>
 
-      {/* Рейтинг + покупки — под заголовком, как на витрине. */}
-      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-2 text-sm">
-        <div className="flex items-center gap-1.5">
-          <StarRating rating={rating} size={16} />
-          <span className="text-zinc-500 dark:text-zinc-400">
-            {ratingCount
-              ? `${rating.toFixed(1)} (${ratingCount} rating${ratingCount === 1 ? "" : "s"})`
-              : "Not yet rated"}
-          </span>
-        </div>
-        <span className="text-zinc-400 dark:text-zinc-600" aria-hidden>
-          ·
-        </span>
+      {/* Только оценка. Число покупок отсюда убрано (решение владельца
+          2026-08-22): оно никуда не делось — плитка Purchases стоит в
+          панели характеристик справа, — а под заголовком две цифры через
+          точку читались как одна мысль, разорванная надвое. */}
+      <div className="mt-4 flex items-center gap-1.5 text-sm">
+        <StarRating rating={rating} size={16} />
         <span className="text-zinc-500 dark:text-zinc-400">
-          {salesCount} {salesCount === 1 ? "purchase" : "purchases"}
+          {ratingCount
+            ? `${rating.toFixed(1)} (${ratingCount} rating${ratingCount === 1 ? "" : "s"})`
+            : "Not yet rated"}
         </span>
       </div>
 
@@ -206,8 +188,24 @@ export default async function ProductPage({
           пока листаешь длинное описание. На мобильном — просто друг под
           другом (карточка покупки выше, description ниже), сайдбар не
           нужен на узком экране, где и так всё в одну колонку. */}
-      <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+      {/* ⚠️ ПРАВАЯ КОЛОНКА ФИКСИРОВАННОЙ ШИРИНЫ, а не доля от экрана
+          (изменено 2026-08-22 по просьбе владельца: «левую шире, правую
+          короче»).
+
+          Было `lg:grid-cols-3` + `col-span-2`, то есть две трети против
+          трети. Доля растёт вместе с экраном: на 1920 треть — это 560px
+          под карточку с ценой и пятью плитками, ей столько не нужно, а
+          галерея слева при этом теряет ровно столько же.
+
+          21rem держит сайдбар постоянным на любой ширине, и всё, что
+          добавляет монитор, уходит картинкам. Тот же приём уже
+          используется в корзине (`lg:grid-cols-[1fr_20rem]`).
+
+          minmax(0,1fr) вместо 1fr — иначе длинное слово в описании или
+          широкая таблица распирают колонку шире ячейки: у грид-элемента
+          min-width по умолчанию auto, и он не даёт ей сжаться. */}
+      <div className="mt-10 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_21rem]">
+        <div className="min-w-0">
           {/* Обложка + скриншоты работы одной галереей: большой кадр и
               лента миниатюр под ним (см. ProductGallery). */}
           <ProductGallery
@@ -316,6 +314,11 @@ export default async function ProductPage({
             salesCount={salesCount}
             views={views}
           />
+
+          {/* Автор — ПОСЛЕДНИМ в колонке. Порядок отвечает на вопросы в
+              том порядке, в каком их задают: сколько стоит → подойдёт ли
+              мне → а кто это сделал. Разбор — в шапке CreatorCard. */}
+          {creator && <CreatorCard creator={creator} />}
         </aside>
       </div>
 

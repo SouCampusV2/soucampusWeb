@@ -82,6 +82,48 @@ type CreatorRow = {
  * стоит, а полагаться на то, что ограничение в базе никогда не ослабят,
  * — стоит. Сюда значение приезжает из БД, то есть это ввод пользователя.
  */
+/**
+ * Роль человека на площадке — ОДНА, самая старшая из подходящих.
+ *
+ * Порядок не алфавитный и не случайный: Creator говорит о человеке
+ * больше всего (он делает то, чем живёт площадка), Client — что он в ней
+ * участвовал деньгами, Member — что он просто есть. Автор почти всегда
+ * ещё и покупатель, и показывать ему «Client» вместо «Creator» значило
+ * бы назвать его менее важной из двух правд.
+ *
+ * Бейдж не заменяет галочку: is_verified отвечает на другой вопрос —
+ * «это точно он», а не «кто он».
+ *
+ * ⚠️ ЖИВЁТ ЗДЕСЬ, А НЕ В СТРАНИЦЕ ПРОФИЛЯ (переехало 2026-08-22). Раньше
+ * это была приватная функция внутри /u/[username]/page.tsx, и когда роль
+ * понадобилась в карточке автора на странице карты, выбор был между
+ * копией и переездом. Копию проект уже проходил семью копиями свечения и
+ * семью способами напечатать дату: расходятся они молча.
+ *
+ * className — только для пилюли на профиле; в сайдабаре берут один label.
+ */
+export function creatorRole(creator: { isCreator: boolean; isClient: boolean }) {
+  if (creator.isCreator) {
+    return {
+      label: "Creator",
+      className:
+        "bg-orange-100 text-orange-700 dark:bg-orange-950 dark:text-orange-300",
+    };
+  }
+  if (creator.isClient) {
+    return {
+      label: "Client",
+      className:
+        "bg-lime-100 text-lime-800 dark:bg-lime-950 dark:text-lime-300",
+    };
+  }
+  return {
+    label: "Member",
+    className:
+      "bg-zinc-950/[0.05] text-zinc-600 dark:bg-zinc-50/[0.06] dark:text-zinc-400",
+  };
+}
+
 export function creatorHref(handle: string): string {
   return `/@${encodeURIComponent(handle)}`;
 }
