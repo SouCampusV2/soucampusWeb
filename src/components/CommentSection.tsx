@@ -227,11 +227,30 @@ export function CommentSection({
           No comments yet.
         </p>
       ) : (
-        <ul className="mt-6 space-y-5">
-          {comments.map((comment) => (
+        <ul className="mt-6 space-y-3">
+          {comments.map((comment, index) => (
             <li
               key={comment.id}
-              className="border-t border-zinc-950/[0.06] pt-5 dark:border-white/10"
+              // Карточка вместо черты сверху (решение владельца
+              // 2026-08-22). Разделители и фон делают одну работу —
+              // отделяют одно высказывание от другого, — и делать её
+              // дважды значит шуметь.
+              //
+              // Чередование по чётности, а НЕ по автору и не по смыслу:
+              // цвет здесь ничего не сообщает, он только разводит соседние
+              // карточки. Если когда-нибудь захочется красить по смыслу
+              // («автор карты», «мой комментарий») — это другой признак, и
+              // чередование придётся убрать: два разных смысла одним цветом
+              // не различить.
+              //
+              // Тёмная тема — по общему правилу отражения 50↔950
+              // (docs/DESIGN.md) с прозрачностью /40, как у плашек по всему
+              // сайту: чистый 950 на тёмном фоне читается как грязное пятно.
+              className={`rounded-xl px-4 py-3.5 ${
+                index % 2 === 0
+                  ? "bg-lime-50 dark:bg-lime-950/40"
+                  : "bg-orange-50 dark:bg-orange-950/40"
+              }`}
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex min-w-0 items-center gap-2">
