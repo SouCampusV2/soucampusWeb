@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { creatorHref } from "@/lib/creators";
 import { Unbounded } from "next/font/google";
 import { SealCheck } from "@phosphor-icons/react/dist/ssr";
 import type { Product } from "@/lib/products";
@@ -53,7 +54,12 @@ export function ProductCard({
     (product.creator
       ? {
           name: product.creator.username,
-          href: `/creator/${encodeURIComponent(product.creator.handle)}`,
+          // creatorHref, а не своя строка: адрес профиля переехал на
+          // /@<имя> ещё 21.08, и эта копия пережила переезд — каждая
+          // карточка витрины вела на СТАРЫЙ адрес, а работало это только
+          // за счёт редиректа в next.config.ts. Редирект прикрывал
+          // протухшую ссылку, вместо того чтобы ловить внешние.
+          href: creatorHref(product.creator.handle),
           isVerified: product.creator.isVerified,
         }
       : { name: "Unknown creator", href: undefined, isVerified: false });

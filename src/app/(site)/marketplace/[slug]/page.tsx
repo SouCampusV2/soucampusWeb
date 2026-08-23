@@ -286,10 +286,6 @@ export default async function ProductPage({
                 </dd>
               </div>
               <div className="flex items-center justify-between">
-                <dt className="text-zinc-500 dark:text-zinc-400">Format</dt>
-                <dd className="font-medium text-zinc-950 dark:text-zinc-50">World file</dd>
-              </div>
-              <div className="flex items-center justify-between">
                 <dt className="text-zinc-500 dark:text-zinc-400">Need help?</dt>
                 <dd>
                   <Link
