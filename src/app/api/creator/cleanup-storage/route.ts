@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
@@ -38,6 +39,12 @@ export async function POST() {
   if (!user) {
     return NextResponse.json({ error: "auth required" }, { status: 401 });
   }
+
+  // Лимит — после проверки входа и до самой работы: расходовать
+  // счёт должен тот, кого мы уже опознали, а работа не должна
+  // начинаться, если слота нет.
+  const limited = await enforceRateLimit("creator-cleanup", user.id);
+  if (limited) return limited;
 
   const db = getSupabaseAdmin();
 

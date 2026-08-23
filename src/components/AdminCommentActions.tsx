@@ -30,7 +30,17 @@ export function AdminCommentActions({ commentId }: { commentId: string }) {
     });
     setPending(false);
 
-    if (response.ok) refresh();
+    if (response.ok) {
+      refresh();
+      return;
+    }
+
+    // Молчаливый отказ здесь выглядит как сломанная кнопка: комментарий
+    // остаётся на месте, и понять почему неоткуда. Отдельного места под
+    // текст в этой кнопке нет, поэтому alert — он же и останавливает
+    // серию нажатий подряд.
+    const data = await response.json().catch(() => null);
+    alert(data?.message ?? "Could not remove the comment.");
   }
 
   return (

@@ -184,6 +184,20 @@ export function AddToCartButton({
         );
         return;
       }
+      // 429 — не сбой, а «слишком часто»: объясняем словами и оставляем
+      // кнопку рабочей, чтобы человек мог повторить через пару минут.
+      if (response.status === 429) {
+        const data = await response.json().catch(() => null);
+        setBuying(false);
+        setNotice({
+          tone: "info",
+          text:
+            typeof data?.message === "string"
+              ? data.message
+              : "Too many attempts. Try again in a few minutes.",
+        });
+        return;
+      }
       if (!response.ok) throw new Error(`checkout failed: ${response.status}`);
 
       const { url } = await response.json();

@@ -36,7 +36,12 @@ export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
       const data = await res.json().catch(() => null);
       if (!res.ok) {
         setError(
-          "Could not send it — nothing was delivered. Check the connection and try again; the text above is still here.",
+          // Лимит частоты объясняет себя сам (и говорит, сколько ждать);
+          // всё остальное — один общий текст, потому что различать сбои
+          // сети админу нечем.
+          typeof data?.message === "string"
+            ? `${data.message} Nothing was delivered — the text above is still here.`
+            : "Could not send it — nothing was delivered. Check the connection and try again; the text above is still here.",
         );
         return;
       }

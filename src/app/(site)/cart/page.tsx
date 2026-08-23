@@ -17,7 +17,12 @@ import {
 } from "@phosphor-icons/react";
 import { useCart, type CartItem } from "@/lib/cart-context";
 import { useUser } from "@/lib/useUser";
-import { Button, BUTTON_COLORS } from "@/components/Button";
+import {
+  Button,
+  BUTTON_COLORS,
+  BUTTON_PILL,
+  DANGER_COLORS,
+} from "@/components/Button";
 import { PageGlow } from "@/components/PageGlow";
 import { CartRecommendations } from "@/components/CartRecommendations";
 
@@ -56,6 +61,9 @@ export default function CartPage() {
   const { user } = useUser();
   const router = useRouter();
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
+  // Отдельно от state, потому что это не сбой: покупка не сломалась,
+  // её попросили повторить позже, и текст объясняет когда.
+  const [limitMessage, setLimitMessage] = useState<string | null>(null);
   // Удаление из корзины необратимо и без подтверждения — вместо
   // модального окна («точно удалить?» на каждый клик раздражает) держим
   // последнее удалённое и предлагаем вернуть. Без автоскрытия по таймеру:
@@ -88,6 +96,7 @@ export default function CartPage() {
       router.push("/login?next=/cart");
       return;
     }
+    setLimitMessage(null);
     setState("loading");
     try {
       const res = await fetch("/api/checkout", {
@@ -100,6 +109,19 @@ export default function CartPage() {
       // Сессия истекла между загрузкой страницы и оплатой — на вход.
       if (res.status === 401) {
         router.push("/login?next=/cart");
+        return;
+      }
+      // 429 — единственный отказ, который надо объяснить словами: он не
+      // сбой, он проходит сам через несколько минут, и «попробуйте
+      // позже» без причины выглядит как поломка магазина.
+      if (res.status === 429) {
+        const data = await res.json().catch(() => null);
+        setLimitMessage(
+          typeof data?.message === "string"
+            ? data.message
+            : "Too many attempts. Try again in a few minutes."
+        );
+        setState("idle");
         return;
       }
       if (!res.ok) throw new Error(`checkout failed: ${res.status}`);
@@ -299,11 +321,17 @@ export default function CartPage() {
                 ))}
               </ul>
 
+              {/* Разрушающее действие второго плана: DANGER_COLORS.quiet
+                  в геометрии маленькой пилюли — тот же вид, что у прочих
+                  опасных кнопок «в ряду с обычными» (DESIGN.md → Red).
+                  Раньше здесь была самодельная серая ссылка с
+                  подчёркиванием, которой нет ни в одном варианте Button. */}
               <button
                 type="button"
                 onClick={clearAll}
-                className="mt-4 cursor-pointer text-sm text-zinc-500 underline decoration-zinc-300 underline-offset-4 hover:text-red-600 dark:text-zinc-400 dark:decoration-zinc-700 dark:hover:text-red-400"
+                className={`mt-4 ${BUTTON_PILL} -ml-5 ${DANGER_COLORS.quiet}`}
               >
+                <Trash size={16} />
                 Clear cart
               </button>
             </div>
@@ -343,6 +371,12 @@ export default function CartPage() {
                 {state === "error" && (
                   <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
                     Something went wrong — please try again.
+                  </p>
+                )}
+
+                {limitMessage && (
+                  <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+                    {limitMessage}
                   </p>
                 )}
 

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/admin";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 // Удаление комментария площадкой.
@@ -21,6 +22,12 @@ export async function POST(request: Request) {
   if (!admin) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
+
+  // Лимит — ПОСЛЕ проверки прав: посторонний не должен расходовать
+  // чужой счёт, и разница ответов (404 против 429) не должна
+  // подсказывать ему, что обработчик существует.
+  const limited = await enforceRateLimit("admin-action", admin.id);
+  if (limited) return limited;
 
   let body: unknown;
   try {

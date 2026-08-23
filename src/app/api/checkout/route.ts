@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { enforceRateLimit } from "@/lib/rate-limit";
 import { getProduct } from "@/lib/products";
 import { getStripe } from "@/lib/stripe";
 import { SITE_URL } from "@/lib/site";
@@ -68,6 +69,12 @@ export async function POST(request: Request) {
   if (!user) {
     return NextResponse.json({ error: "auth required" }, { status: 401 });
   }
+
+  // Лимит — после проверки входа и до самой работы: расходовать
+  // счёт должен тот, кого мы уже опознали, а работа не должна
+  // начинаться, если слота нет.
+  const limited = await enforceRateLimit("checkout", user.id);
+  if (limited) return limited;
 
   let body: unknown;
   try {
