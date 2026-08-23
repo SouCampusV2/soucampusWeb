@@ -40,7 +40,7 @@ export function ApplicationActions({ applicationId }: { applicationId: string })
               // будет жать ещё раз и искать поломку.
               data?.error === "creator signups are frozen"
               ? "Creator signups are frozen — this one has to wait."
-              : "Could not save the decision."
+              : (data?.message ?? "Could not save the decision.")
         );
         return;
       }

@@ -36,6 +36,13 @@ export type Creator = {
    */
   isCreator: boolean;
   /**
+   * Основатель площадки. Про ИДЕНТИЧНОСТЬ, а не про права: права живут в
+   * is_admin, и совпадают эти два поля только пока админ на сайте один.
+   * Роль, выведенная из права, разъедется в день, когда админом станет
+   * модератор.
+   */
+  isFounder: boolean;
+  /**
    * Что-то покупал. Считается на лету поверх закрытых заказов
    * (profile_is_client, миграция 20260820130000) — наружу приходит
    * только «да/нет», без единой строки чужого заказа.
@@ -57,6 +64,8 @@ type CreatorRow = {
   is_creator?: boolean | null;
   /** Обе — из 20260820130000; до неё представление их не отдаёт. */
   is_client?: boolean | null;
+  /** Из 20260823130000; у старых баз колонки нет. */
+  is_founder?: boolean | null;
   name_color?: string | null;
 };
 
@@ -102,7 +111,27 @@ type CreatorRow = {
  *
  * className — только для пилюли на профиле; в сайдабаре берут один label.
  */
-export function creatorRole(creator: { isCreator: boolean; isClient: boolean }) {
+export function creatorRole(creator: {
+  isCreator: boolean;
+  isClient: boolean;
+  isFounder?: boolean;
+}) {
+  // Founder идёт ПЕРВЫМ, потому что роль показывается одна — самая
+  // старшая из подходящих. Владелец площадки почти всегда ещё и автор, и
+  // ещё и покупатель; назвать его «Creator» значило бы выбрать из трёх
+  // правд не самую главную.
+  //
+  // Цвет — blue, второй акцент. Выбран методом исключения, и это честный
+  // довод: orange уже занят ролью Creator, lime — ролью Client, zinc —
+  // Member. Взять чужой оттенок значило бы сделать две разные роли
+  // неразличимыми, а весь смысл бейджа в том, чтобы различать.
+  if (creator.isFounder) {
+    return {
+      label: "Founder",
+      className:
+        "bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-300",
+    };
+  }
   if (creator.isCreator) {
     return {
       label: "Creator",
@@ -141,6 +170,7 @@ function rowToCreator(row: CreatorRow): Creator {
     bio: row.bio,
     isVerified: row.is_verified,
     isCreator: Boolean(row.is_creator),
+    isFounder: Boolean(row.is_founder),
     isClient: Boolean(row.is_client),
     nameColor: isHexColor(row.name_color) ? row.name_color : null,
   };
@@ -157,7 +187,7 @@ export function isHexColor(value: unknown): value is string {
 }
 
 const CREATOR_FIELDS =
-  "id, username, username_lower, avatar_url, bio, is_verified, is_creator, name_color, is_client";
+  "id, username, username_lower, avatar_url, bio, is_verified, is_creator, is_founder, name_color, is_client";
 
 // Тот же набор без is_creator — запасной путь, пока миграция
 // 20260811120000 не прогнана. PostgREST на незнакомую колонку отвечает
@@ -172,6 +202,7 @@ function isMissingRole(message: string): boolean {
   // на карточках витрины исчезли бы целиком из-за одной подписи.
   return (
     message.includes("is_creator") ||
+    message.includes("is_founder") ||
     message.includes("is_client") ||
     message.includes("name_color") ||
     message.includes("username")

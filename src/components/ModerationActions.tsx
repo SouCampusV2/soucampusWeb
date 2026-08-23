@@ -53,7 +53,7 @@ export function ModerationActions({ productId }: { productId: string }) {
         setError("This map was already handled — refreshing the queue.");
         return;
       }
-      setError(data.error ?? "Something went wrong.");
+      setError(data.message ?? data.error ?? "Something went wrong.");
       return;
     }
 

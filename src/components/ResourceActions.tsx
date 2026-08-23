@@ -86,7 +86,9 @@ export function ResourceActions({
 
     if (!response.ok) {
       const data = await response.json().catch(() => ({}));
-      setError(data.error ?? "Something went wrong.");
+      // message приходит с лимитом частоты и написан для человека;
+      // error — машинный код, годный как запасной вариант.
+      setError(data.message ?? data.error ?? "Something went wrong.");
       return;
     }
 

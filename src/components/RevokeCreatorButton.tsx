@@ -57,7 +57,7 @@ export function RevokeCreatorButton({
         setError(
           data?.error === "already handled"
             ? "They're not a creator anymore."
-            : "Could not remove the status."
+            : (data?.message ?? "Could not remove the status.")
         );
         return;
       }

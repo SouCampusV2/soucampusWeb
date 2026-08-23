@@ -72,7 +72,7 @@ export function CatalogActions({
       });
       if (!res.ok) {
         const data = await res.json().catch(() => null);
-        setError(data?.error ?? "Something went wrong");
+        setError(data?.message ?? data?.error ?? "Something went wrong");
         return;
       }
       reset();
