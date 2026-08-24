@@ -115,7 +115,13 @@ export function ReactionButton({
 
   // Гостю кнопка видна, но не нажимается: показать, что реакции есть, и
   // сколько их, — полезно; предлагать действие, которое база отвергнет,
-  // — нет. Подсказка объясняет, почему.
+  // — нет.
+  //
+  // Подсказки «Sign in to react» здесь БОЛЬШЕ НЕТ (решение владельца
+  // 23.08): гасшая кнопка с курсором-запретом уже всё сказала, а
+  // всплывающий текст на кнопке, которую нельзя нажать, читается как
+  // призыв её нажать. Средству чтения экрана смысл по-прежнему несёт
+  // aria-label, так что ничего не потеряно.
   //
   // busy сюда НЕ входит, хотя напрашивается: читать ref во время
   // отрисовки нельзя (React об этом и предупреждает), а главное — не
@@ -133,7 +139,7 @@ export function ReactionButton({
       aria-label={
         mine ? `Remove your ${label} reaction` : `React with ${label}`
       }
-      title={ready ? label : "Sign in to react"}
+      title={ready ? label : undefined}
       className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-sm font-semibold transition ${
         mine
           ? "border-orange-500 bg-orange-500/10 text-orange-700 dark:text-orange-300"
