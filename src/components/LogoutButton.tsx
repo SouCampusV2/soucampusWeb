@@ -1,24 +1,16 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { useRefresh } from "@/lib/useRefresh";
 import { SignOut } from "@phosphor-icons/react";
-import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { useLogout } from "@/lib/useLogout";
 import { Button } from "@/components/Button";
 
 // Кнопка выхода для страницы профиля. Клиентская — signOut живёт в
-// браузере (чистит cookie сессии), после чего router.refresh перечитывает
-// серверные компоненты и push уводит в магазин.
+// браузере (чистит cookie сессии).
+//
+// Сам выход переехал в useLogout: он же был скопирован в Navbar, и
+// правку «оставаться на той же странице» пришлось бы делать дважды.
 export function LogoutButton() {
-  const router = useRouter();
-  const refresh = useRefresh();
-
-  async function handleLogout() {
-    const supabase = createSupabaseBrowser();
-    await supabase.auth.signOut();
-    refresh();
-    router.push("/marketplace");
-  }
+  const handleLogout = useLogout();
 
   return (
     <Button variant="secondary" onClick={handleLogout} className="gap-2">

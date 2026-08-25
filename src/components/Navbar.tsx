@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useRefresh } from "@/lib/useRefresh";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Unbounded } from "next/font/google";
@@ -17,11 +16,11 @@ import { Skeleton } from "@/components/Skeleton";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
 import { isMarketplaceRoute } from "@/lib/marketplace-routes";
 import { useCart } from "@/lib/cart-context";
+import { useLogout } from "@/lib/useLogout";
 import { useUser } from "@/lib/useUser";
 import { CREATOR_SIGNUPS_OPEN } from "@/lib/flags";
 import { SHOP_NAV_LINKS } from "@/lib/products";
 import { creatorHref } from "@/lib/creators";
-import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { NotificationsBell } from "@/components/NotificationsBell";
 
 // Same display font as the hero headings — the navbar rhymes with them.
@@ -33,17 +32,14 @@ const displayFont = Unbounded({
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
-  const refresh = useRefresh();
   const [prevPathname, setPrevPathname] = useState(pathname);
   const { count } = useCart();
   const { user, loading: userLoading } = useUser();
 
+  const logout = useLogout();
+
   async function handleLogout() {
-    const supabase = createSupabaseBrowser();
-    await supabase.auth.signOut();
-    refresh();
-    router.push("/marketplace");
+    await logout();
     setOpen(false);
   }
 
