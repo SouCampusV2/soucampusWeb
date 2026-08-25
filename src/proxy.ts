@@ -1,5 +1,9 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import {
+  NAME_CLAIMED_COOKIE,
+  NAME_CLAIMED_COOKIE_OPTIONS,
+} from "@/lib/name-claimed-cookie";
 
 // Proxy — в Next 16 это бывший middleware (переименован, поведение то же;
 // см. node_modules/next/dist/docs/.../16-proxy.md). Файл один на проект,
@@ -67,6 +71,54 @@ export async function proxy(request: NextRequest) {
     url.pathname = "/login";
     url.search = `?next=${encodeURIComponent(request.nextUrl.pathname)}`;
     return NextResponse.redirect(url);
+  }
+
+  // ------------------------------------------------------------
+  // Вошёл, но ещё не назвался.
+  //
+  // Google ника не даёт, поэтому до выбора имени человек носит то, что
+  // придумала база из его почты. Пока он не назвался — уводим на
+  // /welcome с любого адреса: иначе он оставит комментарий и купит карту
+  // под именем `stavytskyiyevhenii`, а увидит это уже потом.
+  //
+  // ⚠️ ЭТО УДОБСТВО, А НЕ ЗАЩИТА, и путать нельзя. Гейт можно обойти,
+  // подделав cookie ниже, — и не получить ничего: бесплатная смена имени
+  // висит на колонке username_claimed, а её из браузера не изменить
+  // (guard_username_change берёт значение из old прежде любых решений).
+  // Обошедший останется с именем из почты, чего сам и добивался.
+  // Именно поэтому здесь допустим дешёвый признак; будь на кону право —
+  // был бы недопустим.
+  //
+  // ЦЕНА ЗАПРОСА. Спросить базу — значит сходить в неё на КАЖДОМ переходе
+  // каждого вошедшего. Поэтому спрашиваем один раз и запоминаем ответ
+  // cookie: у всех, кто регистрировался формой, username_claimed = true
+  // (default в миграции 20260825120000), они платят один запрос за сессию
+  // и больше никогда.
+  const pathname = request.nextUrl.pathname;
+  const exempt =
+    pathname.startsWith("/welcome") ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/signup");
+
+  if (user && !exempt && !request.cookies.get(NAME_CLAIMED_COOKIE)) {
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("username_claimed")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profile?.username_claimed === false) {
+      const url = request.nextUrl.clone();
+      url.pathname = "/welcome";
+      url.search = "";
+      return NextResponse.redirect(url);
+    }
+
+    // Назвался (или строки ещё нет — тогда не мешаем ходить по сайту).
+    // Ставим признак, чтобы больше не спрашивать.
+    response.cookies.set(NAME_CLAIMED_COOKIE, "1", NAME_CLAIMED_COOKIE_OPTIONS);
   }
 
   return response;
