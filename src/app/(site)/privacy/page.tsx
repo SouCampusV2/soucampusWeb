@@ -25,16 +25,24 @@ import { SITE_NAME, SITE_URL, SUPPORT_EMAIL } from "@/lib/site";
 // ⚠️ Если код изменится, а страница нет — она станет ложью, и это хуже
 // её отсутствия. Правишь сбор данных — правь и этот файл.
 
-// ⚠️ ЗАПОЛНИТЬ ВЛАДЕЛЬЦУ. По GDPR оператор должен быть опознаваем: имя
-// (или название юрлица) и страна. OÜ на 25.08.2026 не зарегистрирована
-// (docs/BUSINESS.md § 11), поэтому здесь стоит имя сайта, а не компании —
-// это честно, но не полно. Появится юрлицо — вписать название и
-// регистрационный номер.
+// Оператор данных — ФИЗЛИЦО, и это полноценный вариант по GDPR: юрлицо
+// для этого не требуется. OÜ решено не заводить (владелец, 25.08:
+// сложности с именем и лишние траты), поэтому здесь настоящее имя.
+//
+// ⚠️ СТРАНА ЗДЕСЬ — НЕ ГРАЖДАНСТВО, а место, где оператор находится:
+// от него зависит, чей надзорный орган и чьё право применяются. Владелец
+// живёт в Эстонии по ВНЖ, гражданство украинское — в документе стоит
+// Эстония, и это не описка.
+//
+// Домашнего адреса здесь нет намеренно. Для физлица, держащего сайт,
+// «имя + страна + рабочая почта» — достаточная опознаваемость; адрес
+// проживания не требуется, а публиковать его вредно.
+//
+// Появится юрлицо — менять ОДНО это место, ради чего константа и
+// отделена от текста: "SouCampus OÜ (reg. 1234567), registered in Estonia".
 const CONTROLLER = {
-  name: SITE_NAME,
-  // Готовый вид, когда юрлицо появится:
-  // "SouCampus OÜ (reg. 1234567), registered in Estonia"
-  detail: "operated as a sole undertaking in the European Union",
+  name: "Yevhenii Stavytskyi",
+  detail: "an individual based in Estonia",
 };
 
 const LAST_UPDATED = "25 August 2026";
@@ -65,7 +73,7 @@ const SECTIONS: Section[] = [
     id: "who-we-are",
     title: "Who is responsible for your data",
     paragraphs: [
-      `${CONTROLLER.name} (${SITE_URL}) is ${CONTROLLER.detail}. It decides why and how the personal data described below is used — in the language of the GDPR, it is the data controller.`,
+      `${SITE_NAME} (${SITE_URL}) is run by ${CONTROLLER.name}, ${CONTROLLER.detail}. He decides why and how the personal data described below is used — in the language of the GDPR, he is the data controller.`,
       `For anything on this page — a question, a request, or a complaint — write to ${SUPPORT_EMAIL}. A person reads that inbox, not a robot.`,
     ],
   },
