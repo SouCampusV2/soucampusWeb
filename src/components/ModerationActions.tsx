@@ -5,6 +5,7 @@ import { useRefresh } from "@/lib/useRefresh";
 import { Check, X } from "@phosphor-icons/react";
 import { BUTTON_COLORS, BUTTON_PILL, DANGER_COLORS } from "@/components/Button";
 import { REJECTION_TEMPLATES, buildRejectionMessage } from "@/lib/rejection";
+import { readApiError } from "@/lib/api-error";
 
 // Кнопки разбора одной заявки. Клиентский компонент — потому что здесь
 // живёт состояние формы отказа; само решение принимает сервер
@@ -45,7 +46,7 @@ export function ModerationActions({ productId }: { productId: string }) {
     setPending(false);
 
     if (!response.ok) {
-      const data = await response.json().catch(() => ({}));
+      const { code, message } = await readApiError(response);
       // 409 — карту уже разобрали в другой вкладке. Это не ошибка
       // пользователя, а гонка; обновляем список, чтобы он показал правду.
       if (response.status === 409) {
@@ -53,7 +54,7 @@ export function ModerationActions({ productId }: { productId: string }) {
         setError("This map was already handled — refreshing the queue.");
         return;
       }
-      setError(data.message ?? data.error ?? "Something went wrong.");
+      setError(message ?? code ?? "Something went wrong.");
       return;
     }
 

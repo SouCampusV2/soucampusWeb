@@ -17,6 +17,7 @@ import {
   type ReasonTemplate,
 } from "@/lib/rejection";
 import type { CatalogRow } from "@/lib/catalog";
+import { readApiError } from "@/lib/api-error";
 
 // Действия над картой в каталоге админки.
 //
@@ -71,8 +72,8 @@ export function CatalogActions({
         body: JSON.stringify({ productId: product.id, action, ...payload }),
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
-        setError(data?.message ?? data?.error ?? "Something went wrong");
+        const { code, message } = await readApiError(res);
+        setError(message ?? code ?? "Something went wrong");
         return;
       }
       reset();

@@ -25,6 +25,7 @@ import {
 } from "@/components/Button";
 import { PageGlow } from "@/components/PageGlow";
 import { CartRecommendations } from "@/components/CartRecommendations";
+import { readApiError } from "@/lib/api-error";
 
 // Клиентская страница целиком (нужен localStorage через useCart) — как
 // у /marketplace/[slug], metadata живёт в соседнем layout.tsx, потому что
@@ -115,12 +116,8 @@ export default function CartPage() {
       // сбой, он проходит сам через несколько минут, и «попробуйте
       // позже» без причины выглядит как поломка магазина.
       if (res.status === 429) {
-        const data = await res.json().catch(() => null);
-        setLimitMessage(
-          typeof data?.message === "string"
-            ? data.message
-            : "Too many attempts. Try again in a few minutes."
-        );
+        const { message } = await readApiError(res);
+        setLimitMessage(message ?? "Too many attempts. Try again in a few minutes.");
         setState("idle");
         return;
       }
