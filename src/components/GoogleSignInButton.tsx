@@ -60,8 +60,15 @@ function GoogleMark() {
 
 export function GoogleSignInButton({
   mode,
+  next,
 }: {
   mode: "login" | "signup";
+  /**
+   * Куда вернуть после входа. Приходит УЖЕ проверенным (safeNextPath в
+   * AuthForm) — принимать сюда сырую строку из адреса нельзя: она
+   * доедет до window.location и уведёт человека на чужой сайт.
+   */
+  next: string;
 }) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -74,20 +81,23 @@ export function GoogleSignInButton({
     const { error } = await supabase.auth.signInWithOAuth({
       provider: "google",
       options: {
-        // ⚠️ БЕЗ ?next=… НАМЕРЕННО. Supabase пускает только те адреса
-        // возврата, что перечислены в Authentication → URL Configuration,
-        // и сверяет их целиком: в списке лежит `/auth/callback` и
-        // отдельной строкой `/auth/callback?next=/reset-password`, то
-        // есть совпадение точное, а не по началу. Собери мы адрес с
-        // произвольным next — Supabase отвергнет возврат, и человек
-        // получит ошибку уже ПОСЛЕ того, как согласился у Google: самый
-        // неприятный момент, чтобы падать.
+        // ⚠️ РАБОТАЕТ ТОЛЬКО ПРИ МАСКЕ В СПИСКЕ РАЗРЕШЁННЫХ АДРЕСОВ.
+        // Supabase пускает возврат лишь на то, что перечислено в
+        // Authentication → URL Configuration, и сверяет адрес ЦЕЛИКОМ,
+        // вместе с параметрами. Значит в списке обязана быть строка вида
         //
-        // Цена: войдя через Google со страницы товара, человек попадёт в
-        // каталог, а не обратно на товар. Чтобы вернуть next, владельцу
-        // надо добавить в тот список строку с маской
-        // `/auth/callback?next=*` — до тех пор не рискуем.
-        redirectTo: `${window.location.origin}/auth/callback`,
+        //   https://soucampus.online/auth/callback**
+        //
+        // (и такая же для preview и localhost:3000/3001). Без неё
+        // Supabase молча отбрасывает наш адрес и подставляет Site URL —
+        // человек попадает на корень сайта с ?code= в адресе, а наш
+        // колбэк не выполняется вовсе. Именно так это и вело себя
+        // 25.08, пока список был пуст.
+        //
+        // ⚠️ Отказ виден не сразу: сначала человек соглашается у Google и
+        // только потом приезжает не туда. Меняешь этот адрес — проверь
+        // список в ОБОИХ проектах Supabase.
+        redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}`,
       },
     });
 

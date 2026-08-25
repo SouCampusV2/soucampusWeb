@@ -149,7 +149,10 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
           увидев его после, он уже потратил силы и просто дозаполнит —
           то есть кнопка не сработает ни разу и будет выглядеть лишней. */}
       <div className="mb-6">
-        <GoogleSignInButton mode={mode} />
+        {/* target, а не сырой next: safeNextPath уже отсёк чужие
+            адреса. Проверка есть и на той стороне, в /auth/callback, —
+            но проверять до отправки дешевле, чем ловить возврат. */}
+        <GoogleSignInButton mode={mode} next={target} />
 
         {/* Разделитель «or» — черта, прерванная словом. Слово лежит на
             фоне карточки (bg-[#fbfbff] / dark:bg-zinc-950), поэтому цвет
