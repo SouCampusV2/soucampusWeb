@@ -9,7 +9,8 @@ import { SITE_URL } from "@/lib/site";
 //
 // Работы и отзывы берём ИЗ БАЗЫ (getAllProjects/getAllReviews), а не списком
 // руками: добавил работу строкой в Supabase — она попадает в карту сама, без
-// правки кода. /terms сюда НЕ включаем — заглушка под noindex (см. page.tsx).
+// правки кода. /terms сюда НЕ включаем — заглушка под noindex (см. page.tsx);
+// /privacy включаем, она настоящая.
 // /marketplace и товары появляются в карте только когда есть опубликованные товары —
 // та же логика, что у robots в shop/page.tsx: пустой каталог не индексируем.
 
@@ -29,6 +30,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/portfolio`, lastModified: now, changeFrequency: "weekly", priority: 0.9 },
     { url: `${SITE_URL}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
+    // /privacy В КАРТЕ ЕСТЬ, в отличие от /terms — тот заглушка под noindex,
+    // а политика конфиденциальности настоящая и обязана быть находимой.
+    // Плюс её забирает Google при проверке OAuth-приложения.
+    { url: `${SITE_URL}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 
   const projectPages: MetadataRoute.Sitemap = projects.map((p) => ({
