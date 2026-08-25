@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRefresh } from "@/lib/useRefresh";
 import { Check, X } from "@phosphor-icons/react";
 import { Button, BUTTON_PILL, BUTTON_COLORS } from "@/components/Button";
+import { readApiError } from "@/lib/api-error";
 
 // Решение по заявке на креаторство: одобрить или отказать с причиной.
 //
@@ -31,16 +32,19 @@ export function ApplicationActions({ applicationId }: { applicationId: string })
         }),
       });
       if (!res.ok) {
-        const data = await res.json().catch(() => null);
+        // Ветвимся по КОДУ, а не по тексту: текст обработчика может
+        // измениться, код — это договор. Ровно поэтому readApiError
+        // возвращает разобранное, а не готовую строку.
+        const { code, message } = await readApiError(res);
         setError(
-          data?.error === "already handled"
+          code === "already handled"
             ? "Someone already decided this one."
             : // Приём авторов заморожен (src/lib/flags.ts). Говорим
               // прямо, что дело не в заявке и не в сбое: иначе владелец
               // будет жать ещё раз и искать поломку.
-              data?.error === "creator signups are frozen"
+              code === "creator signups are frozen"
               ? "Creator signups are frozen — this one has to wait."
-              : (data?.message ?? "Could not save the decision.")
+              : (message ?? "Could not save the decision.")
         );
         return;
       }

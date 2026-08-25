@@ -178,6 +178,15 @@ export function ContactFooter() {
                     Terms of Service
                   </Link>
                 </li>
+                <li>
+                  <Link
+                    href="/privacy"
+                    className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                    data-page-transition="true"
+                  >
+                    Privacy Policy
+                  </Link>
+                </li>
               </ul>
             </div>
           </div>

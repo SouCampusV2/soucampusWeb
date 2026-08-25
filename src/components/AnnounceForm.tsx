@@ -5,6 +5,7 @@ import { Megaphone } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { TextField } from "@/components/MapFormParts";
 import type { Recipient } from "@/lib/notifications";
+import { readApiError } from "@/lib/api-error";
 
 // Объявление всем пользователям.
 //
@@ -33,18 +34,24 @@ export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ title, text, href, userId }),
       });
-      const data = await res.json().catch(() => null);
       if (!res.ok) {
+        // Разбор общий (lib/api-error), решение — местное: здесь важно,
+        // ПРИШЁЛ ли текст от обработчика. Лимит частоты объясняет себя
+        // сам и говорит, сколько ждать, — к нему дописываем главное для
+        // отправителя: рассылка не ушла. Свой фоллбэк эту фразу уже
+        // содержит, поэтому дописывать к нему нельзя.
+        const { message } = await readApiError(res);
         setError(
-          // Лимит частоты объясняет себя сам (и говорит, сколько ждать);
-          // всё остальное — один общий текст, потому что различать сбои
-          // сети админу нечем.
-          typeof data?.message === "string"
-            ? `${data.message} Nothing was delivered — the text above is still here.`
+          message
+            ? `${message} Nothing was delivered — the text above is still here.`
             : "Could not send it — nothing was delivered. Check the connection and try again; the text above is still here.",
         );
         return;
       }
+      // Тело читается ЗДЕСЬ, а не до проверки res.ok: на отказе его уже
+      // разобрал readApiError, а Response.json() второй раз бросает
+      // «body stream already read».
+      const data = (await res.json().catch(() => null)) as { sent?: number } | null;
       // Имя адресата берём из списка, а не из ответа: сервер возвращает
       // только число разложенных уведомлений, а «кому» админ выбирал
       // здесь же — переспрашивать нечего.

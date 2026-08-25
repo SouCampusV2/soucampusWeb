@@ -25,6 +25,7 @@ import {
 } from "@/components/Button";
 import { PageGlow } from "@/components/PageGlow";
 import { CartRecommendations } from "@/components/CartRecommendations";
+import { readApiError } from "@/lib/api-error";
 
 // Клиентская страница целиком (нужен localStorage через useCart) — как
 // у /marketplace/[slug], metadata живёт в соседнем layout.tsx, потому что
@@ -115,12 +116,8 @@ export default function CartPage() {
       // сбой, он проходит сам через несколько минут, и «попробуйте
       // позже» без причины выглядит как поломка магазина.
       if (res.status === 429) {
-        const data = await res.json().catch(() => null);
-        setLimitMessage(
-          typeof data?.message === "string"
-            ? data.message
-            : "Too many attempts. Try again in a few minutes."
-        );
+        const { message } = await readApiError(res);
+        setLimitMessage(message ?? "Too many attempts. Try again in a few minutes.");
         setState("idle");
         return;
       }
@@ -444,11 +441,17 @@ export default function CartPage() {
           набор паддингов, что у страницы витрины (marketplace/page.tsx),
           — вплоть до 2xl:px-[120px]. Разойдутся они только если кто-то
           поправит одно место и забудет второе. */}
-      {items.length === 0 && (
-        <div className="mx-auto max-w-[120rem] px-6 pb-28 sm:px-10 lg:px-16 xl:px-24 2xl:px-[120px]">
-          <CartRecommendations />
-        </div>
-      )}
+      {/* Показываем и при полной корзине (просьба владельца 23.08).
+          Раньше блок исчезал, как только в корзину что-то клали, — то
+          есть ровно в тот момент, когда человек уже точно покупает и
+          добрать вторую карту ему проще всего. Пустая корзина — это
+          «ничего не выбрал», полная — «уже решился»; второе для
+          рекомендации выгоднее, а не хуже.
+
+          exclude убирает из подборки то, что уже лежит в корзине. */}
+      <div className="mx-auto max-w-[120rem] px-6 pb-28 sm:px-10 lg:px-16 xl:px-24 2xl:px-[120px]">
+        <CartRecommendations exclude={items.map((i) => i.slug)} />
+      </div>
     </main>
   );
 }

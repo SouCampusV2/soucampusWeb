@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { CheckCircle, Info, ArrowRight } from "@phosphor-icons/react";
 import { Button, TERTIARY_UNDERLINE } from "@/components/Button";
 import { useCart, type CartItem } from "@/lib/cart-context";
+import { readApiError } from "@/lib/api-error";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
 // Кнопка на странице товара. Оформление заказа — только через /cart,
@@ -50,6 +51,13 @@ export function AddToCartButton({
   // на неё. Своё состояние, а не общее с корзиной: добавление в корзину
   // мгновенно, а этот путь уходит в сеть и может не вернуться.
   const [buying, setBuying] = useState(false);
+
+  // Отказ по частоте — отдельно от Notice, и это разделение по смыслу, а
+  // не по оформлению: Notice сообщает исход («добавлено», «уже ваше»),
+  // а здесь живёт причина, по которой исхода НЕ БЫЛО. Живёт до
+  // следующей попытки: автоскрытие Notice тут вредно — человек читает
+  // «через сколько», а не «что случилось».
+  const [limitMessage, setLimitMessage] = useState<string | null>(null);
 
   // Ответ проверки владения и сам «запрос в полёте». Держим в ref, а не в
   // состоянии: перерисовывать из-за них нечего (кнопка не меняется), а
@@ -154,6 +162,7 @@ export function AddToCartButton({
   const buyNow = async () => {
     if (buying) return;
     setBuying(true);
+    setLimitMessage(null);
 
     // Уже купленную не даём купить второй раз — та же проверка, что у
     // добавления в корзину, и по той же причине.
@@ -186,16 +195,18 @@ export function AddToCartButton({
       }
       // 429 — не сбой, а «слишком часто»: объясняем словами и оставляем
       // кнопку рабочей, чтобы человек мог повторить через пару минут.
+      //
+      // ⚠️ НЕ через Notice, хотя он рядом и напрашивается (правка 25.08 по
+      // отчёту). Notice здесь говорит «всё хорошо, вот что произошло» —
+      // «добавлено в корзину», «вы уже владеете картой». Отказ в том же
+      // оранжевом окошке читается как ещё одна такая новость. А главное,
+      // это ТОТ ЖЕ отказ от того же /api/checkout, который на странице
+      // корзины показан красным: один смысл обязан выглядеть одинаково
+      // независимо от того, с какой кнопки человек начал.
       if (response.status === 429) {
-        const data = await response.json().catch(() => null);
+        const { message } = await readApiError(response);
         setBuying(false);
-        setNotice({
-          tone: "info",
-          text:
-            typeof data?.message === "string"
-              ? data.message
-              : "Too many attempts. Try again in a few minutes.",
-        });
+        setLimitMessage(message ?? "Too many attempts. Try again in a few minutes.");
         return;
       }
       if (!response.ok) throw new Error(`checkout failed: ${response.status}`);
@@ -280,6 +291,14 @@ export function AddToCartButton({
           </div>
         )}
       </div>
+
+      {/* Тот же вид, что у отказа на /cart: text-sm text-red-600 +
+          role="alert". Один смысл — одно оформление. */}
+      {limitMessage && (
+        <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
+          {limitMessage}
+        </p>
+      )}
     </div>
   );
 }

@@ -363,6 +363,34 @@ export function ProfileEditForm({
             </>
           )}
         </p>
+
+        {/* Предупреждение ПЕРЕД сменой, а не после (просьба владельца
+            23.08).
+
+            Тот же текст уже стоит в серой подписи выше — и его не
+            читают: он лежит там всегда, вперемешку с «letters, numbers
+            and underscores», то есть в момент, когда ничего не решается.
+            Человек узнавал о месячной паузе, уже сменив имя и получив
+            заблокированное поле.
+
+            Поэтому здесь не второй экземпляр правила, а тот же самый
+            факт, показанный в ДРУГОЙ момент — когда в поле уже стоит
+            новое имя и решение вот-вот будет принято. Появляется только
+            тогда и исчезает, если вернуть прежнее.
+
+            Сравнение без учёта регистра намеренно: смена только
+            регистра паузы не стоит (guard_username_change), значит и
+            пугать ею нечем. */}
+        {!lockedUntil &&
+          username.trim() !== "" &&
+          username.trim().toLowerCase() !== initial.username.toLowerCase() && (
+            <p className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900 dark:bg-orange-950/30 dark:text-orange-200">
+              Saving this locks your username for {USERNAME_COOLDOWN_DAYS} days,
+              and{" "}
+              <span className="font-semibold">{initial.username}</span> becomes
+              free for anyone else to take.
+            </p>
+          )}
         <div className="grid grid-cols-2 gap-3">
           <Field id="firstName" label="First name" value={firstName} onChange={setFirstName} />
           <Field id="lastName" label="Last name" value={lastName} onChange={setLastName} />
