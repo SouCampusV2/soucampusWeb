@@ -24,8 +24,34 @@ export async function GET(request: Request) {
 
   if (code) {
     const supabase = await createSupabaseServer();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
+      // Вошедшего через Google надо спросить, как его звать: Google ника
+      // не даёт, и до этого момента человек носит имя, придуманное базой
+      // из его почты (handle_new_user). Спрашиваем ЗДЕСЬ, на первом же
+      // шаге после входа, а не когда-нибудь потом — пока имя не заявлено,
+      // смена бесплатна, и тратить это окно молча нечестно.
+      //
+      // ⚠️ Проверяем ВСЕХ, а не только пришедших от Google. Признак — не
+      // «каким способом вошёл», а «выбрано ли имя человеком»
+      // (profiles.username_claimed): способов входа может стать больше, а
+      // вопрос останется тот же. Гадать по провайдеру значило бы заводить
+      // второе место, знающее правило.
+      const userId = data.user?.id;
+      if (userId) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("username_claimed")
+          .eq("id", userId)
+          .maybeSingle();
+
+        // Строки может не быть, если триггер ещё не отработал: тогда не
+        // мешаем входу — гейт в proxy.ts поймает на следующем переходе.
+        if (profile && profile.username_claimed === false) {
+          return NextResponse.redirect(`${origin}/welcome`);
+        }
+      }
+
       return NextResponse.redirect(`${origin}${next}`);
     }
   }

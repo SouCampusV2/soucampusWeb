@@ -11,6 +11,7 @@ import { PASSWORD_RULES, friendlyAuthError } from "@/lib/password";
 import { PasswordChecklist } from "@/components/PasswordChecklist";
 import { AuthField } from "@/components/AuthField";
 import { safeNextPath } from "@/lib/site";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
 type Mode = "login" | "signup";
 
@@ -143,6 +144,28 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
       onSubmit={handleSubmit}
       className="mx-auto max-w-md rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-950"
     >
+      {/* Google СВЕРХУ, до полей (решение владельца 25.08). Человек
+          должен увидеть быстрый путь раньше, чем начнёт заполнять форму:
+          увидев его после, он уже потратил силы и просто дозаполнит —
+          то есть кнопка не сработает ни разу и будет выглядеть лишней. */}
+      <div className="mb-6">
+        {/* target, а не сырой next: safeNextPath уже отсёк чужие
+            адреса. Проверка есть и на той стороне, в /auth/callback, —
+            но проверять до отправки дешевле, чем ловить возврат. */}
+        <GoogleSignInButton mode={mode} next={target} />
+
+        {/* Разделитель «or» — черта, прерванная словом. Слово лежит на
+            фоне карточки (bg-[#fbfbff] / dark:bg-zinc-950), поэтому цвет
+            здесь повторяет её дословно: разойдутся — под текстом
+            проступит линия. */}
+        <div className="relative mt-6" aria-hidden>
+          <div className="h-px w-full bg-zinc-200 dark:bg-zinc-800" />
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#fbfbff] px-3 text-xs font-semibold uppercase tracking-wider text-zinc-400 dark:bg-zinc-950 dark:text-zinc-500">
+            or
+          </span>
+        </div>
+      </div>
+
       <div className="space-y-4">
         {isSignup && (
           <AuthField
