@@ -27,7 +27,7 @@ Everything built from here is built so that switch can be flipped.
 - [Next.js](https://nextjs.org) (App Router) + TypeScript
 - [Tailwind CSS v4](https://tailwindcss.com)
 - [Motion](https://motion.dev) (`motion/react`) for animation
-- [Supabase](https://supabase.com) (Postgres + Auth + Storage) — all site content lives here: projects, reviews, stats, products, orders, user profiles, plus a first-party visitor counter. Email+password auth gates the shop (purchase requires an account); avatars live in a public Storage bucket. A second project mirrors the schema for local/preview work, so migrations and payment testing never touch production data
+- [Supabase](https://supabase.com) (Postgres + Auth + Storage) — all site content lives here: projects, reviews, stats, products, orders, user profiles, plus a first-party visitor counter. Email+password and Google sign-in both gate the shop (purchase requires an account); avatars live in a public Storage bucket. A second project mirrors the schema for local/preview work, so migrations and payment testing never touch production data
 - [Stripe](https://stripe.com) — Checkout for the digital build shop (`/marketplace`, `/cart`), webhook-verified, signed downloads from a private Storage bucket
 - [Tiptap](https://tiptap.dev) — the rich-text editor map descriptions are written in (images and tables inline, not a bare textarea)
 - [sanitize-html](https://github.com/apostrophecms/sanitize-html) — descriptions are author-written HTML, so they go through an explicit tag allowlist before they reach a visitor's browser. It parses the markup itself; DOMPurify (used until 2026-08-08) needs a browser DOM, and the jsdom stand-in it falls back to on the server does not load on Vercel
@@ -42,7 +42,7 @@ Everything built from here is built so that switch can be flipped.
 - 🔴 Rate limits on our own API routes — the last piece of the login/email hardening that is entirely ours to write
 - 🔴 Two-factor auth (TOTP) on the owner account, backup codes included — being locked out of your own admin is the failure mode to design for first
 - 🔴 Malware scanning for uploaded files — signatures are checked, contents aren't, and those files go to buyers. **Blocks letting other creators in**, and blocked in turn by routing writes through the server: files currently go from the browser straight to storage, so there is nowhere to put a scanner
-- 🔴 Upload quotas, subscriptions, Google sign-in, a real 404 page
+- 🔴 Upload quotas, subscriptions, a real 404 page
 - 🟡 A full content admin — the owner-facing screens exist (`/admin` overview with a sales chart, the moderation queue, the whole catalog, comments, creator applications, announcements), but portfolio, reviews and stats are still edited through the Supabase Table Editor on purpose
 - 🔴 Docker, once there's an actual reason for it
 
@@ -61,7 +61,7 @@ Day-to-day work happens on the `dev` branch (Vercel gives it its own Preview URL
 
 ## Project structure
 
-- `src/app/(site)/` — public pages (Next.js App Router): home, `/portfolio`, `/portfolio/[slug]`, `/reviews/[slug]`, `/about`, `/contact`, `/support`, `/marketplace`, `/marketplace/[slug]`, `/marketplace/success`, `/cart`, `/@username` (a person's public profile — the file lives at `/u/[username]`; a folder starting with `@` is a parallel-route slot in the App Router, so the pretty address comes from a rewrite), `/creator/upload`, `/settings`, `/purchases`, `/resources` (a creator's own maps, including ones awaiting review), `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/terms`. The `(site)` group exists so these share a layout the future admin will not inherit
+- `src/app/(site)/` — public pages (Next.js App Router): home, `/portfolio`, `/portfolio/[slug]`, `/reviews/[slug]`, `/about`, `/contact`, `/support`, `/marketplace`, `/marketplace/[slug]`, `/marketplace/success`, `/cart`, `/@username` (a person's public profile — the file lives at `/u/[username]`; a folder starting with `@` is a parallel-route slot in the App Router, so the pretty address comes from a rewrite), `/creator/upload`, `/settings`, `/purchases`, `/resources` (a creator's own maps, including ones awaiting review), `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/welcome` (pick a username after a first Google sign-in — Google does not supply one), `/terms`, `/privacy`. The `(site)` group exists so these share a layout the future admin will not inherit
 - `src/app/admin/` — owner-only area, deliberately outside the `(site)` group so it inherits no navbar, pricing block or footer: `/admin` (sales overview), `/admin/moderation` (review queue), `/admin/products` (the whole catalog — search, filters, add a map, edit one, hide or delete at any time), `/admin/applications` (creator applications), `/admin/comments` (every comment on the site, with a link to its map and a remove button), `/admin/announce` (broadcast a notification)
 - `src/app/api/view/` — the visitor-counter endpoint
 - `src/app/api/admin/moderation/`, `src/app/api/admin/comments/`, `src/app/api/creator/cleanup-storage/` — approve/reject a submission, and collect Storage objects nothing references any more. Both run under the service key on the server; the cleanup one accepts no path from the browser and works out what's in use from the database
