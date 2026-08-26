@@ -5,6 +5,7 @@ import { Unbounded } from "next/font/google";
 import { getAllProducts, getAllProductsWithStats } from "@/lib/products";
 import { MarketplaceCatalog } from "@/components/MarketplaceCatalog";
 import { CategoryFilter } from "@/components/CategoryFilter";
+import { MarketplaceCta } from "@/components/MarketplaceCta";
 import { PageGlow } from "@/components/PageGlow";
 import { INLINE_LINK } from "@/components/Button";
 
@@ -81,6 +82,14 @@ export default async function MarketplacePage() {
           <MarketplaceCatalog products={products} />
         </Suspense>
       )}
+
+      {/* Замыкающий баннер — ВНЕ условия выше, поэтому он стоит внизу и
+          главной витрины, и категории, и результатов поиска, и даже
+          пустого каталога (решение владельца 2026-08-26). Человек, не
+          нашедший готовую карту, — как раз тот, кому нужна заказная,
+          поэтому убирать баннер там, где ничего не нашлось, было бы
+          ровно наоборот. */}
+      <MarketplaceCta />
       </div>
     </main>
   );

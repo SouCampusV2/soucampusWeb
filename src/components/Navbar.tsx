@@ -1,8 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useRefresh } from "@/lib/useRefresh";
+import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { Unbounded } from "next/font/google";
@@ -11,17 +10,18 @@ import {
   ChatCircleDots,
   UserCircle,
 } from "@phosphor-icons/react";
+import { ArrowCircle } from "@/components/ArrowCircle";
 import { Avatar } from "@/components/Avatar";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
-import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
+import { NAV_LINKS } from "@/lib/site";
 import { isMarketplaceRoute } from "@/lib/marketplace-routes";
 import { useCart } from "@/lib/cart-context";
+import { useLogout } from "@/lib/useLogout";
 import { useUser } from "@/lib/useUser";
 import { CREATOR_SIGNUPS_OPEN } from "@/lib/flags";
 import { SHOP_NAV_LINKS } from "@/lib/products";
 import { creatorHref } from "@/lib/creators";
-import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { NotificationsBell } from "@/components/NotificationsBell";
 
 // Same display font as the hero headings — the navbar rhymes with them.
@@ -33,17 +33,14 @@ const displayFont = Unbounded({
 export function Navbar() {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  const router = useRouter();
-  const refresh = useRefresh();
   const [prevPathname, setPrevPathname] = useState(pathname);
   const { count } = useCart();
   const { user, loading: userLoading } = useUser();
 
+  const logout = useLogout();
+
   async function handleLogout() {
-    const supabase = createSupabaseBrowser();
-    await supabase.auth.signOut();
-    refresh();
-    router.push("/marketplace");
+    await logout();
     setOpen(false);
   }
 
@@ -377,14 +374,32 @@ export function Navbar() {
               посетитель просто листает портфолио. */}
           {!isMarketplaceActive && (
             <div className="hidden min-[760px]:block">
+              {/* «Order a map», а не «Order now», и ведёт на /contact, а не
+                  сразу в Discord (решение владельца 2026-08-26). Надпись
+                  здесь и в hero главной была разной, а обещание одно —
+                  два имени у одного действия читаются как два разных.
+                  Выбрана та, что говорит, ЧТО человек получит.
+
+                  Адрес поменялся вместе с надписью, иначе две одинаковые
+                  кнопки на одном экране (навбар виден и на главной) вели
+                  бы в разные места. /contact держит калькулятор и FAQ —
+                  ответы на «сколько» и «когда» ДО того, как человек
+                  напишет; своя кнопка в Discord там и так стоит
+                  последней. */}
               <Button
-                href={DISCORD_INVITE}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/contact"
                 variant="primary"
                 size="sm"
+                pageTransition
+                className="group gap-2"
               >
-                Order now
+                Order a map
+                <ArrowCircle
+                  direction="right"
+                  variant="bare"
+                  className="h-5 w-5 transition-transform duration-300 group-hover:-rotate-45"
+                  colorClassName="text-zinc-950"
+                />
               </Button>
             </div>
           )}
@@ -416,9 +431,16 @@ export function Navbar() {
                   <Skeleton className="h-6 w-6 rounded-full" />
                 </div>
               ) : user ? (
+                // Тап по аватару ведёт на СВОЙ публичный профиль — как
+                // клик по аватару на десктопе. До 26.08 он вёл на
+                // /settings, потому что был единственной дверью в аккаунт
+                // с телефона и приходилось выбирать один пункт из
+                // четырёх. Теперь все четыре лежат в гамбургере (ниже), и
+                // выбирать больше не нужно — два аватара ведут в одно
+                // место.
                 <Link
-                  href="/settings"
-                  aria-label="Profile"
+                  href={ownProfileHref}
+                  aria-label="My profile"
                   title={displayName}
                   className="flex items-center justify-center rounded-full p-2"
                 >
@@ -476,14 +498,19 @@ export function Navbar() {
               ))}
               <li className="px-6 py-3">
                 <Button
-                  href={DISCORD_INVITE}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="/contact"
                   variant="primary"
                   size="sm"
-                  className="w-full"
+                  pageTransition
+                  className="group w-full gap-2"
                 >
-                  Order now
+                  Order a map
+                  <ArrowCircle
+                    direction="right"
+                    variant="bare"
+                    className="h-5 w-5 transition-transform duration-300 group-hover:-rotate-45"
+                    colorClassName="text-zinc-950"
+                  />
                 </Button>
               </li>
             </motion.ul>
@@ -523,6 +550,93 @@ export function Navbar() {
                   </li>
                 ))}
               </ul>
+
+              {/* Аккаунт на мобильном (26.08). На десктопе эти пункты
+                  живут в выпадашке под аватаром, а она открывается по
+                  group-hover — чистым CSS, без состояния. На тач-экране
+                  hover не наступает НИКОГДА, поэтому блок скрыт вместе со
+                  всей десктопной колонкой, и из четырёх пунктов на
+                  телефоне был доступен один: аватар вёл на /settings.
+                  Выйти из аккаунта с телефона было нечем вообще.
+
+                  Раздел стоит ПОД навигацией, а не над ней: магазинные
+                  вкладки здесь главные, и сдвигать их вниз ради
+                  второстепенного значило бы переставить то, к чему уже
+                  привыкли. Черта сверху разделяет два разных вопроса —
+                  «куда пойти в магазине» и «что сделать со своим
+                  аккаунтом».
+
+                  Пункты повторяют десктопное меню поимённо, включая
+                  условие CREATOR_SIGNUPS_OPEN: два меню, отвечающие на
+                  один вопрос по-разному, рано или поздно разъедутся. */}
+              <div className="border-t border-zinc-950/[0.06] pb-2 dark:border-zinc-50/[0.08]">
+                {userLoading ? (
+                  // Та же нейтральная заглушка, что в строке навбара:
+                  // показать «Sign in» тому, кто на самом деле вошёл, —
+                  // хуже, чем не показать пока ничего.
+                  <div className="flex items-center gap-3 px-6 py-3" aria-hidden>
+                    <Skeleton className="h-6 w-6 rounded-full" />
+                    <Skeleton className="h-4 w-24 rounded-full" />
+                  </div>
+                ) : user ? (
+                  <>
+                    {/* Первой строкой — сам человек: аватар и имя ведут на
+                        публичный профиль, как клик по аватару на десктопе.
+                        Это заодно подпись раздела, поэтому отдельного
+                        заголовка «Account» нет. */}
+                    <Link
+                      href={ownProfileHref}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-3 px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                    >
+                      <Avatar avatarUrl={avatarUrl ?? null} size={24} />
+                      <span className="truncate">{displayName}</span>
+                    </Link>
+                    <Link
+                      href="/settings"
+                      onClick={() => setOpen(false)}
+                      className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                    >
+                      Settings
+                    </Link>
+                    {CREATOR_SIGNUPS_OPEN && (
+                      <Link
+                        href="/resources"
+                        onClick={() => setOpen(false)}
+                        className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                      >
+                        Your resources
+                      </Link>
+                    )}
+                    <Link
+                      href="/purchases"
+                      onClick={() => setOpen(false)}
+                      className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                    >
+                      My purchases
+                    </Link>
+                    {/* handleLogout сам закрывает меню — своего
+                        setOpen(false) здесь не нужно. */}
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="block w-full cursor-pointer px-6 py-3 text-left text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                    >
+                      Log out
+                    </button>
+                  </>
+                ) : (
+                  // Гостю — одна строка. Иконка входа есть и в верхней
+                  // строке, но она без подписи; словами понятнее.
+                  <Link
+                    href="/login"
+                    onClick={() => setOpen(false)}
+                    className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                  >
+                    Sign in
+                  </Link>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>

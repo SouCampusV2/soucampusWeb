@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MagnifyingGlass, X } from "@phosphor-icons/react";
-import { SHOP_CATEGORIES, type ProductCategory } from "@/lib/products";
+import {
+  PRICE_RANGES,
+  SHOP_CATEGORIES,
+  type PriceRange,
+  type ProductCategory,
+} from "@/lib/products";
+import { BackLink } from "@/components/BackLink";
 
 // Фильтр категорий на самой витрине. Раньше категории жили вкладками в
 // навбаре — с восемью штуками это перестало помещаться (решение владельца
@@ -25,6 +31,23 @@ export function CategoryFilter() {
   const params = useSearchParams();
   const active = params.get("category");
   const activeQuery = params.get("q") ?? "";
+  // Подборка («all», «popular», …) и категория — ВЗАИМОИСКЛЮЧАЮЩИЕ виды
+  // одного каталога, поэтому выбор одного стирает другое (см. select и
+  // selectCollection). Держать их одновременно значило бы отвечать на
+  // вопрос «что я сейчас смотрю» двумя способами.
+  const activeCollection = params.get("collection");
+  const activePrice = params.get("price");
+
+  // Есть ли вообще подстраница. Пусто — человек на главной витрине, где
+  // рядов-подборок несколько и фильтровать нечего: фильтр цены появляется
+  // только там, где список ОДИН (решение владельца 2026-08-26).
+  const isFiltering =
+    active !== null || activeCollection !== null || activeQuery.length > 0;
+
+  // Внутри «Free» фильтр цены бессмыслен: все карты там стоят ноль, и
+  // любой диапазон, кроме «Free», дал бы пустой экран. Пилюля Free и
+  // фильтр цены отвечают на один вопрос — пусть отвечает одна.
+  const showPrice = isFiltering && active !== "free";
 
   // Своя строка поиска на витрине — в дополнение к той, что в навбаре.
   //
@@ -76,12 +99,42 @@ export function CategoryFilter() {
   // Константа живого поиска — та же, что в админке: пауза между словами.
 
 
+  // Переход в подборку. Отдельной функцией, а не «select(null)», как
+  // было до 26.08: тогда «All maps» просто СТИРАЛА параметр, то есть
+  // возвращала на главную витрину — и «ничего не выбрано» с «показать
+  // все карты» были одним состоянием. Теперь это разные экраны
+  // (главная — ряды подборок), значит и адрес у них разный.
+  function selectCollection(slug: string) {
+    const next = new URLSearchParams(params.toString());
+    next.set("collection", slug);
+    next.delete("category");
+    router.push(`/marketplace?${next.toString()}`, { scroll: false });
+  }
+
+  // Диапазон цены. Повторный клик по выбранной пилюле снимает фильтр —
+  // отдельной кнопки «Any» нет: она заняла бы место ради действия,
+  // которое и так делается тем же нажатием.
+  function selectPrice(slug: PriceRange) {
+    const next = new URLSearchParams(params.toString());
+    if (activePrice === slug) next.delete("price");
+    else next.set("price", slug);
+    const query = next.toString();
+    router.push(query ? `/marketplace?${query}` : "/marketplace", {
+      scroll: false,
+    });
+  }
+
   // Меняем ОДИН параметр, остальные (в частности ?q поиска) сохраняем —
   // иначе выбор категории молча сбрасывал бы поисковый запрос.
   function select(slug: ProductCategory | null) {
     const next = new URLSearchParams(params.toString());
     if (slug) next.set("category", slug);
     else next.delete("category");
+    // Категория и подборка — один и тот же вопрос «какой список я
+    // смотрю», заданный двумя способами. Оставить оба значило бы
+    // получить «Most popular внутри Interiors», чего в интерфейсе никто
+    // не выбирал.
+    next.delete("collection");
     const query = next.toString();
     // scroll: false — список под фильтром обновляется на месте, прыгать
     // к началу страницы при каждом переключении незачем.
@@ -97,10 +150,15 @@ export function CategoryFilter() {
 
   const pills = (
     <div className="flex flex-wrap items-center gap-2">
+      {/* На главной витрине НЕ подсвечена ни одна пилюля — там не выбран
+          ни один список, там их несколько. Раньше «All maps» горела по
+          умолчанию, потому что «выбрано ничего» и значило «показаны все». */}
       <button
         type="button"
-        onClick={() => select(null)}
-        className={`${pill} ${active === null ? selected : inactive}`}
+        onClick={() => selectCollection("all")}
+        className={`${pill} ${
+          activeCollection === "all" ? selected : inactive
+        }`}
       >
         All maps
       </button>
@@ -120,7 +178,18 @@ export function CategoryFilter() {
   );
 
   return (
-    <div className="mt-8 flex flex-col gap-3 sm:flex-row-reverse sm:items-start sm:justify-between sm:gap-6">
+    <div className="mt-8">
+      {/* Дверь обратно на главную витрину. Она нужна с 26.08: до этого
+          «All maps» была одновременно и списком, и кнопкой «сбросить всё»,
+          а теперь сбрасывать нечем — из категории на витрину не выйти
+          иначе как через навбар. */}
+      {isFiltering && (
+        <div className="mb-6">
+          <BackLink href="/marketplace">All collections</BackLink>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-3 sm:flex-row-reverse sm:items-start sm:justify-between sm:gap-6">
       {/* Поиск справа на широком экране, сверху на узком: на телефоне
           набирать удобнее сразу, а не после прокрутки списка категорий. */}
       {/* key={activeQuery} здесь БОЛЬШЕ НЕТ — и это принципиально.
@@ -139,7 +208,33 @@ export function CategoryFilter() {
         onLiveChange={liveSearch}
       />
 
-      {pills}
+        {pills}
+      </div>
+
+      {/* Цена — вторым рядом, под чертой: это фильтр ВНУТРИ выбранного
+          списка, а не ещё один способ его выбрать. Один ряд пилюль с
+          двумя разными смыслами читался бы как девять равноправных
+          вариантов. */}
+      {showPrice && (
+        <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-zinc-950/[0.06] pt-6 dark:border-zinc-50/[0.08]">
+          <span className="mr-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+            Price
+          </span>
+          {PRICE_RANGES.map((range) => (
+            <button
+              key={range.slug}
+              type="button"
+              onClick={() => selectPrice(range.slug)}
+              aria-pressed={activePrice === range.slug}
+              className={`${pill} ${
+                activePrice === range.slug ? selected : inactive
+              }`}
+            >
+              {range.label}
+            </button>
+          ))}
+        </div>
+      )}
     </div>
   );
 }

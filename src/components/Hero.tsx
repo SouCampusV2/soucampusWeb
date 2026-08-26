@@ -2,6 +2,7 @@
 
 import { motion } from "motion/react";
 import { Unbounded } from "next/font/google";
+import { ArrowCircle } from "@/components/ArrowCircle";
 import { Button } from "@/components/Button";
 import { PageGlow } from "@/components/PageGlow";
 
@@ -56,8 +57,24 @@ export function Hero() {
         <Button href="/portfolio" variant="primary" size="md" pageTransition>
           See what I&apos;ve built
         </Button>
-        <Button href="/contact" variant="secondary" size="md" pageTransition>
+        {/* Та же надпись и тот же адрес, что у кнопки в навбаре: обе
+            видны на этом экране одновременно, и разные имена у одного
+            действия читались бы как два разных предложения. Стрелка —
+            общий ArrowCircle, анимируется иконка, а не кнопка. */}
+        <Button
+          href="/contact"
+          variant="secondary"
+          size="md"
+          pageTransition
+          className="group gap-2"
+        >
           Order a map
+          <ArrowCircle
+            direction="right"
+            variant="bare"
+            className="h-6 w-6 transition-transform duration-300 group-hover:-rotate-45"
+            colorClassName="text-orange-500 group-hover:text-orange-600 dark:text-orange-400 dark:group-hover:text-orange-500"
+          />
         </Button>
       </motion.div>
     </section>
