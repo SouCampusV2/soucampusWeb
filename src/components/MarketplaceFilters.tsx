@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { FunnelSimple, X } from "@phosphor-icons/react";
+import { CaretDown, Check, FunnelSimple, X } from "@phosphor-icons/react";
 import {
   FILE_FORMATS,
   GAME_MODES,
@@ -60,6 +60,14 @@ const MULTI_FIELDS: {
   { param: CATALOG_PARAMS.mapSizes, label: "Size", options: MAP_SIZES },
   { param: CATALOG_PARAMS.themes, label: "Theme", options: THEMES },
 ];
+
+// Подпись поля и само поле — на уровне модуля, а не внутри панели: те же
+// классы нужны выпадашке сортировки (SortSelect внизу файла), и вторая
+// копия строки разъехалась бы с первой при первой же правке.
+const LABEL_CLASS =
+  "text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400";
+const FIELD_CLASS =
+  "w-full rounded-xl border border-zinc-950/[0.08] bg-transparent px-3 py-2 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500";
 
 function draftFromParams(params: URLSearchParams): Draft {
   const query = readCatalogQuery(params);
@@ -221,10 +229,8 @@ function FilterPanel({
     return query ? `/marketplace?${query}` : "/marketplace";
   }
 
-  const labelClass =
-    "text-xs font-semibold uppercase tracking-wider text-zinc-500 dark:text-zinc-400";
-  const fieldClass =
-    "w-full rounded-xl border border-zinc-950/[0.08] bg-transparent px-3 py-2 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500";
+  const labelClass = LABEL_CLASS;
+  const fieldClass = FIELD_CLASS;
   const chip =
     "cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium transition-colors";
   const chipOff =
@@ -259,27 +265,11 @@ function FilterPanel({
       {/* Сортировка первой: она отвечает на «в каком порядке» и
           единственная здесь ничего не прячет. */}
       <div className="mt-5">
-        <label className={labelClass} htmlFor="catalog-sort">
-          Sort by
-        </label>
-        <select
-          id="catalog-sort"
+        <span className={labelClass}>Sort by</span>
+        <SortSelect
           value={draft.sort}
-          onChange={(event) =>
-            setDraft((prev) => ({ ...prev, sort: event.target.value }))
-          }
-          className={`mt-2 cursor-pointer ${fieldClass}`}
-        >
-          {/* Пустое значение — «как решил список»: у подборки «Most
-              popular» свой порядок, и не выбрать сортировку значит
-              оставить его. */}
-          <option value="">Default for this list</option>
-          {SORT_OPTIONS.map((option) => (
-            <option key={option.slug} value={option.slug}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          onChange={(value) => setDraft((prev) => ({ ...prev, sort: value }))}
+        />
       </div>
 
       <div className="mt-5">
@@ -360,6 +350,120 @@ function FilterPanel({
           Reset
         </button>
       </div>
+    </div>
+  );
+}
+
+// Выпадашка сортировки. Своя, а не <select> (замечание владельца
+// 2026-08-26).
+//
+// ⚠️ Причина не в придирке к вкусу: НАТИВНЫЙ СПИСОК РИСУЕТ ОПЕРАЦИОННАЯ
+// СИСТЕМА, и покрасить его нельзя в принципе. Классы Tailwind доходят до
+// закрытого поля и обрываются на нём — раскрытый список приезжает с
+// системным синим выделением, системным шрифтом и белым фоном даже в
+// тёмной теме. Это единственное место в интерфейсе, где наши правила
+// цвета просто не действуют.
+//
+// Плата за свой список — доступность, которую <select> давал даром:
+// здесь она сделана руками (role="listbox"/"option", aria-selected,
+// закрытие по Escape и по клику мимо). Стрелками с клавиатуры список
+// пока не листается — если понадобится, добавлять сюда, а не заводить
+// второй компонент.
+//
+// Выпадашка в форме загрузки карты (SelectField) остаётся нативной
+// намеренно: там выбор обязателен и происходит один раз, а здесь список
+// открывают, чтобы посмотреть варианты.
+function SortSelect({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef<HTMLDivElement>(null);
+
+  // Пустое значение — «как решил список»: у подборки «Most popular» свой
+  // порядок, и не выбрать сортировку значит оставить его.
+  const options = [{ slug: "", label: "Default for this list" }, ...SORT_OPTIONS];
+  const current = options.find((option) => option.slug === value) ?? options[0];
+
+  useEffect(() => {
+    if (!open) return;
+    function onPointerDown(event: MouseEvent) {
+      if (ref.current?.contains(event.target as Node)) return;
+      setOpen(false);
+    }
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKey);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKey);
+    };
+  }, [open]);
+
+  return (
+    <div ref={ref} className="relative mt-2">
+      <button
+        type="button"
+        onClick={() => setOpen((v) => !v)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        className={`flex cursor-pointer items-center justify-between gap-2 text-left ${FIELD_CLASS} ${
+          open ? "border-orange-500 dark:border-orange-400" : ""
+        }`}
+      >
+        <span className="truncate">{current.label}</span>
+        <CaretDown
+          size={14}
+          weight="bold"
+          aria-hidden
+          className={`shrink-0 text-zinc-400 transition-transform duration-200 ${
+            open ? "rotate-180" : ""
+          }`}
+        />
+      </button>
+
+      {open && (
+        // Тот же рецепт стекла, что у выпадашки профиля в навбаре
+        // (DESIGN.md → «Стекло»). max-h: список из восьми строк должен
+        // уметь прокручиваться сам, а не растягивать панель фильтров.
+        <ul
+          role="listbox"
+          aria-label="Sort by"
+          className="absolute left-0 right-0 z-50 mt-1 max-h-64 overflow-y-auto overflow-x-hidden rounded-xl border border-white/60 bg-[#fbfbff]/95 py-1 shadow-xl shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-zinc-900/95"
+        >
+          {options.map((option) => {
+            const selected = option.slug === value;
+            return (
+              <li key={option.slug || "default"}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  onClick={() => {
+                    onChange(option.slug);
+                    setOpen(false);
+                  }}
+                  className={`flex w-full cursor-pointer items-center justify-between gap-2 px-3 py-2 text-left text-sm transition-colors hover:bg-zinc-950/[0.05] dark:hover:bg-zinc-50/[0.06] ${
+                    selected
+                      ? "font-semibold text-orange-700 dark:text-orange-400"
+                      : "text-zinc-700 dark:text-zinc-300"
+                  }`}
+                >
+                  <span className="truncate">{option.label}</span>
+                  {/* Галочка, а не только цвет: выбранное должно быть
+                      видно и тому, кто не различает оранжевый. */}
+                  {selected && <Check size={14} weight="bold" aria-hidden />}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }
