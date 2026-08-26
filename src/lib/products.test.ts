@@ -2,8 +2,12 @@ import { describe, it, expect } from "vitest";
 import {
   deriveCategory,
   filterByCategory,
+  filterByPrice,
+  PRICE_RANGES,
   rowToProduct,
   SHOP_CATEGORIES,
+  sortByCollection,
+  type PriceRange,
   type Product,
 } from "./products";
 
@@ -159,5 +163,148 @@ describe("filterByCategory", () => {
       0,
     );
     expect(total).toBe(products.length);
+  });
+});
+
+describe("filterByPrice", () => {
+  const base = {
+    id: "00000000-0000-4000-8000-000000000000",
+    title: "T",
+    summary: "S",
+    description: "D",
+    image_url: "/x.png",
+    price_label: "€20",
+    price_currency: "EUR",
+    created_at: "2026-07-22T12:00:00.000Z",
+    updated_at: "2026-07-22T12:00:00.000Z",
+  };
+  const make = (slug: string, priceCents: number): Product =>
+    rowToProduct({ ...base, slug, price_cents: priceCents });
+
+  const products = [
+    make("free-pack", 0),
+    make("cheap", 500),
+    make("exactly-ten", 1000),
+    make("mid", 1999),
+    make("exactly-25", 2500),
+    make("pricey", 4000),
+  ];
+
+  const slugs = (range: PriceRange) =>
+    filterByPrice(products, range).map((p) => p.slug);
+
+  it("free — только цена ровно 0", () => {
+    expect(slugs("free")).toEqual(["free-pack"]);
+  });
+
+  it("under-10 не берёт бесплатные и не берёт ровно 10", () => {
+    // Обе границы важны: бесплатное живёт в своём диапазоне, а карта за
+    // ровно €10 обязана попасть в «€10–25», иначе она была бы в двух
+    // диапазонах сразу.
+    expect(slugs("under-10")).toEqual(["cheap"]);
+  });
+
+  it("10-25 включает нижнюю границу и исключает верхнюю", () => {
+    expect(slugs("10-25")).toEqual(["exactly-ten", "mid"]);
+  });
+
+  it("25-plus включает ровно 25 и всё дороже", () => {
+    expect(slugs("25-plus")).toEqual(["exactly-25", "pricey"]);
+  });
+
+  it("диапазоны не пересекаются и покрывают весь каталог", () => {
+    const total = PRICE_RANGES.reduce(
+      (sum, r) => sum + filterByPrice(products, r.slug).length,
+      0,
+    );
+    expect(total).toBe(products.length);
+  });
+
+  it("нет диапазона или чепуха в адресе — список как есть", () => {
+    expect(filterByPrice(products, null)).toHaveLength(products.length);
+    expect(
+      filterByPrice(products, "nonsense" as PriceRange),
+    ).toHaveLength(products.length);
+  });
+});
+
+describe("sortByCollection", () => {
+  const base = {
+    id: "00000000-0000-4000-8000-000000000000",
+    title: "T",
+    summary: "S",
+    description: "D",
+    image_url: "/x.png",
+    price_label: "€20",
+    price_cents: 2000,
+    price_currency: "EUR",
+    updated_at: "2026-07-22T12:00:00.000Z",
+  };
+  const make = (
+    slug: string,
+    createdAt: string,
+    stats: Partial<Pick<Product, "salesCount" | "rating" | "ratingCount">>,
+  ): Product => ({
+    ...rowToProduct({ ...base, slug, created_at: createdAt }),
+    ...stats,
+  });
+
+  const products = [
+    make("old-bestseller", "2026-01-01T00:00:00.000Z", {
+      salesCount: 10,
+      rating: 3,
+      ratingCount: 2,
+    }),
+    make("fresh-unrated", "2026-08-01T00:00:00.000Z", {
+      salesCount: 0,
+      rating: 0,
+      ratingCount: 0,
+    }),
+    make("loved", "2026-05-01T00:00:00.000Z", {
+      salesCount: 3,
+      rating: 5,
+      ratingCount: 4,
+    }),
+  ];
+
+  it("all — порядок базы, без своего мнения", () => {
+    expect(sortByCollection(products, "all").map((p) => p.slug)).toEqual([
+      "old-bestseller",
+      "fresh-unrated",
+      "loved",
+    ]);
+  });
+
+  it("popular — по числу продаж", () => {
+    expect(sortByCollection(products, "popular").map((p) => p.slug)).toEqual([
+      "old-bestseller",
+      "loved",
+      "fresh-unrated",
+    ]);
+  });
+
+  it("recent — новые сверху", () => {
+    expect(sortByCollection(products, "recent").map((p) => p.slug)).toEqual([
+      "fresh-unrated",
+      "loved",
+      "old-bestseller",
+    ]);
+  });
+
+  it("top-rated выбрасывает карты без единой оценки", () => {
+    // Ноль у неоценённой карты значит «неизвестно», а не «плохо» —
+    // в «лучших по оценкам» ей не место ни в каком порядке.
+    expect(sortByCollection(products, "top-rated").map((p) => p.slug)).toEqual([
+      "loved",
+      "old-bestseller",
+    ]);
+  });
+
+  it("не мутирует исходный массив", () => {
+    // Массив приезжает из кэша страницы: сортировка на месте меняла бы
+    // его для всех остальных читателей.
+    const before = products.map((p) => p.slug);
+    sortByCollection(products, "popular");
+    expect(products.map((p) => p.slug)).toEqual(before);
   });
 });

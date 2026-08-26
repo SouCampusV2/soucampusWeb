@@ -266,6 +266,107 @@ export function filterByCategory(
   return products.filter((p) => p.category === category);
 }
 
+// ── Подборки витрины ───────────────────────────────────────────────────
+//
+// Подборка — это не тег на карте, а ПОРЯДОК, в котором смотрят один и тот
+// же каталог: «популярное» и «новое» состоят из тех же карт, просто
+// выстроенных по-разному. Поэтому здесь сортировка, а не фильтр.
+//
+// Функция вынесена сюда, потому что порядок нужен ДВУМ местам сразу: ряду
+// на главной витрине (первые восемь) и подстранице подборки (все).
+// Отсортируй они каждый у себя — рано или поздно первая карта ряда
+// перестала бы быть первой на странице, куда ведёт его же «View all».
+export type ProductCollection = "all" | "popular" | "recent" | "top-rated";
+
+export const SHOP_COLLECTIONS: {
+  slug: ProductCollection;
+  label: string;
+}[] = [
+  { slug: "all", label: "All maps" },
+  { slug: "popular", label: "Most popular" },
+  { slug: "recent", label: "Recently added" },
+  { slug: "top-rated", label: "Top rated" },
+];
+
+/**
+ * Порядок карт внутри подборки. Не мутирует вход — сортировка идёт по
+ * копии: массив приезжает из кэша страницы, и перестановка на месте
+ * меняла бы его для всех остальных читателей.
+ *
+ * `all` возвращает порядок как есть — это тот, что задала база
+ * (sort_order), и своего мнения у витрины здесь нет.
+ *
+ * ⚠️ `top-rated` заодно ОТСЕИВАЕТ карты без единой оценки: карта, которую
+ * никто не оценил, не может стоять в «лучших по оценкам» — ноль там
+ * значит «неизвестно», а не «плохо». Это единственная подборка, которая
+ * меняет состав, а не только порядок.
+ */
+export function sortByCollection(
+  products: Product[],
+  collection: ProductCollection,
+): Product[] {
+  switch (collection) {
+    case "popular":
+      return [...products].sort(
+        (a, b) => (b.salesCount ?? 0) - (a.salesCount ?? 0),
+      );
+    case "recent":
+      return [...products].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+    case "top-rated":
+      return products
+        .filter((p) => (p.ratingCount ?? 0) > 0)
+        .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+    case "all":
+    default:
+      return products;
+  }
+}
+
+// ── Фильтр цены ────────────────────────────────────────────────────────
+//
+// Готовые диапазоны, а не два поля min/max (решение владельца
+// 2026-08-26): вариантов немного, все влезают пилюлями, и человеку не
+// нужно ни печатать, ни знать, сколько вообще стоят карты.
+//
+// Границы — в ЦЕНТАХ, как priceCents: цена в базе целочисленная, и
+// сравнивать её с 9.99 значило бы завести дробную арифметику там, где её
+// нет. Нижняя граница включительна, верхняя — нет (10 евро попадает в
+// «€10–25», а не в «under €10»): иначе карта за ровно 10 оказалась бы в
+// обоих диапазонах сразу.
+export type PriceRange = "free" | "under-10" | "10-25" | "25-plus";
+
+export const PRICE_RANGES: {
+  slug: PriceRange;
+  label: string;
+  /** Включительно. */
+  minCents: number;
+  /** Не включительно; null — верхней границы нет. */
+  maxCents: number | null;
+}[] = [
+  { slug: "free", label: "Free", minCents: 0, maxCents: 1 },
+  { slug: "under-10", label: "Under €10", minCents: 1, maxCents: 1000 },
+  { slug: "10-25", label: "€10–25", minCents: 1000, maxCents: 2500 },
+  { slug: "25-plus", label: "€25+", minCents: 2500, maxCents: null },
+];
+
+/**
+ * Отбор по диапазону цены. Неизвестный диапазон возвращает список как
+ * есть — адрес правит кто угодно, и «?price=чепуха» должен показывать всё,
+ * а не пустоту, которая читается как поломка каталога.
+ */
+export function filterByPrice(
+  products: Product[],
+  range: PriceRange | null,
+): Product[] {
+  const bounds = PRICE_RANGES.find((r) => r.slug === range);
+  if (!bounds) return products;
+  return products.filter(
+    (p) =>
+      p.priceCents >= bounds.minCents &&
+      (bounds.maxCents === null || p.priceCents < bounds.maxCents),
+  );
+}
+
 type ProductRow = {
   id: string;
   slug: string;
