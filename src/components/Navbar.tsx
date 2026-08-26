@@ -10,10 +10,11 @@ import {
   ChatCircleDots,
   UserCircle,
 } from "@phosphor-icons/react";
+import { ArrowCircle } from "@/components/ArrowCircle";
 import { Avatar } from "@/components/Avatar";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
-import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
+import { NAV_LINKS } from "@/lib/site";
 import { isMarketplaceRoute } from "@/lib/marketplace-routes";
 import { useCart } from "@/lib/cart-context";
 import { useLogout } from "@/lib/useLogout";
@@ -373,14 +374,32 @@ export function Navbar() {
               посетитель просто листает портфолио. */}
           {!isMarketplaceActive && (
             <div className="hidden min-[760px]:block">
+              {/* «Order a map», а не «Order now», и ведёт на /contact, а не
+                  сразу в Discord (решение владельца 2026-08-26). Надпись
+                  здесь и в hero главной была разной, а обещание одно —
+                  два имени у одного действия читаются как два разных.
+                  Выбрана та, что говорит, ЧТО человек получит.
+
+                  Адрес поменялся вместе с надписью, иначе две одинаковые
+                  кнопки на одном экране (навбар виден и на главной) вели
+                  бы в разные места. /contact держит калькулятор и FAQ —
+                  ответы на «сколько» и «когда» ДО того, как человек
+                  напишет; своя кнопка в Discord там и так стоит
+                  последней. */}
               <Button
-                href={DISCORD_INVITE}
-                target="_blank"
-                rel="noopener noreferrer"
+                href="/contact"
                 variant="primary"
                 size="sm"
+                pageTransition
+                className="group gap-2"
               >
-                Order now
+                Order a map
+                <ArrowCircle
+                  direction="right"
+                  variant="bare"
+                  className="h-5 w-5 transition-transform duration-300 group-hover:-rotate-45"
+                  colorClassName="text-zinc-950"
+                />
               </Button>
             </div>
           )}
@@ -479,14 +498,19 @@ export function Navbar() {
               ))}
               <li className="px-6 py-3">
                 <Button
-                  href={DISCORD_INVITE}
-                  target="_blank"
-                  rel="noopener noreferrer"
+                  href="/contact"
                   variant="primary"
                   size="sm"
-                  className="w-full"
+                  pageTransition
+                  className="group w-full gap-2"
                 >
-                  Order now
+                  Order a map
+                  <ArrowCircle
+                    direction="right"
+                    variant="bare"
+                    className="h-5 w-5 transition-transform duration-300 group-hover:-rotate-45"
+                    colorClassName="text-zinc-950"
+                  />
                 </Button>
               </li>
             </motion.ul>
