@@ -1,5 +1,11 @@
 import { describe, it, expect } from "vitest";
-import { orderInputFromLineItems, type SessionLike, type LineItemLike } from "./orders";
+import {
+  freeOrderKey,
+  getPaidOrder,
+  orderInputFromLineItems,
+  type SessionLike,
+  type LineItemLike,
+} from "./orders";
 
 // Граница "Checkout Session + её строки -> заказ в нашей БД" — чистая
 // функция, как rowToProduct. Тесты здесь строже обычного: именно эта
@@ -147,5 +153,57 @@ describe("orderInputFromLineItems", () => {
     // Stripe отдаёт "eur", в наших таблицах валюта хранится как "EUR"
     // (products.price_currency) — на границе приводим к одному виду.
     expect(orderInputFromLineItems(paidSession, oneItem)?.currency).toBe("EUR");
+  });
+});
+
+describe("freeOrderKey", () => {
+  const product = "3f2c8a10-0000-4000-8000-000000000001";
+  const user = "7b1d4e20-0000-4000-8000-000000000002";
+
+  it("для одной пары человек+карта ключ всегда один", () => {
+    // На этом держится вся защита от повторного получения: колонка
+    // stripe_session_id уникальна, значит вторая запись с тем же ключом
+    // просто не создастся. Проверку в коде так не заменишь — два
+    // одновременных запроса прошли бы её оба.
+    expect(freeOrderKey(product, user)).toBe(freeOrderKey(product, user));
+  });
+
+  it("разные карты и разные люди дают разные ключи", () => {
+    const other = "9c3f5a30-0000-4000-8000-000000000003";
+    expect(freeOrderKey(product, user)).not.toBe(freeOrderKey(other, user));
+    expect(freeOrderKey(product, user)).not.toBe(freeOrderKey(product, other));
+  });
+
+  it("ключ нельзя спутать с сессией Stripe", () => {
+    // Настоящие сессии начинаются с cs_ — именно по этому признаку
+    // страница успеха отличает их от наших синтетических ключей.
+    expect(freeOrderKey(product, user).startsWith("cs_")).toBe(false);
+  });
+});
+
+describe("getPaidOrder — пропуск только для сессий Stripe", () => {
+  it("ключ бесплатного заказа не открывает заказ", async () => {
+    // ⚠️ Это про доступ, а не про формат. Ключ бесплатного заказа
+    // собирается из id карты (лежит в разметке страницы товара) и id
+    // аккаунта — обе части известны, то есть подобрать чужой ключ можно
+    // руками. Без этой проверки /marketplace/success?session_id=free:…
+    // отдал бы подписанную ссылку на чужой файл.
+    //
+    // Тест не ходит в базу и не требует ключей: проверка стоит ДО
+    // создания клиента, и это часть требования — переставь её ниже, и
+    // тест упадёт на отсутствующем SUPABASE_SERVICE_ROLE_KEY.
+    await expect(
+      getPaidOrder(
+        freeOrderKey(
+          "3f2c8a10-0000-4000-8000-000000000001",
+          "7b1d4e20-0000-4000-8000-000000000002",
+        ),
+      ),
+    ).resolves.toBeNull();
+  });
+
+  it("мусор вместо id тоже не открывает заказ", async () => {
+    await expect(getPaidOrder("../../etc/passwd")).resolves.toBeNull();
+    await expect(getPaidOrder("")).resolves.toBeNull();
   });
 });
