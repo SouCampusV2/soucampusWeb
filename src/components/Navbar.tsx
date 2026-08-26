@@ -412,9 +412,16 @@ export function Navbar() {
                   <Skeleton className="h-6 w-6 rounded-full" />
                 </div>
               ) : user ? (
+                // Тап по аватару ведёт на СВОЙ публичный профиль — как
+                // клик по аватару на десктопе. До 26.08 он вёл на
+                // /settings, потому что был единственной дверью в аккаунт
+                // с телефона и приходилось выбирать один пункт из
+                // четырёх. Теперь все четыре лежат в гамбургере (ниже), и
+                // выбирать больше не нужно — два аватара ведут в одно
+                // место.
                 <Link
-                  href="/settings"
-                  aria-label="Profile"
+                  href={ownProfileHref}
+                  aria-label="My profile"
                   title={displayName}
                   className="flex items-center justify-center rounded-full p-2"
                 >
@@ -519,6 +526,93 @@ export function Navbar() {
                   </li>
                 ))}
               </ul>
+
+              {/* Аккаунт на мобильном (26.08). На десктопе эти пункты
+                  живут в выпадашке под аватаром, а она открывается по
+                  group-hover — чистым CSS, без состояния. На тач-экране
+                  hover не наступает НИКОГДА, поэтому блок скрыт вместе со
+                  всей десктопной колонкой, и из четырёх пунктов на
+                  телефоне был доступен один: аватар вёл на /settings.
+                  Выйти из аккаунта с телефона было нечем вообще.
+
+                  Раздел стоит ПОД навигацией, а не над ней: магазинные
+                  вкладки здесь главные, и сдвигать их вниз ради
+                  второстепенного значило бы переставить то, к чему уже
+                  привыкли. Черта сверху разделяет два разных вопроса —
+                  «куда пойти в магазине» и «что сделать со своим
+                  аккаунтом».
+
+                  Пункты повторяют десктопное меню поимённо, включая
+                  условие CREATOR_SIGNUPS_OPEN: два меню, отвечающие на
+                  один вопрос по-разному, рано или поздно разъедутся. */}
+              <div className="border-t border-zinc-950/[0.06] pb-2 dark:border-zinc-50/[0.08]">
+                {userLoading ? (
+                  // Та же нейтральная заглушка, что в строке навбара:
+                  // показать «Sign in» тому, кто на самом деле вошёл, —
+                  // хуже, чем не показать пока ничего.
+                  <div className="flex items-center gap-3 px-6 py-3" aria-hidden>
+                    <Skeleton className="h-6 w-6 rounded-full" />
+                    <Skeleton className="h-4 w-24 rounded-full" />
+                  </div>
+                ) : user ? (
+                  <>
+                    {/* Первой строкой — сам человек: аватар и имя ведут на
+                        публичный профиль, как клик по аватару на десктопе.
+                        Это заодно подпись раздела, поэтому отдельного
+                        заголовка «Account» нет. */}
+                    <Link
+                      href={ownProfileHref}
+                      onClick={() => setOpen(false)}
+                      className="flex items-center gap-3 px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                    >
+                      <Avatar avatarUrl={avatarUrl ?? null} size={24} />
+                      <span className="truncate">{displayName}</span>
+                    </Link>
+                    <Link
+                      href="/settings"
+                      onClick={() => setOpen(false)}
+                      className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                    >
+                      Settings
+                    </Link>
+                    {CREATOR_SIGNUPS_OPEN && (
+                      <Link
+                        href="/resources"
+                        onClick={() => setOpen(false)}
+                        className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                      >
+                        Your resources
+                      </Link>
+                    )}
+                    <Link
+                      href="/purchases"
+                      onClick={() => setOpen(false)}
+                      className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                    >
+                      My purchases
+                    </Link>
+                    {/* handleLogout сам закрывает меню — своего
+                        setOpen(false) здесь не нужно. */}
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="block w-full cursor-pointer px-6 py-3 text-left text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                    >
+                      Log out
+                    </button>
+                  </>
+                ) : (
+                  // Гостю — одна строка. Иконка входа есть и в верхней
+                  // строке, но она без подписи; словами понятнее.
+                  <Link
+                    href="/login"
+                    onClick={() => setOpen(false)}
+                    className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                  >
+                    Sign in
+                  </Link>
+                )}
+              </div>
             </motion.div>
           )}
         </AnimatePresence>
