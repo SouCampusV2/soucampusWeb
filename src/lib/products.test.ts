@@ -1,13 +1,15 @@
 import { describe, it, expect } from "vitest";
 import {
   deriveCategory,
+  eurosToCents,
   filterByCategory,
-  filterByPrice,
-  PRICE_RANGES,
+  filterByPriceRange,
+  filterBySpecs,
   rowToProduct,
   SHOP_CATEGORIES,
   sortByCollection,
-  type PriceRange,
+  sortProducts,
+  EMPTY_SPEC_FILTERS,
   type Product,
 } from "./products";
 
@@ -166,7 +168,31 @@ describe("filterByCategory", () => {
   });
 });
 
-describe("filterByPrice", () => {
+describe("eurosToCents", () => {
+  it("переводит евро в центы, принимая и запятую", () => {
+    expect(eurosToCents("12")).toBe(1200);
+    expect(eurosToCents("12.5")).toBe(1250);
+    expect(eurosToCents("12,5")).toBe(1250);
+  });
+
+  it("округляет, а не отбрасывает дробь", () => {
+    // 19.99 * 100 в двоичной арифметике даёт 1998.9999999999998.
+    // Без округления карта за €19.99 не попала бы в диапазон «до 19.99».
+    expect(eurosToCents("19.99")).toBe(1999);
+  });
+
+  it("пусто и чепуха — это отсутствие границы, а не ноль", () => {
+    // Ноль — законная граница («от 0» включает бесплатные), поэтому
+    // отличать «не ввели» от «ввели 0» обязательно.
+    expect(eurosToCents("")).toBeNull();
+    expect(eurosToCents("   ")).toBeNull();
+    expect(eurosToCents("abc")).toBeNull();
+    expect(eurosToCents("-5")).toBeNull();
+    expect(eurosToCents("0")).toBe(0);
+  });
+});
+
+describe("filterByPriceRange", () => {
   const base = {
     id: "00000000-0000-4000-8000-000000000000",
     title: "T",
@@ -184,47 +210,168 @@ describe("filterByPrice", () => {
   const products = [
     make("free-pack", 0),
     make("cheap", 500),
-    make("exactly-ten", 1000),
-    make("mid", 1999),
-    make("exactly-25", 2500),
+    make("mid", 2000),
     make("pricey", 4000),
   ];
 
-  const slugs = (range: PriceRange) =>
-    filterByPrice(products, range).map((p) => p.slug);
+  const slugs = (min: number | null, max: number | null) =>
+    filterByPriceRange(products, min, max).map((p) => p.slug);
 
-  it("free — только цена ровно 0", () => {
-    expect(slugs("free")).toEqual(["free-pack"]);
+  it("обе границы включительны", () => {
+    // Так читается «от 5 до 20» тем, кто их вписал: карта за ровно 20
+    // обязана быть в выборке.
+    expect(slugs(500, 2000)).toEqual(["cheap", "mid"]);
   });
 
-  it("under-10 не берёт бесплатные и не берёт ровно 10", () => {
-    // Обе границы важны: бесплатное живёт в своём диапазоне, а карта за
-    // ровно €10 обязана попасть в «€10–25», иначе она была бы в двух
-    // диапазонах сразу.
-    expect(slugs("under-10")).toEqual(["cheap"]);
+  it("одна граница — открытый с другой стороны диапазон", () => {
+    expect(slugs(null, 500)).toEqual(["free-pack", "cheap"]);
+    expect(slugs(2000, null)).toEqual(["mid", "pricey"]);
   });
 
-  it("10-25 включает нижнюю границу и исключает верхнюю", () => {
-    expect(slugs("10-25")).toEqual(["exactly-ten", "mid"]);
+  it("границ нет — список как есть", () => {
+    expect(slugs(null, null)).toHaveLength(products.length);
   });
 
-  it("25-plus включает ровно 25 и всё дороже", () => {
-    expect(slugs("25-plus")).toEqual(["exactly-25", "pricey"]);
+  it("перепутанные местами границы не дают пустоты", () => {
+    // «от 20 до 5» — опечатка, а пустой экран в ответ на опечатку
+    // читается как поломка каталога.
+    expect(slugs(2000, 500)).toEqual(["cheap", "mid"]);
   });
 
-  it("диапазоны не пересекаются и покрывают весь каталог", () => {
-    const total = PRICE_RANGES.reduce(
-      (sum, r) => sum + filterByPrice(products, r.slug).length,
-      0,
+  it("от нуля — вместе с бесплатными", () => {
+    expect(slugs(0, 500)).toEqual(["free-pack", "cheap"]);
+  });
+});
+
+describe("filterBySpecs", () => {
+  const base = {
+    id: "00000000-0000-4000-8000-000000000000",
+    title: "T",
+    summary: "S",
+    description: "D",
+    image_url: "/x.png",
+    price_label: "€20",
+    price_cents: 2000,
+    price_currency: "EUR",
+    created_at: "2026-07-22T12:00:00.000Z",
+    updated_at: "2026-07-22T12:00:00.000Z",
+  };
+
+  const spawn = rowToProduct({
+    ...base,
+    slug: "spawn",
+    mc_versions: ["1.21", "1.20"],
+    map_type: "Spawn",
+    file_formats: ["Java world"],
+    game_modes: ["Hub & lobby"],
+    map_size: "Large",
+    themes: ["Medieval"],
+  });
+  const arena = rowToProduct({
+    ...base,
+    slug: "arena",
+    mc_versions: ["1.8"],
+    map_type: "Minigame arena",
+    file_formats: ["Schematic"],
+    game_modes: ["Minigame"],
+    map_size: "Small",
+    themes: ["Fantasy"],
+  });
+  const bare = rowToProduct({ ...base, slug: "bare" });
+  const products = [spawn, arena, bare];
+
+  const slugs = (filters: Partial<typeof EMPTY_SPEC_FILTERS>) =>
+    filterBySpecs(products, { ...EMPTY_SPEC_FILTERS, ...filters }).map(
+      (p) => p.slug,
     );
-    expect(total).toBe(products.length);
+
+  it("ничего не выбрано — список как есть", () => {
+    expect(slugs({})).toHaveLength(products.length);
   });
 
-  it("нет диапазона или чепуха в адресе — список как есть", () => {
-    expect(filterByPrice(products, null)).toHaveLength(products.length);
-    expect(
-      filterByPrice(products, "nonsense" as PriceRange),
-    ).toHaveLength(products.length);
+  it("внутри поля значения складываются по ИЛИ", () => {
+    // «1.8 или 1.21» — обычная просьба. «И 1.8, и 1.21 одновременно»
+    // человек в фильтре не имеет в виду почти никогда.
+    expect(slugs({ mcVersions: ["1.8", "1.21"] }).sort()).toEqual([
+      "arena",
+      "spawn",
+    ]);
+  });
+
+  it("разные поля складываются по И", () => {
+    expect(slugs({ mcVersions: ["1.21"], formats: ["Schematic"] })).toEqual([]);
+    expect(slugs({ mcVersions: ["1.21"], formats: ["Java world"] })).toEqual([
+      "spawn",
+    ]);
+  });
+
+  it("одиночные поля работают тем же правилом, что списки", () => {
+    expect(slugs({ mapTypes: ["Spawn"] })).toEqual(["spawn"]);
+    expect(slugs({ mapSizes: ["Small"] })).toEqual(["arena"]);
+  });
+
+  it("карта без характеристик выпадает из любого фильтра", () => {
+    // И это правильно: пустое поле значит «автор не сказал», а не
+    // «подходит под всё».
+    expect(slugs({ themes: ["Medieval"] })).toEqual(["spawn"]);
+    expect(slugs({ mapTypes: ["Spawn"] })).not.toContain("bare");
+  });
+});
+
+describe("sortProducts", () => {
+  const base = {
+    id: "00000000-0000-4000-8000-000000000000",
+    summary: "S",
+    description: "D",
+    image_url: "/x.png",
+    price_label: "€20",
+    price_currency: "EUR",
+    updated_at: "2026-07-22T12:00:00.000Z",
+  };
+  const make = (
+    slug: string,
+    title: string,
+    priceCents: number,
+    createdAt: string,
+  ): Product =>
+    rowToProduct({
+      ...base,
+      slug,
+      title,
+      price_cents: priceCents,
+      created_at: createdAt,
+    });
+
+  const products = [
+    make("b", "Bravo", 3000, "2026-03-01T00:00:00.000Z"),
+    make("a", "Alpha", 1000, "2026-01-01T00:00:00.000Z"),
+    make("c", "Charlie", 2000, "2026-06-01T00:00:00.000Z"),
+  ];
+  const order = (sort: Parameters<typeof sortProducts>[1]) =>
+    sortProducts(products, sort).map((p) => p.slug);
+
+  it("без выбора порядок не трогается", () => {
+    expect(order(null)).toEqual(["b", "a", "c"]);
+  });
+
+  it("новые и старые", () => {
+    expect(order("newest")).toEqual(["c", "b", "a"]);
+    expect(order("oldest")).toEqual(["a", "b", "c"]);
+  });
+
+  it("дешёвые и дорогие", () => {
+    expect(order("price-asc")).toEqual(["a", "c", "b"]);
+    expect(order("price-desc")).toEqual(["b", "c", "a"]);
+  });
+
+  it("по названию", () => {
+    expect(order("name-asc")).toEqual(["a", "b", "c"]);
+  });
+
+  it("не мутирует исходный массив", () => {
+    const before = products.map((p) => p.slug);
+    sortProducts(products, "price-asc");
+    expect(products.map((p) => p.slug)).toEqual(before);
   });
 });
 

@@ -3,13 +3,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { MagnifyingGlass, X } from "@phosphor-icons/react";
-import {
-  PRICE_RANGES,
-  SHOP_CATEGORIES,
-  type PriceRange,
-  type ProductCategory,
-} from "@/lib/products";
-import { BackLink } from "@/components/BackLink";
+import { SHOP_CATEGORIES, type ProductCategory } from "@/lib/products";
+import { MarketplaceFilters } from "@/components/MarketplaceFilters";
 
 // Фильтр категорий на самой витрине. Раньше категории жили вкладками в
 // навбаре — с восемью штуками это перестало помещаться (решение владельца
@@ -36,18 +31,11 @@ export function CategoryFilter() {
   // selectCollection). Держать их одновременно значило бы отвечать на
   // вопрос «что я сейчас смотрю» двумя способами.
   const activeCollection = params.get("collection");
-  const activePrice = params.get("price");
 
   // Есть ли вообще подстраница. Пусто — человек на главной витрине, где
-  // рядов-подборок несколько и фильтровать нечего: фильтр цены появляется
-  // только там, где список ОДИН (решение владельца 2026-08-26).
+  // рядов-подборок несколько. От этого зависит одно: какая пилюля горит.
   const isFiltering =
     active !== null || activeCollection !== null || activeQuery.length > 0;
-
-  // Внутри «Free» фильтр цены бессмыслен: все карты там стоят ноль, и
-  // любой диапазон, кроме «Free», дал бы пустой экран. Пилюля Free и
-  // фильтр цены отвечают на один вопрос — пусть отвечает одна.
-  const showPrice = isFiltering && active !== "free";
 
   // Своя строка поиска на витрине — в дополнение к той, что в навбаре.
   //
@@ -111,17 +99,11 @@ export function CategoryFilter() {
     router.push(`/marketplace?${next.toString()}`, { scroll: false });
   }
 
-  // Диапазон цены. Повторный клик по выбранной пилюле снимает фильтр —
-  // отдельной кнопки «Any» нет: она заняла бы место ради действия,
-  // которое и так делается тем же нажатием.
-  function selectPrice(slug: PriceRange) {
-    const next = new URLSearchParams(params.toString());
-    if (activePrice === slug) next.delete("price");
-    else next.set("price", slug);
-    const query = next.toString();
-    router.push(query ? `/marketplace?${query}` : "/marketplace", {
-      scroll: false,
-    });
+  // Возврат на главную витрину. Здесь снимается ВСЁ, включая фильтры и
+  // поиск, и это единственное место, где так можно: ряды подборок — не
+  // список, накладывать на них условия не к чему.
+  function reset() {
+    router.push("/marketplace", { scroll: false });
   }
 
   // Меняем ОДИН параметр, остальные (в частности ?q поиска) сохраняем —
@@ -174,21 +156,28 @@ export function CategoryFilter() {
         </button>
       ))}
 
+      {/* Дверь обратно на главную витрину — ПОСЛЕДНЕЙ пилюлей, а не
+          ссылкой-стрелкой над рядом (решение владельца 2026-08-26).
+          Стрелка «назад» обещала предыдущий экран, а ведёт всегда в одно
+          и то же место — на витрину; пилюля в общем ряду честнее
+          называет то, чем это является: ещё один вид каталога, наравне с
+          «All maps» и категориями.
+
+          Горит она ровно тогда, когда не выбрано ничего другого, — то
+          есть на самой витрине. Так в ряду всегда подсвечена ровно одна
+          пилюля, и «где я» читается без чтения адреса. */}
+      <button
+        type="button"
+        onClick={() => reset()}
+        className={`${pill} ${!isFiltering ? selected : inactive}`}
+      >
+        Collections
+      </button>
     </div>
   );
 
   return (
     <div className="mt-8">
-      {/* Дверь обратно на главную витрину. Она нужна с 26.08: до этого
-          «All maps» была одновременно и списком, и кнопкой «сбросить всё»,
-          а теперь сбрасывать нечем — из категории на витрину не выйти
-          иначе как через навбар. */}
-      {isFiltering && (
-        <div className="mb-6">
-          <BackLink href="/marketplace">All collections</BackLink>
-        </div>
-      )}
-
       <div className="flex flex-col gap-3 sm:flex-row-reverse sm:items-start sm:justify-between sm:gap-6">
       {/* Поиск справа на широком экране, сверху на узком: на телефоне
           набирать удобнее сразу, а не после прокрутки списка категорий. */}
@@ -201,40 +190,21 @@ export function CategoryFilter() {
           букве — набрать больше одного символа стало бы невозможно.
           Плата за это: при переходе «назад» текст в поле остаётся
           прежним, хотя список обновляется. */}
-      <SearchField
-        initialQuery={activeQuery}
-        onSubmit={submitSearch}
-        onClear={clearSearch}
-        onLiveChange={liveSearch}
-      />
+      {/* Поиск и фильтры — одной группой: оба сужают выдачу, и стоять
+          они должны рядом, а не по разным углам экрана. */}
+      <div className="flex w-full items-start gap-2 sm:w-auto">
+        <SearchField
+          initialQuery={activeQuery}
+          onSubmit={submitSearch}
+          onClear={clearSearch}
+          onLiveChange={liveSearch}
+        />
+        <MarketplaceFilters />
+      </div>
 
         {pills}
       </div>
 
-      {/* Цена — вторым рядом, под чертой: это фильтр ВНУТРИ выбранного
-          списка, а не ещё один способ его выбрать. Один ряд пилюль с
-          двумя разными смыслами читался бы как девять равноправных
-          вариантов. */}
-      {showPrice && (
-        <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-zinc-950/[0.06] pt-6 dark:border-zinc-50/[0.08]">
-          <span className="mr-1 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-            Price
-          </span>
-          {PRICE_RANGES.map((range) => (
-            <button
-              key={range.slug}
-              type="button"
-              onClick={() => selectPrice(range.slug)}
-              aria-pressed={activePrice === range.slug}
-              className={`${pill} ${
-                activePrice === range.slug ? selected : inactive
-              }`}
-            >
-              {range.label}
-            </button>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
