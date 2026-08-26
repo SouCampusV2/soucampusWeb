@@ -4,17 +4,18 @@ import { useSearchParams } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import {
   filterByCategory,
-  filterByPrice,
+  filterByPriceRange,
   filterBySearch,
-  PRICE_RANGES,
+  filterBySpecs,
   SHOP_CATEGORIES,
   SHOP_COLLECTIONS,
   sortByCollection,
-  type PriceRange,
+  sortProducts,
   type Product,
   type ProductCategory,
   type ProductCollection,
 } from "@/lib/products";
+import { readCatalogQuery } from "@/lib/catalog-params";
 import { ProductCard } from "@/components/ProductCard";
 import { MarketplaceShowcaseRow } from "@/components/MarketplaceShowcaseRow";
 
@@ -54,16 +55,18 @@ export function MarketplaceCatalog({ products }: { products: Product[] }) {
     ? (rawCollection as ProductCollection)
     : null;
 
-  const rawPrice = params.get("price");
-  const price = PRICE_RANGES.some((r) => r.slug === rawPrice)
-    ? (rawPrice as PriceRange)
-    : null;
+  // Цена, характеристики и сортировка — одним разбором, общим с попапом
+  // фильтров (см. lib/catalog-params.ts). Пока каждый читал адрес сам,
+  // расхождение было вопросом времени.
+  const filters = readCatalogQuery(params);
 
   const query = (params.get("q") ?? "").trim();
 
-  // Цена в этот список НЕ входит намеренно: сама по себе она экрана не
-  // выбирает. «?price=free» без подборки — это по-прежнему главная
-  // витрина, а не список всех бесплатных карт (для него есть ?category=free).
+  // Фильтры в этот список НЕ входят намеренно: сами по себе они экрана не
+  // выбирают. «?min=5» без подборки — это по-прежнему главная витрина, а
+  // не список. Попап это знает и, применяя фильтр с витрины, сам
+  // добавляет collection=all — то есть выбор экрана остаётся ОДНИМ
+  // решением, принятым в одном месте.
   const isFiltering =
     category !== null || collection !== null || query.length > 0;
 
@@ -121,7 +124,12 @@ export function MarketplaceCatalog({ products }: { products: Product[] }) {
       ? filterByCategory(products, category)
       : products;
   result = filterBySearch(result, query);
-  result = filterByPrice(result, price);
+  result = filterByPriceRange(result, filters.minCents, filters.maxCents);
+  result = filterBySpecs(result, filters.specs);
+  // Сортировка ПОСЛЕДНЕЙ и поверх порядка подборки: человек попросил
+  // явно, и оставить «свой» порядок значило бы проигнорировать просьбу.
+  // Без выбора (sort === null) функция возвращает список как есть.
+  result = sortProducts(result, filters.sort);
 
   // Заголовок отвечает на «где я». Поиск главнее списка: набранное слово —
   // самое свежее действие человека, и назвать экран категорией, когда он
@@ -145,8 +153,8 @@ export function MarketplaceCatalog({ products }: { products: Product[] }) {
 
       {result.length === 0 ? (
         <p className="mt-10 text-zinc-600 dark:text-zinc-400">
-          Nothing here yet. Try another price range, another category, or clear
-          the search.
+          Nothing matches. Try widening the filters, picking another category,
+          or clearing the search.
         </p>
       ) : (
         <ProductGrid products={result} />

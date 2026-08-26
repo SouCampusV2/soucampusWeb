@@ -324,47 +324,160 @@ export function sortByCollection(
 
 // ── Фильтр цены ────────────────────────────────────────────────────────
 //
-// Готовые диапазоны, а не два поля min/max (решение владельца
-// 2026-08-26): вариантов немного, все влезают пилюлями, и человеку не
-// нужно ни печатать, ни знать, сколько вообще стоят карты.
+// Границы вводит человек («от» и «до»), а не выбирает из готовых
+// диапазонов (решение владельца 2026-08-26; до этого здесь были пилюли
+// Free / Under €10 / …). Готовые диапазоны короче в нажатиях, но
+// отвечают только на те вопросы, которые мы придумали заранее; поле
+// отвечает на любой.
 //
-// Границы — в ЦЕНТАХ, как priceCents: цена в базе целочисленная, и
-// сравнивать её с 9.99 значило бы завести дробную арифметику там, где её
-// нет. Нижняя граница включительна, верхняя — нет (10 евро попадает в
-// «€10–25», а не в «under €10»): иначе карта за ровно 10 оказалась бы в
-// обоих диапазонах сразу.
-export type PriceRange = "free" | "under-10" | "10-25" | "25-plus";
+// Наружу — ЕВРО (то, что человек видит на карточке), внутрь — центы.
+// Перевод один и здесь: цена в базе целочисленная, и дробная
+// арифметика на границе — самый дешёвый способ получить «19.99 не
+// попало в диапазон до 20».
+export function eurosToCents(value: string): number | null {
+  const trimmed = value.trim().replace(",", ".");
+  if (!trimmed) return null;
+  const parsed = Number(trimmed);
+  if (!Number.isFinite(parsed) || parsed < 0) return null;
+  return Math.round(parsed * 100);
+}
 
-export const PRICE_RANGES: {
-  slug: PriceRange;
-  label: string;
-  /** Включительно. */
-  minCents: number;
-  /** Не включительно; null — верхней границы нет. */
-  maxCents: number | null;
-}[] = [
-  { slug: "free", label: "Free", minCents: 0, maxCents: 1 },
-  { slug: "under-10", label: "Under €10", minCents: 1, maxCents: 1000 },
-  { slug: "10-25", label: "€10–25", minCents: 1000, maxCents: 2500 },
-  { slug: "25-plus", label: "€25+", minCents: 2500, maxCents: null },
+/**
+ * Отбор по цене. Обе границы ВКЛЮЧИТЕЛЬНЫ — так читается «от 5 до 20»
+ * человеком, который их вписал: карта за ровно 20 в такой выборке
+ * обязана быть. Это отличается от прежних пилюль, где верхняя граница
+ * была исключающей, и отличается сознательно: там диапазоны стояли
+ * встык и пересечение было бы ошибкой, здесь границы называет человек.
+ *
+ * null — граница не задана. Перепутанные местами границы (от 20 до 5)
+ * не считаем ошибкой и молча меняем местами: это опечатка, а пустой
+ * экран в ответ на опечатку читается как поломка каталога.
+ */
+export function filterByPriceRange(
+  products: Product[],
+  minCents: number | null,
+  maxCents: number | null,
+): Product[] {
+  let lo = minCents;
+  let hi = maxCents;
+  if (lo !== null && hi !== null && lo > hi) [lo, hi] = [hi, lo];
+
+  return products.filter(
+    (p) =>
+      (lo === null || p.priceCents >= lo) && (hi === null || p.priceCents <= hi),
+  );
+}
+
+// ── Фильтр по характеристикам ──────────────────────────────────────────
+//
+// Ровно те поля, что завела миграция 20260821130000: версии, формат
+// файла, тип карты, режимы, размер, темы. Значения приходят из адреса и
+// сверяются со СТРОКАМИ В КАРТЕ, а не со словарём из product-specs.ts:
+// словарь там — про вкус и пополняется без миграции, и карта, залитая
+// со значением вне словаря, обязана находиться своим же значением.
+export type SpecFilters = {
+  /** Карта подходит, если совпала ХОТЯ БЫ ОДНА выбранная версия. */
+  mcVersions: string[];
+  formats: string[];
+  mapTypes: string[];
+  gameModes: string[];
+  mapSizes: string[];
+  themes: string[];
+};
+
+export const EMPTY_SPEC_FILTERS: SpecFilters = {
+  mcVersions: [],
+  formats: [],
+  mapTypes: [],
+  gameModes: [],
+  mapSizes: [],
+  themes: [],
+};
+
+// Внутри одного поля выбранные значения складываются по ИЛИ, а разные
+// поля — по И. То есть «1.20 или 1.21» и при этом «Schematic».
+// Обратное («и 1.20, и 1.21 одновременно») человек в фильтре не имеет в
+// виду почти никогда, а у карты версии перечислены списком — требовать
+// совпадения всех значило бы находить пустоту.
+function matchesAny(chosen: string[], actual: string[]): boolean {
+  if (chosen.length === 0) return true;
+  return actual.some((value) => chosen.includes(value));
+}
+
+export function filterBySpecs(
+  products: Product[],
+  filters: SpecFilters,
+): Product[] {
+  return products.filter((p) => {
+    const specs = p.specs;
+    return (
+      matchesAny(filters.mcVersions, specs.mcVersions) &&
+      matchesAny(filters.formats, specs.fileFormats) &&
+      // mapType и mapSize — одно значение или ничего. Приводим к списку,
+      // чтобы правило совпадения было ОДНО на все поля: два разных
+      // правила «одно значение» и «список» разошлись бы при первой же
+      // правке.
+      matchesAny(filters.mapTypes, specs.mapType ? [specs.mapType] : []) &&
+      matchesAny(filters.gameModes, specs.gameModes) &&
+      matchesAny(filters.mapSizes, specs.mapSize ? [specs.mapSize] : []) &&
+      matchesAny(filters.themes, specs.themes)
+    );
+  });
+}
+
+// ── Сортировка ─────────────────────────────────────────────────────────
+//
+// Отдельная ось от подборки. Подборка задаёт порядок ПО УМОЛЧАНИЮ
+// («Most popular» — по продажам), а выбранная человеком сортировка его
+// перебивает: он попросил явно, и молча оставить свой порядок значило бы
+// проигнорировать просьбу.
+export type SortOption =
+  | "newest"
+  | "oldest"
+  | "price-asc"
+  | "price-desc"
+  | "name-asc"
+  | "rating";
+
+export const SORT_OPTIONS: { slug: SortOption; label: string }[] = [
+  { slug: "newest", label: "Newest first" },
+  { slug: "oldest", label: "Oldest first" },
+  { slug: "price-asc", label: "Price: low to high" },
+  { slug: "price-desc", label: "Price: high to low" },
+  { slug: "name-asc", label: "Name: A to Z" },
+  { slug: "rating", label: "Best rated" },
 ];
 
 /**
- * Отбор по диапазону цены. Неизвестный диапазон возвращает список как
- * есть — адрес правит кто угодно, и «?price=чепуха» должен показывать всё,
- * а не пустоту, которая читается как поломка каталога.
+ * Не мутирует вход — сортировка идёт по копии: массив приезжает из кэша
+ * страницы, и перестановка на месте меняла бы его для всех остальных
+ * читателей.
+ *
+ * `localeCompare` для имён, а не сравнение строк: иначе «Émeraude»
+ * уезжает за «Zephyr», потому что по коду символа É больше Z.
  */
-export function filterByPrice(
+export function sortProducts(
   products: Product[],
-  range: PriceRange | null,
+  sort: SortOption | null,
 ): Product[] {
-  const bounds = PRICE_RANGES.find((r) => r.slug === range);
-  if (!bounds) return products;
-  return products.filter(
-    (p) =>
-      p.priceCents >= bounds.minCents &&
-      (bounds.maxCents === null || p.priceCents < bounds.maxCents),
-  );
+  if (!sort) return products;
+  const copy = [...products];
+  switch (sort) {
+    case "newest":
+      return copy.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+    case "oldest":
+      return copy.sort((a, b) => (a.createdAt > b.createdAt ? 1 : -1));
+    case "price-asc":
+      return copy.sort((a, b) => a.priceCents - b.priceCents);
+    case "price-desc":
+      return copy.sort((a, b) => b.priceCents - a.priceCents);
+    case "name-asc":
+      return copy.sort((a, b) => a.title.localeCompare(b.title, "en"));
+    case "rating":
+      return copy.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+    default:
+      return copy;
+  }
 }
 
 type ProductRow = {
