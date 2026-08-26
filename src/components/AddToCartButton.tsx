@@ -211,7 +211,17 @@ export function AddToCartButton({
       }
       if (!response.ok) throw new Error(`checkout failed: ${response.status}`);
 
-      const { url } = await response.json();
+      const data = await response.json();
+
+      // Бесплатная карта до Stripe не доходит: сервер записал заказ сам.
+      // Уводим в «My purchases» — там же, где лежат все остальные карты
+      // человека, и там же работает уже проверенная выдача файла.
+      if (data?.claimed) {
+        window.location.assign("/purchases");
+        return;
+      }
+
+      const { url } = data;
       // Проверяем, куда нас отправляют, хотя адрес пришёл от нашего же
       // сервера: window.location.assign уводит человека куда угодно, и
       // единственная проверка на этом пути — вот эта.
@@ -229,28 +239,63 @@ export function AddToCartButton({
     }
   };
 
+  // Бесплатность — свойство КАРТЫ, а не того, кто на неё смотрит:
+  // priceCents приезжает с сервера вместе со страницей. Поэтому надпись
+  // может от неё зависеть, не ломая статику, — в отличие от «что в
+  // корзине» и «куплено ли», ради которых кнопка когда-то и стала
+  // неизменной (см. комментарий вверху файла).
+  const isFree = product.priceCents === 0;
+
   return (
     <div>
       {/* Цена из подписи убрана (решение владельца 2026-08-21): она стоит
           крупным шрифтом прямо над кнопкой, и повторять её значит
           удлинять кнопку ради того, что человек и так видит. */}
-      <Button size="lg" onClick={handleClick} className="w-full">
-        Add to cart
-      </Button>
+      {isFree ? (
+        <>
+          {/* У бесплатной карты главное действие — забрать её, а не
+              положить в корзину: корзина существует, чтобы собрать
+              несколько карт к одной оплате, а оплаты здесь не будет.
+              Кнопка «Add to cart» остаётся второй — за бесплатной могут
+              прийти заодно с платной. */}
+          <Button
+            size="lg"
+            onClick={buyNow}
+            disabled={buying}
+            className="w-full"
+          >
+            {buying ? "Getting it…" : "Get it for free"}
+          </Button>
+          <Button
+            size="lg"
+            variant="secondary"
+            onClick={handleClick}
+            className="mt-3 w-full"
+          >
+            Add to cart
+          </Button>
+        </>
+      ) : (
+        <>
+          <Button size="lg" onClick={handleClick} className="w-full">
+            Add to cart
+          </Button>
 
-      {/* Покупка одной кнопкой — вторичная намеренно. Основной путь у нас
-          корзина: она позволяет докупить вторую карту и оформить всё
-          одним заказом. «Buy now» для тех, кто пришёл за одной картой и
-          не хочет лишнего шага. */}
-      <Button
-        size="lg"
-        variant="secondary"
-        onClick={buyNow}
-        disabled={buying}
-        className="mt-3 w-full"
-      >
-        {buying ? "Redirecting…" : "Buy now"}
-      </Button>
+          {/* Покупка одной кнопкой — вторичная намеренно. Основной путь у
+              нас корзина: она позволяет докупить вторую карту и оформить
+              всё одним заказом. «Buy now» для тех, кто пришёл за одной
+              картой и не хочет лишнего шага. */}
+          <Button
+            size="lg"
+            variant="secondary"
+            onClick={buyNow}
+            disabled={buying}
+            className="mt-3 w-full"
+          >
+            {buying ? "Redirecting…" : "Buy now"}
+          </Button>
+        </>
+      )}
 
       {/* min-h резервирует место под сообщение, чтобы его появление не
           сдвигало карточку с ценой и характеристиками. */}

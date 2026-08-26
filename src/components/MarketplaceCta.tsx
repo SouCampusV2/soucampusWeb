@@ -1,6 +1,5 @@
 import Image from "next/image";
 import { Unbounded } from "next/font/google";
-import { ArrowCircle } from "@/components/ArrowCircle";
 import { Button } from "@/components/Button";
 
 // Тот же дисплейный шрифт, что у hero-заголовков (DESIGN.md → «Hero-секции
@@ -117,23 +116,17 @@ export function MarketplaceCta() {
         <p className="mt-5 text-zinc-600 dark:text-zinc-400">{SUBTEXT}</p>
 
         {/* Единственный CTA на баннере — правило «один главный CTA на
-            экран» (DESIGN.md → «Цвета»). Стрелка — общий ArrowCircle в
-            варианте bare: анимируется иконка, а не кнопка, как у кнопок
-            заказа в навбаре и в hero. */}
+            экран» (DESIGN.md → «Цвета»).
+
+            ⚠️ Стрелки НЕТ, хотя сначала она здесь была. Поворот на -45 у
+            нас означает «уходишь с сайта» (так он стоит у «Join Discord»
+            и «Open Discord»), а кнопка ведёт на /contact — свою страницу.
+            Одна и та же надпись «Order a map» стоит в навбаре, в hero и
+            здесь: стрелка на одной из трёх обещала бы, что эта ведёт
+            куда-то ещё. */}
         <div className="mt-8">
-          <Button
-            href={CTA_HREF}
-            variant="primary"
-            size="md"
-            className="group gap-2"
-          >
+          <Button href={CTA_HREF} variant="primary" size="md">
             {CTA_LABEL}
-            <ArrowCircle
-              direction="right"
-              variant="bare"
-              className="h-6 w-6 transition-transform duration-300 group-hover:-rotate-45"
-              colorClassName="text-zinc-950"
-            />
           </Button>
         </div>
       </div>

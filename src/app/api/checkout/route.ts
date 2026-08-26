@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { getProduct } from "@/lib/products";
+import { freeOrderKey, recordPaidOrder } from "@/lib/orders";
 import { getStripe } from "@/lib/stripe";
 import { SITE_URL } from "@/lib/site";
 import { createSupabaseServer } from "@/lib/supabase-server";
@@ -116,6 +117,71 @@ export async function POST(request: Request) {
 
   if (lineItems.length === 0) {
     return NextResponse.json({ error: "no valid products" }, { status: 404 });
+  }
+
+  // ── Бесплатные карты идут МИМО Stripe ────────────────────────────────
+  //
+  // Почему это вообще нужно: платёжный режим Stripe требует суммы не ниже
+  // минимальной, и сессия на 0 не создаётся. До 2026-08-26 бесплатная
+  // карта покупалась только «прицепом» к платной — в одиночку она
+  // упиралась в отказ Stripe, то есть скачать её было нельзя вовсе.
+  //
+  // ⚠️ Ветку выбирает СЕРВЕР по цене из НАШЕЙ базы, а не клиент. Это не
+  // придирка: отдельный роут «дай бесплатно» означал бы вторую дверь,
+  // которую пришлось бы запирать своим замком, и однажды один из двух
+  // замков отстал бы. Здесь же «бесплатно» физически не может относиться
+  // к платной карте — сумма считается из тех же priceCents, что ушли бы
+  // в Stripe.
+  //
+  // Цены отрицательными не бывают (check price_cents >= 0 в схеме),
+  // поэтому нулевая сумма и значит «все позиции бесплатны».
+  const totalCents = lineItems.reduce(
+    (sum, item) => sum + item.price_data.unit_amount,
+    0
+  );
+
+  if (totalCents === 0) {
+    const freeProducts = products.filter(
+      (product): product is NonNullable<(typeof products)[number]> => product !== null
+    );
+
+    // Заказ на КАЖДУЮ карту отдельно, а не один общий. Так ключ
+    // (freeOrderKey) описывает ровно «этот человек, эта карта», и
+    // уникальный индекс на stripe_session_id сам не даёт получить одну
+    // карту дважды. Общий заказ на набор такого ключа не имеет: сегодня
+    // взяли {A}, завтра {A, B} — и A уехала бы в /purchases второй раз.
+    //
+    // Последовательно, а не Promise.all: записей единицы, а параллельные
+    // вставки в одну таблицу ради экономии миллисекунд — не та цена,
+    // которую стоит платить за менее предсказуемый порядок в логах.
+    for (const product of freeProducts) {
+      await recordPaidOrder({
+        stripeSessionId: freeOrderKey(product.id, user.id),
+        // Колонка not null. Аккаунт без почты у нас невозможен, но
+        // подстраховка стоит дешевле упавшей записи.
+        customerEmail: user.email ?? "unknown",
+        userId: user.id,
+        totalCents: 0,
+        currency: product.currency.toUpperCase(),
+        items: [
+          {
+            productId: product.id,
+            // Снимок названия на момент получения — как у платного
+            // заказа: карту могут переименовать, а в списке покупок
+            // должно остаться то, что человек взял.
+            title: product.title,
+            priceCents: 0,
+            quantity: 1,
+          },
+        ],
+      });
+    }
+
+    // Адреса наружу не отдаём вовсе — клиент сам уходит на /purchases.
+    // Возвращать сюда ссылку значило бы отдать браузеру строку, которую
+    // он подставит в window.location: у платного пути её приходится
+    // проверять на https, а здесь проверять просто нечего.
+    return NextResponse.json({ claimed: true });
   }
 
   const base = returnBase(request);

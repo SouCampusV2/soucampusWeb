@@ -122,7 +122,20 @@ export default function CartPage() {
         return;
       }
       if (!res.ok) throw new Error(`checkout failed: ${res.status}`);
-      const { url } = await res.json();
+      const data = await res.json();
+
+      // Корзина из одних бесплатных карт до Stripe не доходит вовсе —
+      // сервер записал заказы сам и вернул claimed (см. /api/checkout).
+      // Корзину чистим ЗДЕСЬ, а не на странице назначения: у платного
+      // пути это делает ClearCartOnSuccess на /marketplace/success, а
+      // бесплатный туда не заходит, и чистить его было бы некому.
+      if (data?.claimed) {
+        clear();
+        router.push("/purchases");
+        return;
+      }
+
+      const { url } = data;
       if (typeof url !== "string" || !url.startsWith("https://")) {
         throw new Error("checkout returned no url");
       }
@@ -362,7 +375,18 @@ export default function CartPage() {
                 </div>
 
                 <Button size="lg" onClick={checkout} className="mt-6 w-full">
-                  {state === "loading" ? "Redirecting…" : user ? "Checkout" : "Sign in to checkout"}
+                  {/* Надпись честно называет то, что произойдёт: у
+                      корзины из одних бесплатных карт не будет ни
+                      перехода к оплате, ни самой оплаты. */}
+                  {state === "loading"
+                    ? totalCents === 0
+                      ? "Getting your maps…"
+                      : "Redirecting…"
+                    : !user
+                      ? "Sign in to continue"
+                      : totalCents === 0
+                        ? "Get for free"
+                        : "Checkout"}
                 </Button>
 
                 {state === "error" && (
