@@ -10,7 +10,6 @@ import {
   ChatCircleDots,
   UserCircle,
 } from "@phosphor-icons/react";
-import { ArrowCircle } from "@/components/ArrowCircle";
 import { Avatar } from "@/components/Avatar";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
@@ -386,20 +385,15 @@ export function Navbar() {
                   ответы на «сколько» и «когда» ДО того, как человек
                   напишет; своя кнопка в Discord там и так стоит
                   последней. */}
-              <Button
-                href="/contact"
-                variant="primary"
-                size="sm"
-                pageTransition
-                className="group gap-2"
-              >
+              {/* ⚠️ Стрелки здесь НЕТ намеренно (решение владельца
+                  2026-08-26, в тот же день, что и её появление). Поворот
+                  на -45 у нас означает «уходишь с сайта» — так он стоит у
+                  «Join Discord» и «Open Discord». Кнопка ведёт на
+                  /contact, то есть никуда не уводит, и стрелка обещала бы
+                  переход, которого не будет. Появится внешний адрес —
+                  вернуть вместе с ним. */}
+              <Button href="/contact" variant="primary" size="sm" pageTransition>
                 Order a map
-                <ArrowCircle
-                  direction="right"
-                  variant="bare"
-                  className="h-5 w-5 transition-transform duration-300 group-hover:-rotate-45"
-                  colorClassName="text-zinc-950"
-                />
               </Button>
             </div>
           )}
@@ -502,15 +496,9 @@ export function Navbar() {
                   variant="primary"
                   size="sm"
                   pageTransition
-                  className="group w-full gap-2"
+                  className="w-full"
                 >
                   Order a map
-                  <ArrowCircle
-                    direction="right"
-                    variant="bare"
-                    className="h-5 w-5 transition-transform duration-300 group-hover:-rotate-45"
-                    colorClassName="text-zinc-950"
-                  />
                 </Button>
               </li>
             </motion.ul>
