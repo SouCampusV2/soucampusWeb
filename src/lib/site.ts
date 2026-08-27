@@ -24,16 +24,13 @@ export const SITE_TAGLINE =
 export const SITE_SAMEAS: string[] = [
   DISCORD_INVITE,
   "https://www.planetminecraft.com/member/soucampus/",
-  "https://www.instagram.com/soucampus_builds/",
-  "https://www.tiktok.com/@soucampusmc",
+  "https://www.instagram.com/soucampusbuilds/",
+  "https://www.tiktok.com/@soucampus",
   "https://www.patreon.com/c/SouCampus",
   "https://chunkfactory.com/community/members/soucampus.19017/",
   "https://www.reddit.com/user/SouCampus/",
   "https://www.youtube.com/@SouCampus",
-  // Хэндл в X — CouSampus, а не SouCampus (слоги переставлены), и сменить его
-  // нельзя. Для sameAs это не помеха: связь строится по самой ссылке, а не по
-  // тексту хэндла, — важно лишь, чтобы профиль ссылался обратно на сайт.
-  "https://x.com/CouSampus",
+  "https://x.com/SouCampusBuilds",
 ];
 
 // Куда безопасно вести после входа/подтверждения почты.

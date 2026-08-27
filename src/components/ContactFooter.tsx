@@ -53,17 +53,15 @@ const SOCIALS = [
   // Нижний ряд
   {
     label: "TikTok",
-    href: "https://www.tiktok.com/@soucampusmc",
+    href: "https://www.tiktok.com/@soucampus",
     icon: TiktokLogo,
   },
   {
     label: "Instagram",
-    href: "https://www.instagram.com/soucampus_builds/",
+    href: "https://www.instagram.com/soucampusbuilds/",
     icon: InstagramLogo,
   },
-  // ⚠ Хэндл в X — CouSampus (слоги переставлены относительно бренда), сменить
-  // его нельзя. Ссылка настоящая, поэтому пусть работает.
-  { label: "X", href: "https://x.com/CouSampus", icon: XLogo },
+  { label: "X", href: "https://x.com/SouCampusBuilds", icon: XLogo },
   {
     label: "YouTube",
     href: "https://www.youtube.com/@SouCampus",
