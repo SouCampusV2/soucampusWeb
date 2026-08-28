@@ -4,6 +4,7 @@ import { Unbounded } from "next/font/google";
 import { SealCheck } from "@phosphor-icons/react/dist/ssr";
 import type { Product } from "@/lib/products";
 import { ProductCardImage } from "@/components/ProductCardImage";
+import { INLINE_LINK } from "@/components/Button";
 import { StarRating } from "@/components/StarRating";
 
 // Тот же дисплейный шрифт, что у hero-заголовков и карточек портфолио
@@ -12,22 +13,23 @@ const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
 // Карточка товара витрины магазина.
 //
-// Раскладка сменилась 2026-08-28: карточка теперь ЦЕЛИКОМ фотография
-// 16:9, а подпись лежит прямо на её нижнем крае — название и под ним
-// одна строка меты (автор · рейтинг · покупки). Цена остаётся чипом в
-// правом верхнем углу. Белого блока под фото больше нет: до этого дня
-// карточка читалась как «картинка и текст под ней», то есть витрина
-// была сеткой белых прямоугольников с картинками сверху.
+// Расположение — как у маркетплейсов (BuiltByBit/PMC): фото 16:9 с чипом
+// цены → заголовок → креатор → короткое описание → низ: рейтинг слева,
+// число покупок справа.
 //
-// ⚠️ Два варианта отвергнуты владельцем в тот же день, не повторять:
-// вертикальный кадр 3:4 (широкие скриншоты обрезались и мылились) и
-// подпись стеклянной ПАНЕЛЬЮ со своей рамкой (читалась коробкой,
-// положенной на фотографию). Осталось: родная пропорция кадра и текст
-// без контейнера, читаемость которому даёт блюр с маской.
+// ⚠️ ЧТО ИЗМЕНИЛОСЬ 2026-08-28 И ЧЕГО НЕ ПОВТОРЯТЬ. Подпись стоит там
+// же, где стояла, но фон под ней рисует ProductCardImage — это низ
+// текущего кадра, растянутый и размытый до одного цвета. Карточка от
+// этого перестаёт быть «картинкой и белым прямоугольником под ней»:
+// фотография как бы растворяется в подписи, а витрина не выглядит
+// сеткой белых блоков.
 //
-// ⚠️ Короткого описания на карточке БОЛЬШЕ НЕТ. Оно занимало две
-// строки — на узкой полосе внизу кадра это половина фотографии ради
-// текста, который целиком есть на странице карты.
+// До этого за день перепробованы и ОТВЕРГНУТЫ владельцем два варианта:
+// вертикальный кадр 3:4 (широкие скриншоты обрезались по бокам и
+// мылились) и подпись поверх фото — сперва стеклянной панелью со своей
+// рамкой (читалась коробкой, положенной на фотографию), затем текстом
+// на фейде без контейнера (терялось описание, качество кадра всё равно
+// страдало). Не заходить на третий круг.
 //
 // Стиль наш (DESIGN.md): `rounded-2xl`, обводка zinc, hover — оранжевая
 // рамка + лёгкий зум фото, без scale самой карточки.
@@ -97,61 +99,56 @@ export function ProductCard({
         images={images}
         alt={product.title}
         priceLabel={product.price}
-        overlay={
-          // Подпись карточки — прямо на кадре, без своей поверхности.
-          // Размытие и затемнение под ней рисует ProductCardImage; здесь
-          // только текст, поэтому и обёртка голая.
-          //
-          // ⚠️ Цвета без dark:-вариантов намеренно: текст лежит НА ФОТО,
-          // а не на фоне сайта, и в обеих темах выглядит одинаково — то
-          // же правило, что у чипов поверх фотографий (DESIGN.md).
-          <div>
+        below={
+          // Подпись карточки. Цвета — ОБЫЧНЫЕ, как на фоне сайта: блок
+          // стоит под фотографией, а не на ней, и фон ему рисует
+          // ProductCardImage (размытый низ кадра под слоем цвета
+          // страницы). Инверсия работает как везде.
+          <div className="pointer-events-none flex flex-1 flex-col p-4">
             <h3
-              className={`${displayFont.className} line-clamp-1 text-sm leading-tight text-white transition-colors group-hover:text-orange-300`}
+              className={`${displayFont.className} text-base leading-tight text-zinc-950 transition-colors group-hover:text-orange-600 dark:text-zinc-50 dark:group-hover:text-orange-400`}
             >
               {product.title}
             </h3>
 
-            {/* Мета — ОДНОЙ строкой, точками-разделителями. На широком
-                кадре подпись занимает узкую полосу внизу, и три отдельных
-                строки (автор, рейтинг, покупки) сожрали бы половину
-                фотографии ради данных, которые читаются мельком.
-                flex-wrap — страховка на самых узких карточках: строка
-                перенесётся, а не вылезет за край. */}
-            <div className="mt-1 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] font-medium text-white/75">
-              <span>
-                by{" "}
-                {/* Автор — отдельная ссылка на его профиль: с витрины
-                    можно уйти прямо к креатору, не заходя сначала в карту
-                    (просьба владельца 2026-07-27). z-20, потому что лежит
-                    на фото рядом со стрелками листания. */}
-                {author.href ? (
-                  <Link
-                    href={author.href}
-                    className="pointer-events-auto relative z-20 inline-flex items-center gap-1 font-semibold text-white hover:text-orange-300"
-                  >
-                    {author.name}
-                    {author.isVerified && <SealCheck size={11} weight="fill" aria-hidden />}
-                  </Link>
-                ) : (
-                  <span className="inline-flex items-center gap-1">{author.name}</span>
-                )}
-              </span>
+            {/* Автор — отдельная ссылка на его профиль: с витрины можно
+                уйти прямо к креатору, не заходя сначала в карту (просьба
+                владельца 2026-07-27). */}
+            <p className="mt-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+              by{" "}
+              {author.href ? (
+                <Link
+                  href={author.href}
+                  className={`pointer-events-auto relative z-10 inline-flex items-center gap-1 ${INLINE_LINK}`}
+                >
+                  {author.name}
+                  {author.isVerified && <SealCheck size={12} weight="fill" aria-hidden />}
+                </Link>
+              ) : (
+                <span className="inline-flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
+                  {author.name}
+                </span>
+              )}
+            </p>
 
-              <span aria-hidden className="text-white/35">
-                ·
-              </span>
+            <p className="mt-2 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
+              {product.summary}
+            </p>
 
-              <span className="inline-flex items-center gap-1">
-                <StarRating rating={rating ?? 0} size={11} emptyClassName="text-white/30" />
-                {ratingCount ? `(${ratingCount})` : "not rated"}
-              </span>
+            {/* Низ карточки: рейтинг слева, покупки справа. mt-auto
+                прижимает к низу, чтобы у карточек разной высоты описания
+                эта строка выравнивалась по одной линии. */}
+            <div className="mt-auto flex items-center justify-between gap-3 pt-4 text-xs">
+              <div className="flex items-center gap-1.5">
+                <StarRating rating={rating ?? 0} />
+                <span className="text-zinc-500 dark:text-zinc-400">
+                  {ratingCount
+                    ? `${ratingCount} rating${ratingCount === 1 ? "" : "s"}`
+                    : "Not yet rated"}
+                </span>
+              </div>
 
-              <span aria-hidden className="text-white/35">
-                ·
-              </span>
-
-              <span>
+              <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
                 {salesCount ?? 0} {(salesCount ?? 0) === 1 ? "purchase" : "purchases"}
               </span>
             </div>
