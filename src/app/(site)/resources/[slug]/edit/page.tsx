@@ -43,7 +43,7 @@ export default async function EditResourcePage({
   if (!product) notFound();
 
   // Список реакций живёт в базе, а форма клиентская — читаем здесь
-  // (тот же довод, что на /creator/upload).
+  // (тот же довод, что на /admin/products/new).
   const reactionOptions = await getReactionOptions();
 
   return (

@@ -29,7 +29,7 @@ export function CreatorOwnerActions({
 }) {
   const [isOwner, setIsOwner] = useState(false);
   // Право загружать. Пока неизвестно — null: рисовать «Add a map» до
-  // ответа нельзя, гейт на /creator/upload развернёт человека обратно.
+  // ответа нельзя, гейт на /admin/products/new развернёт человека обратно.
   const [isCreator, setIsCreator] = useState<boolean | null>(null);
 
   useEffect(() => {
@@ -70,7 +70,7 @@ export function CreatorOwnerActions({
           «Edit profile»: предлагать «стать автором», когда приём
           закрыт, значит вести на страницу, которая ответит отказом. */}
       {isCreator ? (
-        <Button href="/creator/upload" size="sm" variant="secondary">
+        <Button href="/admin/products/new" size="sm" variant="secondary">
           Add a map
         </Button>
       ) : (
