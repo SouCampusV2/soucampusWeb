@@ -5,11 +5,17 @@ import { Unbounded } from "next/font/google";
 import { DownloadSimple } from "@phosphor-icons/react/dist/ssr";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getCurrentUser } from "@/lib/current-user";
-import { getPurchasesForUser, signedDownloadUrl, downloadFileName } from "@/lib/orders";
+import {
+  getPurchasesForUser,
+  signedDownloadUrl,
+  downloadFileName,
+} from "@/lib/orders";
 import { readUserRatings } from "@/lib/ratings";
 import { RatingStars } from "@/components/RatingStars";
 import { PageGlow } from "@/components/PageGlow";
 import { BUTTON_COLORS } from "@/components/Button";
+import { LocalTime } from "@/components/LocalTime";
+import { FreshBadge } from "@/components/FreshBadge";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -82,20 +88,36 @@ export default async function PurchasesPage() {
                   className="flex items-center justify-between gap-4 rounded-2xl border border-zinc-200 bg-[#fbfbff] px-5 py-4 dark:border-zinc-800 dark:bg-zinc-950"
                 >
                   <div className="min-w-0">
-                    {item.slug ? (
-                      <Link
-                        href={`/marketplace/${item.slug}`}
-                        className="truncate font-semibold text-zinc-950 hover:underline dark:text-zinc-50"
-                      >
-                        {item.title}
-                      </Link>
-                    ) : (
-                      <span className="truncate font-semibold text-zinc-950 dark:text-zinc-50">
-                        {item.title}
-                      </span>
-                    )}
+                    <div className="flex items-center gap-2">
+                      {item.slug ? (
+                        <Link
+                          href={`/marketplace/${item.slug}`}
+                          className="truncate font-semibold text-zinc-950 hover:underline dark:text-zinc-50"
+                        >
+                          {item.title}
+                        </Link>
+                      ) : (
+                        <span className="truncate font-semibold text-zinc-950 dark:text-zinc-50">
+                          {item.title}
+                        </span>
+                      )}
+                      {/* «Сейчас» знает только браузер — почему так и
+                          что это меняет, разобрано в самом компоненте. */}
+                      <FreshBadge purchasedAt={item.purchasedAt} />
+                    </div>
 
                     <div className="mt-1.5 flex items-center gap-2">
+                      {/* Момент покупки — в поясе читателя, поэтому
+                          LocalTime, а не formatDate: тот пришпилен к UTC
+                          и предназначен для дней-ключей (столбики
+                          графика), а не для «когда это случилось». */}
+                      <LocalTime
+                        value={item.purchasedAt}
+                        className="text-xs text-zinc-500 dark:text-zinc-400"
+                      />
+                      <span className="text-xs text-zinc-300 dark:text-zinc-700">
+                        ·
+                      </span>
                       <span className="text-xs text-zinc-500 dark:text-zinc-400">
                         Your rating
                       </span>

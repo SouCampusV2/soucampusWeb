@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test": "vitest run",
     "check:views": "node scripts/check-views.mjs",
+    "check:limits": "node scripts/check-rate-limits.mjs",
     "clear:storage": "node scripts/clear-product-storage.mjs"
   },
   "dependencies": {

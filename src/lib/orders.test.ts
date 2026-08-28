@@ -3,6 +3,8 @@ import {
   freeOrderKey,
   getPaidOrder,
   orderInputFromLineItems,
+  isFreshPurchase,
+  FRESH_PURCHASE_MS,
   type SessionLike,
   type LineItemLike,
 } from "./orders";
@@ -205,5 +207,41 @@ describe("getPaidOrder — пропуск только для сессий Strip
   it("мусор вместо id тоже не открывает заказ", async () => {
     await expect(getPaidOrder("../../etc/passwd")).resolves.toBeNull();
     await expect(getPaidOrder("")).resolves.toBeNull();
+  });
+});
+
+// Бейдж «NEW» на свежей покупке (2026-08-28). Функция вынесена из
+// страницы именно ради этих проверок: граница «две минуты» иначе
+// проверялась бы только глазами, покупая карту и считая секунды.
+describe("isFreshPurchase", () => {
+  const now = Date.parse("2026-08-28T12:00:00.000Z");
+  const ago = (ms: number) => new Date(now - ms).toISOString();
+
+  it("покупка минуту назад — свежая", () => {
+    expect(isFreshPurchase(ago(60_000), now)).toBe(true);
+  });
+
+  it("покупка час назад — уже нет", () => {
+    expect(isFreshPurchase(ago(60 * 60_000), now)).toBe(false);
+  });
+
+  it("ровно на границе двух минут бейджа уже нет", () => {
+    // Граница строгая и проверяется отдельно: «меньше двух минут», а не
+    // «не больше». Ошибка на единицу здесь незаметна на глаз — бейдж
+    // просто задержался бы на один рендер.
+    expect(isFreshPurchase(ago(FRESH_PURCHASE_MS), now)).toBe(false);
+    expect(isFreshPurchase(ago(FRESH_PURCHASE_MS - 1), now)).toBe(true);
+  });
+
+  it("дата из будущего считается свежей", () => {
+    // Часы сервера могут уйти вперёд относительно базы. Для человека это
+    // «только что купил», и прятать бейдж из-за расхождения часов
+    // означало бы наказать его за нашу неточность.
+    expect(isFreshPurchase(new Date(now + 30_000).toISOString(), now)).toBe(true);
+  });
+
+  it("непарсящаяся дата бейджа не даёт", () => {
+    expect(isFreshPurchase("не дата", now)).toBe(false);
+    expect(isFreshPurchase("", now)).toBe(false);
   });
 });
