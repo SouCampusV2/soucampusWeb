@@ -320,7 +320,7 @@ export function UploadMapForm({
       });
       await addProductImages(supabase, id, galleryUrls);
 
-      router.push("/creator/upload/submitted");
+      router.push("/admin/products/new/submitted");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setPending(false);

@@ -236,7 +236,15 @@ export async function POST(request: Request) {
               restored.length === 1 ? "map is" : "maps are"
             } back on sale.`
           : "Your application was approved — you can upload maps to the marketplace.",
-      href: "/creator/upload",
+      // ⚠️ НЕ на форму загрузки. С 2026-08-28 она живёт в админке
+      // (/admin/products/new — разбор там же), и одобренный автор,
+      // админом не будучи, получил бы 404 вместо приглашения.
+      // /resources — его собственный список карт, креатору он открыт.
+      //
+      // Строка держится ровно до разморозки креаторства: тот день
+      // обязан вернуть автору отдельный вход на форму, и тогда сюда
+      // вернётся адрес формы.
+      href: "/resources",
     });
 
     revalidateMaps(restored);

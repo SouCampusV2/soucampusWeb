@@ -52,6 +52,31 @@ const nextConfig: NextConfig = {
       { source: "/shop", destination: "/marketplace", permanent: true },
       { source: "/shop/:path*", destination: "/marketplace/:path*", permanent: true },
 
+      // ⚠️ ЭТИ ДВЕ СТРОКИ ОБЯЗАНЫ СТОЯТЬ ВЫШЕ ПРАВИЛА ПРО ПРОФИЛЬ.
+      // Next берёт ПЕРВОЕ совпавшее правило, а "/creator/:username" ниже
+      // ловит и «upload» тоже — именно так форма загрузки и пропала на
+      // семь дней (21–28.08): она уезжала на /@upload, то есть на
+      // профиль несуществующего человека, и отдавала 404.
+      //
+      // Сама форма с 2026-08-28 живёт в админке (/admin/products/new,
+      // разбор — в её page.tsx). Редирект остаётся навсегда и не для
+      // красоты: href «/creator/upload» записан в УЖЕ РАЗОСЛАННЫЕ
+      // уведомления об одобренных заявках, а строки в notifications
+      // задним числом не переписать.
+      //
+      // Постороннему редирект ничего не открывает: /admin/* отдаёт 404
+      // всем, кроме админа, — гейт стоит в layout админки.
+      {
+        source: "/creator/upload",
+        destination: "/admin/products/new",
+        permanent: true,
+      },
+      {
+        source: "/creator/upload/submitted",
+        destination: "/admin/products/new/submitted",
+        permanent: true,
+      },
+
       // Профиль переехал с /creator/<имя> на /@<имя> (2026-08-21).
       // Прежний адрес называл РОЛЬ — а роль меняется (сегодня клиент,
       // завтра автор), профиль же остаётся тем же человеком. Тот же
