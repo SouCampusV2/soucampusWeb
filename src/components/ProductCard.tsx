@@ -11,28 +11,11 @@ import { StarRating } from "@/components/StarRating";
 // (см. DESIGN.md, "Hero-секции страниц").
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
-// Карточка товара витрины магазина.
-//
-// Расположение — как у маркетплейсов (BuiltByBit/PMC): фото 16:9 с чипом
-// цены → заголовок → креатор → короткое описание → низ: рейтинг слева,
-// число покупок справа.
-//
-// ⚠️ ЧТО ИЗМЕНИЛОСЬ 2026-08-28 И ЧЕГО НЕ ПОВТОРЯТЬ. Подпись стоит там
-// же, где стояла, но фон под ней рисует ProductCardImage — это низ
-// текущего кадра, растянутый и размытый до одного цвета. Карточка от
-// этого перестаёт быть «картинкой и белым прямоугольником под ней»:
-// фотография как бы растворяется в подписи, а витрина не выглядит
-// сеткой белых блоков.
-//
-// До этого за день перепробованы и ОТВЕРГНУТЫ владельцем два варианта:
-// вертикальный кадр 3:4 (широкие скриншоты обрезались по бокам и
-// мылились) и подпись поверх фото — сперва стеклянной панелью со своей
-// рамкой (читалась коробкой, положенной на фотографию), затем текстом
-// на фейде без контейнера (терялось описание, качество кадра всё равно
-// страдало). Не заходить на третий круг.
-//
-// Стиль наш (DESIGN.md): `rounded-2xl`, обводка zinc, hover — оранжевая
-// рамка + лёгкий зум фото, без scale самой карточки.
+// Карточка товара витрины магазина. Расположение — как у маркетплейсов
+// (BuiltByBit/PMC): фото с чипом цены → заголовок → креатор → короткое
+// описание → низ: рейтинг слева, число покупок справа. Стиль наш
+// (DESIGN.md): `rounded-2xl`, обводка zinc, hover — оранжевая рамка +
+// лёгкий зум фото, без scale самой карточки.
 //
 // Устройство ссылок. Раньше вся карточка была одним <Link>, но внутри
 // понадобились ещё две интерактивные вещи: ссылка на автора и стрелки
@@ -99,62 +82,57 @@ export function ProductCard({
         images={images}
         alt={product.title}
         priceLabel={product.price}
-        below={
-          // Подпись карточки. Цвета — ОБЫЧНЫЕ, как на фоне сайта: блок
-          // стоит под фотографией, а не на ней, и фон ему рисует
-          // ProductCardImage (размытый низ кадра под слоем цвета
-          // страницы). Инверсия работает как везде.
-          <div className="pointer-events-none flex flex-1 flex-col p-4">
-            <h3
-              className={`${displayFont.className} text-base leading-tight text-zinc-950 transition-colors group-hover:text-orange-600 dark:text-zinc-50 dark:group-hover:text-orange-400`}
-            >
-              {product.title}
-            </h3>
-
-            {/* Автор — отдельная ссылка на его профиль: с витрины можно
-                уйти прямо к креатору, не заходя сначала в карту (просьба
-                владельца 2026-07-27). */}
-            <p className="mt-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-              by{" "}
-              {author.href ? (
-                <Link
-                  href={author.href}
-                  className={`pointer-events-auto relative z-10 inline-flex items-center gap-1 ${INLINE_LINK}`}
-                >
-                  {author.name}
-                  {author.isVerified && <SealCheck size={12} weight="fill" aria-hidden />}
-                </Link>
-              ) : (
-                <span className="inline-flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
-                  {author.name}
-                </span>
-              )}
-            </p>
-
-            <p className="mt-2 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
-              {product.summary}
-            </p>
-
-            {/* Низ карточки: рейтинг слева, покупки справа. mt-auto
-                прижимает к низу, чтобы у карточек разной высоты описания
-                эта строка выравнивалась по одной линии. */}
-            <div className="mt-auto flex items-center justify-between gap-3 pt-4 text-xs">
-              <div className="flex items-center gap-1.5">
-                <StarRating rating={rating ?? 0} />
-                <span className="text-zinc-500 dark:text-zinc-400">
-                  {ratingCount
-                    ? `${ratingCount} rating${ratingCount === 1 ? "" : "s"}`
-                    : "Not yet rated"}
-                </span>
-              </div>
-
-              <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
-                {salesCount ?? 0} {(salesCount ?? 0) === 1 ? "purchase" : "purchases"}
-              </span>
-            </div>
-          </div>
-        }
       />
+
+      <div className="pointer-events-none flex flex-1 flex-col p-4">
+        <h3
+          className={`${displayFont.className} text-base leading-tight text-zinc-950 transition-colors group-hover:text-orange-600 dark:text-zinc-50 dark:group-hover:text-orange-400`}
+        >
+          {product.title}
+        </h3>
+
+        {/* Автор — отдельная ссылка на его профиль: с витрины можно уйти
+            прямо к креатору, не заходя сначала в карту (просьба владельца
+            2026-07-27). */}
+        <p className="mt-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
+          by{" "}
+          {author.href ? (
+            <Link
+              href={author.href}
+              className={`pointer-events-auto relative z-10 inline-flex items-center gap-1 ${INLINE_LINK}`}
+            >
+              {author.name}
+              {author.isVerified && <SealCheck size={12} weight="fill" aria-hidden />}
+            </Link>
+          ) : (
+            <span className="inline-flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
+              {author.name}
+            </span>
+          )}
+        </p>
+
+        <p className="mt-2 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
+          {product.summary}
+        </p>
+
+        {/* Низ карточки: рейтинг слева, покупки справа. mt-auto прижимает
+            к низу, чтобы у карточек разной высоты описания эта строка
+            выравнивалась по одной линии. */}
+        <div className="mt-auto flex items-center justify-between gap-3 pt-4 text-xs">
+          <div className="flex items-center gap-1.5">
+            <StarRating rating={rating ?? 0} />
+            <span className="text-zinc-500 dark:text-zinc-400">
+              {ratingCount
+                ? `${ratingCount} rating${ratingCount === 1 ? "" : "s"}`
+                : "Not yet rated"}
+            </span>
+          </div>
+
+          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
+            {salesCount ?? 0} {(salesCount ?? 0) === 1 ? "purchase" : "purchases"}
+          </span>
+        </div>
+      </div>
     </div>
   );
 }
