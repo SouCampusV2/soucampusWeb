@@ -494,7 +494,13 @@ export function UploadMapForm({
         <Button type="submit" variant="primary" disabled={pending} className="flex-1">
           {pending ? STAGE_LABEL[stage] : "Submit for review"}
         </Button>
-        <Button href="/resources" variant="secondary" className="flex-1">
+        {/* ⚠️ В АДМИНКУ, а не в /resources (2026-08-28). Форма
+            переехала в /admin/products/new, а Cancel остался указывать в
+            кабинет автора — и уводил не туда даже не всегда одинаково:
+            /resources у не-креатора сама перекидывает на витрину, так
+            что отмена загрузки заканчивалась на главной магазина.
+            Отмена обязана возвращать туда, откуда пришли. */}
+        <Button href="/admin/products" variant="secondary" className="flex-1">
           Cancel
         </Button>
       </div>
