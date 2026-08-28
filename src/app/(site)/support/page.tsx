@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
 import { EnvelopeSimple } from "@phosphor-icons/react/dist/ssr";
+import { ArrowCircle } from "@/components/ArrowCircle";
 import { Button } from "@/components/Button";
 import { DISCORD_INVITE, SUPPORT_EMAIL } from "@/lib/site";
 
@@ -38,8 +39,24 @@ export default function SupportPage() {
           email us — a proper support form is on the way.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4">
-          <Button href={DISCORD_INVITE} target="_blank" rel="noopener noreferrer">
+          {/* Стрелка с поворотом -45 при наведении — тот же приём и тот
+              же образец, что у «Join Discord» на /contact. Поворот здесь
+              не украшение: по DESIGN.md он означает «уходишь с сайта», а
+              Discord — чужая площадка. У кнопок «Order a map», ведущих на
+              свою страницу, стрелки нет намеренно. */}
+          <Button
+            href={DISCORD_INVITE}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="group gap-3"
+          >
             Contact on Discord
+            <ArrowCircle
+              direction="right"
+              variant="bare"
+              className="h-6 w-6 transition-transform duration-300 group-hover:-rotate-45"
+              colorClassName="text-zinc-950"
+            />
           </Button>
           <a
             href={`mailto:${SUPPORT_EMAIL}`}
