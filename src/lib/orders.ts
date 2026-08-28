@@ -439,13 +439,51 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
 
 // Одна купленная карта в списке "My purchases": название — снимок на
 // момент покупки (order_items.title), slug — ссылка на страницу товара,
-// filePath — путь к файлу для подписанной ссылки на скачивание.
+// filePath — путь к файлу для подписанной ссылки на скачивание,
+// purchasedAt — момент заказа (orders.created_at) для порядка в списке и
+// бейджа «NEW».
 export type PurchasedItem = {
   productId: string;
   title: string;
   slug: string | null;
   filePath: string | null;
+  purchasedAt: string;
 };
+
+/**
+ * Сколько времени покупка считается свежей — решение владельца
+ * 2026-08-26: ДВЕ МИНУТЫ.
+ *
+ * Число здесь, а не в базе, потому что это решение о продукте: оно
+ * меняется от того, как выглядит список, а не от того, как устроены
+ * данные (то же правило, что у лимитов в rate-limit.ts).
+ *
+ * ⚠️ Две минуты — это по сути «только что вернулся с оплаты». Бейдж
+ * дублирует переход со страницы успеха, и это осознанно: он отвечает на
+ * вопрос «за чем я сюда пришёл», а не «что у меня новенького».
+ */
+export const FRESH_PURCHASE_MS = 2 * 60 * 1000;
+
+/**
+ * Свежая ли покупка на указанный момент.
+ *
+ * ⚠️ Считается ОДИН РАЗ, на сервере, в момент рендера страницы: она
+ * force-dynamic, но не живая. Открыл список и подождал три минуты —
+ * «NEW» останется до перезагрузки. Лечится клиентским таймером, и
+ * решено не лечить: через три минуты человек уже нашёл, за чем пришёл.
+ *
+ * `now` параметром, а не Date.now() внутри, — чтобы функцию можно было
+ * спросить о любом моменте, в том числе в тесте.
+ */
+export function isFreshPurchase(purchasedAt: string, now: number): boolean {
+  const at = Date.parse(purchasedAt);
+  // Непарсящаяся дата — не повод показывать бейдж: NaN в сравнении даёт
+  // false сам по себе, но полагаться на это молча не стоит.
+  if (Number.isNaN(at)) return false;
+  // Будущее (часы сервера ушли вперёд) считаем свежим: это «только что»
+  // с точки зрения человека, а не повод спрятать бейдж.
+  return now - at < FRESH_PURCHASE_MS;
+}
 
 /**
  * Все купленные пользователем карты — для страницы профиля. Берём
@@ -464,7 +502,8 @@ export async function getPurchasesForUser(
   email: string
 ): Promise<PurchasedItem[]> {
   const db = getSupabaseAdmin();
-  const select = "order_items(product_id, title, products(slug, file_path))";
+  const select =
+    "created_at, order_items(product_id, title, products(slug, file_path))";
 
   const [byUser, byEmail] = await Promise.all([
     db.from("orders").select(select).eq("status", "paid").eq("user_id", userId),
@@ -480,6 +519,7 @@ export async function getPurchasesForUser(
   if (byEmail.error) throw new Error(`Не удалось загрузить покупки: ${byEmail.error.message}`);
 
   type OrderRow = {
+    created_at: string;
     order_items:
       | {
           product_id: string;
@@ -495,16 +535,33 @@ export async function getPurchasesForUser(
   const byProduct = new Map<string, PurchasedItem>();
   for (const order of [...(byUser.data ?? []), ...(byEmail.data ?? [])] as OrderRow[]) {
     for (const item of order.order_items ?? []) {
-      if (byProduct.has(item.product_id)) continue;
+      // ⚠️ У дубля берём БОЛЕЕ СВЕЖУЮ дату, а не первую попавшуюся.
+      // Одна карта приходит сюда дважды, когда гостевой заказ на ту же
+      // почту встречается с заказом под аккаунтом; порядок строк при
+      // этом задаёт база, то есть он произвольный. Раньше выигрывала
+      // случайная из двух — для списка это было незаметно, а для «NEW»
+      // означало бы, что бейдж иногда не появляется на свежей покупке.
+      const seen = byProduct.get(item.product_id);
+      if (seen && Date.parse(seen.purchasedAt) >= Date.parse(order.created_at)) {
+        continue;
+      }
       const product = unwrapOne(item.products);
       byProduct.set(item.product_id, {
         productId: item.product_id,
         title: item.title,
         slug: product?.slug ?? null,
         filePath: product?.file_path ?? null,
+        purchasedAt: order.created_at,
       });
     }
   }
 
-  return Array.from(byProduct.values());
+  // Новые сверху. Порядок задаём ЗДЕСЬ, а не запросом с order by: строки
+  // приходят из двух запросов и склеиваются в памяти, так что сортировка
+  // в базе всё равно ничего бы не гарантировала. До 2026-08-28 порядка
+  // не было вовсе — список показывался в том виде, в каком его вернула
+  // база, и только что купленная карта могла оказаться в середине.
+  return Array.from(byProduct.values()).sort(
+    (a, b) => Date.parse(b.purchasedAt) - Date.parse(a.purchasedAt)
+  );
 }

@@ -4,18 +4,24 @@ import { Unbounded } from "next/font/google";
 import { SealCheck } from "@phosphor-icons/react/dist/ssr";
 import type { Product } from "@/lib/products";
 import { ProductCardImage } from "@/components/ProductCardImage";
-import { INLINE_LINK } from "@/components/Button";
 import { StarRating } from "@/components/StarRating";
 
 // Тот же дисплейный шрифт, что у hero-заголовков и карточек портфолио
 // (см. DESIGN.md, "Hero-секции страниц").
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
-// Карточка товара витрины магазина. Расположение — как у маркетплейсов
-// (BuiltByBit/PMC): фото с чипом цены → заголовок → креатор → короткое
-// описание → низ: рейтинг слева, число покупок справа. Стиль наш
-// (DESIGN.md): `rounded-2xl`, обводка zinc, hover — оранжевая рамка +
-// лёгкий зум фото, без scale самой карточки.
+// Карточка товара витрины магазина.
+//
+// Раскладка сменилась 2026-08-28 (референс владельца): карточка теперь
+// ЦЕЛИКОМ фотография 3:4, а вся подпись — стеклянная панель поверх её
+// нижнего края: заголовок → автор → короткое описание → черта → рейтинг
+// слева, покупки справа. Цена остаётся чипом в правом верхнем углу.
+// Белого блока под фото больше нет — до этого дня карточка читалась как
+// «картинка и текст под ней», то есть витрина была сеткой белых
+// прямоугольников с картинками сверху.
+//
+// Стиль наш (DESIGN.md): `rounded-2xl`, обводка zinc, hover — оранжевая
+// рамка + лёгкий зум фото, без scale самой карточки.
 //
 // Устройство ссылок. Раньше вся карточка была одним <Link>, но внутри
 // понадобились ещё две интерактивные вещи: ссылка на автора и стрелки
@@ -82,57 +88,72 @@ export function ProductCard({
         images={images}
         alt={product.title}
         priceLabel={product.price}
-      />
-
-      <div className="pointer-events-none flex flex-1 flex-col p-4">
-        <h3
-          className={`${displayFont.className} text-base leading-tight text-zinc-950 transition-colors group-hover:text-orange-600 dark:text-zinc-50 dark:group-hover:text-orange-400`}
-        >
-          {product.title}
-        </h3>
-
-        {/* Автор — отдельная ссылка на его профиль: с витрины можно уйти
-            прямо к креатору, не заходя сначала в карту (просьба владельца
-            2026-07-27). */}
-        <p className="mt-1 text-xs font-medium text-zinc-500 dark:text-zinc-400">
-          by{" "}
-          {author.href ? (
-            <Link
-              href={author.href}
-              className={`pointer-events-auto relative z-10 inline-flex items-center gap-1 ${INLINE_LINK}`}
+        overlay={
+          // ВСЯ подпись карточки — стеклянной панелью поверх фото
+          // (2026-08-28, по референсу владельца). Раньше под фотографией
+          // стоял белый блок, и карточка читалась как «картинка и текст
+          // под ней»; теперь она читается как одна вещь — сама карта, а
+          // витрина перестаёт быть сеткой белых прямоугольников.
+          //
+          // Стекло — законный паттерн проекта (DESIGN.md → «Стекло»), и
+          // здесь выполняется его условие: за поверхностью есть что
+          // размывать — фотография, которая ещё и едет при hover. Это
+          // ровно та разница, из-за которой стекло откатили на /cart,
+          // где за ним был плоский фон.
+          //
+          // ⚠️ Без dark:-вариантов намеренно: панель лежит НА ФОТО, а не
+          // на фоне сайта, и в обеих темах выглядит одинаково — как чипы
+          // поверх фотографий по DESIGN.md.
+          <div className="overflow-hidden rounded-xl border border-white/15 bg-zinc-950/45 p-3 backdrop-blur-xl backdrop-saturate-150">
+            <h3
+              className={`${displayFont.className} line-clamp-2 text-sm leading-tight text-white transition-colors group-hover:text-orange-300`}
             >
-              {author.name}
-              {author.isVerified && <SealCheck size={12} weight="fill" aria-hidden />}
-            </Link>
-          ) : (
-            <span className="inline-flex items-center gap-1 text-zinc-500 dark:text-zinc-400">
-              {author.name}
-            </span>
-          )}
-        </p>
+              {product.title}
+            </h3>
 
-        <p className="mt-2 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
-          {product.summary}
-        </p>
+            {/* Автор — отдельная ссылка на его профиль: с витрины можно
+                уйти прямо к креатору, не заходя сначала в карту (просьба
+                владельца 2026-07-27). z-20, потому что лежит на фото
+                рядом со стрелками листания. */}
+            <p className="mt-1 text-[11px] font-medium text-white/70">
+              by{" "}
+              {author.href ? (
+                <Link
+                  href={author.href}
+                  className="pointer-events-auto relative z-20 inline-flex items-center gap-1 font-semibold text-white underline decoration-white/30 decoration-2 underline-offset-4 hover:text-orange-300 hover:decoration-orange-300"
+                >
+                  {author.name}
+                  {author.isVerified && <SealCheck size={12} weight="fill" aria-hidden />}
+                </Link>
+              ) : (
+                <span className="inline-flex items-center gap-1">{author.name}</span>
+              )}
+            </p>
 
-        {/* Низ карточки: рейтинг слева, покупки справа. mt-auto прижимает
-            к низу, чтобы у карточек разной высоты описания эта строка
-            выравнивалась по одной линии. */}
-        <div className="mt-auto flex items-center justify-between gap-3 pt-4 text-xs">
-          <div className="flex items-center gap-1.5">
-            <StarRating rating={rating ?? 0} />
-            <span className="text-zinc-500 dark:text-zinc-400">
-              {ratingCount
-                ? `${ratingCount} rating${ratingCount === 1 ? "" : "s"}`
-                : "Not yet rated"}
-            </span>
+            <p className="mt-2 line-clamp-2 text-xs leading-relaxed text-white/75">
+              {product.summary}
+            </p>
+
+            {/* Низ панели: рейтинг слева, покупки справа — та же пара,
+                что стояла в белом блоке. Отделена чертой, а не отступом:
+                на стекле пустое место читается как край панели. */}
+            <div className="mt-2.5 flex items-center justify-between gap-3 border-t border-white/10 pt-2.5 text-[11px]">
+              <div className="flex items-center gap-1.5">
+                <StarRating rating={rating ?? 0} emptyClassName="text-white/30" />
+                <span className="text-white/70">
+                  {ratingCount
+                    ? `${ratingCount} rating${ratingCount === 1 ? "" : "s"}`
+                    : "Not yet rated"}
+                </span>
+              </div>
+
+              <span className="shrink-0 text-white/70">
+                {salesCount ?? 0} {(salesCount ?? 0) === 1 ? "purchase" : "purchases"}
+              </span>
+            </div>
           </div>
-
-          <span className="shrink-0 text-zinc-500 dark:text-zinc-400">
-            {salesCount ?? 0} {(salesCount ?? 0) === 1 ? "purchase" : "purchases"}
-          </span>
-        </div>
-      </div>
+        }
+      />
     </div>
   );
 }

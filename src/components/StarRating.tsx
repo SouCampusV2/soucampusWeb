@@ -17,10 +17,19 @@ export function StarRating({
   rating,
   size = 13,
   className = "",
+  emptyClassName = "text-zinc-300 dark:text-zinc-600",
 }: {
   rating: number;
   size?: number;
   className?: string;
+  /**
+   * Цвет НЕзаполненных звёзд. По умолчанию рассчитан на фон сайта и
+   * инвертируется вместе с темой. Проп нужен там, где звёзды лежат на
+   * чужой поверхности — на стеклянной панели карточки витрины она
+   * тёмная в обеих темах, и dark:-вариант там читается как пустое
+   * место.
+   */
+  emptyClassName?: string;
 }) {
   const rounded = Math.round(rating * 2) / 2;
 
@@ -48,7 +57,7 @@ export function StarRating({
             weight={filled ? "fill" : "regular"}
             aria-hidden
             className={
-              filled ? "text-orange-400" : "text-zinc-300 dark:text-zinc-600"
+              filled ? "text-orange-400" : emptyClassName
             }
           />
         );

@@ -21,10 +21,17 @@ export function ProductCardImage({
   images,
   alt,
   priceLabel,
+  overlay,
 }: {
   images: string[];
   alt: string;
   priceLabel: string;
+  /**
+   * Подпись поверх нижнего края фото (название карты и автор) — приходит
+   * готовой разметкой из серверной ProductCard, чтобы этот компонент
+   * оставался единственным клиентским куском карточки.
+   */
+  overlay?: React.ReactNode;
 }) {
   const [index, setIndex] = useState(0);
   const many = images.length > 1;
@@ -50,7 +57,12 @@ export function ProductCardImage({
     // pointer-events-none: сама картинка кликов не ловит — они проходят
     // насквозь на ссылку-оверлей карточки (см. ProductCard). Обратно
     // включены только стрелки.
-    <div className="pointer-events-none relative aspect-video w-full overflow-hidden">
+    // ⚠️ Пропорция 3:4, а не 16:9 (2026-08-28). Карточка теперь ЦЕЛИКОМ
+    // фотография — подпись переехала на неё стеклянной панелью, белого
+    // блока под фото больше нет. На широком кадре панель съедала бы
+    // половину картинки; вертикальный кадр даёт ей место и оставляет
+    // карту видимой.
+    <div className="pointer-events-none relative aspect-[3/4] w-full overflow-hidden">
       <Image
         src={images[index]}
         alt={alt}
@@ -80,9 +92,32 @@ export function ProductCardImage({
         </div>
       )}
 
-      {/* Точки-индикатор: сколько кадров всего и где мы сейчас. */}
+      {/* Фейд под подписью. Градиент, а не плашка: у карточек кадры
+          разные, и сплошная полоса резала бы фото линией, а фейд
+          растворяется в нём. Тянется на 60% высоты — на меньшем куске
+          светлый скриншот пробивался бы сквозь текст.
+
+          Рисуется ТОЛЬКО когда есть что подписывать: без overlay это был
+          бы тёмный край фотографии ни за чем. */}
+      {overlay && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-3/5 bg-gradient-to-t from-zinc-950/90 via-zinc-950/55 to-transparent" />
+      )}
+
+      {/* Сама подпись. pointer-events-none у контейнера — клики уходят на
+          ссылку-оверлей карточки; своё действие включает обратно только
+          ссылка автора (см. ProductCard). */}
+      {overlay && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-2.5">
+          {overlay}
+        </div>
+      )}
+
+      {/* Точки-индикатор: сколько кадров всего и где мы сейчас.
+          ⚠️ Переехали ВВЕРХ, когда низ фото занял текст (2026-08-28):
+          снизу они попадали ровно под название. По центру — цена стоит в
+          правом верхнем углу, они с ней не спорят. */}
       {many && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-2 z-10 flex justify-center gap-1.5">
+        <div className="pointer-events-none absolute inset-x-0 top-3 z-10 flex justify-center gap-1.5">
           {images.map((src, i) => (
             <span
               key={src}
