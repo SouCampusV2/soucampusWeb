@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CaretDown, Check, FunnelSimple, X } from "@phosphor-icons/react";
 import {
@@ -18,6 +18,7 @@ import {
   CATALOG_PARAMS,
   readCatalogQuery,
 } from "@/lib/catalog-params";
+import { useDismiss } from "@/lib/useDismiss";
 
 // Фильтры витрины — В ПОПАПЕ, а не рядами пилюль на странице (решение
 // владельца 2026-08-26; до этого здесь был один ряд пилюль по цене).
@@ -93,8 +94,17 @@ export function MarketplaceFilters() {
 
   const count = activeFilterCount(readCatalogQuery(params));
 
+  // Закрытие живёт ЗДЕСЬ, а не внутри панели, и ref смотрит на обёртку
+  // целиком — вместе с кнопкой-триггером. Раньше панель стерегла себя
+  // сама и вынуждена была отдельной проверкой прощать клик по кнопке
+  // (иначе клик закрывал панель отсюда, а кнопка тут же открывала её
+  // обратно). С обёрткой кнопка «внутри» по определению, и проверка не
+  // нужна.
+  const wrapRef = useRef<HTMLDivElement>(null);
+  useDismiss(wrapRef, () => setOpen(false), { enabled: open });
+
   return (
-    <div className="relative shrink-0">
+    <div ref={wrapRef} className="relative shrink-0">
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
@@ -148,31 +158,10 @@ function FilterPanel({
   onApply: (href: string) => void;
 }) {
   const [draft, setDraft] = useState<Draft>(initial);
-  const panelRef = useRef<HTMLDivElement>(null);
 
-  // Закрытие по клику мимо и по Escape. Оба обязательны: попап
-  // перекрывает каталог, и передумавший его открывать не должен искать
-  // крестик.
-  useEffect(() => {
-    function onPointerDown(event: MouseEvent) {
-      if (!panelRef.current) return;
-      const target = event.target as Node;
-      // Клик по самой кнопке-триггеру пропускаем: она сама переключает
-      // состояние, и закрытие отсюда сработало бы вторым разом, снова
-      // открыв панель.
-      if (panelRef.current.parentElement?.contains(target)) return;
-      onClose();
-    }
-    function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") onClose();
-    }
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [onClose]);
+  // Закрытие по клику мимо и по Escape панель себе НЕ берёт: им заведует
+  // MarketplaceFilters, у которого под рукой обёртка вместе с кнопкой.
+  // Здесь остаётся только черновик фильтров.
 
   function toggle(param: string, value: string) {
     setDraft((prev) => {
@@ -240,7 +229,6 @@ function FilterPanel({
 
   return (
     <div
-      ref={panelRef}
       role="dialog"
       aria-label="Filters"
       // Стекло по рецепту из DESIGN.md — тот же, что у выпадашки профиля
@@ -388,22 +376,7 @@ function SortSelect({
   const options = [{ slug: "", label: "Default for this list" }, ...SORT_OPTIONS];
   const current = options.find((option) => option.slug === value) ?? options[0];
 
-  useEffect(() => {
-    if (!open) return;
-    function onPointerDown(event: MouseEvent) {
-      if (ref.current?.contains(event.target as Node)) return;
-      setOpen(false);
-    }
-    function onKey(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKey);
-    };
-  }, [open]);
+  useDismiss(ref, () => setOpen(false), { enabled: open });
 
   return (
     <div ref={ref} className="relative mt-2">

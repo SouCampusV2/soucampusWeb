@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { NAME_COLORS } from "@/lib/name-colors";
+import { useDismiss } from "@/lib/useDismiss";
 
 // Выбор цвета ника — квадратик у поля ника, по нажатию открывается
 // небольшая карточка.
@@ -33,26 +34,10 @@ export function NameColorPicker({
   const [open, setOpen] = useState(false);
   const wrap = useRef<HTMLDivElement>(null);
 
-  // Закрытие по клику мимо и по Esc. Оба — на document, потому что
-  // событие происходит ВНЕ компонента: onBlur здесь не годится, он не
-  // отличит «ушёл совсем» от «перешёл на кружок внутри карточки».
-  useEffect(() => {
-    if (!open) return;
-
-    function onPointerDown(event: MouseEvent) {
-      if (!wrap.current?.contains(event.target as Node)) setOpen(false);
-    }
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
-    }
-
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
+  // Закрытие по клику мимо и по Esc. Слушать надо document, а не сам
+  // компонент: событие происходит ВНЕ него, и onBlur здесь не годится —
+  // он не отличит «ушёл совсем» от «перешёл на кружок внутри карточки».
+  useDismiss(wrap, () => setOpen(false), { enabled: open });
 
   return (
     <div ref={wrap} className="relative">
