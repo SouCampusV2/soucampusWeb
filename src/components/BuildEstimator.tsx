@@ -7,6 +7,7 @@ import { Button } from "@/components/Button";
 import { ArrowCircle } from "@/components/ArrowCircle";
 import { DISCORD_INVITE } from "@/lib/site";
 import { estimatePrice, estimateDeadlineDays, formatDeadline } from "@/lib/pricing";
+import { useDismiss } from "@/lib/useDismiss";
 
 // Wise-style "calculator" card, adapted for map size -> price/timeline
 // instead of currency conversion. All numbers here are an estimate shown
@@ -77,14 +78,10 @@ function CurrencyDropdown({
   const [query, setQuery] = useState("");
   const ref = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    if (!open) return;
-    const onClickOutside = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
-    };
-    document.addEventListener("mousedown", onClickOutside);
-    return () => document.removeEventListener("mousedown", onClickOutside);
-  }, [open]);
+  // Клик мимо и Escape — общий хук. До 2026-08-29 здесь лежала своя
+  // копия, знавшая только про клик: Escape не забыли специально, его
+  // просто не написали.
+  useDismiss(ref, () => setOpen(false), { enabled: open });
 
   const allCodes = useMemo(() => Object.keys(names).sort(), [names]);
   const q = query.trim().toLowerCase();

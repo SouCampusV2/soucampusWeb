@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { useRefresh } from "@/lib/useRefresh";
+import { useDismiss } from "@/lib/useDismiss";
 import { DotsThree, EyeSlash, Eye, Trash } from "@phosphor-icons/react";
 import { BUTTON_PILL, DANGER_COLORS } from "@/components/Button";
 import type { ProductState } from "@/lib/products";
@@ -41,32 +42,13 @@ export function ResourceActions({
   // ткнёшь ровно в ту же кнопку, — и на странице с десятком карт легко
   // открыть второе, не закрыв первое.
   //
-  // pointerdown на document в ФАЗЕ ПЕРЕХВАТА, а не mousedown на window
-  // (как было, и оно не срабатывало):
-  //   • перехват — событие достаётся нам ПЕРВЫМИ, до всплытия, поэтому
-  //     любой stopPropagation по дороге (а на странице живёт перехватчик
-  //     ссылок из PageTransition) больше не может нас отключить;
-  //   • pointer вместо mouse — одно событие и на мышь, и на тач: на
-  //     телефоне mousedown приходит с задержкой, а то и не приходит вовсе;
-  //   • меню закрывается на нажатии, поэтому последующий click спокойно
-  //     доходит до того, во что целились, — раньше промах по меню
-  //     ощущался как «клик не сработал».
-  // Esc — то же самое с клавиатуры, обязательное для всплывающего меню.
-  useEffect(() => {
-    if (!open) return;
-    function onPointerDown(event: PointerEvent) {
-      if (!wrapRef.current?.contains(event.target as Node)) setOpen(false);
-    }
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
-    }
-    document.addEventListener("pointerdown", onPointerDown, true);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("pointerdown", onPointerDown, true);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
+  // ⚠️ Разбор «почему pointerdown в фазе перехвата, а не mousedown» жил
+  // здесь и УЕХАЛ В ХУК целиком: этот довод (перехватчик ссылок из
+  // PageTransition, задержка mousedown на тач-экранах) касается всех
+  // выпадашек сайта, а не одного меню карты. Он же решил спор при
+  // объединении — общим сделали не самый частый вариант из пяти, а
+  // единственный, у которого была причина.
+  useDismiss(wrapRef, () => setOpen(false), { enabled: open });
 
   async function send(action: "hide" | "unhide" | "delete") {
     setError(null);
