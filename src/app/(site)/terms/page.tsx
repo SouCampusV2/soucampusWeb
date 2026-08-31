@@ -62,7 +62,7 @@ export default function TermsPage() {
         <PageGlow color="rgba(251,146,60,0.35)" />
         <span className="text-sm font-semibold text-orange-500">Legal</span>
         <h1
-          className={`${displayFont.className} mt-3 text-4xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
+          className={`${displayFont.className} mt-3 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
         >
           Terms of Service
         </h1>
