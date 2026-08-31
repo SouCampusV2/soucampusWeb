@@ -7,7 +7,7 @@ import Link from "next/link";
 import { UserCircle, Camera, Key } from "@phosphor-icons/react";
 import { Button, BUTTON_COLORS } from "@/components/Button";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
-import type { Profile } from "@/lib/profiles";
+import { USERNAME_COOLDOWN_DAYS, type Profile } from "@/lib/profiles";
 import { NameColorPicker } from "@/components/NameColorPicker";
 import { formatDayMonthYear } from "@/lib/dates";
 import { revalidateProfile } from "@/app/(site)/settings/actions";
@@ -15,13 +15,6 @@ import { revalidateProfile } from "@/app/(site)/settings/actions";
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024; // 2 МБ
 
 // Столько же, сколько в guard_username_change (миграция 20260821140000).
-// ⚠️ Число живёт в двух местах, и это осознанно: здесь оно нужно, чтобы
-// назвать дату ДО нажатия «Сохранить», а вычислять её запросом в базу
-// ради подписи под полем — дороже, чем держать копию. Настоящее правило
-// всё равно одно, и оно в триггере: разъедутся — сайт покажет неверную
-// дату, но лишней смены не пропустит.
-const USERNAME_COOLDOWN_DAYS = 30;
-
 export function ProfileEditForm({
   initial,
   userId,

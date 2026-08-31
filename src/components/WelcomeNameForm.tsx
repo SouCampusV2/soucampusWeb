@@ -6,6 +6,7 @@ import { User } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { AuthField } from "@/components/AuthField";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { USERNAME_COOLDOWN_DAYS } from "@/lib/profiles";
 import { markNameClaimed } from "@/app/(site)/welcome/actions";
 
 // Выбор имени после первого входа через Google.
@@ -119,10 +120,16 @@ export function WelcomeNameForm({ suggested }: { suggested: string }) {
           что в настройках профиля (правка 24.08): правило, показанное в
           момент решения, читают; то же правило в общей серой подписи —
           нет. Разница в том, что здесь смена бесплатна, и сказать надо
-          не «ты потратишь», а «дальше будет дороже». */}
-      <p className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:border-blue-900 dark:bg-blue-950/30 dark:text-blue-200">
+          не «ты потратишь», а «дальше будет дороже».
+
+          ⚠️ Цвет тот же, что у плашки в ProfileEditForm, и это важнее
+          разницы в тоне: правило одно (guard_username_change), человек
+          видит обе формы, и два цвета читались бы как два разных
+          правила. Было blue-50 (31.08) — оранжевый в DESIGN.md
+          закреплён за предупреждениями именно такого рода. */}
+      <p className="mt-4 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900 dark:bg-orange-950/30 dark:text-orange-200">
         Choosing now is free. After this, changing your name is limited to
-        once every 30 days.
+        once every {USERNAME_COOLDOWN_DAYS} days.
       </p>
 
       {error && (
