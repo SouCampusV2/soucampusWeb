@@ -3,6 +3,7 @@ import { getAllProjects } from "@/lib/projects";
 import { getAllReviews } from "@/lib/reviews";
 import { getAllProducts } from "@/lib/products";
 import { SITE_URL } from "@/lib/site";
+import { WIKI_ARTICLES } from "@/lib/wiki";
 
 // Карта сайта — список всех индексируемых адресов для поисковика. Next отдаёт
 // её по /sitemap.xml автоматически из этого файла.
@@ -43,6 +44,20 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
+  // Вики — настоящий контент, в отличие от /terms: индексируем и
+  // корневую страницу, и каждую статью. Список берётся из WIKI_ARTICLES,
+  // а не переписывается сюда руками, — новая статья попадает в карту
+  // сама, ровно как работы портфолио попадают из базы.
+  const wikiPages: MetadataRoute.Sitemap = [
+    { url: `${SITE_URL}/wiki`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
+    ...WIKI_ARTICLES.map((article) => ({
+      url: `${SITE_URL}/wiki/${article.slug}`,
+      lastModified: now,
+      changeFrequency: "monthly" as const,
+      priority: 0.5,
+    })),
+  ];
+
   const reviewPages: MetadataRoute.Sitemap = reviews.map((r) => ({
     url: `${SITE_URL}/reviews/${r.slug}`,
     lastModified: now,
@@ -63,5 +78,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
           })),
         ];
 
-  return [...staticPages, ...projectPages, ...reviewPages, ...shopPages];
+  return [
+    ...staticPages,
+    ...projectPages,
+    ...wikiPages,
+    ...reviewPages,
+    ...shopPages,
+  ];
 }
