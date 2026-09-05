@@ -1,8 +1,22 @@
 import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
 import { FileText } from "@phosphor-icons/react/dist/ssr";
+import Link from "next/link";
 import { BASE_RATE, HIGH_RATE, HIGH_RATE_THRESHOLD } from "@/lib/pricing";
 import { PageGlow } from "@/components/PageGlow";
+import { WikiArticleBody } from "@/components/WikiArticleBody";
+import { getWikiArticle } from "@/lib/wiki";
+
+// Лицензия рисуется ИЗ ТОЙ ЖЕ статьи вики, а не переписана сюда своими
+// словами (решение владельца 2026-09-05: «сделай одинаково и там и там, в
+// вики правильный вариант»).
+//
+// ⚠️ Копия здесь была бы хуже отсутствия. Два текста про то, что человек
+// вправе делать с купленной картой, расходятся не «когда-нибудь», а при
+// первой же правке одного из них — и расхождение в правах, купленных за
+// деньги, стоит дороже любого другого расхождения на сайте. Поэтому
+// источник один, а страниц две.
+const LICENCE = getWikiArticle("using-a-map-you-bought");
 
 // Explains the same formula BuildEstimator.tsx (Contact page) actually
 // computes with — the rate/threshold numbers are imported from
@@ -42,12 +56,14 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
+// «Licensing & usage rights» из списка убран 05.09: он больше не
+// «coming», он ниже на этой же странице. Обещать написать то, что уже
+// написано, — способ выглядеть менее готовым, чем ты есть.
 const SECTIONS = [
   "Scope of services",
   "Ordering & pricing",
   "Payment & refunds",
   "Delivery & revisions",
-  "Licensing & usage rights",
   "Liability",
 ];
 
@@ -102,6 +118,32 @@ export default function TermsPage() {
         </div>
       </section>
 
+      {/* Лицензия. Живой раздел, как #pricing выше, а не пункт списка
+          «скоро»: на него ссылается статья вики, и он же — ответ на самый
+          частый вопрос покупателя. */}
+      {LICENCE && (
+        <section id="licensing" className="mx-auto max-w-6xl scroll-mt-24 py-10 sm:py-16">
+          <span className="text-sm font-semibold text-orange-500">Licensing</span>
+          <h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
+            {LICENCE.title}
+          </h2>
+          <div className="max-w-2xl">
+            <WikiArticleBody article={LICENCE} />
+            <p className="mt-8 text-sm text-zinc-500 dark:text-zinc-400">
+              The same text lives in the{" "}
+              <Link
+                href="/wiki/using-a-map-you-bought"
+                className="font-medium text-orange-500 transition-colors hover:text-orange-600"
+                data-page-transition="true"
+              >
+                wiki
+              </Link>
+              , where the rest of the map guides are.
+            </p>
+          </div>
+        </section>
+      )}
+
       <section className="mx-auto max-w-6xl py-16 sm:py-28">
         <div className="mx-auto max-w-2xl rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-900 sm:p-12">
           <FileText size={32} className="text-orange-400" weight="duotone" />
@@ -109,9 +151,9 @@ export default function TermsPage() {
             Coming soon
           </h2>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            Full terms covering orders, payment, revisions, licensing, and
-            liability are being written and will be published here ahead of
-            the marketplace launch. Until then, order terms are agreed directly in
+            Full terms covering orders, payment, revisions, and liability are
+            being written and will be published here ahead of the marketplace
+            launch. Until then, order terms are agreed directly in
             Discord for every commission.
           </p>
 

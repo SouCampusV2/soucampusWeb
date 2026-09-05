@@ -159,20 +159,6 @@ export function ContactFooter() {
                     )}
                   </li>
                 ))}
-                {/* Вики стоит здесь, а не в SHOP_NAV_LINKS: тот список
-                    рисует ещё и навбар магазина, где место наперечёт, а
-                    справка — не раздел витрины. Единственная дверь в неё
-                    на сайте, поэтому пункт обязан быть настоящей ссылкой,
-                    а не заглушкой «soon». */}
-                <li>
-                  <Link
-                    href="/wiki"
-                    className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                    data-page-transition="true"
-                  >
-                    Wiki
-                  </Link>
-                </li>
               </ul>
             </div>
 
