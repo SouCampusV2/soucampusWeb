@@ -46,7 +46,7 @@ export default async function WelcomePage() {
             Almost there
           </span>
           <h1
-            className={`${displayFont.className} mt-3 text-4xl tracking-tight text-zinc-950 dark:text-zinc-50`}
+            className={`${displayFont.className} mt-3 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
           >
             Pick your name
           </h1>

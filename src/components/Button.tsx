@@ -95,6 +95,31 @@ export const DANGER_COLORS = {
 export const BUTTON_PILL =
   "inline-flex h-10 shrink-0 cursor-pointer items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold transition-colors disabled:cursor-not-allowed disabled:opacity-60";
 
+// Цвет ПЕРЕКЛЮЧАТЕЛЯ — пилюли и чипа, у которых есть состояние «выбран».
+//
+// Порог, названный в DESIGN.md («появится седьмое место — выносить»),
+// перешли 26.08: CategoryFilter и MarketplaceFilters завели побайтово
+// одинаковые пары классов, три копии на два файла.
+//
+// Здесь ТОЛЬКО цвет, геометрии нет намеренно — она у переключателей
+// разная и обязана быть разной: пилюли категорий крупные
+// (`px-4 py-2 text-sm`), чипы характеристик мельче (`px-3 py-1.5 text-xs`),
+// потому что их в ряду вдесятеро больше. Та же граница, что у
+// BUTTON_COLORS против BUTTON_PILL: общий источник у раскраски, своя
+// геометрия у каждого места.
+//
+// ⚠️ Второе семейство переключателей НЕ сведено сюда и сведено быть не
+// может без решения о дизайне: ReactionButton, ReactionPicker и
+// SpecFields красят выбранное `bg-orange-500/10 text-orange-700`
+// (подсветка), а не заливкой, и в невыбранном состоянии ведут hover в
+// нейтральный `border-zinc-400`, а не в оранжевый. Это другой вид, а не
+// отставшая копия — переливать его в этот набор значит менять внешность
+// трёх компонентов, чего никто не просил.
+export const TOGGLE_PILL_COLORS = {
+  off: "border-zinc-950/[0.08] text-zinc-600 hover:border-orange-500 hover:text-orange-600 dark:border-zinc-50/[0.08] dark:text-zinc-400 dark:hover:border-orange-400 dark:hover:text-orange-400",
+  on: "border-orange-500 bg-orange-500 text-zinc-950 dark:border-orange-400 dark:bg-orange-400",
+} as const;
+
 // Ссылка ВНУТРИ текста — не кнопка и не tertiary.
 //
 // Разница принципиальная и часто путается. `Button variant="tertiary"` —

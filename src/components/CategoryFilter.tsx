@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { MagnifyingGlass, X } from "@phosphor-icons/react";
 import { SHOP_CATEGORIES, type ProductCategory } from "@/lib/products";
 import { MarketplaceFilters } from "@/components/MarketplaceFilters";
+import { TOGGLE_PILL_COLORS } from "@/components/Button";
 
 // Фильтр категорий на самой витрине. Раньше категории жили вкладками в
 // навбаре — с восемью штуками это перестало помещаться (решение владельца
@@ -125,10 +126,7 @@ export function CategoryFilter() {
 
   const pill =
     "cursor-pointer rounded-full border px-4 py-2 text-sm font-medium transition-colors";
-  const inactive =
-    "border-zinc-950/[0.08] text-zinc-600 hover:border-orange-500 hover:text-orange-600 dark:border-zinc-50/[0.08] dark:text-zinc-400 dark:hover:border-orange-400 dark:hover:text-orange-400";
-  const selected =
-    "border-orange-500 bg-orange-500 text-zinc-950 dark:border-orange-400 dark:bg-orange-400";
+  const { off: inactive, on: selected } = TOGGLE_PILL_COLORS;
 
   const pills = (
     <div className="flex flex-wrap items-center gap-2">

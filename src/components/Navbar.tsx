@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
+import type { User } from "@supabase/supabase-js";
 import { Unbounded } from "next/font/google";
 import {
   ShoppingCart,
@@ -232,122 +233,15 @@ export function Navbar() {
                     size={22}
                     className="transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
                   />
-                  {/* Пока не знаем, кто залогинен (сессия читается на
-                      клиенте — статический HTML её не содержит), показываем
-                      нейтральную заглушку-кружок вместо заведомо неверной
-                      иконки «войти». Так нет мелькания «войти → аватар».
-                      Размер совпадает с иконкой (p-2 + h-6/w-6), поэтому
-                      подмена не дёргает вёрстку. */}
-                  {userLoading ? (
-                    <div className="flex items-center justify-center p-2" aria-hidden>
-                      <Skeleton className="h-6 w-6 rounded-full" />
-                    </div>
-                  ) : user ? (
-                    // Наведение раскрывает меню (Settings / Your resources /
-                    // Log out); клик по самому профилю ведёт на публичную
-                    // страницу продавца. group + group-hover — без JS-стейта;
-                    // focus-within — чтобы открывалось и с клавиатуры. pt-2 на
-                    // обёртке меню — прозрачный «мостик», чтобы курсор не терял
-                    // hover в зазоре между профилем и карточкой.
-                    <div className="group relative flex h-full items-center self-stretch">
-                      <Link
-                        href={ownProfileHref}
-                        title={displayName}
-                        className="flex max-w-[11rem] items-center gap-2 rounded-full px-2.5 py-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
-                      >
-                        <Avatar avatarUrl={avatarUrl ?? null} size={22} />
-                        <span className="truncate text-sm font-medium">
-                          {displayName}
-                        </span>
-                      </Link>
-
-                      <div className="invisible absolute left-0 top-full z-50 w-max opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
-                        {/* Без вертикального паддинга: py-1 оставлял 4px
-                            фона над первым и под последним пунктом, из-за
-                            чего их подсветка при наведении не доходила до
-                            скруглённых краёв — сверху/снизу оставалась
-                            белая полоска. overflow-hidden и так вписывает
-                            прямоугольную подсветку в радиус карточки. */}
-                        {/* Стекло по тому же рецепту, что карточка
-                            калькулятора (BuildEstimator): сильный блюр по
-                            фону + очень слабая заливка + светлая грань.
-                            Прежние bg/95 давали почти непрозрачную
-                            подложку — «матовый пластик», а не стекло:
-                            сквозь неё ничего не просвечивало, и блюру
-                            нечего было размывать. Блик в левом верхнем
-                            углу — потому что ровная заливка читается как
-                            пластик, настоящее стекло ловит свет
-                            неравномерно. */}
-                        {/* Заливка плотнее (было /20 и /30): при почти
-                            прозрачном фоне сквозь пункты меню просвечивал
-                            контент страницы, и текст становился нечитаемым —
-                            блюр размывает, но не гасит контраст. Плюс
-                            backdrop-brightness приглушает то, что осталось
-                            позади, отдельно в светлой и тёмной теме. */}
-                        <div className="relative min-w-[11rem] overflow-hidden rounded-2xl border border-white/60 bg-[#fbfbff]/80 shadow-xl shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-110 dark:border-white/10 dark:bg-zinc-900/85 dark:backdrop-brightness-75">
-                          <div
-                            aria-hidden
-                            // -z-10: блик позиционирован, пункты меню — нет,
-                            // поэтому без этого он бы рисовался ПОВЕРХ текста.
-                            className="pointer-events-none absolute -left-1/4 -top-1/3 -z-10 h-2/3 w-2/3 rounded-full bg-[#fbfbff]/40 blur-3xl dark:bg-white/10"
-                          />
-                          <Link
-                            href="/settings"
-                            className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
-                          >
-                            Settings
-                          </Link>
-                          {/* Свои карты — управление, а не публичная
-                              витрина: раньше пункт вёл на /creator/<ник>,
-                              где ничего нельзя было отредактировать.
-
-                              Пока приём авторов заморожен, пункта нет ни
-                              у кого — включая владельца. Причина не в
-                              правах (у владельца они есть), а в том, что
-                              меню одно на всех и знать, кто его открыл,
-                              оно не может: useUser отдаёт пользователя, а
-                              не is_creator. Дотягивать флаг запросом —
-                              лишний поход в базу на каждой странице ради
-                              одного человека, который дойдёт по адресу
-                              /resources напрямую. При разморозке пункт
-                              возвращается как был. */}
-                          {CREATOR_SIGNUPS_OPEN && (
-                            <Link
-                              href="/resources"
-                              className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
-                            >
-                              Your resources
-                            </Link>
-                          )}
-                          {/* Покупки — отдельным пунктом (просьба владельца
-                              2026-07-27): раньше они прятались за
-                              «Settings», хотя это разные вещи. */}
-                          <Link
-                            href="/purchases"
-                            className="block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
-                          >
-                            My purchases
-                          </Link>
-                          <button
-                            type="button"
-                            onClick={handleLogout}
-                            className="block w-full cursor-pointer px-4 py-2.5 text-left text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
-                          >
-                            Log out
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <Link
-                      href="/login"
-                      aria-label="Sign in"
-                      title="Sign in"
-                      className="flex items-center justify-center rounded-full p-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
-                    >
-                      <UserCircle size={22} />
-                    </Link>
-                  )}
+                  <AccountMenu
+                    user={user}
+                    loading={userLoading}
+                    displayName={displayName}
+                    avatarUrl={avatarUrl}
+                    profileHref={ownProfileHref}
+                    onLogout={handleLogout}
+                    showName
+                  />
                 </div>
               </div>
             </>
@@ -372,7 +266,36 @@ export function Navbar() {
               рекламируются раздельно, корзина не должна маячить, пока
               посетитель просто листает портфолио. */}
           {!isMarketplaceActive && (
-            <div className="hidden min-[760px]:block">
+            /* Вход в аккаунт на портфолио-стороне (01.09, просьба владельца
+               из TEMP.md 1.8). До этого дня на /, /about, /portfolio
+               аккаунта в навбаре не было ВООБЩЕ — ни на десктопе, ни на
+               телефоне: правка 26.08 закрыла только режим магазина.
+
+               ⚠️ Корзины здесь нет и не будет (решение владельца 28.08):
+               магазин и портфолио рекламируются раздельно, и корзина не
+               должна маячить, пока человек листает портфолио. Переехал
+               ровно один вход — в аккаунт.
+
+               Имя рядом с аватаром НЕ показывается (showName={false}), в
+               отличие от магазина: слева от аккаунта здесь стоят пять
+               ссылок NAV_LINKS и лого, а справа — кнопка заказа. Ник до
+               11rem не помещается на 760px, с которых начинается эта
+               раскладка. Имя не пропало — оно первой строкой в самой
+               выпадашке.
+
+               Кнопка заказа остаётся последней, у самого края пилюли:
+               она главное действие портфолио-стороны, и переставлять её
+               ради аккаунта никто не просил. */
+            <div className="hidden items-center gap-1 min-[760px]:flex">
+              <AccountMenu
+                user={user}
+                loading={userLoading}
+                displayName={displayName}
+                avatarUrl={avatarUrl}
+                profileHref={ownProfileHref}
+                onLogout={handleLogout}
+                showName={false}
+              />
               {/* «Order a map», а не «Order now», и ведёт на /contact, а не
                   сразу в Discord (решение владельца 2026-08-26). Надпись
                   здесь и в hero главной была разной, а обещание одно —
@@ -464,7 +387,12 @@ export function Navbar() {
 
         <AnimatePresence>
           {open && !isMarketplaceActive && (
-            <motion.ul
+            /* motion.div, а не motion.ul, как было до 01.09: снизу
+               появился раздел аккаунта, а он не пункт списка — <div>
+               внутри <ul> невалиден. Список ссылок остался списком,
+               просто уехал на уровень внутрь. Ровно та же форма, что у
+               магазинной выпадашки ниже. */
+            <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
@@ -478,30 +406,46 @@ export function Navbar() {
               // never has to flatten its corners to fit a flush dropdown.
               className="absolute inset-x-0 top-[calc(100%+8px)] overflow-hidden rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/95 min-[760px]:hidden"
             >
-              {NAV_LINKS.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    onClick={() => setOpen(false)}
-                    className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                    data-page-transition="true"
+              <ul>
+                {NAV_LINKS.map((link) => (
+                  <li key={link.href}>
+                    <Link
+                      href={link.href}
+                      onClick={() => setOpen(false)}
+                      className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                      data-page-transition="true"
+                    >
+                      {link.label}
+                    </Link>
+                  </li>
+                ))}
+                <li className="px-6 py-3">
+                  <Button
+                    href="/contact"
+                    variant="primary"
+                    size="sm"
+                    pageTransition
+                    className="w-full"
                   >
-                    {link.label}
-                  </Link>
+                    Order a map
+                  </Button>
                 </li>
-              ))}
-              <li className="px-6 py-3">
-                <Button
-                  href="/contact"
-                  variant="primary"
-                  size="sm"
-                  pageTransition
-                  className="w-full"
-                >
-                  Order a map
-                </Button>
-              </li>
-            </motion.ul>
+              </ul>
+
+              {/* Аккаунт — последним, под чертой, как в магазинной
+                  выпадашке: сначала «куда пойти», потом «что сделать со
+                  своим аккаунтом». Тот же компонент, поэтому два меню не
+                  могут разъехаться. */}
+              <AccountLinks
+                user={user}
+                loading={userLoading}
+                displayName={displayName}
+                avatarUrl={avatarUrl}
+                profileHref={ownProfileHref}
+                onLogout={handleLogout}
+                onNavigate={() => setOpen(false)}
+              />
+            </motion.div>
           )}
 
           {/* Магазинная выпадашка: те же вкладки, что в пилюле на десктопе
@@ -539,92 +483,15 @@ export function Navbar() {
                 ))}
               </ul>
 
-              {/* Аккаунт на мобильном (26.08). На десктопе эти пункты
-                  живут в выпадашке под аватаром, а она открывается по
-                  group-hover — чистым CSS, без состояния. На тач-экране
-                  hover не наступает НИКОГДА, поэтому блок скрыт вместе со
-                  всей десктопной колонкой, и из четырёх пунктов на
-                  телефоне был доступен один: аватар вёл на /settings.
-                  Выйти из аккаунта с телефона было нечем вообще.
-
-                  Раздел стоит ПОД навигацией, а не над ней: магазинные
-                  вкладки здесь главные, и сдвигать их вниз ради
-                  второстепенного значило бы переставить то, к чему уже
-                  привыкли. Черта сверху разделяет два разных вопроса —
-                  «куда пойти в магазине» и «что сделать со своим
-                  аккаунтом».
-
-                  Пункты повторяют десктопное меню поимённо, включая
-                  условие CREATOR_SIGNUPS_OPEN: два меню, отвечающие на
-                  один вопрос по-разному, рано или поздно разъедутся. */}
-              <div className="border-t border-zinc-950/[0.06] pb-2 dark:border-zinc-50/[0.08]">
-                {userLoading ? (
-                  // Та же нейтральная заглушка, что в строке навбара:
-                  // показать «Sign in» тому, кто на самом деле вошёл, —
-                  // хуже, чем не показать пока ничего.
-                  <div className="flex items-center gap-3 px-6 py-3" aria-hidden>
-                    <Skeleton className="h-6 w-6 rounded-full" />
-                    <Skeleton className="h-4 w-24 rounded-full" />
-                  </div>
-                ) : user ? (
-                  <>
-                    {/* Первой строкой — сам человек: аватар и имя ведут на
-                        публичный профиль, как клик по аватару на десктопе.
-                        Это заодно подпись раздела, поэтому отдельного
-                        заголовка «Account» нет. */}
-                    <Link
-                      href={ownProfileHref}
-                      onClick={() => setOpen(false)}
-                      className="flex items-center gap-3 px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                    >
-                      <Avatar avatarUrl={avatarUrl ?? null} size={24} />
-                      <span className="truncate">{displayName}</span>
-                    </Link>
-                    <Link
-                      href="/settings"
-                      onClick={() => setOpen(false)}
-                      className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                    >
-                      Settings
-                    </Link>
-                    {CREATOR_SIGNUPS_OPEN && (
-                      <Link
-                        href="/resources"
-                        onClick={() => setOpen(false)}
-                        className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                      >
-                        Your resources
-                      </Link>
-                    )}
-                    <Link
-                      href="/purchases"
-                      onClick={() => setOpen(false)}
-                      className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                    >
-                      My purchases
-                    </Link>
-                    {/* handleLogout сам закрывает меню — своего
-                        setOpen(false) здесь не нужно. */}
-                    <button
-                      type="button"
-                      onClick={handleLogout}
-                      className="block w-full cursor-pointer px-6 py-3 text-left text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                    >
-                      Log out
-                    </button>
-                  </>
-                ) : (
-                  // Гостю — одна строка. Иконка входа есть и в верхней
-                  // строке, но она без подписи; словами понятнее.
-                  <Link
-                    href="/login"
-                    onClick={() => setOpen(false)}
-                    className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                  >
-                    Sign in
-                  </Link>
-                )}
-              </div>
+              <AccountLinks
+                user={user}
+                loading={userLoading}
+                displayName={displayName}
+                avatarUrl={avatarUrl}
+                profileHref={ownProfileHref}
+                onLogout={handleLogout}
+                onNavigate={() => setOpen(false)}
+              />
             </motion.div>
           )}
         </AnimatePresence>
@@ -638,6 +505,228 @@ export function Navbar() {
 // размером иконки: любую правку приходилось делать дважды, и однажды это
 // уже разошлось. Компоненты локальные (не в отдельных файлах) — за
 // пределами навбара они не нужны.
+
+// ── Аккаунт: одно меню на оба режима навбара ──────────────────────────
+// До 01.09 эти пункты жили только в магазинной ветке, и на
+// портфолио-стороне войти в аккаунт было нельзя ниоткуда. Второй,
+// скопированный набор пунктов был бы вторым ответом на один вопрос — тем
+// самым, про который в этом файле уже написано «рано или поздно
+// разъедутся». Поэтому меню вынесено сюда, а обе ветки его зовут.
+//
+// Пункты и их условия (включая CREATOR_SIGNUPS_OPEN) описаны теперь ОДИН
+// раз на весь навбар — десктоп и мобильный берут их отсюда.
+
+type AccountProps = {
+  user: User | null;
+  loading: boolean;
+  displayName?: string;
+  avatarUrl?: string;
+  profileHref: string;
+  onLogout: () => void;
+};
+
+// Пункт выпадающего меню на десктопе. Строкой-константой, а не classNames
+// в каждом Link: пунктов пять, и одинаковыми они должны быть по
+// определению, а не по внимательности.
+const MENU_ITEM =
+  "block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50";
+
+// Пункт мобильной выпадашки: без hover (на тач-экране его нет) и с
+// паддингом самой выпадашки.
+const MOBILE_ITEM =
+  "block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300";
+
+// Десктоп: аватар (в магазине — с ником) + меню под ним.
+//
+// Наведение раскрывает меню, клик по самому аватару ведёт на публичный
+// профиль. group + group-hover — без JS-состояния; focus-within — чтобы
+// открывалось и с клавиатуры.
+//
+// ⚠️ На тач-экране hover не наступает НИКОГДА, поэтому на телефоне этого
+// меню не существует и существовать не может — там работает AccountLinks
+// внутри гамбургера (правило записано 26.08, когда с телефона нельзя было
+// выйти из аккаунта).
+function AccountMenu({
+  user,
+  loading,
+  displayName,
+  avatarUrl,
+  profileHref,
+  onLogout,
+  showName,
+}: AccountProps & { showName: boolean }) {
+  // Пока не знаем, кто залогинен (сессия читается на клиенте — статический
+  // HTML её не содержит), показываем нейтральную заглушку-кружок вместо
+  // заведомо неверной иконки «войти». Так нет мелькания «войти → аватар».
+  // Размер совпадает с иконкой (p-2 + h-6/w-6), поэтому подмена не дёргает
+  // вёрстку.
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-2" aria-hidden>
+        <Skeleton className="h-6 w-6 rounded-full" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <Link
+        href="/login"
+        aria-label="Sign in"
+        title="Sign in"
+        className="flex items-center justify-center rounded-full p-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+      >
+        <UserCircle size={22} />
+      </Link>
+    );
+  }
+
+  return (
+    <div className="group relative flex h-full items-center self-stretch">
+      <Link
+        href={profileHref}
+        title={displayName}
+        aria-label={showName ? undefined : "My profile"}
+        className={`flex max-w-[11rem] items-center rounded-full py-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50 ${
+          showName ? "gap-2 px-2.5" : "px-2"
+        }`}
+      >
+        <Avatar avatarUrl={avatarUrl ?? null} size={22} />
+        {showName && (
+          <span className="truncate text-sm font-medium">{displayName}</span>
+        )}
+      </Link>
+
+      <div className="invisible absolute left-0 top-full z-50 w-max opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
+        {/* Без вертикального паддинга: py-1 оставлял 4px фона над первым и
+            под последним пунктом, из-за чего их подсветка при наведении не
+            доходила до скруглённых краёв. overflow-hidden и так вписывает
+            прямоугольную подсветку в радиус карточки. */}
+        {/* Стекло по тому же рецепту, что карточка калькулятора
+            (BuildEstimator): сильный блюр по фону, слабая заливка, светлая
+            грань. Блик в левом верхнем углу — потому что ровная заливка
+            читается как пластик, настоящее стекло ловит свет неравномерно.
+            Заливка при этом плотная: сквозь почти прозрачную просвечивал
+            контент страницы, а блюр размывает, но не гасит контраст. */}
+        <div className="relative min-w-[11rem] overflow-hidden rounded-2xl border border-white/60 bg-[#fbfbff]/80 shadow-xl shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-110 dark:border-white/10 dark:bg-zinc-900/85 dark:backdrop-brightness-75">
+          <div
+            aria-hidden
+            // -z-10: блик позиционирован, пункты меню — нет, поэтому без
+            // этого он бы рисовался ПОВЕРХ текста.
+            className="pointer-events-none absolute -left-1/4 -top-1/3 -z-10 h-2/3 w-2/3 rounded-full bg-[#fbfbff]/40 blur-3xl dark:bg-white/10"
+          />
+          {/* Имя первой строкой — только там, где его нет у самого аватара
+              (портфолио-сторона). В магазине ник написан рядом с аватаром,
+              и повторять его в меню значило бы сказать одно дважды. */}
+          {!showName && (
+            <Link href={profileHref} className={`${MENU_ITEM} max-w-[14rem] truncate`}>
+              {displayName}
+            </Link>
+          )}
+          <Link href="/settings" className={MENU_ITEM}>
+            Settings
+          </Link>
+          {/* Свои карты — управление, а не публичная витрина.
+
+              Пока приём авторов заморожен, пункта нет ни у кого — включая
+              владельца. Причина не в правах (у владельца они есть), а в
+              том, что меню одно на всех и знать, кто его открыл, оно не
+              может: useUser отдаёт пользователя, а не is_creator.
+              Дотягивать флаг запросом — лишний поход в базу на каждой
+              странице ради одного человека, который дойдёт по адресу
+              /resources напрямую. При разморозке пункт возвращается. */}
+          {CREATOR_SIGNUPS_OPEN && (
+            <Link href="/resources" className={MENU_ITEM}>
+              Your resources
+            </Link>
+          )}
+          {/* Покупки — отдельным пунктом (просьба владельца 2026-07-27):
+              раньше они прятались за Settings, хотя это разные вещи. */}
+          <Link href="/purchases" className={MENU_ITEM}>
+            My purchases
+          </Link>
+          <button
+            type="button"
+            onClick={onLogout}
+            className={`${MENU_ITEM} w-full cursor-pointer text-left`}
+          >
+            Log out
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Мобильный: тот же аккаунт разделом внизу гамбургера, под чертой.
+//
+// Раздел стоит ПОД навигацией, а не над ней: вкладки здесь главные, и
+// сдвигать их вниз ради второстепенного значило бы переставить то, к чему
+// уже привыкли. Черта разделяет два разных вопроса — «куда пойти» и «что
+// сделать со своим аккаунтом».
+function AccountLinks({
+  user,
+  loading,
+  displayName,
+  avatarUrl,
+  profileHref,
+  onLogout,
+  onNavigate,
+}: AccountProps & { onNavigate: () => void }) {
+  return (
+    <div className="border-t border-zinc-950/[0.06] pb-2 dark:border-zinc-50/[0.08]">
+      {loading ? (
+        // Та же нейтральная заглушка, что в строке навбара: показать
+        // «Sign in» тому, кто на самом деле вошёл, — хуже, чем не показать
+        // пока ничего.
+        <div className="flex items-center gap-3 px-6 py-3" aria-hidden>
+          <Skeleton className="h-6 w-6 rounded-full" />
+          <Skeleton className="h-4 w-24 rounded-full" />
+        </div>
+      ) : user ? (
+        <>
+          {/* Первой строкой — сам человек: аватар и имя ведут на публичный
+              профиль. Это заодно подпись раздела, поэтому отдельного
+              заголовка «Account» нет. */}
+          <Link
+            href={profileHref}
+            onClick={onNavigate}
+            className="flex items-center gap-3 px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+          >
+            <Avatar avatarUrl={avatarUrl ?? null} size={24} />
+            <span className="truncate">{displayName}</span>
+          </Link>
+          <Link href="/settings" onClick={onNavigate} className={MOBILE_ITEM}>
+            Settings
+          </Link>
+          {CREATOR_SIGNUPS_OPEN && (
+            <Link href="/resources" onClick={onNavigate} className={MOBILE_ITEM}>
+              Your resources
+            </Link>
+          )}
+          <Link href="/purchases" onClick={onNavigate} className={MOBILE_ITEM}>
+            My purchases
+          </Link>
+          {/* handleLogout сам закрывает меню — своего onNavigate здесь не
+              нужно. */}
+          <button
+            type="button"
+            onClick={onLogout}
+            className={`${MOBILE_ITEM} w-full cursor-pointer text-left`}
+          >
+            Log out
+          </button>
+        </>
+      ) : (
+        // Гостю — одна строка. Иконка входа есть и в верхней строке, но
+        // она без подписи; словами понятнее.
+        <Link href="/login" onClick={onNavigate} className={MOBILE_ITEM}>
+          Sign in
+        </Link>
+      )}
+    </div>
+  );
+}
 
 // Три полоски гамбургера, складывающиеся в крестик при open.
 function HamburgerIcon({ open }: { open: boolean }) {

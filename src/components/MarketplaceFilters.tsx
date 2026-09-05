@@ -12,7 +12,11 @@ import {
   THEMES,
 } from "@/lib/product-specs";
 import { SORT_OPTIONS } from "@/lib/products";
-import { BUTTON_COLORS, TERTIARY_COLORS } from "@/components/Button";
+import {
+  BUTTON_COLORS,
+  TERTIARY_COLORS,
+  TOGGLE_PILL_COLORS,
+} from "@/components/Button";
 import {
   activeFilterCount,
   CATALOG_PARAMS,
@@ -113,7 +117,7 @@ export function MarketplaceFilters() {
         className={`relative flex h-[42px] cursor-pointer items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors ${
           count > 0
             ? "border-orange-500 text-orange-700 dark:border-orange-400 dark:text-orange-400"
-            : "border-zinc-950/[0.08] text-zinc-600 hover:border-orange-500 hover:text-orange-600 dark:border-zinc-50/[0.08] dark:text-zinc-400 dark:hover:border-orange-400 dark:hover:text-orange-400"
+            : TOGGLE_PILL_COLORS.off
         }`}
       >
         <FunnelSimple size={18} weight={count > 0 ? "fill" : "regular"} />
@@ -222,10 +226,7 @@ function FilterPanel({
   const fieldClass = FIELD_CLASS;
   const chip =
     "cursor-pointer rounded-full border px-3 py-1.5 text-xs font-medium transition-colors";
-  const chipOff =
-    "border-zinc-950/[0.08] text-zinc-600 hover:border-orange-500 hover:text-orange-600 dark:border-zinc-50/[0.08] dark:text-zinc-400 dark:hover:border-orange-400 dark:hover:text-orange-400";
-  const chipOn =
-    "border-orange-500 bg-orange-500 text-zinc-950 dark:border-orange-400 dark:bg-orange-400";
+  const { off: chipOff, on: chipOn } = TOGGLE_PILL_COLORS;
 
   return (
     <div
