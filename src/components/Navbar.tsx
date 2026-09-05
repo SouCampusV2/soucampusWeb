@@ -266,36 +266,21 @@ export function Navbar() {
               рекламируются раздельно, корзина не должна маячить, пока
               посетитель просто листает портфолио. */}
           {!isMarketplaceActive && (
-            /* Вход в аккаунт на портфолио-стороне (01.09, просьба владельца
-               из TEMP.md 1.8). До этого дня на /, /about, /portfolio
-               аккаунта в навбаре не было ВООБЩЕ — ни на десктопе, ни на
-               телефоне: правка 26.08 закрыла только режим магазина.
+            /* ⚠️ АККАУНТА ЗДЕСЬ НЕТ — и это решение, а не пропуск
+               (владелец, 2026-09-05). 01.09 вход в аккаунт сюда добавили
+               по просьбе из TEMP.md 1.8, владелец посмотрел на живом
+               сайте и убрал: аватар в студийном навбаре — не то решение.
+               Вопрос не в кнопке, а в том, как студия и магазин вообще
+               соединяются; владелец продумает это отдельно.
 
-               ⚠️ Корзины здесь нет и не будет (решение владельца 28.08):
-               магазин и портфолио рекламируются раздельно, и корзина не
-               должна маячить, пока человек листает портфолио. Переехал
-               ровно один вход — в аккаунт.
+               ⚠️ Не возвращать «заодно» с чем-нибудь другим. Корзины
+               здесь нет по тому же счёту (решение 28.08): студия и
+               магазин рекламируются раздельно, и всё магазинное на этой
+               стороне маячить не должно, пока связь не придумана.
 
-               Имя рядом с аватаром НЕ показывается (showName={false}), в
-               отличие от магазина: слева от аккаунта здесь стоят пять
-               ссылок NAV_LINKS и лого, а справа — кнопка заказа. Ник до
-               11rem не помещается на 760px, с которых начинается эта
-               раскладка. Имя не пропало — оно первой строкой в самой
-               выпадашке.
-
-               Кнопка заказа остаётся последней, у самого края пилюли:
-               она главное действие портфолио-стороны, и переставлять её
-               ради аккаунта никто не просил. */
+               Компоненты AccountMenu/AccountLinks живы и работают — их
+               рисует режим магазина. Убран вызов, а не механизм. */
             <div className="hidden items-center gap-1 min-[760px]:flex">
-              <AccountMenu
-                user={user}
-                loading={userLoading}
-                displayName={displayName}
-                avatarUrl={avatarUrl}
-                profileHref={ownProfileHref}
-                onLogout={handleLogout}
-                showName={false}
-              />
               {/* «Order a map», а не «Order now», и ведёт на /contact, а не
                   сразу в Discord (решение владельца 2026-08-26). Надпись
                   здесь и в hero главной была разной, а обещание одно —
@@ -387,12 +372,12 @@ export function Navbar() {
 
         <AnimatePresence>
           {open && !isMarketplaceActive && (
-            /* motion.div, а не motion.ul, как было до 01.09: снизу
-               появился раздел аккаунта, а он не пункт списка — <div>
-               внутри <ul> невалиден. Список ссылок остался списком,
-               просто уехал на уровень внутрь. Ровно та же форма, что у
-               магазинной выпадашки ниже. */
-            <motion.div
+            /* Снова motion.ul, как было до 01.09. На один день здесь
+               появлялся раздел аккаунта, а он не пункт списка — <div>
+               внутри <ul> невалиден, из-за него список и уезжал на
+               уровень внутрь motion.div. Аккаунт убран (см. десктопную
+               группу выше), лишний уровень вместе с ним. */
+            <motion.ul
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
@@ -406,46 +391,30 @@ export function Navbar() {
               // never has to flatten its corners to fit a flush dropdown.
               className="absolute inset-x-0 top-[calc(100%+8px)] overflow-hidden rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/95 min-[760px]:hidden"
             >
-              <ul>
-                {NAV_LINKS.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      onClick={() => setOpen(false)}
-                      className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                      data-page-transition="true"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-                <li className="px-6 py-3">
-                  <Button
-                    href="/contact"
-                    variant="primary"
-                    size="sm"
-                    pageTransition
-                    className="w-full"
+              {NAV_LINKS.map((link) => (
+                <li key={link.href}>
+                  <Link
+                    href={link.href}
+                    onClick={() => setOpen(false)}
+                    className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
+                    data-page-transition="true"
                   >
-                    Order a map
-                  </Button>
+                    {link.label}
+                  </Link>
                 </li>
-              </ul>
-
-              {/* Аккаунт — последним, под чертой, как в магазинной
-                  выпадашке: сначала «куда пойти», потом «что сделать со
-                  своим аккаунтом». Тот же компонент, поэтому два меню не
-                  могут разъехаться. */}
-              <AccountLinks
-                user={user}
-                loading={userLoading}
-                displayName={displayName}
-                avatarUrl={avatarUrl}
-                profileHref={ownProfileHref}
-                onLogout={handleLogout}
-                onNavigate={() => setOpen(false)}
-              />
-            </motion.div>
+              ))}
+              <li className="px-6 py-3">
+                <Button
+                  href="/contact"
+                  variant="primary"
+                  size="sm"
+                  pageTransition
+                  className="w-full"
+                >
+                  Order a map
+                </Button>
+              </li>
+            </motion.ul>
           )}
 
           {/* Магазинная выпадашка: те же вкладки, что в пилюле на десктопе

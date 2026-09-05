@@ -58,12 +58,10 @@ export const SHOP_NAV_LINKS: {
   // «Maps», а не «All Map» (2026-08-14): прежняя подпись была ещё и
   // безграмотной — all с единственным числом.
   { href: "/marketplace", label: "Maps" },
-  {
-    href: "/wiki",
-    label: "Wiki",
-    soon: true,
-    title: "Guides on installing maps are coming soon",
-  },
+  // Wiki перестала быть заглушкой 2026-09-02, флаг снят 05.09 — раздел
+  // есть, восемь статей. Правка ровно в одну строку и ровно здесь: этот
+  // список рисует И навбар магазина, И колонку Marketplace в футере.
+  { href: "/wiki", label: "Wiki" },
   {
     href: "/updates",
     label: "What's new",
