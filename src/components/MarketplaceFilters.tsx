@@ -46,6 +46,23 @@ type Draft = {
   values: Record<string, string[]>;
 };
 
+// Сколько условий наложит Apply прямо сейчас.
+//
+// ⚠️ Считается ЧЕРНОВИК, а не адрес. Кнопка Filters снаружи показывает,
+// сколько условий УЖЕ применено (activeFilterCount по параметрам
+// адреса), а эта — сколько станет, если нажать. Пока попап открыт, числа
+// разные, и в этом весь смысл: снял два фильтра — на Apply видно, что
+// станет меньше, ещё до нажатия.
+//
+// Правило совпадения то же, что в activeFilterCount: поле с непустым
+// набором — одно условие, цена целиком — одно, сортировка не в счёт
+// (она ничего не прячет).
+function draftFilterCount(draft: Draft): number {
+  const fields = Object.values(draft.values).filter((v) => v.length > 0).length;
+  const price = draft.min.trim() || draft.max.trim() ? 1 : 0;
+  return fields + price;
+}
+
 // Поля-наборы списком, а не шестью кусками разметки: одинаковые вещи,
 // написанные шесть раз, разъезжаются — это в проекте уже случалось с
 // градиентом и с датами.
@@ -162,6 +179,7 @@ function FilterPanel({
   onApply: (href: string) => void;
 }) {
   const [draft, setDraft] = useState<Draft>(initial);
+  const draftCount = draftFilterCount(draft);
 
   // Закрытие по клику мимо и по Escape панель себе НЕ берёт: им заведует
   // MarketplaceFilters, у которого под рукой обёртка вместе с кнопкой.
@@ -235,9 +253,14 @@ function FilterPanel({
       // Стекло по рецепту из DESIGN.md — тот же, что у выпадашки профиля
       // в навбаре: панель плавает над каталогом, под ней есть чему
       // просвечивать и размываться.
-      className="absolute right-0 z-40 mt-2 max-h-[70vh] w-[min(24rem,calc(100vw-3rem))] overflow-y-auto rounded-2xl border border-white/60 bg-[#fbfbff]/90 p-5 shadow-xl shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-110 dark:border-white/10 dark:bg-zinc-900/90 dark:backdrop-brightness-75"
+      // Колонка с настоящим подвалом: прокручиваются ПОЛЯ, а кнопки
+      // стоят на нижнем краю панели всегда (просьба владельца
+      // 2026-09-06). До этого подвал был sticky внутри общей прокрутки —
+      // то есть плавал поверх полей, а при коротком списке останавливался
+      // там, где кончился контент, а не внизу попапа.
+      className="absolute right-0 z-40 mt-2 flex max-h-[70vh] w-[min(24rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-2xl border border-white/60 bg-[#fbfbff]/90 shadow-xl shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-110 dark:border-white/10 dark:bg-zinc-900/90 dark:backdrop-brightness-75"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex shrink-0 items-center justify-between px-5 pb-3 pt-5">
         <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
           Filters
         </h3>
@@ -251,9 +274,12 @@ function FilterPanel({
         </button>
       </div>
 
+      {/* Прокручивается только эта часть — подвал с Apply остаётся на
+          нижнем краю панели. */}
+      <div className="flex-1 overflow-y-auto px-5 pb-4">
       {/* Сортировка первой: она отвечает на «в каком порядке» и
           единственная здесь ничего не прячет. */}
-      <div className="mt-5">
+      <div className="mt-0">
         <span className={labelClass}>Sort by</span>
         <SortSelect
           value={draft.sort}
@@ -316,9 +342,12 @@ function FilterPanel({
         </div>
       ))}
 
-      {/* Кнопки прилипают к низу: полей семь, панель прокручивается, и
-          Apply не должен уезжать из виду вместе с ними. */}
-      <div className="sticky bottom-0 -mx-5 -mb-5 mt-6 flex items-center gap-3 border-t border-zinc-950/[0.06] bg-[#fbfbff]/90 px-5 py-4 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-900/90">
+      </div>
+
+      {/* Подвал панели: не sticky внутри прокрутки, а отдельный ряд под
+          ней. Поэтому кнопки стоят на нижнем краю попапа всегда — и при
+          длинном списке полей, и при коротком. */}
+      <div className="flex shrink-0 items-center gap-3 border-t border-zinc-950/[0.06] bg-[#fbfbff]/90 px-5 py-4 dark:border-zinc-50/[0.08] dark:bg-zinc-900/90">
         {/* Раскраска из BUTTON_COLORS, а геометрия своя: фиксированная
             высота h-12/h-14 из Button не влезает в подвал панели. Это тот
             самый случай, ради которого раскраска и вынесена отдельно —
@@ -329,7 +358,11 @@ function FilterPanel({
           onClick={() => onApply(buildHref(draft))}
           className={`flex-1 cursor-pointer px-4 py-2.5 text-sm font-semibold transition-colors ${BUTTON_COLORS.primary}`}
         >
-          Apply
+          {/* Число — то, что станет ПОСЛЕ нажатия (просьба владельца
+              2026-09-06). На кнопке Filters снаружи стоит число уже
+              применённых; пока попап открыт, они не обязаны совпадать, и
+              это и есть польза: видно, к чему приведёт нажатие. */}
+          Apply{draftCount > 0 && ` (${draftCount})`}
         </button>
         <button
           type="button"

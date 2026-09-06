@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import { BUTTON_PILL, DANGER_COLORS } from "@/components/Button";
+import { useEscapeLayer } from "@/lib/useDismiss";
 
 // Наше окно подтверждения — вместо confirm() браузера.
 //
@@ -53,19 +54,10 @@ export function ConfirmDialog({
 }) {
   const confirmRef = useRef<HTMLButtonElement>(null);
 
-  // Esc закрывает, как у всех выпадашек на сайте. Слушатель вешается
-  // только пока окно открыто: висящий постоянно перехватывал бы Esc у
-  // страницы под ним.
-  useEffect(() => {
-    if (!open) return;
-
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onCancel();
-    };
-
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [open, onCancel]);
+  // Esc закрывает, как у всех выпадашек на сайте, — и через ту же
+  // очередь: открытое поверх чего-то закрывается первым, а не вместе с
+  // тем, что под ним.
+  useEscapeLayer(onCancel, open);
 
   // Фокус переезжает на кнопку подтверждения, иначе он остаётся на
   // кнопке под затемнением: Tab уводил бы в невидимую часть страницы, а
