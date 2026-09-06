@@ -63,7 +63,9 @@ export function CreatorOwnerActions({
 
   return (
     <div className="mt-4 flex flex-wrap justify-center gap-3 sm:justify-start">
-      <Button href="/settings" size="sm" variant="secondary" pageTransition>
+      {/* Без pageTransition: профиль — магазинная страница, а внутри
+          магазина волны нет. */}
+      <Button href="/settings" size="sm" variant="secondary">
         Edit profile
       </Button>
       {/* Вторая кнопка есть только у автора. У остального — одна

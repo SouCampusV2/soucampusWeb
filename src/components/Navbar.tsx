@@ -155,10 +155,20 @@ export function Navbar() {
                 : "contents"
             }
           >
+            {/* Волна — только на портфолио-стороне. До 2026-08-20 лого в
+                магазине вело на "/", то есть было ВЫХОДОМ наружу, и
+                анимация там была уместна; тогда же адрес сменили на
+                витрину, а атрибут остался безусловным — и лого стало
+                единственной ссылкой магазина, запускающей волну.
+
+                ⚠️ undefined, а не false: PageTransition спрашивает
+                hasAttribute, а false React отрисовал бы строкой "false" —
+                атрибут остался бы на месте и проверка бы его нашла. Тот же
+                приём, что в Button.tsx. */}
             <Link
               href={isMarketplaceActive ? "/marketplace" : "/"}
               className={`${displayFont.className} shrink-0 text-lg tracking-tight text-orange-500`}
-              data-page-transition="true"
+              data-page-transition={isMarketplaceActive ? undefined : "true"}
             >
               SouCampus
             </Link>

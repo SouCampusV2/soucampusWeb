@@ -319,9 +319,12 @@ export function AddToCartButton({
               // символ `→` внутри подчёркнутой ссылки собирал черту и под
               // собой (см. TERTIARY_UNDERLINE в Button.tsx — там же
               // разобрано, почему цвет и черта разделены).
+              // Без data-page-transition: эта плашка живёт на странице
+              // карты, а внутри магазина волны нет. Ссылки ведут в
+              // /purchases и /cart — обе магазинные, так что условия
+              // здесь не нужно, нужно отсутствие атрибута.
               <Link
                 href={notice.href}
-                data-page-transition="true"
                 className="group ml-auto flex shrink-0 items-center gap-1.5 font-semibold text-orange-700 dark:text-orange-300"
               >
                 <span className={TERTIARY_UNDERLINE}>{notice.linkLabel}</span>

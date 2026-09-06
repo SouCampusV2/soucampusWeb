@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import {
   DiscordLogo,
@@ -17,6 +18,7 @@ import {
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
 import { SHOP_NAV_LINKS } from "@/lib/products";
+import { isMarketplaceRoute } from "@/lib/marketplace-routes";
 
 // Same display font as the navbar brand name — the footer logo rhymes with it.
 const displayFont = Unbounded({
@@ -75,6 +77,19 @@ const SOCIALS = [
 ];
 
 export function ContactFooter() {
+  // Волна перехода — только на портфолио-стороне. Футер один на весь
+  // сайт, поэтому на страницах магазина его ссылки запускали анимацию,
+  // которой внутри магазина быть не должно (правило из CLAUDE.md).
+  //
+  // ⚠️ Решает страница, НА КОТОРОЙ стоим, а не та, КУДА ведём. Так же
+  // устроен навбар: пункт "Studio" уводит из магазина наружу и волны при
+  // этом не играет. Одно правило на оба места дешевле двух похожих.
+  //
+  // undefined, а не false: PageTransition спрашивает hasAttribute, и
+  // строку "false" он бы нашёл.
+  const inShop = isMarketplaceRoute(usePathname());
+  const wave = inShop ? undefined : "true";
+
   return (
     <section className="border-t border-zinc-200 dark:border-zinc-800">
       <footer className="px-6 py-12">
@@ -84,7 +99,7 @@ export function ContactFooter() {
               <Link
                 href="/"
                 className={`${displayFont.className} text-lg tracking-tight text-orange-500`}
-                data-page-transition="true"
+                data-page-transition={wave}
               >
                 SouCampus
               </Link>
@@ -113,7 +128,7 @@ export function ContactFooter() {
                     <Link
                       href={link.href}
                       className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                      data-page-transition="true"
+                      data-page-transition={wave}
                     >
                       {link.label}
                     </Link>
@@ -152,7 +167,7 @@ export function ContactFooter() {
                       <Link
                         href={link.href}
                         className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                        data-page-transition="true"
+                        data-page-transition={wave}
                       >
                         {link.label}
                       </Link>
@@ -171,7 +186,7 @@ export function ContactFooter() {
                   <Link
                     href="/terms"
                     className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                    data-page-transition="true"
+                    data-page-transition={wave}
                   >
                     Terms of Service
                   </Link>
@@ -180,7 +195,7 @@ export function ContactFooter() {
                   <Link
                     href="/privacy"
                     className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                    data-page-transition="true"
+                    data-page-transition={wave}
                   >
                     Privacy Policy
                   </Link>
