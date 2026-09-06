@@ -43,7 +43,12 @@ export function ProductCard({
    * нужен там, где автор и так известен странице — например на
    * /creator/[handle], чтобы не тянуть профиль повторно.
    */
-  creator?: { name: string; href?: string; isVerified?: boolean };
+  creator?: {
+    name: string;
+    href?: string;
+    isVerified?: boolean;
+    nameColor?: string | null;
+  };
   className?: string;
 }) {
   const { rating, ratingCount, salesCount } = product;
@@ -61,8 +66,14 @@ export function ProductCard({
           // протухшую ссылку, вместо того чтобы ловить внешние.
           href: creatorHref(product.creator.handle),
           isVerified: product.creator.isVerified,
+          nameColor: product.creator.nameColor ?? null,
         }
-      : { name: "Unknown creator", href: undefined, isVerified: false });
+      : {
+          name: "Unknown creator",
+          href: undefined,
+          isVerified: false,
+          nameColor: null,
+        });
   // images появился вместе с галереей; у старых данных его может не быть —
   // тогда листать нечего, показываем одну обложку.
   const images = product.images?.length ? product.images : [product.image];
@@ -100,6 +111,10 @@ export function ProductCard({
             <Link
               href={author.href}
               className={`pointer-events-auto relative z-10 inline-flex items-center gap-1 ${INLINE_LINK}`}
+              // style, а не класс: значение произвольное, в Tailwind его
+              // не выразить. Так же сделано в CreatorCard и под
+              // комментарием — одно имя, один способ его покрасить.
+              style={author.nameColor ? { color: author.nameColor } : undefined}
             >
               {author.name}
               {author.isVerified && <SealCheck size={12} weight="fill" aria-hidden />}

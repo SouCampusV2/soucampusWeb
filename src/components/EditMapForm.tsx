@@ -345,7 +345,7 @@ export function EditMapForm({
       // повод пугать человека — мусор подберётся при следующем разе.
       fetch("/api/creator/cleanup-storage", { method: "POST" }).catch(() => {});
 
-      router.push("/resources");
+      router.push("/admin/products");
       refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -493,7 +493,6 @@ export function EditMapForm({
           value={category}
           onChange={(v) => setCategory(v as ProductCategory)}
           options={FORM_CATEGORIES.map((c) => ({ value: c.slug, label: c.label }))}
-          required
         />
         <PriceField value={priceInput} onChange={setPriceInput} />
       </div>
@@ -570,7 +569,7 @@ export function EditMapForm({
               ? "Resubmit for review"
               : "Save changes"}
         </Button>
-        <Button href="/resources" variant="secondary" className="flex-1">
+        <Button href="/admin/products" variant="secondary" className="flex-1">
           Cancel
         </Button>
       </div>

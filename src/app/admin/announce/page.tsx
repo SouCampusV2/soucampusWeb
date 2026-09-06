@@ -9,7 +9,7 @@ export default async function AdminAnnouncePage() {
   const recipients = await getRecipients();
 
   return (
-    <div className="mx-auto max-w-2xl px-6 py-12">
+    <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-12">
       <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
         Send a notification
       </h1>

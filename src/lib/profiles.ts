@@ -82,4 +82,4 @@ export async function readProfile(
  * появлением /welcome их стало две, и вторая вписала «30 days» руками —
  * то есть ровно тот случай, ради которого константы и выносят.
  */
-export const USERNAME_COOLDOWN_DAYS = 30;
+export const USERNAME_COOLDOWN_DAYS = 14;

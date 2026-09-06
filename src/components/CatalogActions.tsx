@@ -120,7 +120,7 @@ export function CatalogActions({
                 записи в products со своими правами и своими дырами. */}
             {own && (
               <Link
-                href={`/resources/${product.slug}/edit`}
+                href={`/admin/products/${product.slug}/edit`}
                 className={`${BUTTON_PILL} ${BUTTON_COLORS.secondary}`}
               >
                 <PencilSimple size={16} weight="bold" />

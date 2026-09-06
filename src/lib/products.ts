@@ -153,7 +153,20 @@ export type Product = {
    * отдельным запросом (см. getCreatorsById — связать вложенной выборкой
    * нельзя, profiles закрыта RLS) и подмешивается только там, где нужен.
    */
-  creator?: { username: string; handle: string; isVerified: boolean };
+  creator?: {
+    username: string;
+    handle: string;
+    isVerified: boolean;
+    /**
+     * Цвет ника — привилегия купивших. Едет сюда, чтобы имя автора
+     * выглядело одинаково ВЕЗДЕ: на карточке витрины, в блоке автора на
+     * странице карты и под комментарием. До 2026-09-06 цвет доходил
+     * только до двух последних, и карточка показывала то же имя серым —
+     * то есть привилегия, за которую заплачено, на самом видном месте
+     * не работала.
+     */
+    nameColor?: string | null;
+  };
   // Агрегаты витрины (оценки/покупки). Опциональны: приезжают отдельным
   // запросом get_product_stats() и подмешиваются в getAllProductsWithStats.
   // Без них (детальная страница, тесты) карточка просто их не показывает.
@@ -187,8 +200,12 @@ export type Product = {
 export type ProductSpecs = {
   /** Версии Minecraft ПО СЛОВАМ АВТОРА — площадка их не проверяет. */
   mcVersions: string[];
-  /** Чем карта является: Spawn, Hub… Одно значение. */
-  mapType: string | null;
+  /**
+   * Чем карта является: Spawn, Hub… НАБОР до трёх (с 2026-09-06; до
+   * этого было одно значение). Три — «основное и два уточнения»: карта,
+   * помеченная всеми типами, не описана никак.
+   */
+  mapTypes: string[];
   gameModes: string[];
   themes: string[];
   /** Масштаб словами: Small…Huge. */
@@ -411,11 +428,10 @@ export function filterBySpecs(
     return (
       matchesAny(filters.mcVersions, specs.mcVersions) &&
       matchesAny(filters.formats, specs.fileFormats) &&
-      // mapType и mapSize — одно значение или ничего. Приводим к списку,
-      // чтобы правило совпадения было ОДНО на все поля: два разных
-      // правила «одно значение» и «список» разошлись бы при первой же
-      // правке.
-      matchesAny(filters.mapTypes, specs.mapType ? [specs.mapType] : []) &&
+      matchesAny(filters.mapTypes, specs.mapTypes) &&
+      // mapSize — одно значение или ничего. Приводим к списку, чтобы
+      // правило совпадения было ОДНО на все поля: два разных правила
+      // «одно значение» и «список» разошлись бы при первой же правке.
       matchesAny(filters.gameModes, specs.gameModes) &&
       matchesAny(filters.mapSizes, specs.mapSize ? [specs.mapSize] : []) &&
       matchesAny(filters.themes, specs.themes)
@@ -503,6 +519,8 @@ type ProductRow = {
   /** Все восемь — из 20260821130000; у баз без неё колонок нет. */
   mc_versions?: string[] | null;
   map_type?: string | null;
+  /** Из 20260906120000 — набор вместо одного значения. */
+  map_types?: string[] | null;
   game_modes?: string[] | null;
   themes?: string[] | null;
   map_size?: string | null;
@@ -543,7 +561,16 @@ export function rowToProduct(row: ProductRow): Product {
     creatorId: row.creator_id ?? null,
     specs: {
       mcVersions: row.mc_versions ?? [],
-      mapType: row.map_type ?? null,
+      // Пока обе колонки живы, читаем новую, а старую держим запасным
+      // путём: миграция прогоняется ДО деплоя, но база без неё (или
+      // строка, дописанная старым кодом) не должна терять тип карты.
+      // Уйдёт вместе со сносом map_type.
+      mapTypes:
+        row.map_types && row.map_types.length > 0
+          ? row.map_types
+          : row.map_type
+            ? [row.map_type]
+            : [],
       gameModes: row.game_modes ?? [],
       themes: row.themes ?? [],
       mapSize: row.map_size ?? null,
@@ -576,7 +603,7 @@ const PRODUCT_FIELDS_NO_IMAGES =
 // легко снять целиком, если база окажется без миграции, — см.
 // isMissingOptional ниже.
 const PRODUCT_SPEC_FIELDS =
-  "mc_versions, map_type, game_modes, themes, map_size, file_formats, tags, file_size_bytes, published_at, reaction_option_id";
+  "mc_versions, map_type, map_types, game_modes, themes, map_size, file_formats, tags, file_size_bytes, published_at, reaction_option_id";
 
 const PRODUCT_FIELDS = `${PRODUCT_FIELDS_NO_IMAGES}, creator_id, category, product_images(url, position), ${PRODUCT_SPEC_FIELDS}`;
 
@@ -595,6 +622,7 @@ function isMissingOptional(message: string): boolean {
     // спрашивать эти колонки — значит уронить витрину целиком.
     message.includes("mc_versions") ||
     message.includes("map_type") ||
+    message.includes("map_types") ||
     message.includes("game_modes") ||
     message.includes("themes") ||
     message.includes("map_size") ||
@@ -695,6 +723,7 @@ export async function getAllProductsWithStats(): Promise<Product[]> {
               username: c.username,
               handle: c.handle,
               isVerified: c.isVerified,
+              nameColor: c.nameColor,
             },
           }
         : {}),

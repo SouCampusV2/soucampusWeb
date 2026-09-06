@@ -41,6 +41,16 @@ describe("isMarketplaceRoute", () => {
     expect(isMarketplaceRoute("/resources/some-map/edit")).toBe(true);
   });
 
+  it("вики — магазинная сторона", () => {
+    // Попасть в неё можно только из магазина: ссылка стоит в
+    // SHOP_NAV_LINKS и в футерной колонке Marketplace. С 02.09 по
+    // 06.09 навбар там был портфолийный — про вики просто забыли, когда
+    // её заводили, и заметил это владелец глазами.
+    expect(isMarketplaceRoute("/wiki")).toBe(true);
+    expect(isMarketplaceRoute("/wiki/installing-a-map")).toBe(true);
+    expect(isMarketplaceRoute("/wiki/missing-blocks")).toBe(true);
+  });
+
   it("профиль продавца — витрина магазина", () => {
     // ⚠️ Здесь стоял /creator/upload, и проверка ПРОХОДИЛА всё время,
     // пока сама страница отдавала 404: она спрашивает, какой рисовать

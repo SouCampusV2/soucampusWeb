@@ -419,7 +419,6 @@ export function UploadMapForm({
           value={category}
           onChange={(v) => setCategory(v as ProductCategory)}
           options={FORM_CATEGORIES.map((c) => ({ value: c.slug, label: c.label }))}
-          required
         />
 
         <PriceField value={priceInput} onChange={setPriceInput} />

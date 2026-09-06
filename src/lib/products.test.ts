@@ -54,7 +54,7 @@ describe("rowToProduct", () => {
       // отсутствующее поле заставило бы её проверять ещё и это.
       specs: {
         mcVersions: [],
-        mapType: null,
+        mapTypes: [],
         gameModes: [],
         themes: [],
         mapSize: null,
@@ -261,7 +261,7 @@ describe("filterBySpecs", () => {
     ...base,
     slug: "spawn",
     mc_versions: ["1.21", "1.20"],
-    map_type: "Spawn",
+    map_types: ["Spawn"],
     file_formats: ["Java world"],
     game_modes: ["Hub & lobby"],
     map_size: "Large",
@@ -271,7 +271,7 @@ describe("filterBySpecs", () => {
     ...base,
     slug: "arena",
     mc_versions: ["1.8"],
-    map_type: "Minigame arena",
+    map_types: ["Minigame arena"],
     file_formats: ["Schematic"],
     game_modes: ["Minigame"],
     map_size: "Small",

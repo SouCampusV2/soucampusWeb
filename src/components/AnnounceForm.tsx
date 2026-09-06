@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Megaphone } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
+import { SelectField } from "@/components/SelectField";
 import { TextField } from "@/components/MapFormParts";
 import type { Recipient } from "@/lib/notifications";
 import { readApiError } from "@/lib/api-error";
@@ -75,27 +76,22 @@ export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
 
   return (
     <div className="mt-6 space-y-4">
-      <div>
-        <label
-          htmlFor="announce-to"
-          className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
-        >
-          Who gets it
-        </label>
-        <select
-          id="announce-to"
-          value={userId}
-          onChange={(e) => setUserId(e.target.value)}
-          className="w-full cursor-pointer rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-3 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:bg-zinc-900"
-        >
-          <option value="">Everyone ({recipients.length} accounts)</option>
-          {recipients.map((recipient) => (
-            <option key={recipient.id} value={recipient.id}>
-              {recipient.username}
-            </option>
-          ))}
-        </select>
-      </div>
+      {/* Свой список, а не <select>: раскрытый нативный рисует
+          операционная система, и в тёмной теме он приезжает белым.
+          Компонент общий с формами загрузки и правки карты. */}
+      <SelectField
+        id="announce-to"
+        label="Who gets it"
+        value={userId}
+        onChange={setUserId}
+        options={[
+          { value: "", label: `Everyone (${recipients.length} accounts)` },
+          ...recipients.map((recipient) => ({
+            value: recipient.id,
+            label: recipient.username,
+          })),
+        ]}
+      />
 
       <TextField
         id="announce-title"

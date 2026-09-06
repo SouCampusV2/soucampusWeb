@@ -27,12 +27,12 @@ import type { ProductSpecs } from "@/lib/products";
 /** Часть ProductSpecs, которую заполняет человек. */
 export type EditableSpecs = Pick<
   ProductSpecs,
-  "mcVersions" | "mapType" | "gameModes" | "themes" | "mapSize" | "fileFormats"
+  "mcVersions" | "mapTypes" | "gameModes" | "themes" | "mapSize" | "fileFormats"
 >;
 
 export const EMPTY_SPECS: EditableSpecs = {
   mcVersions: [],
-  mapType: null,
+  mapTypes: [],
   gameModes: [],
   themes: [],
   mapSize: null,
@@ -54,10 +54,13 @@ function Chip({
   label,
   active,
   onClick,
+  disabled = false,
 }: {
   label: string;
   active: boolean;
   onClick: () => void;
+  /** Выбор исчерпан — пилюлю гасим, но с экрана не убираем. */
+  disabled?: boolean;
 }) {
   return (
     // type="button" обязателен: кнопка без типа внутри <form> считается
@@ -65,8 +68,9 @@ function Chip({
     <button
       type="button"
       onClick={onClick}
+      disabled={disabled}
       aria-pressed={active}
-      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
+      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${
         active
           ? "border-orange-500 bg-orange-500/10 text-orange-700 dark:text-orange-300"
           : "border-zinc-950/[0.08] text-zinc-600 hover:border-zinc-400 dark:border-zinc-50/[0.08] dark:text-zinc-400 dark:hover:border-zinc-600"
@@ -101,6 +105,12 @@ function Group({
   );
 }
 
+// Потолок набора типов. Дублирует ограничение в базе
+// (20260906120000) НАМЕРЕННО: база решает, что можно сохранить, форма —
+// что человек успеет попробовать. Здесь число ради подписи и гашения
+// пилюль, а не ради защиты.
+const MAX_MAP_TYPES = 3;
+
 export function SpecFields({
   value,
   onChange,
@@ -129,18 +139,29 @@ export function SpecFields({
         ))}
       </Group>
 
-      <Group label="Type" hint="Pick one — a map is one thing.">
-        {MAP_TYPES.map((t) => (
-          <Chip
-            key={t}
-            label={t}
-            active={value.mapType === t}
-            // Повторное нажатие снимает выбор: иначе поставленное по
-            // ошибке значение уже не убрать, у одиночного выбора нет
-            // «пустого» пункта.
-            onClick={() => set({ mapType: value.mapType === t ? null : t })}
-          />
-        ))}
+      {/* До трёх (решение владельца 2026-09-06; было ровно одно).
+          Потолок стоит и в базе — здесь он только чтобы человек упёрся
+          в него до отправки, а не после отказа. */}
+      <Group
+        label="Type"
+        hint={`Up to ${MAX_MAP_TYPES} — pick what it actually is.`}
+      >
+        {MAP_TYPES.map((t) => {
+          const active = value.mapTypes.includes(t);
+          return (
+            <Chip
+              key={t}
+              label={t}
+              active={active}
+              // Четвёртый не выбирается молча: неотзывчивая пилюля
+              // читается как поломка. Гасим её и объясняем подписью.
+              disabled={!active && value.mapTypes.length >= MAX_MAP_TYPES}
+              onClick={() =>
+                set({ mapTypes: toggle(value.mapTypes, t, MAP_TYPES) })
+              }
+            />
+          );
+        })}
       </Group>
 
       <Group label="Game mode" hint="Pick any that fit.">
@@ -194,7 +215,7 @@ export function SpecFields({
 export function specsToColumns(specs: EditableSpecs) {
   return {
     mc_versions: specs.mcVersions,
-    map_type: specs.mapType,
+    map_types: specs.mapTypes,
     game_modes: specs.gameModes,
     themes: specs.themes,
     map_size: specs.mapSize,

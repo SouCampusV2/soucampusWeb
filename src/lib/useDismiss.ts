@@ -35,6 +35,26 @@ import { useEffect, useRef, type RefObject } from "react";
 // обратно — и выпадашка перестанет закрываться нажатием на свою же
 // кнопку. В MarketplaceFilters это чинилось особой проверкой
 // parentElement; с обёрткой она не нужна.
+// ⚠️ ESCAPE ЗАКРЫВАЕТ ТОЛЬКО ВЕРХНЮЮ ВЫПАДАШКУ (замечание владельца
+// 2026-09-06). До этого слушатель висел у каждой открытой независимо, и
+// одно нажатие закрывало ВСЁ разом: в попапе фильтров с раскрытой
+// сортировкой Escape уносил и список, и сам попап. Человек при этом
+// хотел отменить последнее действие, а не всю работу с фильтрами.
+//
+// Порядок хранит этот стек: открывшаяся выпадашка встаёт последней,
+// Escape достаётся только ей, закрылась — очередь переходит к
+// предыдущей. Стек модульный, а не в контексте React, потому что вопрос
+// «кто сейчас сверху» общий на всё дерево, и провайдер пришлось бы
+// оборачивать вокруг всего приложения ради одной клавиши.
+//
+// ⚠️ КЛИК МИМО СТЕКОМ НЕ ПОЛЬЗУЕТСЯ, и это не упущение. У него есть
+// собственный ответ на тот же вопрос — попадание в свой ref: клик внутри
+// попапа, но мимо списка сортировки, закрывает список (он снаружи) и не
+// трогает попап (он внутри). Класть сюда ещё и стек значило бы решать
+// уже решённое, причём хуже: клик по кнопке ВНЕ обеих выпадашек должен
+// закрывать обе, а стек закрыл бы одну.
+const escapeStack: Array<() => void> = [];
+
 export function useDismiss(
   ref: RefObject<HTMLElement | null>,
   onDismiss: () => void,
@@ -62,8 +82,17 @@ export function useDismiss(
     function onPointerDown(event: PointerEvent) {
       if (!ref.current?.contains(event.target as Node)) latest.current();
     }
+    // Своя стрелка на каждый экземпляр: по ней же ищем себя в стеке при
+    // уборке. Ссылка на latest.current напрямую сюда не годится — она
+    // меняется между рендерами, и снять со стека было бы нечего.
+    const close = () => latest.current();
+    escapeStack.push(close);
+
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") latest.current();
+      if (event.key !== "Escape") return;
+      // Верхняя — последняя открывшаяся. Остальные слушатели тоже
+      // получат событие, но промолчат.
+      if (escapeStack[escapeStack.length - 1] === close) close();
     }
 
     document.addEventListener("pointerdown", onPointerDown, true);
@@ -71,6 +100,46 @@ export function useDismiss(
     return () => {
       document.removeEventListener("pointerdown", onPointerDown, true);
       document.removeEventListener("keydown", onKeyDown);
+      // По значению, а не pop(): выпадашки закрываются не только в
+      // обратном порядке — попап можно закрыть кнопкой Apply, пока
+      // список сортировки внутри него ещё открыт.
+      const at = escapeStack.lastIndexOf(close);
+      if (at !== -1) escapeStack.splice(at, 1);
     };
   }, [enabled, ref]);
+}
+
+/**
+ * Только очередь Escape, без клика мимо.
+ *
+ * Для того, у чего нет «снаружи» в смысле ref: модальное окно закрывает
+ * клик по затемнению, а не промах мимо панели. Но в общей очереди оно
+ * стоять обязано — иначе Escape над открытой выпадашкой закроет и её, и
+ * окно поверх неё, то есть вернётся та же болезнь, что чинили в
+ * useDismiss.
+ */
+export function useEscapeLayer(onEscape: () => void, enabled: boolean) {
+  const latest = useRef(onEscape);
+  useEffect(() => {
+    latest.current = onEscape;
+  });
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    const close = () => latest.current();
+    escapeStack.push(close);
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      if (escapeStack[escapeStack.length - 1] === close) close();
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      const at = escapeStack.lastIndexOf(close);
+      if (at !== -1) escapeStack.splice(at, 1);
+    };
+  }, [enabled]);
 }

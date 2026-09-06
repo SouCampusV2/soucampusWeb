@@ -26,8 +26,8 @@ export default async function AdminCommentsPage() {
   const live = comments.filter((c) => !c.deletedBy);
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-12">
-      <div className="flex items-center justify-between gap-4">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
           Comments
         </h1>
@@ -53,11 +53,31 @@ export default async function AdminCommentsPage() {
       ) : (
         <ul className="mt-8 space-y-4">
           {comments.map((comment) => (
+            // Снятый площадкой подсвечен красным (просьба владельца).
+            // Не «удалённый вообще»: своё удаление автора и удаление
+            // автором карты — обычные события, а `site` означает, что
+            // вмешалась площадка, и в списке из полусотни строк такие
+            // нужно находить глазами, не читая подписи.
+            //
+            // Фон, а не рамка: рамка есть у всех, и красная читалась бы
+            // как выделение, а не как состояние.
             <li
               key={comment.id}
-              className="rounded-2xl border border-zinc-200 p-5 dark:border-zinc-800"
+              className={`rounded-2xl border p-4 sm:p-5 ${
+                // "moderator" — это и есть «сняла площадка»: так метку
+                // ставит soft_delete_comment по роли удалившего. Ниже,
+                // в подписи, тот же случай называется «Removed by the
+                // site» — одно состояние, два слова для него, и путать
+                // их нельзя.
+                comment.deletedBy === "moderator"
+                  ? "border-red-200 bg-red-50 dark:border-red-900/60 dark:bg-red-950/30"
+                  : "border-zinc-200 dark:border-zinc-800"
+              }`}
             >
-              <div className="flex items-baseline justify-between gap-3">
+              {/* На телефоне действие уезжает под шапку: имя, дата и
+                  название карты вместе занимают всю ширину, и кнопка
+                  справа от них сжимала ссылку до двух букв. */}
+              <div className="flex flex-col gap-2 sm:flex-row sm:items-baseline sm:justify-between sm:gap-3">
                 <div className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1 text-sm">
                   <span
                     className="font-semibold text-zinc-950 dark:text-zinc-50"

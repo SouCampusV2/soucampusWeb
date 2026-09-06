@@ -40,7 +40,7 @@ import type { Product } from "@/lib/products";
  */
 const WEIGHTS = {
   category: 5,
-  mapType: 4,
+  mapTypes: 4,
   theme: 3,
   tag: 2,
   gameMode: 1,
@@ -96,12 +96,15 @@ export function similarityScore(base: Product, other: Product): number {
   // Пустое поле не совпадает с пустым: две карты, у которых тип не
   // заполнен, не становятся от этого похожими. Иначе все карты, залитые
   // до миграции с характеристиками, слиплись бы в одну кучу.
-  if (
-    base.specs.mapType &&
-    other.specs.mapType &&
-    base.specs.mapType.toLowerCase() === other.specs.mapType.toLowerCase()
-  ) {
-    score += WEIGHTS.mapType;
+  // Тип стал НАБОРОМ (2026-09-06), и совпадением считается пересечение
+  // хотя бы по одному значению — не по всем. Карта «Spawn + City» и
+  // карта «Spawn» похожи, и требовать полного совпадения наборов
+  // означало бы наказывать автора за то, что он описал работу подробнее.
+  //
+  // Балл при этом НЕ умножается на число совпадений: иначе тип начал бы
+  // перевешивать всё остальное у карт с тремя метками.
+  if (overlap(base.specs.mapTypes, other.specs.mapTypes) > 0) {
+    score += WEIGHTS.mapTypes;
   }
 
   score += Math.min(

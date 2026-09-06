@@ -41,8 +41,16 @@ export default async function ResourcesPage() {
   const supabase = await createSupabaseServer();
   const user = await getCurrentUser(supabase);
 
+  // Гостя уводим НА ВИТРИНУ, а не на вход (правка 2026-09-06 по
+  // замечанию владельца). Пока приём авторов заморожен, «войди, чтобы
+  // попасть сюда» — обещание, которое мы не выполним: вошедший без
+  // статуса тут же уедет на витрину следующим редиректом ниже. Два шага
+  // там, где честный ответ — ноль.
+  //
+  // ⚠️ При разморозке креаторства вернуть /login?next=/resources: тогда
+  // вход снова будет вести к чему-то, а не по кругу.
   if (!user) {
-    redirect("/login?next=/resources");
+    redirect(CREATOR_SIGNUPS_OPEN ? "/login?next=/resources" : "/marketplace");
   }
 
   // Право загружать и состояние заявки — параллельно, они независимы.

@@ -27,7 +27,7 @@ export default async function SignupPage({
           <h1
             className={`${displayFont.className} text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
           >
-            Create your account
+            Create account
           </h1>
           <p className="mt-4 text-zinc-600 dark:text-zinc-400">
             One account for every map you buy and download.

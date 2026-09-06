@@ -238,7 +238,7 @@ export async function getOwnProduct(
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, slug, title, summary, description, image_url, price_cents, category, state, rejection_reason, rejection_flags, file_path, product_images(url, position), mc_versions, map_type, game_modes, themes, map_size, file_formats, reaction_option_id"
+      "id, slug, title, summary, description, image_url, price_cents, category, state, rejection_reason, rejection_flags, file_path, product_images(url, position), mc_versions, map_type, map_types, game_modes, themes, map_size, file_formats, reaction_option_id"
     )
     .eq("creator_id", userId)
     .eq("slug", slug)
@@ -266,6 +266,7 @@ export async function getOwnProduct(
     product_images: { url: string; position: number }[] | null;
     mc_versions: string[] | null;
     map_type: string | null;
+    map_types: string[] | null;
     game_modes: string[] | null;
     themes: string[] | null;
     map_size: string | null;
@@ -295,7 +296,12 @@ export async function getOwnProduct(
     rejectionFlags: row.rejection_flags ?? [],
     specs: {
       mcVersions: row.mc_versions ?? [],
-      mapType: row.map_type ?? null,
+      mapTypes:
+        row.map_types && row.map_types.length > 0
+          ? row.map_types
+          : row.map_type
+            ? [row.map_type]
+            : [],
       gameModes: row.game_modes ?? [],
       themes: row.themes ?? [],
       mapSize: row.map_size ?? null,
