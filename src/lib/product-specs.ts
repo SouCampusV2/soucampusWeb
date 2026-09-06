@@ -49,8 +49,12 @@ export const THEMES = [
 export const MAP_SIZES = ["Small", "Medium", "Large", "Huge"] as const;
 
 /** В каком виде отдаётся файл. */
+// ⚠️ Datapack и Resource pack убраны 2026-09-06 (решение владельца): мы
+// их не продаём, а формат в списке — это обещание, что такое бывает.
+// Вернуть, когда такой товар появится, — словарь на то и в коде, что
+// правится без миграции.
 export const FILE_FORMATS = [
-  "Java world", "Bedrock world", "Schematic", "Datapack", "Resource pack",
+  "Java world", "Bedrock world", "Schematic",
 ] as const;
 
 /**

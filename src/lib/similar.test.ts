@@ -13,7 +13,7 @@ import type { Product, ProductSpecs } from "./products";
 
 const EMPTY_SPECS: ProductSpecs = {
   mcVersions: [],
-  mapType: null,
+  mapTypes: [],
   gameModes: [],
   themes: [],
   mapSize: null,
@@ -87,12 +87,12 @@ describe("similarityScore", () => {
     const a = make({
       category: "spawn",
       creatorId: "c1",
-      specs: { ...EMPTY_SPECS, mapType: "Hub", tags: ["pvp", "arena"] },
+      specs: { ...EMPTY_SPECS, mapTypes: ["Hub"], tags: ["pvp", "arena"] },
     });
     const b = make({
       category: "spawn",
       creatorId: "c1",
-      specs: { ...EMPTY_SPECS, mapType: "hub", tags: ["arena"] },
+      specs: { ...EMPTY_SPECS, mapTypes: ["hub"], tags: ["arena"] },
     });
     expect(similarityScore(a, b)).toBe(similarityScore(b, a));
   });
@@ -151,12 +151,12 @@ describe("pickSimilar", () => {
   it("ставит более похожую карту выше", () => {
     const base = make({
       category: "adventure",
-      specs: { ...EMPTY_SPECS, mapType: "Quest", themes: ["fantasy"] },
+      specs: { ...EMPTY_SPECS, mapTypes: ["Quest"], themes: ["fantasy"] },
     });
     const weaker = make({ category: "adventure" });
     const stronger = make({
       category: "adventure",
-      specs: { ...EMPTY_SPECS, mapType: "Quest", themes: ["fantasy"] },
+      specs: { ...EMPTY_SPECS, mapTypes: ["Quest"], themes: ["fantasy"] },
     });
     const [first, second] = pickSimilar(base, [weaker, stronger]);
     expect(first.id).toBe(stronger.id);

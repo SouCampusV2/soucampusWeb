@@ -103,7 +103,7 @@ export function ProductSpecs({
     // Тип и размер — одиночные значения, но показываем той же пилюлей:
     // разный вид у соседних строк читался бы как разный смысл, которого
     // здесь нет.
-    { label: "Type", values: specs.mapType ? [specs.mapType] : [] },
+    { label: "Type", values: specs.mapTypes },
     { label: "Game mode", values: specs.gameModes },
     { label: "Theme", values: specs.themes },
     { label: "Size", values: specs.mapSize ? [specs.mapSize] : [] },
