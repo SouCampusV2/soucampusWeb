@@ -193,7 +193,12 @@ You can submit a new map again after ${new Date(
               : rejectionReason,
             // На правку, а не на витрину: исправил — карта сама
             // возвращается в очередь.
-            href: `/resources/${data.slug}/edit`,
+            //
+            // Адрес админский с 2026-09-06 (форма правки переехала).
+            // Старые уведомления по-прежнему держат «/resources/<карта>/edit»
+            // — их спасает редирект в next.config.ts, и он поэтому
+            // остаётся навсегда.
+            href: `/admin/products/${data.slug}/edit`,
           }
     );
   }

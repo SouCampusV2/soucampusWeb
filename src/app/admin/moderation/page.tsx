@@ -54,8 +54,8 @@ export default async function ModerationPage() {
   const pending = await getPendingProducts();
 
   return (
-    <div className="mx-auto max-w-5xl px-6 py-12">
-      <div className="flex items-center justify-between gap-4">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
+      <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
         <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
           Moderation queue
         </h1>

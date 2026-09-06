@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { AdminNav } from "@/components/AdminNav";
 import { notFound } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import { getAdminUser } from "@/lib/admin";
@@ -31,16 +32,13 @@ export default async function AdminLayout({
 
   return (
     <div className="flex min-h-screen flex-col bg-[#fbfbff] dark:bg-zinc-950">
-      {/* Шапка на телефоне. Была одна строка `justify-between` с пятью
-          разделами, почтой и двумя ссылками — на 360px это сжимало
-          пункты в нечитаемую кашу и вылезало за экран.
-          Теперь две строки: сверху имя и служебное (почта прячется —
-          владелец и так знает, под кем сидит), снизу разделы. Разделы
-          не переносятся, а ПРОКРУЧИВАЮТСЯ вбок: перенос на вторую-третью
-          строку съедал бы пол-экрана на каждой странице, а горизонтальная
-          лента — это ровно то, чего ждёшь от ряда вкладок. */}
+      {/* Шапка на телефоне — две строки: сверху имя и тема, снизу
+          разделы (почта прячется, владелец и так знает, под кем сидит).
+          ⚠️ Разделы с 2026-09-06 в ГАМБУРГЕРЕ, а не в прокручиваемой
+          ленте: лента ничем о себе не сообщала, и половина разделов на
+          узком экране просто не существовала. Разбор — в AdminNav. */}
       <header className="border-b border-zinc-200 dark:border-zinc-800">
-        <div className="mx-auto flex max-w-5xl flex-col gap-3 px-6 py-4 md:flex-row md:items-center md:justify-between md:gap-4">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-6 py-4 md:flex-row md:items-center md:justify-between md:gap-4">
           <div className="flex items-center justify-between gap-4 md:justify-start">
             <Link
               href="/admin"
@@ -54,47 +52,7 @@ export default async function AdminLayout({
               <ThemeToggle />
             </div>
           </div>
-          {/* Разделы админки. Без выделения активного: подсветка требует
-              usePathname, то есть клиентской границы вокруг всего layout.
-              Дойдут руки — вернуться. */}
-          <nav className="-mx-6 flex items-center gap-4 overflow-x-auto px-6 text-sm [scrollbar-width:none] md:mx-0 md:overflow-visible md:px-0">
-            <Link
-              href="/admin"
-              className="shrink-0 whitespace-nowrap font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
-            >
-              Overview
-            </Link>
-            <Link
-              href="/admin/moderation"
-              className="shrink-0 whitespace-nowrap font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
-            >
-              Queue
-            </Link>
-            <Link
-              href="/admin/products"
-              className="shrink-0 whitespace-nowrap font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
-            >
-              Catalog
-            </Link>
-            <Link
-              href="/admin/applications"
-              className="shrink-0 whitespace-nowrap font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
-            >
-              Creators
-            </Link>
-            <Link
-              href="/admin/comments"
-              className="shrink-0 whitespace-nowrap font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
-            >
-              Comments
-            </Link>
-            <Link
-              href="/admin/announce"
-              className="shrink-0 whitespace-nowrap font-medium text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
-            >
-              Announce
-            </Link>
-          </nav>
+          <AdminNav />
 
           <div className="flex shrink-0 items-center gap-4 text-sm">
             {/* Почта — справка «под кем я зашёл», на телефоне она первой

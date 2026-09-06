@@ -66,7 +66,7 @@ export default async function AddMapPage() {
 
   if (!creator || blockedUntil) {
     return (
-      <div className="mx-auto max-w-3xl px-6 py-12">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
         <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
           Add a map
         </h1>
@@ -121,7 +121,7 @@ export default async function AddMapPage() {
   const pending = own.filter((p) => p.state === "pending");
 
   return (
-    <div className="mx-auto max-w-3xl px-6 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
         Add a map
       </h1>
