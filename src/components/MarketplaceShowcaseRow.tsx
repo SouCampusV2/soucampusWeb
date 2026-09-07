@@ -20,11 +20,17 @@ export function MarketplaceShowcaseRow({
   products,
   viewAllHref,
   viewAllLabel = "View all",
+  priorityFirst = false,
 }: {
   title: string;
   products: Product[];
   viewAllHref?: string;
   viewAllLabel?: string;
+  /**
+   * Грузить обложку первой карточки сразу. Ставит только витрина и
+   * только самому верхнему ряду — см. MarketplaceShowcase.
+   */
+  priorityFirst?: boolean;
 }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
 
@@ -117,7 +123,7 @@ export function MarketplaceShowcaseRow({
         onScroll={measure}
         className="mt-6 flex snap-x snap-mandatory gap-4 overflow-x-auto pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
       >
-        {products.map((product) => (
+        {products.map((product, i) => (
           // Ширина карточки повторяет колонку сетки «All maps» на каждой
           // контрольной точке (1/2/3/4 колонки, gap-4 = 1rem): вычитаем из
           // 100% суммарные промежутки и делим на число колонок. Раньше
@@ -127,7 +133,16 @@ export function MarketplaceShowcaseRow({
             key={product.slug}
             className="w-full shrink-0 snap-start sm:w-[calc((100%-1rem)/2)] lg:w-[calc((100%-2rem)/3)] xl:w-[calc((100%-3rem)/4)]"
           >
-            <ProductCard product={product} className="h-full" />
+            {/* priority только ПЕРВОЙ карточке и только в первом ряду
+                (проп priorityFirst приходит сверху): на телефоне она и
+                есть LCP-элемент витрины. Остальные остаются ленивыми —
+                иначе восемь обложек начнут соревноваться за канал с той
+                единственной, ради которой всё и делается. */}
+            <ProductCard
+              product={product}
+              className="h-full"
+              priority={priorityFirst && i === 0}
+            />
           </div>
         ))}
       </div>

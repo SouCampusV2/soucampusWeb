@@ -6,6 +6,18 @@ import { MagnifyingGlass, X } from "@phosphor-icons/react";
 import { SHOP_CATEGORIES, type ProductCategory } from "@/lib/products";
 import { MarketplaceFilters } from "@/components/MarketplaceFilters";
 import { TOGGLE_PILL_COLORS } from "@/components/Button";
+// ⚠️ Классы общие с CategoryFilterStatic — серверным близнецом этой
+// панели, который стоит в fallback у <Suspense>. Разъедутся — вернётся
+// сдвиг макета: разбор в lib/catalog-chrome.ts.
+import {
+  CATALOG_BAR_OUTER,
+  CATALOG_BAR_ROW,
+  CATALOG_PILL,
+  CATALOG_PILL_ROW,
+  CATALOG_SEARCH_FORM,
+  CATALOG_SEARCH_GROUP,
+  CATALOG_SEARCH_INPUT,
+} from "@/lib/catalog-chrome";
 
 // Фильтр категорий на самой витрине. Раньше категории жили вкладками в
 // навбаре — с восемью штуками это перестало помещаться (решение владельца
@@ -124,12 +136,11 @@ export function CategoryFilter() {
     router.push(query ? `/marketplace?${query}` : "/marketplace", { scroll: false });
   }
 
-  const pill =
-    "cursor-pointer rounded-full border px-4 py-2 text-sm font-medium transition-colors";
+  const pill = CATALOG_PILL;
   const { off: inactive, on: selected } = TOGGLE_PILL_COLORS;
 
   const pills = (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className={CATALOG_PILL_ROW}>
       {/* На главной витрине НЕ подсвечена ни одна пилюля — там не выбран
           ни один список, там их несколько. Раньше «All maps» горела по
           умолчанию, потому что «выбрано ничего» и значило «показаны все». */}
@@ -175,8 +186,8 @@ export function CategoryFilter() {
   );
 
   return (
-    <div className="mt-8">
-      <div className="flex flex-col gap-3 sm:flex-row-reverse sm:items-start sm:justify-between sm:gap-6">
+    <div className={CATALOG_BAR_OUTER}>
+      <div className={CATALOG_BAR_ROW}>
       {/* Поиск справа на широком экране, сверху на узком: на телефоне
           набирать удобнее сразу, а не после прокрутки списка категорий. */}
       {/* key={activeQuery} здесь БОЛЬШЕ НЕТ — и это принципиально.
@@ -190,7 +201,7 @@ export function CategoryFilter() {
           прежним, хотя список обновляется. */}
       {/* Поиск и фильтры — одной группой: оба сужают выдачу, и стоять
           они должны рядом, а не по разным углам экрана. */}
-      <div className="flex w-full items-start gap-2 sm:w-auto">
+      <div className={CATALOG_SEARCH_GROUP}>
         <SearchField
           initialQuery={activeQuery}
           onSubmit={submitSearch}
@@ -253,7 +264,7 @@ function SearchField({
         event.preventDefault();
         onSubmit(value);
       }}
-      className="relative w-full sm:max-w-xs"
+      className={CATALOG_SEARCH_FORM}
     >
       <MagnifyingGlass
         size={16}
@@ -272,7 +283,7 @@ function SearchField({
         onChange={(event) => setValue(event.target.value)}
         aria-label="Search maps and creators"
         placeholder="Search maps or creators"
-        className="w-full rounded-full border border-zinc-950/[0.08] bg-transparent py-2.5 pl-10 pr-9 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
+        className={CATALOG_SEARCH_INPUT}
       />
       {value && (
         <button

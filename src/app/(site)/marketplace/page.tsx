@@ -6,6 +6,8 @@ import { getAllProducts, getAllProductsWithStats } from "@/lib/products";
 import { MarketplaceCatalog } from "@/components/MarketplaceCatalog";
 import { CategoryFilter } from "@/components/CategoryFilter";
 import { MarketplaceCta } from "@/components/MarketplaceCta";
+import { MarketplaceShowcase } from "@/components/MarketplaceShowcase";
+import { CategoryFilterStatic } from "@/components/CategoryFilterStatic";
 import { PageGlow } from "@/components/PageGlow";
 import { INLINE_LINK } from "@/components/Button";
 
@@ -77,7 +79,40 @@ export default async function MarketplacePage() {
         // состояние — сам адрес, а не проп между ними. Suspense обязателен
         // вокруг useSearchParams, иначе статическая /marketplace свалилась бы
         // целиком в client-render.
-        <Suspense>
+        //
+        // ⚠️ FALLBACK ЗДЕСЬ — НЕ ЗАГЛУШКА, А ТА ЖЕ ВИТРИНА, НАРИСОВАННАЯ
+        // СЕРВЕРОМ, и в этом весь смысл правки 2026-09-07.
+        //
+        // Что было: fallback отсутствовал, поддерево на сервере не
+        // рисовалось вовсе, и в HTML на месте каталога была пустота
+        // высотой ноль. Браузер получал шапку, сразу под ней баннер
+        // заказа — и вставлял каталог между ними уже сам, сдвигая баннер
+        // на пол-экрана. Замерено на живом сайте: CLS 0.452 при пороге
+        // 0.1. Заодно краулер видел магазин без единой карты.
+        //
+        // Что теперь: fallback рендерится НА СЕРВЕРЕ, поэтому в HTML
+        // лежат настоящие ряды подборок и настоящие ссылки на категории.
+        // Клиент на пустом адресе рисует ровно то же самое (тот же
+        // MarketplaceShowcase, те же классы панели) — сдвигаться нечему.
+        //
+        // ⚠️ Серые прямоугольники-скелет здесь ПРОБОВАЛИ И ОТКАТИЛИ 06.09:
+        // CLS стал 0.817, вдвое хуже. У витрины два экрана разной высоты,
+        // и заглушка, не совпавшая с содержимым, превращает один сдвиг в
+        // два. Совпасть может только само содержимое.
+        //
+        // ⚠️ На адресе С ПАРАМЕТРОМ сдвиг остаётся: сервер при статической
+        // сборке параметров не знает и рисует главный экран. Это принято
+        // сознательно — такие адреса не индексируются и входной точкой не
+        // являются. Убрать и его можно, только сделав страницу
+        // динамической (пункт 12 плана, ждёт сотни карт).
+        <Suspense
+          fallback={
+            <>
+              <CategoryFilterStatic />
+              <MarketplaceShowcase products={products} />
+            </>
+          }
+        >
           <CategoryFilter />
           <MarketplaceCatalog products={products} />
         </Suspense>
