@@ -44,7 +44,12 @@ export default function WikiIndexPage() {
       <div className="mx-auto max-w-6xl space-y-14 pb-16 sm:pb-24">
         {WIKI_SECTIONS.map((section) => (
           <section key={section.id}>
-            <h2 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-3xl">
+            {/* Заголовок раздела внутри длинного документа — без
+                sm:-шага, как в /privacy и в теле статьи вики
+                (DESIGN.md → «Типографика»). До 07.09 здесь стоял ещё и
+                sm:text-3xl, и на сайте было ТРИ разных начертания
+                «заголовка секции» вместо двух. */}
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
               {section.title}
             </h2>
             <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">

@@ -55,6 +55,52 @@ import { useEffect, useRef, type RefObject } from "react";
 // закрывать обе, а стек закрыл бы одну.
 const escapeStack: Array<() => void> = [];
 
+/**
+ * Очередь Escape — общая часть `useDismiss` и `useEscapeLayer`.
+ *
+ * ⚠️ Вынесено 07.09 по находке еженедельного отчёта: обе функции держали
+ * этот блок дословно, и написаны они были В ОДИН ДЕНЬ — то есть это не
+ * «копии, разъехавшиеся со временем», а копипаст в момент письма. Тем
+ * обиднее, что прямо над ним в этом же файле стоит комментарий про пять
+ * копий одного эффекта: заметить шестую и седьмую в себе самом не
+ * получилось.
+ */
+function useEscapeStack(onEscape: () => void, enabled: boolean) {
+  // Колбэк в ref, а не в зависимостях: на месте вызова его пишут стрелкой
+  // прямо в аргументе, то есть каждый рендер даёт новую функцию.
+  const latest = useRef(onEscape);
+  useEffect(() => {
+    latest.current = onEscape;
+  });
+
+  useEffect(() => {
+    if (!enabled) return;
+
+    // Своя стрелка на каждый экземпляр: по ней же ищем себя в стеке при
+    // уборке. Ссылка на latest.current не годится — она меняется между
+    // рендерами, и снять со стека было бы нечего.
+    const close = () => latest.current();
+    escapeStack.push(close);
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      // Верхняя — последняя открывшаяся. Остальные слушатели событие тоже
+      // получат, но промолчат.
+      if (escapeStack[escapeStack.length - 1] === close) close();
+    }
+
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("keydown", onKeyDown);
+      // По значению, а не pop(): выпадашки закрываются не только в
+      // обратном порядке — попап можно закрыть кнопкой Apply, пока список
+      // сортировки внутри него ещё открыт.
+      const at = escapeStack.lastIndexOf(close);
+      if (at !== -1) escapeStack.splice(at, 1);
+    };
+  }, [enabled]);
+}
+
 export function useDismiss(
   ref: RefObject<HTMLElement | null>,
   onDismiss: () => void,
@@ -71,40 +117,29 @@ export function useDismiss(
   // и React это запрещает (линтер поймал сразу). Эффект без зависимостей
   // выполняется после каждого рендера, то есть заведомо раньше, чем
   // человек успеет куда-то нажать.
-  const latest = useRef(onDismiss);
+  // Очередь Escape — общая (см. useEscapeStack выше).
+  useEscapeStack(onDismiss, enabled);
+
+  // Здесь остаётся только клик мимо. Он стеком НЕ пользуется намеренно: у
+  // него есть свой ответ на тот же вопрос — попадание в свой ref. Клик
+  // внутри попапа, но мимо списка сортировки, закрывает список (он
+  // снаружи) и не трогает попап (он внутри); а клик по кнопке ВНЕ обеих
+  // должен закрывать обе, и стек закрыл бы одну.
+  const latestPointer = useRef(onDismiss);
   useEffect(() => {
-    latest.current = onDismiss;
+    latestPointer.current = onDismiss;
   });
 
   useEffect(() => {
     if (!enabled) return;
 
     function onPointerDown(event: PointerEvent) {
-      if (!ref.current?.contains(event.target as Node)) latest.current();
-    }
-    // Своя стрелка на каждый экземпляр: по ней же ищем себя в стеке при
-    // уборке. Ссылка на latest.current напрямую сюда не годится — она
-    // меняется между рендерами, и снять со стека было бы нечего.
-    const close = () => latest.current();
-    escapeStack.push(close);
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
-      // Верхняя — последняя открывшаяся. Остальные слушатели тоже
-      // получат событие, но промолчат.
-      if (escapeStack[escapeStack.length - 1] === close) close();
+      if (!ref.current?.contains(event.target as Node)) latestPointer.current();
     }
 
     document.addEventListener("pointerdown", onPointerDown, true);
-    document.addEventListener("keydown", onKeyDown);
     return () => {
       document.removeEventListener("pointerdown", onPointerDown, true);
-      document.removeEventListener("keydown", onKeyDown);
-      // По значению, а не pop(): выпадашки закрываются не только в
-      // обратном порядке — попап можно закрыть кнопкой Apply, пока
-      // список сортировки внутри него ещё открыт.
-      const at = escapeStack.lastIndexOf(close);
-      if (at !== -1) escapeStack.splice(at, 1);
     };
   }, [enabled, ref]);
 }
@@ -119,27 +154,5 @@ export function useDismiss(
  * useDismiss.
  */
 export function useEscapeLayer(onEscape: () => void, enabled: boolean) {
-  const latest = useRef(onEscape);
-  useEffect(() => {
-    latest.current = onEscape;
-  });
-
-  useEffect(() => {
-    if (!enabled) return;
-
-    const close = () => latest.current();
-    escapeStack.push(close);
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
-      if (escapeStack[escapeStack.length - 1] === close) close();
-    }
-
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("keydown", onKeyDown);
-      const at = escapeStack.lastIndexOf(close);
-      if (at !== -1) escapeStack.splice(at, 1);
-    };
-  }, [enabled]);
+  useEscapeStack(onEscape, enabled);
 }

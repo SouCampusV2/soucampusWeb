@@ -27,7 +27,8 @@ export function ProfileEditForm({
 
   const [username, setUsername] = useState(initial.username);
 
-  // До какой даты username менять нельзя (30 дней с прошлой смены).
+  // До какой даты username менять нельзя (USERNAME_COOLDOWN_DAYS дней
+  // с прошлой смены — числом не писать, оно уже менялось).
   // Считаем ЗДЕСЬ только для подписи под полем — настоящий запрет стоит
   // в триггере guard_username_change, и он же отказал бы, соври мы тут.
   // null — менять можно прямо сейчас (ни разу не меняли или месяц вышел).
