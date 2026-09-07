@@ -21,10 +21,25 @@ export function ProductCardImage({
   images,
   alt,
   priceLabel,
+  priority = false,
 }: {
   images: string[];
   alt: string;
   priceLabel: string;
+  /**
+   * Грузить обложку сразу, без ожидания прокрутки.
+   *
+   * ⚠️ Ставится ТОЛЬКО первой карточке первого ряда витрины. С 07.09
+   * каталог приходит уже в серверном HTML, и первая обложка стала
+   * LCP-элементом страницы — а она была ленивой, то есть мы сами просили
+   * браузер отложить ровно то, по чему нас меряют. Ровно та же ошибка,
+   * что до этого нашлась у баннера заказа.
+   *
+   * ⚠️ И только ОДНОЙ. Пометить так весь ряд — значит отменить ленивую
+   * загрузку для восьми картинок сразу: они начнут соревноваться за
+   * канал с той единственной, которая и есть LCP, и сделают хуже.
+   */
+  priority?: boolean;
 }) {
   const [index, setIndex] = useState(0);
   const many = images.length > 1;
@@ -56,6 +71,7 @@ export function ProductCardImage({
         alt={alt}
         fill
         sizes="(min-width: 640px) 20rem, 85vw"
+        priority={priority}
         className="object-cover transition-transform duration-300 group-hover:scale-105"
       />
 

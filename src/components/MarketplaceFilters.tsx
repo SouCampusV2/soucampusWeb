@@ -23,6 +23,9 @@ import {
   readCatalogQuery,
 } from "@/lib/catalog-params";
 import { useDismiss } from "@/lib/useDismiss";
+// Класс кнопки общий с серверным близнецом панели (CategoryFilterStatic):
+// высота у них обязана совпадать, иначе панель поедет при гидратации.
+import { CATALOG_FILTER_BUTTON } from "@/lib/catalog-chrome";
 
 // Фильтры витрины — В ПОПАПЕ, а не рядами пилюль на странице (решение
 // владельца 2026-08-26; до этого здесь был один ряд пилюль по цене).
@@ -131,7 +134,7 @@ export function MarketplaceFilters() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="dialog"
-        className={`relative flex h-[42px] cursor-pointer items-center gap-2 rounded-full border px-4 text-sm font-medium transition-colors ${
+        className={`${CATALOG_FILTER_BUTTON} ${
           count > 0
             ? "border-orange-500 text-orange-700 dark:border-orange-400 dark:text-orange-400"
             : TOGGLE_PILL_COLORS.off

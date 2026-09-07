@@ -35,6 +35,7 @@ export function ProductCard({
   product,
   creator,
   className = "",
+  priority = false,
 }: {
   product: Product;
   /**
@@ -50,6 +51,8 @@ export function ProductCard({
     nameColor?: string | null;
   };
   className?: string;
+  /** Обложка грузится сразу — только для первой карточки витрины. */
+  priority?: boolean;
 }) {
   const { rating, ratingCount, salesCount } = product;
   // Товар без автора (creator_id обнулился вместе с удалённым аккаунтом)
@@ -93,6 +96,7 @@ export function ProductCard({
         images={images}
         alt={product.title}
         priceLabel={product.price}
+        priority={priority}
       />
 
       <div className="pointer-events-none flex flex-1 flex-col p-4">

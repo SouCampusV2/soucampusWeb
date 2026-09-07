@@ -17,7 +17,7 @@ import {
 } from "@/lib/products";
 import { readCatalogQuery } from "@/lib/catalog-params";
 import { ProductCard } from "@/components/ProductCard";
-import { MarketplaceShowcaseRow } from "@/components/MarketplaceShowcaseRow";
+import { MarketplaceShowcase } from "@/components/MarketplaceShowcase";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -81,37 +81,12 @@ export function MarketplaceCatalog({ products }: { products: Product[] }) {
     // не этот файл: ровно тот же порядок нужен подстранице, куда ведёт
     // «View all». Пока сортировка жила здесь, ряд и его же страница
     // могли начинаться с разных карт.
-    const take = 8;
-
-    // Рядов по конкретным категориям на витрине по-прежнему НЕТ: категории
-    // выбираются пилюлями прямо над рядами (CategoryFilter), и дублировать
-    // их ещё и рядами — лишний шум. Ряды остаются под подборки, которые
-    // категорией не выразить: популярное, новое, лучшее по оценкам,
-    // бесплатное.
-    return (
-      <>
-        <MarketplaceShowcaseRow
-          title="Most popular"
-          products={sortByCollection(products, "popular").slice(0, take)}
-          viewAllHref="/marketplace?collection=popular"
-        />
-        <MarketplaceShowcaseRow
-          title="Recently added"
-          products={sortByCollection(products, "recent").slice(0, take)}
-          viewAllHref="/marketplace?collection=recent"
-        />
-        <MarketplaceShowcaseRow
-          title="Top rated"
-          products={sortByCollection(products, "top-rated").slice(0, take)}
-          viewAllHref="/marketplace?collection=top-rated"
-        />
-        <MarketplaceShowcaseRow
-          title="Free to download"
-          products={filterByCategory(products, "free").slice(0, take)}
-          viewAllHref="/marketplace?category=free"
-        />
-      </>
-    );
+    // ⚠️ Ряды вынесены в MarketplaceShowcase и рисуются ТЕМ ЖЕ
+    // компонентом, что стоит в fallback у <Suspense> на странице. Так
+    // серверный HTML и то, что рисует браузер, совпадают дословно — а
+    // значит витрина не дёргается при гидратации. Копию здесь заводить
+    // нельзя: разойдутся — вернётся сдвиг (разбор в MarketplaceShowcase).
+    return <MarketplaceShowcase products={products} />;
   }
 
   // Подстраница. Порядок шагов важен: сперва ЧТО за список (подборка или
