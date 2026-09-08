@@ -26,38 +26,18 @@
 // добивает их вызовом с истёкшим окном — функция сама удаляет свои
 // протухшие строки той же пары (bucket, actor).
 // ============================================================
-import fs from "node:fs";
-import path from "node:path";
 import { randomUUID } from "node:crypto";
-import { fileURLToPath } from "node:url";
 import { createClient } from "@supabase/supabase-js";
 
 // Корень проекта — от расположения скрипта, а не жёстким путём: иначе он
 // работал бы только на одной машине.
-const ROOT = path.join(path.dirname(fileURLToPath(import.meta.url)), "..");
-for (const line of fs.readFileSync(path.join(ROOT, ".env.local"), "utf8").split(/\r?\n/)) {
-  const m = line.match(/^\s*([A-Z_]+)\s*=\s*(.*)$/);
-  if (m) process.env[m[1]] = m[2].trim();
-}
+import { loadEnv, pickTarget, projectRef } from "./db-target.mjs";
 
 // По умолчанию preview: на проде эти же вызовы оставят строки в живой
-// таблице, и хотя они безобидны, привычка «проверяю на проде» дороже
-// сэкономленной минуты.
+// таблице. Сторож выбора базы — в db-target.mjs.
+loadEnv();
 const PROD = process.argv.includes("--prod");
-const url = PROD
-  ? process.env.NEXT_PUBLIC_SUPABASE_URL
-  : process.env.NEXT_PUBLIC_SUPABASE_URL_PREVIEW ?? process.env.NEXT_PUBLIC_SUPABASE_URL;
-const anonKey = PROD
-  ? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  : process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY_PREVIEW ?? process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-const serviceKey = PROD
-  ? process.env.SUPABASE_SERVICE_ROLE_KEY
-  : process.env.SUPABASE_SERVICE_ROLE_KEY_PREVIEW ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-if (!url || !anonKey || !serviceKey) {
-  console.error("Не хватает переменных в .env.local (URL, ANON_KEY, SERVICE_ROLE_KEY).");
-  process.exit(1);
-}
+const { url, anonKey, serviceKey, label } = pickTarget(PROD);
 
 // anon — ключ, который лежит в браузере у КАЖДОГО посетителя. Именно он
 // должен получать отказ.
@@ -95,7 +75,7 @@ function check(name, ok, detail = "") {
 }
 
 async function main() {
-  console.log(`\nПроверяю ${PROD ? "ПРОД" : "preview"}: ${url}\n`);
+  console.log(`\nПроверяю ${label}: ${projectRef(url)}\n`);
 
   // ---------------------------------------------------------
   // 1. Права. Самое важное в файле.

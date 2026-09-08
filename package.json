@@ -10,6 +10,7 @@
     "test": "vitest run",
     "check:views": "node scripts/check-views.mjs",
     "check:limits": "node scripts/check-rate-limits.mjs",
+    "check:guards": "node scripts/check-guards.mjs",
     "clear:storage": "node scripts/clear-product-storage.mjs"
   },
   "dependencies": {
