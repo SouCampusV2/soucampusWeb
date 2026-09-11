@@ -20,13 +20,7 @@ const RichTextEditor = dynamic(
   () => import("@/components/RichTextEditor").then((m) => m.RichTextEditor),
   { ssr: false, loading: () => <RichTextEditorSkeleton /> }
 );
-import {
-  Star,
-  Image as ImageIcon,
-  DotsSixVertical,
-  X,
-  FileArrowUp,
-} from "@phosphor-icons/react";
+import { FileArrowUp } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { SelectField } from "@/components/SelectField";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
@@ -40,14 +34,12 @@ import {
 import { uploadMapFile } from "@/lib/upload-client";
 import { TextField, PriceField } from "@/components/MapFormParts";
 import {
-  MAX_IMAGES,
-  IMAGES_TOTAL_MAX_BYTES,
   checkImageFile,
   checkMapFile,
-  formatBytes,
   safeExtension,
   MAP_FILE_ACCEPT,
 } from "@/lib/upload-limits";
+import { GalleryPicker, useImagePicker } from "@/components/GalleryPicker";
 import { SpecFields, EMPTY_SPECS, type EditableSpecs } from "@/components/SpecFields";
 import { ReactionPicker } from "@/components/ReactionPicker";
 import type { ReactionOption } from "@/lib/reactions";
@@ -56,11 +48,6 @@ import type { ReactionOption } from "@/lib/reactions";
 // Категории формы = все, кроме "free" — бесплатность определяется ценой
 // 0, а не отдельным тегом (см. filterByCategory в products.ts).
 const FORM_CATEGORIES = SHOP_CATEGORIES.filter((c) => c.slug !== "free");
-
-type PickedImage = {
-  file: File;
-  preview: string;
-};
 
 /**
  * Форма «Add a map» — единая страница с секциями (тот же приём, что
@@ -90,10 +77,15 @@ export function UploadMapForm({
   const [priceInput, setPriceInput] = useState("");
   const [category, setCategory] = useState<ProductCategory>(FORM_CATEGORIES[0].slug);
 
-  const [images, setImages] = useState<PickedImage[]>([]);
-  const [coverIndex, setCoverIndex] = useState(0);
-  const dragIndex = useRef<number | null>(null);
-  const imageInput = useRef<HTMLInputElement>(null);
+  // ⚠️ Ошибка объявлена ДО галереи: useImagePicker получает setError
+  // аргументом, то есть вычисляет его в момент вызова. Объявишь ниже —
+  // ReferenceError на первом рендере, const не всплывает.
+  const [error, setError] = useState<string | null>(null);
+
+  // Галерея — общий хук и общий компонент на обе формы карты. У загрузки
+  // сохранённых картинок не бывает, поэтому начальный список пуст.
+  const gallery = useImagePicker([], setError);
+  const { images, coverIndex } = gallery;
 
   const [mapFile, setMapFile] = useState<File | null>(null);
   // Характеристики карты (миграция 20260821130000). Пустые по умолчанию:
@@ -105,7 +97,6 @@ export function UploadMapForm({
   const [reactionOptionId, setReactionOptionId] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
-  const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   // Какой шаг отправки идёт сейчас. Нужен только ради подписи на кнопке:
   // файл карты может грузиться минутами, и без этого непонятно, работает
@@ -124,72 +115,6 @@ export function UploadMapForm({
   // догрузится. До этого момента он null — форма уже работает, просто
   // описание ещё нельзя набирать (см. проверку в submit).
   const [editor, setEditor] = useState<Editor | null>(null);
-
-  async function pickImages(event: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(event.target.files ?? []);
-    event.target.value = ""; // тот же файл можно выбрать снова
-    if (files.length === 0) return;
-
-    if (images.length + files.length > MAX_IMAGES) {
-      setError(`You can upload up to ${MAX_IMAGES} images.`);
-      return;
-    }
-
-    // Каждая картинка — по сигнатуре, а не по MIME-типу от браузера
-    // (его подделывает любой, кто переименовал файл).
-    for (const file of files) {
-      const problem = await checkImageFile(file);
-      if (problem) {
-        setError(problem);
-        return;
-      }
-    }
-
-    // Общий вес галереи: пятнадцать картинок по 5 МБ — это 75 МБ на один
-    // товар, поэтому потолок есть и у суммы, не только у каждой отдельно.
-    const already = images.reduce((sum, i) => sum + i.file.size, 0);
-    const adding = files.reduce((sum, f) => sum + f.size, 0);
-    if (already + adding > IMAGES_TOTAL_MAX_BYTES) {
-      setError(
-        `All images together must be ${formatBytes(IMAGES_TOTAL_MAX_BYTES)} or less — these add up to ${formatBytes(already + adding)}.`
-      );
-      return;
-    }
-
-    setError(null);
-    setImages((prev) => [
-      ...prev,
-      ...files.map((file) => ({ file, preview: URL.createObjectURL(file) })),
-    ]);
-  }
-
-  function removeImage(index: number) {
-    setImages((prev) => prev.filter((_, i) => i !== index));
-    setCoverIndex((prev) => {
-      if (index === prev) return 0;
-      if (index < prev) return prev - 1;
-      return prev;
-    });
-  }
-
-  // Нативный drag & drop HTML5 — без новой зависимости для одной
-  // фичи "перетащить миниатюру". dragIndex — обычный ref, не state:
-  // сама перестановка не должна триггерить лишний рендер посреди жеста.
-  function reorderImages(from: number, to: number) {
-    if (from === to) return;
-    setImages((prev) => {
-      const next = [...prev];
-      const [moved] = next.splice(from, 1);
-      next.splice(to, 0, moved);
-      return next;
-    });
-    setCoverIndex((prev) => {
-      if (prev === from) return to;
-      if (from < prev && to >= prev) return prev - 1;
-      if (from > prev && to <= prev) return prev + 1;
-      return prev;
-    });
-  }
 
   // Картинка внутрь описания. В отличие от галереи, грузится СРАЗУ (а не
   // при отправке формы): редактор должен показать её на месте немедленно,
@@ -288,12 +213,18 @@ export function UploadMapForm({
       // порядком входного массива, поэтому coverIndex остаётся валиден.
       setStage("images");
       const imageUrls = await Promise.all(
-        images.map(async (img, i) => {
-          const ext = safeExtension(img.file.name, "jpg");
+        images.map(async (image, i) => {
+          // Уже сохранённой картинки здесь не бывает: форма начинается с
+          // пустой галереи, и взять такую неоткуда. Ветка нужна ТИПУ —
+          // он общий с формой правки, где сохранённые как раз обычное
+          // дело. Врать компилятору через `as` ради одной строки не
+          // стоит: тип общий именно потому, что формы одинаковы.
+          if (image.kind === "existing") return image.url;
+          const ext = safeExtension(image.file.name, "jpg");
           const path = `${userId}/${stamp}-${i}.${ext}`;
           const { error: imgError } = await supabase.storage
             .from(PRODUCT_IMAGES_BUCKET)
-            .upload(path, img.file, { contentType: img.file.type });
+            .upload(path, image.file, { contentType: image.file.type });
           if (imgError) throw new Error(`Couldn't upload an image: ${imgError.message}`);
           const { data } = supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path);
           return data.publicUrl;
@@ -333,78 +264,7 @@ export function UploadMapForm({
       onSubmit={handleSubmit}
       className="space-y-8 rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-950"
     >
-      {/* Images */}
-      <div>
-        <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Images <span className="font-normal text-zinc-500 dark:text-zinc-400">— first drag order sets gallery order, star sets the cover</span>
-        </label>
-
-        <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          {images.map((img, index) => (
-            <div
-              key={img.preview}
-              draggable
-              onDragStart={() => (dragIndex.current = index)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => {
-                if (dragIndex.current !== null) reorderImages(dragIndex.current, index);
-                dragIndex.current = null;
-              }}
-              className="group relative aspect-video cursor-grab overflow-hidden rounded-xl border border-zinc-950/[0.08] active:cursor-grabbing dark:border-zinc-50/[0.08]"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={img.preview} alt="" className="h-full w-full object-cover" />
-
-              <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-zinc-950/60 via-transparent to-transparent opacity-0 transition-opacity group-hover:opacity-100" />
-
-              <span className="pointer-events-none absolute left-1.5 top-1.5 rounded-full bg-zinc-950/40 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100">
-                <DotsSixVertical size={14} weight="bold" />
-              </span>
-
-              <button
-                type="button"
-                onClick={() => removeImage(index)}
-                className="absolute right-1.5 top-1.5 rounded-full bg-zinc-950/50 p-1 text-white opacity-0 transition-opacity hover:bg-zinc-950/80 group-hover:opacity-100"
-                aria-label="Remove image"
-              >
-                <X size={14} weight="bold" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setCoverIndex(index)}
-                className={`absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium transition-colors ${
-                  coverIndex === index
-                    ? "bg-orange-500 text-zinc-950"
-                    : "bg-zinc-950/50 text-white opacity-0 hover:bg-zinc-950/80 group-hover:opacity-100"
-                }`}
-              >
-                <Star size={12} weight={coverIndex === index ? "fill" : "regular"} />
-                {coverIndex === index ? "Cover" : "Set as cover"}
-              </button>
-            </div>
-          ))}
-
-          {images.length < MAX_IMAGES && (
-            <button
-              type="button"
-              onClick={() => imageInput.current?.click()}
-              className="flex aspect-video flex-col items-center justify-center gap-1.5 rounded-xl border border-dashed border-zinc-950/[0.15] text-zinc-500 transition-colors hover:border-orange-500 hover:text-orange-600 dark:border-zinc-50/[0.15] dark:text-zinc-400 dark:hover:border-orange-400 dark:hover:text-orange-400"
-            >
-              <ImageIcon size={22} />
-              <span className="text-xs font-medium">Add photo</span>
-            </button>
-          )}
-        </div>
-        <input
-          ref={imageInput}
-          type="file"
-          accept="image/*"
-          multiple
-          onChange={pickImages}
-          className="hidden"
-        />
-      </div>
+      <GalleryPicker picker={gallery} />
 
       {/* Title / summary */}
       <div className="space-y-4">
