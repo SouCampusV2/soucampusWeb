@@ -37,7 +37,7 @@ import {
   SHOP_CATEGORIES,
   type ProductCategory,
 } from "@/lib/products";
-import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
+import { uploadMapFile } from "@/lib/upload-client";
 import { TextField, PriceField } from "@/components/MapFormParts";
 import {
   MAX_IMAGES,
@@ -273,13 +273,14 @@ export function UploadMapForm({
     const stamp = Date.now();
 
     try {
-      // 1) Файл карты — в приватный бакет, путь под свою папку (RLS).
-      const fileExt = safeExtension(mapFile.name, "zip");
-      const filePath = `${userId}/${stamp}-map.${fileExt}`;
-      const { error: fileError } = await supabase.storage
-        .from(PRODUCT_FILES_BUCKET)
-        .upload(filePath, mapFile, { contentType: mapFile.type || "application/octet-stream" });
-      if (fileError) throw new Error(`Couldn't upload the map file: ${fileError.message}`);
+      // 1) Файл карты — через шлюз (/api/creator/upload).
+      //
+      // Путь здесь больше НЕ строится: его называет сервер, и это не
+      // мелочь стиля. Пока ключ объекта собирал браузер, всё, что стояло
+      // между чужой папкой и записью, — политика бакета; размер,
+      // расширение и сигнатуру не проверял никто, кроме формы, то есть
+      // никто. Разбор — в шапке src/app/api/creator/upload/route.ts.
+      const filePath = await uploadMapFile(mapFile);
 
       // 2) Картинки — в публичный бакет. ПАРАЛЛЕЛЬНО (Promise.all), а не
       // по очереди: загрузки друг от друга не зависят, и очередь просто

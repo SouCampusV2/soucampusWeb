@@ -24,7 +24,7 @@ import {
   SHOP_CATEGORIES,
   type ProductCategory,
 } from "@/lib/products";
-import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
+import { uploadMapFile } from "@/lib/upload-client";
 import type { EditableProduct } from "@/lib/moderation";
 import { templateFor } from "@/lib/rejection";
 import { SpecFields, specsToColumns } from "@/components/SpecFields";
@@ -259,13 +259,10 @@ export function EditMapForm({
       // остаётся прежним, и триггер повторной модерации не срабатывает.
       let filePath = product.filePath;
       if (mapFile) {
-        filePath = `${userId}/${stamp}-map.${safeExtension(mapFile.name, "zip")}`;
-        const { error: fileError } = await supabase.storage
-          .from(PRODUCT_FILES_BUCKET)
-          .upload(filePath, mapFile, {
-            contentType: mapFile.type || "application/octet-stream",
-          });
-        if (fileError) throw new Error(`Couldn't upload the map file: ${fileError.message}`);
+        // Через шлюз — путь называет сервер, он же проверяет размер и
+        // сигнатуру уже загруженного объекта. Разбор — в шапке
+        // src/app/api/creator/upload/route.ts.
+        filePath = await uploadMapFile(mapFile);
       }
 
       // 2) Новые картинки — параллельно; уже сохранённые остаются как есть.
