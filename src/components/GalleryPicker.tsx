@@ -5,6 +5,8 @@ import {
   Star,
   Image as ImageIcon,
   DotsSixVertical,
+  CaretLeft,
+  CaretRight,
   X,
 } from "@phosphor-icons/react";
 import {
@@ -198,7 +200,7 @@ export function GalleryPicker({ picker }: { picker: ImagePicker }) {
       <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
         Images{" "}
         <span className="font-normal text-zinc-500 dark:text-zinc-400">
-          — drag to reorder, star sets the cover
+          — drag or use the arrows to reorder, star sets the cover
         </span>
       </label>
 
@@ -222,14 +224,14 @@ export function GalleryPicker({ picker }: { picker: ImagePicker }) {
 
             {/* Ручка перетаскивания — подсказка, что плитку можно тащить.
                 У формы правки её не было, хотя тащить там было можно. */}
-            <span className="pointer-events-none absolute left-1.5 top-1.5 rounded-full bg-zinc-950/40 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100">
+            <span className="pointer-events-none absolute left-1.5 top-1.5 hidden rounded-full bg-zinc-950/40 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100 pointer-fine:block">
               <DotsSixVertical size={14} weight="bold" />
             </span>
 
             <button
               type="button"
               onClick={() => removeImage(index)}
-              className="absolute right-1.5 top-1.5 rounded-full bg-zinc-950/50 p-1 text-white opacity-0 transition-opacity hover:bg-zinc-950/80 group-hover:opacity-100"
+              className="absolute right-1.5 top-1.5 rounded-full bg-zinc-950/50 p-1.5 text-white transition-opacity hover:bg-zinc-950/80 pointer-coarse:opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100"
               aria-label="Remove image"
             >
               <X size={14} weight="bold" />
@@ -241,12 +243,41 @@ export function GalleryPicker({ picker }: { picker: ImagePicker }) {
               className={`absolute bottom-1.5 left-1.5 flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium transition-colors ${
                 coverIndex === index
                   ? "bg-orange-500 text-zinc-950"
-                  : "bg-zinc-950/50 text-white opacity-0 hover:bg-zinc-950/80 group-hover:opacity-100"
+                  : "bg-zinc-950/50 text-white hover:bg-zinc-950/80 pointer-coarse:opacity-100 pointer-fine:opacity-0 pointer-fine:group-hover:opacity-100"
               }`}
             >
               <Star size={12} weight={coverIndex === index ? "fill" : "regular"} />
               {coverIndex === index ? "Cover" : "Set as cover"}
             </button>
+
+            {/* Порядок стрелками — единственный способ переставить фото
+                на телефоне. Нативный HTML5 drag & drop на тач-экране не
+                работает ВОВСЕ: события dragstart/drop там не возникают,
+                и до сегодня порядок на телефоне поменять было нельзя
+                никак. Клавиатурой, к слову, тоже — стрелки чинят и это.
+
+                Стрелки не прячутся за hover по той же причине, что и
+                остальные кнопки плитки (см. выше). */}
+            <div className="absolute bottom-1.5 right-1.5 flex gap-1 pointer-coarse:opacity-100 pointer-fine:opacity-0 pointer-fine:transition-opacity pointer-fine:group-hover:opacity-100">
+              <button
+                type="button"
+                onClick={() => reorderImages(index, index - 1)}
+                disabled={index === 0}
+                className="rounded-full bg-zinc-950/50 p-1.5 text-white transition-colors hover:bg-zinc-950/80 disabled:opacity-30 disabled:hover:bg-zinc-950/50"
+                aria-label="Move image earlier"
+              >
+                <CaretLeft size={12} weight="bold" />
+              </button>
+              <button
+                type="button"
+                onClick={() => reorderImages(index, index + 1)}
+                disabled={index === images.length - 1}
+                className="rounded-full bg-zinc-950/50 p-1.5 text-white transition-colors hover:bg-zinc-950/80 disabled:opacity-30 disabled:hover:bg-zinc-950/50"
+                aria-label="Move image later"
+              >
+                <CaretRight size={12} weight="bold" />
+              </button>
+            </div>
           </div>
         ))}
 
