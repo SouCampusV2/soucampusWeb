@@ -99,15 +99,25 @@ export function EditorToolbar({
     },
   ];
 
+  // ⚠️ НА ТЕЛЕФОНЕ ПАНЕЛЬ — ОДНА СТРОКА С ПРОКРУТКОЙ, а не перенос.
+  // Перенос выглядел безобиднее, но ломал заглушку: RichTextEditorSkeleton
+  // держит ровно ОДНУ строку (h-[42px]), а на узком экране девять кнопок
+  // переносились во вторую — и форма прыгала на сорок пикселей в момент,
+  // когда редактор догружался. Ровно то, ради чего заглушка и заведена.
+  // Одна строка с боковой прокруткой держит высоту постоянной, а значит
+  // честной, — тот же приём, что у разделов админки.
+  //
+  // Кнопки крупнее на тач-экране: 28px — это промах пальцем, и меряется
+  // это указателем, а не шириной экрана (у тач-ноутбука экран широкий).
   return (
-    <div className="flex flex-wrap gap-1 border-b border-zinc-950/[0.08] bg-zinc-950/[0.02] px-2 py-1.5 dark:border-zinc-50/[0.08] dark:bg-zinc-50/[0.03]">
+    <div className="flex gap-1 overflow-x-auto border-b border-zinc-950/[0.08] bg-zinc-950/[0.02] px-2 py-1.5 [scrollbar-width:none] sm:flex-wrap sm:overflow-x-visible dark:border-zinc-50/[0.08] dark:bg-zinc-50/[0.03]">
       {items.map((item) => (
         <button
           key={item.label}
           type="button"
           onClick={item.onClick}
           aria-label={item.label}
-          className={`rounded-lg p-1.5 transition-colors ${
+          className={`shrink-0 rounded-lg p-1.5 transition-colors pointer-coarse:p-2.5 ${
             item.active
               ? "bg-orange-500 text-zinc-950 dark:bg-orange-400"
               : "text-zinc-600 hover:bg-zinc-950/[0.06] dark:text-zinc-400 dark:hover:bg-zinc-50/[0.08]"
