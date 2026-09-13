@@ -1,10 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 import { getCreatorsById } from "@/lib/creators";
-import {
-  specsToColumns,
-  type EditableSpecs,
-} from "@/components/SpecFields";
 
 // Категории витрины. ВРЕМЕННО: пока в БД нет колонки category, категорию
 // выводим детерминированно из slug (deriveCategory ниже) — «случайно, но
@@ -217,6 +213,43 @@ export type ProductSpecs = {
   /** Когда карта впервые вышла на витрину; null — ещё не выходила. */
   publishedAt: string | null;
 };
+
+/**
+ * Часть ProductSpecs, которую заполняет человек.
+ *
+ * ⚠️ Живёт здесь, а не в SpecFields.tsx, с 2026-09-13. Тот компонент
+ * помечен "use client", и шлюз записи (/api/creator/map), импортируя из
+ * него чистую функцию, тащил бы за ней клиентскую границу в серверный
+ * обработчик. Место характеристик и так рядом с остальной формой карты.
+ *
+ * Что автор НЕ заполняет: fileSizeBytes берётся из самого файла (у
+ * Storage, а не со слов клиента), publishedAt ставит база.
+ */
+export type EditableSpecs = Pick<
+  ProductSpecs,
+  "mcVersions" | "mapTypes" | "gameModes" | "themes" | "mapSize" | "fileFormats"
+>;
+
+export const EMPTY_SPECS: EditableSpecs = {
+  mcVersions: [],
+  mapTypes: [],
+  gameModes: [],
+  themes: [],
+  mapSize: null,
+  fileFormats: [],
+};
+
+/** Форма для записи в БД. Одна на обе формы — колонки не разъедутся. */
+export function specsToColumns(specs: EditableSpecs) {
+  return {
+    mc_versions: specs.mcVersions,
+    map_types: specs.mapTypes,
+    game_modes: specs.gameModes,
+    themes: specs.themes,
+    map_size: specs.mapSize,
+    file_formats: specs.fileFormats,
+  };
+}
 
 // «Случайная, но стабильная» категория из slug: маленький хеш → одна из
 // нехалявных категорий. «free» сюда не попадает — бесплатность определяется
@@ -786,23 +819,42 @@ export type CreateProductInput = {
    * ставит база, второе приходит отдельным полем ниже.
    */
   specs: EditableSpecs;
-  /** Вес загруженного файла в байтах — берётся из самого File. */
+  /**
+   * Вес загруженного файла в байтах.
+   *
+   * ⚠️ С 2026-09-13 берётся у Storage (storage.info), а не из File в
+   * браузере: число показывается покупателю, и заявленному нет причины
+   * верить, когда можно спросить у того, кто файл хранит.
+   */
   fileSizeBytes: number;
   /** Выбранная автором реакция; null — карта без реакции. */
   reactionOptionId: string | null;
+  /** Скриншоты сверх обложки, по порядку. */
+  galleryUrls: string[];
 };
 
-// Черновик карты от креатора.
+// Черновик карты от креатора. Зовётся ТОЛЬКО из шлюза
+// (/api/creator/map) и только служебным ключом: с 2026-09-13 из браузера
+// эту таблицу не пишет никто, политика вставки снята.
 //
-// Состояние здесь НЕ передаётся вовсе, и это осознанно: его назначает
-// триггер guard_product_insert (миграция 20260815160000) — новая карта
-// всегда встаёт в очередь на разбор, что бы ни прислали. Передавать
-// state: 'pending' отсюда значило бы делать вид, что решает эта строка
-// кода, хотя решает база; а если бы она НЕ решала, то же поле можно было
-// бы прислать запросом мимо этой функции и опубликовать себя сразу.
+// ⚠️ СОСТОЯНИЕ ЗДЕСЬ ТЕПЕРЬ ПЕРЕДАЁТСЯ ЯВНО, И ЭТО РАЗВОРОТ.
 //
-// RLS "creators insert own products" разрешает вставку только со своим
-// creator_id и только при активном статусе креатора без паузы на заявки.
+// Раньше на этом месте стоял ровно обратный довод: state не передаём,
+// его назначает триггер guard_product_insert, а писать его из кода —
+// «делать вид, что решает эта строка, когда решает база». Довод был
+// верен, пока вставка шла из браузера под ролью authenticated.
+//
+// Служебный ключ эту роль меняет, а триггер первой же строкой
+// пропускает всё, что приходит не от конечного пользователя, — иначе
+// модерация не могла бы назначать состояния вовсе. То есть под нашим
+// ключом триггер молчит, и «не передавать state» означало бы теперь
+// создать карту БЕЗ состояния (точнее, с умолчанием колонки) — и
+// однажды выложить на витрину непроверенное.
+//
+// Правило не изменилось, изменилось место: решает по-прежнему одна
+// сторона, но теперь эта сторона — обработчик, потому что только он
+// знает, автор нажал кнопку или владелец. Триггер остаётся вторым
+// рубежом для любого ещё не мигрировавшего пути.
 //
 // slug уникален (unique constraint) — при коллизии добавляем случайный
 // хвост и пробуем ещё раз, до 5 попыток (коллизия по одинаковому
@@ -831,6 +883,16 @@ export async function createProduct(
         file_path: input.filePath,
         category: input.category,
         creator_id: input.creatorId,
+        // То, что решает судьбу карты, — поимённо, теми же значениями,
+        // что назначал guard_product_insert. Новая карта всегда встаёт
+        // в очередь: что бы ни прислала форма, публикует владелец.
+        state: "pending",
+        submission_kind: "first",
+        was_approved: false,
+        deleted_by: null,
+        suspension_reason: null,
+        rejection_reason: null,
+        rejection_flags: [],
         ...specsToColumns(input.specs),
         file_size_bytes: input.fileSizeBytes,
         reaction_option_id: input.reactionOptionId,
@@ -838,7 +900,24 @@ export async function createProduct(
       .select("id, slug")
       .single();
 
-    if (!error) return { id: data.id as string, slug: data.slug as string };
+    if (!error) {
+      const id = data.id as string;
+      // Галерея — сразу же и здесь, а не вторым вызовом из обработчика.
+      //
+      // ⚠️ Не ради краткости: если картинки не легли, карту надо убрать.
+      // Иначе автор увидит ошибку, нажмёт ещё раз — и в очереди окажутся
+      // два черновика одной карты, из которых первый без скриншотов.
+      // Настоящей транзакции тут нет (две таблицы, два запроса), поэтому
+      // убираем ЖЁСТКИМ delete: строка живёт секунды, в очередь не
+      // попадала и мягкое удаление хранить в ней нечего.
+      try {
+        await addProductImages(supabase, id, input.galleryUrls);
+      } catch (err) {
+        await supabase.from("products").delete().eq("id", id);
+        throw err;
+      }
+      return { id, slug: data.slug as string };
+    }
     // 23505 — unique_violation (slug занят). Другая ошибка — не наша
     // область, пробовать заново бессмысленно.
     if (error.code !== "23505") throw new Error(`Не удалось создать товар: ${error.message}`);

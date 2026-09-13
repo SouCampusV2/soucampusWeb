@@ -25,9 +25,10 @@ import {
   type ProductCategory,
 } from "@/lib/products";
 import { uploadMapFile } from "@/lib/upload-client";
+import { updateMap } from "@/lib/map-client";
 import type { EditableProduct } from "@/lib/moderation";
 import { templateFor } from "@/lib/rejection";
-import { SpecFields, specsToColumns } from "@/components/SpecFields";
+import { SpecFields } from "@/components/SpecFields";
 import { ReactionPicker } from "@/components/ReactionPicker";
 import type { ReactionOption } from "@/lib/reactions";
 import {
@@ -49,11 +50,15 @@ const FORM_CATEGORIES = SHOP_CATEGORIES.filter((c) => c.slug !== "free");
  *
  * Отдельный компонент, а не режим UploadMapForm: у создания и правки
  * разные обязательные поля (при правке файл и картинки уже есть, менять
- * их необязательно), разный результат (insert против update) и разные
+ * их необязательно), разный результат (создание против правки) и разные
  * последствия — замена файла у опубликованной карты снимает её с витрины
- * и отправляет на повторную проверку (триггер guard_product_publication,
- * миграция 20260730160000). Свести это в один компонент через флаги
- * означало бы форму, где половина логики под `if (isEdit)`.
+ * и отправляет на повторную проверку. Свести это в один компонент через
+ * флаги означало бы форму, где половина логики под `if (isEdit)`.
+ *
+ * ⚠️ Где теперь живёт это «снимает с витрины»: с 2026-09-13 в шлюзе
+ * (/api/creator/map), а не в триггере guard_product_author_edit. Триггер
+ * цел и остаётся вторым рубежом, но служебный ключ он пропускает — а
+ * шлюз пишет именно им.
  */
 export function EditMapForm({
   product,
@@ -180,9 +185,10 @@ export function EditMapForm({
     const stamp = Date.now();
 
     try {
-      // 1) Новый файл карты — только если выбрали. Иначе file_path
-      // остаётся прежним, и триггер повторной модерации не срабатывает.
-      let filePath = product.filePath;
+      // 1) Новый файл карты — только если выбрали. Не выбрали — ниже
+      // уходит null, и сервер оставляет прежний путь: повторная
+      // проверка не начинается.
+      let filePath: string | null = null;
       if (mapFile) {
         // Через шлюз — путь называет сервер, он же проверяет размер и
         // сигнатуру уже загруженного объекта. Разбор — в шапке
@@ -207,59 +213,30 @@ export function EditMapForm({
       const coverUrl = uploads[coverIndex];
       const galleryUrls = uploads.filter((_, i) => i !== coverIndex);
 
-      // 3) Сама строка. Состояние (state) намеренно НЕ передаём: его
-      // всё равно вернёт на место триггер (публиковать себя сам креатор
-      // не может), а отправлять поля, которые будут проигнорированы —
-      // значит врать читателю кода.
-      const { error: updateError } = await supabase
-        .from("products")
-        .update({
-          title: title.trim(),
-          summary: summary.trim(),
-          description: editor.getHTML(),
-          image_url: coverUrl,
-          price_cents: Math.round(priceEuros * 100),
-          price_label: `€${priceEuros.toFixed(2)}`,
-          category,
-          file_path: filePath,
-          ...specsToColumns(specs),
-          reaction_option_id: reactionOptionId,
-          // Вес пишем ТОЛЬКО когда файл заменили: иначе правка описания
-          // затирала бы верный размер нулём.
-          ...(mapFile ? { file_size_bytes: mapFile.size } : {}),
-        })
-        .eq("id", product.id);
-
-      if (updateError) throw new Error(`Couldn't save: ${updateError.message}`);
-
-      // 4) Галерея. Два отдельных решения, оба по делу.
+      // 3) Сама карта — одним вызовом шлюза (/api/creator/map).
       //
-      // Первое: если состав и порядок не изменились, не трогаем её
-      // вообще. Раньше каждое сохранение переписывало все строки, даже
-      // когда правили одну запятую в описании, — а вместе с ними
-      // менялись id и created_at, то есть история переписывалась на
-      // ровном месте.
-      //
-      // Второе: когда писать всё же нужно, это ОДИН вызов функции в
-      // транзакции, а не delete + insert подряд. У двух запросов между
-      // ними есть окно, в котором у товара ноль картинок: оборвалась
-      // связь после delete — и галерея потеряна целиком. Ровно эту
-      // болезнь уже лечили у заказов (record_paid_order), лечим и здесь.
-      const previousGallery = product.images.slice(1);
-      const galleryUnchanged =
-        product.image === coverUrl &&
-        previousGallery.length === galleryUrls.length &&
-        previousGallery.every((url, i) => url === galleryUrls[i]);
-
-      if (!galleryUnchanged) {
-        const { error: galleryError } = await supabase.rpc("replace_product_images", {
-          p_product_id: product.id,
-          p_urls: galleryUrls,
-        });
-        if (galleryError) {
-          throw new Error(`Couldn't save the gallery: ${galleryError.message}`);
-        }
-      }
+      // ⚠️ Отсюда ушли ТРИ вещи, и стоит знать какие. Во-первых, сам
+      // update: таблицу products из браузера больше не пишет никто,
+      // политика снята. Во-вторых, галерея — сервер сам решает, менялась
+      // ли она, и сам зовёт replace_product_images. В-третьих (и это
+      // важнее всего), состояние: замена файла у живой карты снимает её
+      // с витрины, и раньше это делал триггер базы, а теперь —
+      // обработчик, потому что под служебным ключом триггер молчит.
+      // Разбор — в шапке src/app/api/creator/map/route.ts.
+      await updateMap(product.id, {
+        title: title.trim(),
+        summary: summary.trim(),
+        description: editor.getHTML(),
+        coverUrl,
+        galleryUrls,
+        priceCents: Math.round(priceEuros * 100),
+        category,
+        // null означает «файл не меняли». Новый путь называет шлюз
+        // загрузки, старый сервер и так знает.
+        filePath: mapFile ? filePath : null,
+        specs,
+        reactionOptionId,
+      });
 
       // 5) Уборка мусора в Storage — старые файл и картинки, на которые
       // больше никто не ссылается. Намеренно НЕ ждём результата и не

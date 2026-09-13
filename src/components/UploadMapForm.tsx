@@ -25,13 +25,14 @@ import { Button } from "@/components/Button";
 import { SelectField } from "@/components/SelectField";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import {
-  createProduct,
-  addProductImages,
+  EMPTY_SPECS,
   PRODUCT_IMAGES_BUCKET,
   SHOP_CATEGORIES,
+  type EditableSpecs,
   type ProductCategory,
 } from "@/lib/products";
 import { uploadMapFile } from "@/lib/upload-client";
+import { createMap } from "@/lib/map-client";
 import { TextField, PriceField } from "@/components/MapFormParts";
 import {
   checkImageFile,
@@ -40,7 +41,7 @@ import {
   MAP_FILE_ACCEPT,
 } from "@/lib/upload-limits";
 import { GalleryPicker, useImagePicker } from "@/components/GalleryPicker";
-import { SpecFields, EMPTY_SPECS, type EditableSpecs } from "@/components/SpecFields";
+import { SpecFields } from "@/components/SpecFields";
 import { ReactionPicker } from "@/components/ReactionPicker";
 import type { ReactionOption } from "@/lib/reactions";
 
@@ -54,13 +55,16 @@ const FORM_CATEGORIES = SHOP_CATEGORIES.filter((c) => c.slug !== "free");
  * ProfileEditForm), а не мастер из шагов: полей немного, шаг за шагом
  * добавил бы кликов без выгоды.
  *
- * Отправка последовательная: файл карты → картинки → сама строка
- * products → product_images. Промежуточная неудача не оставляет
- * "полу-опубликованный" товар видимым — до успешного createProduct
- * никакой строки products вообще не существует, а после него товар
- * всё равно скрыт (state=pending), пока владелец
- * не одобрит вручную. Поэтому отдельный откат при частичном сбое не
- * нужен — просто показываем ошибку и даём попробовать ещё раз.
+ * Отправка последовательная: файл карты → картинки → сама карта.
+ * Первый и третий шаги идут через свои обработчики (шлюз записи),
+ * картинки пока пишутся в Storage напрямую — граница проведена по
+ * бакету, см. ARCHITECTURE.md § 5.3.
+ *
+ * Промежуточная неудача не оставляет «полу-опубликованный» товар
+ * видимым: до последнего шага строки products вообще не существует, а
+ * после него карта всё равно скрыта (state = pending), пока владелец не
+ * одобрит вручную. Поэтому отдельный откат при частичном сбое не нужен —
+ * показываем ошибку и даём попробовать ещё раз.
  */
 export function UploadMapForm({
   userId,
@@ -233,24 +237,26 @@ export function UploadMapForm({
       const coverUrl = imageUrls[coverIndex];
       const galleryUrls = imageUrls.filter((_, i) => i !== coverIndex);
 
-      // 3) Строка товара + галерея.
+      // 3) Строка товара + галерея — ОДНИМ вызовом шлюза
+      // (/api/creator/map), а не двумя запросами из браузера.
+      //
+      // ⚠️ Что здесь перестало быть нашим делом: состояние карты, её
+      // slug, вес файла и проверка паузы после отказа. Всё это теперь
+      // называет сервер — форма говорит только, ЧТО за карта. Разбор —
+      // в шапке src/app/api/creator/map/route.ts.
       setStage("saving");
-      const { id } = await createProduct(supabase, {
-        creatorId: userId,
+      await createMap({
         title: title.trim(),
         summary: summary.trim(),
         description,
-        imageUrl: coverUrl,
+        coverUrl,
+        galleryUrls,
         priceCents: Math.round(priceEuros * 100),
-        category: category as Exclude<ProductCategory, "free">,
+        category,
         filePath,
         specs,
-        // Вес берём из самого файла, а не спрашиваем: спрошенное число
-        // разъедется с реальностью при первой же замене файла.
-        fileSizeBytes: mapFile.size,
         reactionOptionId,
       });
-      await addProductImages(supabase, id, galleryUrls);
 
       router.push("/admin/products/new/submitted");
     } catch (err) {

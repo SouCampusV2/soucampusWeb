@@ -13,8 +13,14 @@ import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
 // Всё это говорит сервер. Задача этого файла — три шага подряд и
 // внятная ошибка наружу.
 
-/** Что показать человеку, когда шлюз отказал. */
-async function problemFrom(response: Response): Promise<string> {
+/**
+ * Что показать человеку, когда шлюз отказал.
+ *
+ * Общая на оба шлюза — загрузку файла и запись карты (map-client.ts):
+ * разбор ответа у них дословно одинаков, а разъехавшись, они однажды
+ * по-разному покажут одно и то же 429.
+ */
+export async function problemFromGateway(response: Response): Promise<string> {
   const body = (await response.json().catch(() => ({}))) as {
     error?: string;
     message?: string;
@@ -46,7 +52,7 @@ export async function uploadMapFile(file: File): Promise<string> {
       size: file.size,
     }),
   });
-  if (!signResponse.ok) throw new Error(await problemFrom(signResponse));
+  if (!signResponse.ok) throw new Error(await problemFromGateway(signResponse));
   const { path, token } = (await signResponse.json()) as {
     path: string;
     token: string;
@@ -73,7 +79,7 @@ export async function uploadMapFile(file: File): Promise<string> {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ action: "confirm", path, fileName: file.name }),
   });
-  if (!confirmResponse.ok) throw new Error(await problemFrom(confirmResponse));
+  if (!confirmResponse.ok) throw new Error(await problemFromGateway(confirmResponse));
 
   return path;
 }

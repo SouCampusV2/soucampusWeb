@@ -1,7 +1,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { signedDownloadUrl, downloadFileName } from "@/lib/orders";
-import type { EditableSpecs } from "@/components/SpecFields";
+import type { EditableSpecs } from "@/lib/products";
 import type { ProductCategory, ProductState } from "@/lib/products";
 
 // Очередь модерации и «мои заявки» креатора.
