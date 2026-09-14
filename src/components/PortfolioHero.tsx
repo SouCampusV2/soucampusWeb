@@ -106,8 +106,13 @@ export function PortfolioHero({ projects: allProjects }: Props) {
     <section className="relative overflow-x-clip pt-20">
       <PageGlow color="rgba(163,230,53,0.35)" />
 
+      {/* ⚠️ min-w-0 на текстовом блоке — не украшение. Без него flex-элемент
+          не сжимается ниже ширины своего содержимого (min-width: auto), и
+          на 320px заголовок с подписью занимали 196 из 272 доступных: ряду
+          стрелок (100px) места не оставалось, и правая уезжала за экран,
+          где её срезал overflow-x-clip. Измерено, а не предположено. */}
       <div className="flex items-end justify-between gap-6">
-        <div>
+        <div className="min-w-0">
           <h1
             className={`${displayFont.className} text-4xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
           >
