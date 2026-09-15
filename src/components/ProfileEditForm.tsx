@@ -138,7 +138,10 @@ export function ProfileEditForm({
       nextAvatarUrl = `${data.publicUrl}?v=${Date.now()}`;
     }
 
-    // RLS "own profile update" разрешает менять только свою строку.
+    // Какую СТРОКУ можно менять, решает RLS «own profile update» (свою).
+    // Какие ПОЛЯ — права на колонки (миграция 20260915120000): браузеру
+    // выдано ровно то, что отправляет эта форма. Добавишь сюда поле —
+    // выдай на него право там же, иначе база ответит отказом прав.
     const { error: updateError } = await supabase
       .from("profiles")
       .update({
