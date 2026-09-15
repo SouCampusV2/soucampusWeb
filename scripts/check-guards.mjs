@@ -20,7 +20,8 @@
 // ⚠️ ДВА ПРАВИЛЬНЫХ ИСХОДА, И ОНИ ЗНАЧАТ РАЗНОЕ.
 //   • ОШИБКА прав — запрет стоит политикой, записать нельзя вовсе.
 //   • МОЛЧАЛИВЫЙ ОТКАТ — запрос прошёл, но триггер вернул старое
-//     значение. Так сделано намеренно у полей profiles: иначе сохранение
+//     значение (или политика не нашла ни одной строки, которую можно
+//     править). Так сделано намеренно у полей profiles: иначе сохранение
 //     всего профиля падало бы из-за поля, которого человек в форме не
 //     видит.
 // Опасен только третий исход: запрос прошёл И значение изменилось.
@@ -28,9 +29,10 @@
 //
 // ⚠️ ЧТО СКРИПТ ПИШЕТ В БАЗУ. Заводит одного временного пользователя
 // (почта вида guardcheck+<uuid>@example.invalid) и одну карту в состоянии
-// pending на него. В конце удаляет обоих. Домен .invalid зарезервирован
-// стандартом и не существует физически — письмо туда не уйдёт никуда даже
-// при ошибке.
+// pending на него — служебным ключом, как это делает сам сайт. Карта на
+// витрину не попадает. В конце удаляет обоих и всё, что успело к ним
+// прилипнуть. Домен .invalid зарезервирован стандартом и не существует
+// физически — письмо туда не уйдёт никуда даже при ошибке.
 // ============================================================
 import { randomUUID } from "node:crypto";
 import { createClient } from "@supabase/supabase-js";
@@ -46,6 +48,10 @@ const { url, anonKey, serviceKey, label } = pickTarget(PROD);
 const asServer = createClient(url, serviceKey, {
   auth: { autoRefreshToken: false, persistSession: false },
 });
+
+// Имя бакета с файлами карт. Дублирует PRODUCT_FILES_BUCKET из
+// src/lib/orders.ts: скрипт — обычный .mjs и TypeScript не импортирует.
+const PRODUCT_FILES_BUCKET = "product-files";
 
 let passed = 0;
 let failed = 0;
@@ -74,10 +80,10 @@ function skip(name, why) {
 async function fieldHolds(asUser, id, field, attempted, label, seed) {
   // ⚠️ У НОВОГО ЧЕЛОВЕКА ДЕФОЛТ КОЛОНКИ ЧАСТО РАВЕН ТОМУ, ЧТО МЫ
   // ПЫТАЕМСЯ ПРОТАЩИТЬ (пауза уже null, имя ещё не заявлено). Тогда
-  // проверка не сработает НИКОГДА — то есть её всả равно что нет. Поэтому
+  // проверка не сработает НИКОГДА — то есть её всё равно что нет. Поэтому
   // служебным ключом заранее ставим заведомо ДРУГОЕ значение — ровно так,
   // как его ставит владелец или модерация, — и уже его пробуем снять.
-  //⚠️ Подготовка ОБЯЗАНА откатываться. username_claimed мы ставим в true,
+  // ⚠️ Подготовка ОБЯЗАНА откатываться. username_claimed мы ставим в true,
   // а следующая секция проверяет ровно ветку «имя ещё не заявлено»: не
   // вернём — и подготовка одной проверки поломает три другие.
   let original;
@@ -96,6 +102,17 @@ async function fieldHolds(asUser, id, field, attempted, label, seed) {
   };
 
   const before = await asServer.from("profiles").select(field).eq("id", id).single();
+
+  // ⚠️ ОШИБКА ЧТЕНИЯ — ЭТО НЕ «ЗНАЧЕНИЕ НЕ ИЗМЕНИЛОСЬ». Найдено 15.09:
+  // на preview не оказалось колонки is_founder, «до» и «после» пришли
+  // оба undefined, сравнились как равные — и скрипт напечатал ok про
+  // защиту поля, которого в базе нет. Колонка, которую нельзя прочитать,
+  // не проверена, и сказать об этом надо громко.
+  if (before.error) {
+    check(label, false, `колонку ${field} не прочитать служебным ключом: ${before.error.message}`);
+    await restore();
+    return;
+  }
 
   // ⚠️ СРАВНЕНИЕ «ДО/ПОСЛЕ» НИЧЕГО НЕ ДОКАЗЫВАЕТ, если в базе УЖЕ лежит
   // то, что мы пытаемся протащить: значение не изменится и при снятой
@@ -151,7 +168,10 @@ async function main() {
     process.exit(1);
   }
 
-  let productId = null;
+  // Всё, что скрипт может оставить после себя, — сюда, а уборка в
+  // finally пройдётся по списку, даже если проверка упала посередине.
+  const productIds = [];
+  const storedFiles = [];
 
   try {
     // -------------------------------------------------------
@@ -168,8 +188,8 @@ async function main() {
     await fieldHolds(asUser, userId, "is_admin", true, "админом себя не сделать");
     await fieldHolds(asUser, userId, "is_creator", true, "креатором себя не сделать");
     await fieldHolds(asUser, userId, "is_founder", true, "основателем себя не назвать");
-    // Паузу сначала СТАВИМ (так еả ставит тяжảлый отказ в модерации),
-    // потом пробуем снять еả собой — именно эта дыра была найдена 21.08.
+    // Паузу сначала СТАВИМ (так её ставит тяжёлый отказ в модерации),
+    // потом пробуем снять её собой — именно эта дыра была найдена 21.08.
     await fieldHolds(
       asUser,
       userId,
@@ -183,7 +203,7 @@ async function main() {
     // guard_username_change первой строкой, ДО всяких ветвлений и
     // без оглядки на роль, стоит `new.username_claimed := old.username_claimed`
     // — флаг не принадлежит никому и меняется только КАК СЛЕДСТВИЕ
-    // смены имени. Поэтому ждảм, пока он станет true сам.
+    // смены имени. Поэтому ждём, пока он станет true сам.
 
     // -------------------------------------------------------
     // 2. Имя: резерв и пауза.
@@ -273,33 +293,120 @@ async function main() {
     );
 
     // -------------------------------------------------------
-    // 3. Карта: состояние решает база, а не тот, кто её заводит.
+    // 2а. Колонки, которые браузеру не принадлежат (20260915120000).
     //
-    // ⚠️ ВСТАВЛЯЕТ КАРТУ ЧЕЛОВЕК, А НЕ СЛУЖЕБНЫЙ КЛЮЧ, и это принципиально.
-    // Сперва скрипт заводил её служебным ключом — и «нашёл дыру»: карта
-    // осталась live. Дыры нет: guard_product_insert СОЗНАТЕЛЬНО пропускает
-    // всё, что не `authenticated` (миграция 20260815160000, строка 40) —
-    // серверу нужно уметь засеять каталог в любом состоянии. Проверять
-    // надо путь человека, иначе тест меряет не то, что защищает.
+    // До 15.09 политика «own profile update» пускала в ЛЮБУЮ колонку своей
+    // строки, и защищено было только то, у чего есть свой триггер. Эти
+    // проверки — про остальное: про колонки, которые не стерёг никто, и
+    // про сам механизм «ничего нельзя, кроме разрешённого».
     // -------------------------------------------------------
-    console.log("\nКарта");
+    console.log("\nКолонки профиля, которые браузеру не принадлежат");
 
-    // Сначала — что БЕЗ статуса креатора карту завести нельзя. Строго до
-    // выдачи статуса ниже, иначе проверка потеряет смысл.
-    const withoutStatus = await asUser.from("products").insert({
-      slug: `guard-nocreator-${suffix}`,
-      title: "should not exist",
-      summary: "x",
-      description: "x",
+    // Пауза на имя стоит (две смены выше поставили отметку). Обнулив её,
+    // человек сменил бы имя снова сразу: триггер возвращает дату только
+    // при смене САМОГО имени. Дыра, найденная 15.09.
+    await fieldHolds(
+      asUser,
+      userId,
+      "username_changed_at",
+      null,
+      "паузу на смену имени себе не обнулить"
+    );
+    await fieldHolds(
+      asUser,
+      userId,
+      "creator_revoked_reason",
+      "rewritten by the person it was about",
+      "причину отзыва статуса себе не переписать",
+      "Revoked by npm run check:guards"
+    );
+
+    // ⚠️ Доказательство самого механизма, а не отдельного поля. Раньше
+    // запись is_admin проходила и тихо откатывалась триггером; с правами
+    // на колонки база отвечает ОТКАЗОМ ПРАВ (42501) ещё до триггеров.
+    // Тихий откат здесь — не «ok»: он значит, что колонку снова выдали и
+    // держит её только триггер.
+    const privilege = await asUser.from("profiles").update({ is_admin: true }).eq("id", userId);
+    check(
+      "в колонку-право база не пускает вовсе (отказ прав, а не тихий откат)",
+      privilege.error?.code === "42501",
+      privilege.error
+        ? `ошибка, но не отказ прав: ${privilege.error.code} ${privilege.error.message}`
+        : "запрос прошёл — право на UPDATE всей строки снова выдано"
+    );
+
+    // Аватар: чужой сервер собирал бы IP каждого, кто открыл профиль или
+    // комментарий человека.
+    await fieldHolds(
+      asUser,
+      userId,
+      "avatar_url",
+      "https://tracker.example.invalid/pixel.png",
+      "чужой адрес в аватар не поставить"
+    );
+    await fieldHolds(
+      asUser,
+      userId,
+      "avatar_url",
+      "/logoSouCampus.png",
+      "лого сайта в аватар без галочки не поставить"
+    );
+
+    // ⚠️ И обратная сторона: запрет не должен сломать саму форму. Адрес
+    // собран так же, как его собирает ProfileEditForm (getPublicUrl +
+    // ?v=), и обязан проходить.
+    const ownAvatar = `${url}/storage/v1/object/public/avatars/${userId}/avatar?v=1`;
+    const saved = await asUser.from("profiles").update({ avatar_url: ownAvatar }).eq("id", userId);
+    const stored = await asServer.from("profiles").select("avatar_url").eq("id", userId).single();
+    check(
+      "свой аватар из нашего бакета сохраняется (форма не сломана)",
+      saved.error === null && stored.data?.avatar_url === ownAvatar,
+      saved.error ? saved.error.message : `в базе ${JSON.stringify(stored.data?.avatar_url)}`
+    );
+    await asServer.from("profiles").update({ avatar_url: null }).eq("id", userId);
+
+    // -------------------------------------------------------
+    // 3. Карта: из браузера её не пишет никто (шлюз записи, пути 1–4).
+    //
+    // До 15.09 здесь проверялось, что триггер guard_product_insert
+    // переписывает карту человека в pending. С прогоном
+    // 20260911120000_map_file_gateway и 20260913120000_map_write_gateway
+    // вопрос сменился: политики записи сняты, карта, её файл и галерея
+    // пишутся только обработчиками /api/creator/* под служебным ключом.
+    // Первый рубеж теперь — ОТКАЗ базы на любую такую запись из браузера,
+    // в том числе от креатора. Его и проверяем, по одному на каждый путь.
+    //
+    // ⚠️ Сам триггер guard_product_insert отсюда больше не проверить, и
+    // это не потерянная проверка, а её цена: он срабатывает только на
+    // вставку от роли authenticated, а такой вставки теперь не пропускает
+    // политика. Он остался вторым рубежом; вернут политику — первой
+    // упадёт проверка «креатор тоже не заводит карту» ниже.
+    // -------------------------------------------------------
+    console.log("\nКарта — шлюз записи");
+
+    const mapRow = (slug) => ({
+      slug,
+      title: `Guard check ${suffix}`,
+      summary: "temporary row created by npm run check:guards",
+      description: "temporary",
       image_url: "/logoSouCampus.png",
-      price_cents: 100,
-      price_label: "€1",
+      price_cents: 1000,
+      price_label: "€10",
       price_currency: "eur",
       category: "building",
       creator_id: userId,
     });
+
+    // Без статуса креатора — строго ДО выдачи статуса ниже, иначе
+    // проверка потеряет смысл.
+    const withoutStatus = await asUser
+      .from("products")
+      .insert(mapRow(`guard-nocreator-${suffix}`))
+      .select("id")
+      .maybeSingle();
+    if (withoutStatus.data?.id) productIds.push(withoutStatus.data.id);
     check(
-      "не-креатор не заводит карту",
+      "не-креатор не заводит карту из браузера",
       withoutStatus.error !== null,
       withoutStatus.error === null ? "карта создалась — политика вставки не держит" : ""
     );
@@ -310,99 +417,129 @@ async function main() {
       .update({ is_creator: true })
       .eq("id", userId);
     if (granted.error) {
-      skip("проверки состояния карты", `не удалось выдать статус креатора: ${granted.error.message}`);
+      skip("креатор и карта", `не удалось выдать статус креатора: ${granted.error.message}`);
     } else {
-      const slug = `guard-check-${suffix}`;
-      const inserted = await asUser
+      // Путь №2. До шлюза эта вставка ПРОХОДИЛА (и триггер переписывал
+      // state в pending); после — обязана упасть на политике.
+      const asCreator = await asUser
         .from("products")
-        .insert({
-          slug,
-          title: `Guard check ${suffix}`,
-          summary: "temporary row created by npm run check:guards",
-          description: "temporary",
-          image_url: "/logoSouCampus.png",
-          price_cents: 1000,
-          price_label: "€10",
-          price_currency: "eur",
-          category: "building",
-          creator_id: userId,
-          // Просим сразу на витрину — база обязана поправить на pending.
-          state: "live",
-          // ⚠️ СОСТОЯНИЕ — НЕ ЕДИНСТВЕННОЕ, ЧТО ТРИГГЕР НАЗНАЧАЕТ САМ.
-          // Он затирает весь вердикт модерации целиком, и проверять надо
-          // тоже целиком: карта в очереди, но с чужим «was_approved = true» —
-          // это уже не та карта, которую модерация собиралась смотреть.
-          rejection_reason: "guard check: should be wiped",
-          was_approved: true,
-        })
-        .select("id, state, rejection_reason, was_approved")
-        .single();
+        .insert({ ...mapRow(`guard-creator-${suffix}`), state: "live" })
+        .select("id")
+        .maybeSingle();
+      if (asCreator.data?.id) productIds.push(asCreator.data.id);
+      check(
+        "креатор тоже не заводит карту из браузера (только через /api/creator/map)",
+        asCreator.error !== null,
+        asCreator.error === null
+          ? "карта создалась мимо шлюза — политика вставки вернулась или 20260913120000 не прогнана"
+          : ""
+      );
 
-      if (inserted.error) {
-        skip("проверки состояния карты", `креатор не смог завести карту: ${inserted.error.message}`);
-      } else {
-        productId = inserted.data.id;
+      // Путь №1: файл карты в бакет напрямую.
+      const filePath = `${userId}/guard-${suffix}.zip`;
+      const upload = await asUser.storage
+        .from(PRODUCT_FILES_BUCKET)
+        .upload(filePath, new Blob(["guard check"]), { contentType: "application/zip" });
+      if (!upload.error) storedFiles.push(filePath);
+      check(
+        "файл карты в бакет из браузера не загрузить (только через /api/creator/upload)",
+        upload.error !== null,
+        upload.error === null
+          ? "файл лёг мимо шлюза — политика бакета вернулась или 20260911120000 не прогнана"
+          : ""
+      );
+    }
 
-        check(
-          "карта человека всегда начинается с pending, что бы он ни просил",
-          inserted.data.state === "pending",
-          `в базе состояние ${inserted.data.state} — guard_product_insert не сработал`
-        );
+    // Временная карта для остальных проверок — СЛУЖЕБНЫМ КЛЮЧОМ, как её
+    // заводит сам сайт. Встаёт pending и на витрину не попадает: на проде
+    // это важно — витрина кэшируется на минуту, и временная live-карта
+    // могла бы успеть в чужой кэш.
+    // ⚠️ До 15.09 карту заводил человек, и после шлюза скрипт упирался в
+    // отказ и пропускал всё, что от карты зависело (два skip 15.09).
+    let productId = null;
+    const seeded = await asServer
+      .from("products")
+      .insert({ ...mapRow(`guard-check-${suffix}`), state: "pending" })
+      .select("id")
+      .single();
+    if (seeded.error) {
+      skip("правка карты и галерея", `не удалось завести временную карту: ${seeded.error.message}`);
+    } else {
+      productId = seeded.data.id;
+      productIds.push(productId);
 
-        check(
-          "вердикт модерации своей рукой не вписать",
-          inserted.data.rejection_reason === null && inserted.data.was_approved === false,
-          `rejection_reason ${JSON.stringify(inserted.data.rejection_reason)}, was_approved ${JSON.stringify(inserted.data.was_approved)} — присланное не затёрто`
-        );
-
-        const holds = async (field, attempted, label, seed) => {
-          // Тот же приảм, что в fieldHolds: если дефолт совпадает с тем, что
-          // протаскиваем, сначала ставим служебным ключом другое значение.
-          if (seed !== undefined) {
-            const prepared = await asServer
-              .from("products")
-              .update({ [field]: seed })
-              .eq("id", productId);
-            if (prepared.error) {
-              skip(label, `не удалось подготовить значение: ${prepared.error.message}`);
-              return;
-            }
-          }
-
-          const before = await asServer.from("products").select(field).eq("id", productId).single();
-
-          // То же правило, что в fieldHolds выше, и здесь оно уже стреляло:
-          // пока карта вставала сразу live, проверка holds("state","live")
-          // сравнивала live с live и бодро печатала ok поверх дыры.
-          if (JSON.stringify(before.data?.[field]) === JSON.stringify(attempted)) {
-            skip(label, `в базе уже лежит ${JSON.stringify(attempted)} — проверка не различит защиту и её отсутствие`);
+      const holds = async (field, attempted, label, seed) => {
+        // Тот же приём, что в fieldHolds: если дефолт совпадает с тем, что
+        // протаскиваем, сначала ставим служебным ключом другое значение.
+        if (seed !== undefined) {
+          const prepared = await asServer
+            .from("products")
+            .update({ [field]: seed })
+            .eq("id", productId);
+          if (prepared.error) {
+            skip(label, `не удалось подготовить значение: ${prepared.error.message}`);
             return;
           }
+        }
 
-          await asUser.from("products").update({ [field]: attempted }).eq("id", productId);
-          const after = await asServer.from("products").select(field).eq("id", productId).single();
-          const unchanged =
-            JSON.stringify(before.data?.[field]) === JSON.stringify(after.data?.[field]);
-          check(
-            label,
-            unchanged,
-            unchanged
-              ? ""
-              : `было ${JSON.stringify(before.data?.[field])}, стало ${JSON.stringify(after.data?.[field])} — ДЫРА`
-          );
-        };
+        const before = await asServer.from("products").select(field).eq("id", productId).single();
 
-        await holds("state", "live", "автор не выводит свою карту на витрину сам");
-        // Сначала гасим автора (так делает отзыв статуса), потом пробуем
-        // вернуть карты на витрину его же руками — дыра, закрытая 16.08.
-        await holds(
-          "creator_active",
-          true,
-          "лишённый статуса не возвращает карты на витрину",
-          false
+        // То же правило, что в fieldHolds выше, и здесь оно уже стреляло:
+        // пока карта вставала сразу live, проверка holds("state","live")
+        // сравнивала live с live и бодро печатала ok поверх дыры.
+        if (JSON.stringify(before.data?.[field]) === JSON.stringify(attempted)) {
+          skip(label, `в базе уже лежит ${JSON.stringify(attempted)} — проверка не различит защиту и её отсутствие`);
+          return;
+        }
+
+        await asUser.from("products").update({ [field]: attempted }).eq("id", productId);
+        const after = await asServer.from("products").select(field).eq("id", productId).single();
+        const unchanged =
+          JSON.stringify(before.data?.[field]) === JSON.stringify(after.data?.[field]);
+        check(
+          label,
+          unchanged,
+          unchanged
+            ? ""
+            : `было ${JSON.stringify(before.data?.[field])}, стало ${JSON.stringify(after.data?.[field])} — ДЫРА`
         );
-        await holds("published_at", "2019-01-01T00:00:00Z", "дату премьеры задним числом не поставить");
-      }
+      };
+
+      // Путь №3. Ни одно поле своей карты из браузера не переписать —
+      // начиная с самого безобидного: если проходит заголовок, значит
+      // политика правки жива, и все рассуждения про поля состояния ниже
+      // держатся только на триггере.
+      await holds("title", "rewritten from the browser", "свою карту из браузера не переписать (только через /api/creator/map)");
+      await holds("state", "live", "автор не выводит свою карту на витрину сам");
+      // Сначала гасим автора (так делает отзыв статуса), потом пробуем
+      // вернуть карты на витрину его же руками — дыра, закрытая 16.08.
+      await holds(
+        "creator_active",
+        true,
+        "лишённый статуса не возвращает карты на витрину",
+        false
+      );
+      await holds("published_at", "2019-01-01T00:00:00Z", "дату премьеры задним числом не поставить");
+
+      // Путь №4: галерея — ни строкой, ни функцией.
+      const image = await asUser
+        .from("product_images")
+        .insert({ product_id: productId, url: "/logoSouCampus.png", position: 0 });
+      check(
+        "картинку в галерею из браузера не добавить",
+        image.error !== null,
+        image.error === null ? "строка галереи создалась — политика product_images вернулась" : ""
+      );
+
+      const rpc = await asUser.rpc("replace_product_images", {
+        p_product_id: productId,
+        p_urls: ["/logoSouCampus.png"],
+      });
+      check(
+        "функцию галереи из браузера не вызвать",
+        rpc.error !== null,
+        rpc.error === null ? "replace_product_images выполнилась — execute у authenticated не отозван" : ""
+      );
     }
 
     // -------------------------------------------------------
@@ -423,6 +560,12 @@ async function main() {
     );
 
     if (productId) {
+      // ⚠️ Карта здесь в pending, а не live. Отказ на комментарий может
+      // прийти и оттого, что карту не видно, а не только оттого, что её не
+      // покупали, — различить эти два отказа отсюда нельзя. Сделать карту
+      // live ради чистоты проверки нельзя тем более: см. выше про кэш
+      // витрины на проде. Проверяется главное: мимо has_purchased() строка
+      // не встаёт.
       const comment = await asUser.from("product_comments").insert({
         product_id: productId,
         user_id: userId,
@@ -448,13 +591,17 @@ async function main() {
     }
   } finally {
     // -------------------------------------------------------
-    // Уборка. В finally, чтобы временный человек и карта не остались в
-    // базе даже если проверка упала посередине.
+    // Уборка. В finally, чтобы временный человек, карты и файлы не
+    // остались в базе даже если проверка упала посередине.
     // -------------------------------------------------------
-    if (productId) {
-      await asServer.from("product_comments").delete().eq("product_id", productId);
-      await asServer.from("product_reactions").delete().eq("product_id", productId);
-      await asServer.from("products").delete().eq("id", productId);
+    for (const id of productIds) {
+      await asServer.from("product_comments").delete().eq("product_id", id);
+      await asServer.from("product_reactions").delete().eq("product_id", id);
+      await asServer.from("product_images").delete().eq("product_id", id);
+      await asServer.from("products").delete().eq("id", id);
+    }
+    if (storedFiles.length > 0) {
+      await asServer.storage.from(PRODUCT_FILES_BUCKET).remove(storedFiles);
     }
     await asServer.auth.admin.deleteUser(userId);
   }
