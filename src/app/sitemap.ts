@@ -4,6 +4,7 @@ import { getAllReviews } from "@/lib/reviews";
 import { getAllProducts } from "@/lib/products";
 import { SITE_URL } from "@/lib/site";
 import { WIKI_ARTICLES } from "@/lib/wiki";
+import { getAllUpdates } from "@/lib/updates";
 
 // Карта сайта — список всех индексируемых адресов для поисковика. Next отдаёт
 // её по /sitemap.xml автоматически из этого файла.
@@ -58,6 +59,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     })),
   ];
 
+  // What's new — тот же приём, что у вики. lastModified у поста — его
+  // собственная дата, а не «сейчас»: пост после публикации не меняется,
+  // и честная дата говорит поисковику, что перечитывать его незачем.
+  const updatePages: MetadataRoute.Sitemap = [
+    { url: `${SITE_URL}/updates`, lastModified: now, changeFrequency: "weekly", priority: 0.6 },
+    ...getAllUpdates().map((post) => ({
+      url: `${SITE_URL}/updates/${post.slug}`,
+      lastModified: new Date(`${post.date}T00:00:00Z`),
+      changeFrequency: "yearly" as const,
+      priority: 0.4,
+    })),
+  ];
+
   const reviewPages: MetadataRoute.Sitemap = reviews.map((r) => ({
     url: `${SITE_URL}/reviews/${r.slug}`,
     lastModified: now,
@@ -82,6 +96,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...staticPages,
     ...projectPages,
     ...wikiPages,
+    ...updatePages,
     ...reviewPages,
     ...shopPages,
   ];

@@ -51,6 +51,14 @@ describe("isMarketplaceRoute", () => {
     expect(isMarketplaceRoute("/wiki/missing-blocks")).toBe(true);
   });
 
+  it("What's new — тоже магазинная сторона", () => {
+    // Та же дверь, что у вики: SHOP_NAV_LINKS и колонка Marketplace.
+    // Проверка стоит с первого дня раздела, чтобы не повторить четыре
+    // дня вики с чужим навбаром.
+    expect(isMarketplaceRoute("/updates")).toBe(true);
+    expect(isMarketplaceRoute("/updates/a-faster-storefront")).toBe(true);
+  });
+
   it("профиль продавца — витрина магазина", () => {
     // ⚠️ Здесь стоял /creator/upload, и проверка ПРОХОДИЛА всё время,
     // пока сама страница отдавала 404: она спрашивает, какой рисовать

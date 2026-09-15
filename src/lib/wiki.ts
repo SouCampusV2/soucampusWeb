@@ -1,3 +1,4 @@
+import type { ArticleBlock, ArticleSection } from "@/lib/article-blocks";
 import { BASE_RATE, HIGH_RATE, HIGH_RATE_THRESHOLD } from "@/lib/pricing";
 import { DISCORD_INVITE, SUPPORT_EMAIL } from "@/lib/site";
 
@@ -49,12 +50,11 @@ export const WIKI_SECTIONS = [
 
 export type WikiSectionId = (typeof WIKI_SECTIONS)[number]["id"];
 
-/** Кусок статьи. Разметки внутри текста нет намеренно — см. ниже. */
-export type WikiBlock =
-  | { kind: "text"; text: string }
-  | { kind: "steps"; items: string[] }
-  | { kind: "list"; items: string[] }
-  | { kind: "note"; text: string };
+/**
+ * Кусок статьи. С 2026-09-15 тип общий с постами What's new и живёт в
+ * article-blocks.ts — там же объяснено, почему блоки, а не HTML.
+ */
+export type WikiBlock = ArticleBlock;
 
 export type WikiArticle = {
   slug: string;
@@ -62,17 +62,9 @@ export type WikiArticle = {
   section: WikiSectionId;
   /** Одна фраза — на карточку в оглавлении и в description страницы. */
   summary: string;
-  body: { heading: string; blocks: WikiBlock[] }[];
+  body: ArticleSection[];
 };
 
-// Тело статьи — размеченные БЛОКИ, а не строка с HTML.
-//
-// HTML в данных пришлось бы выводить через dangerouslySetInnerHTML, то
-// есть завести второй путь для разметки на сайте, где для описаний карт
-// уже есть sanitize.ts. Здесь текст свой и лежит в репозитории, но
-// «свой» — это про сегодня: путь остаётся открытым навсегда, а закрывать
-// его придётся тому, кто причину уже не помнит. Блоки же превращает в
-// разметку отрисовщик, и вставить в них тег физически нечем.
 export const WIKI_ARTICLES: WikiArticle[] = [
   {
     slug: "installing-a-map",

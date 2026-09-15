@@ -116,6 +116,7 @@ describe("редиректы next.config.ts", () => {
       "/@soucampus",
       "/u/soucampus",
       "/wiki",
+      "/updates",
     ]) {
       expect(resolve(redirects, pathname)).toBeNull();
     }
