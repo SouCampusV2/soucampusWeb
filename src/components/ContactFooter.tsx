@@ -87,6 +87,15 @@ export function ContactFooter() {
   //
   // undefined, а не false: PageTransition спрашивает hasAttribute, и
   // строку "false" он бы нашёл.
+  //
+  // ⚠️ Правило выше действует на ЛОГО и колонку Legal. У двух колонок
+  // разделов своё решение (владелец, 2026-09-15), и оно по КОЛОНКЕ, а не
+  // по странице:
+  //   Studio      — волна ВСЕГДА, в том числе со страниц магазина: эти
+  //                 ссылки ведут в студию, а волна — её язык.
+  //   Marketplace — волны НЕТ никогда, в том числе со страниц студии:
+  //                 магазин живёт без неё, и входить в него волной значило
+  //                 бы обещать анимацию, которой внутри не будет.
   const inShop = isMarketplaceRoute(usePathname());
   const wave = inShop ? undefined : "true";
 
@@ -123,12 +132,18 @@ export function ContactFooter() {
                 Studio
               </h3>
               <ul className="mt-3 space-y-2 text-sm text-zinc-500 dark:text-zinc-400">
-                {NAV_LINKS.map((link) => (
+                {/* Без пункта Marketplace (решение владельца 15.09): у
+                    магазина своя колонка рядом, и ссылка на него внутри
+                    «Studio» была дублем. Отбираем по href, а не по
+                    позиции — тот же довод, что у колонки Marketplace ниже.
+                    Из самого NAV_LINKS пункт НЕ убран: по нему навбар
+                    студии переключается в режим магазина. */}
+                {NAV_LINKS.filter((link) => link.href !== "/marketplace").map((link) => (
                   <li key={link.href}>
                     <Link
                       href={link.href}
                       className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                      data-page-transition={wave}
+                      data-page-transition="true"
                     >
                       {link.label}
                     </Link>
@@ -164,10 +179,12 @@ export function ContactFooter() {
                         {link.label} <span className="text-xs">soon</span>
                       </span>
                     ) : (
+                      // Без data-page-transition вовсе — атрибут не
+                      // ставится даже со значением undefined: волны у этой
+                      // колонки нет ни с одной страницы (шапка компонента).
                       <Link
                         href={link.href}
                         className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                        data-page-transition={wave}
                       >
                         {link.label}
                       </Link>
