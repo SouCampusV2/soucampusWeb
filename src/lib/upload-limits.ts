@@ -25,10 +25,41 @@ export function formatBytes(bytes: number): string {
 // Это НЕ антивирус: правильный zip может содержать что угодно внутри.
 // Проверка отсекает грубое (переименованный exe), но не заменяет
 // нормального сканирования — см. docs/IDEAS.md, «Проверка файлов».
+//
+// ⚠️ ФУНКЦИИ ЗДЕСЬ ЗОВУТСЯ С ДВУХ СТОРОН, и это главное, что о них надо
+// знать (2026-09-11). До шлюза записи они жили только в браузере, то
+// есть не проверяли ничего: отключить их можно было правкой одной
+// строки в консоли. Теперь те же правила исполняет сервер — обработчик
+// /api/creator/upload читает первые байты уже загруженного объекта и
+// зовёт checkMapBytes. Поэтому ядро проверок — ЧИСТЫЕ функции над
+// Uint8Array (их же покрывают тесты), а варианты с File — тонкие
+// обёртки для формы, которая показывает человеку ошибку до загрузки.
+//
+// Браузерная проверка осталась УДОБСТВОМ: она бережёт время и трафик.
+// Защищает — серверная.
 // ------------------------------------------------------------
 
 /** Что принимаем от креатора — для атрибута accept у поля файла. */
 export const MAP_FILE_ACCEPT = ".zip,.schem,.schematic";
+
+/**
+ * Расширения файла карты, которые вообще может выдать шлюз.
+ *
+ * Список нужен серверу: расширение едет в ключ объекта, и решать, каким
+ * оно будет, должен не загружающий. safeExtension чистит строку от
+ * мусора, но «чистая» строка `exe` остаётся `exe` — отсекает её вот
+ * этот перечень.
+ */
+export const MAP_FILE_EXTENSIONS = ["zip", "schem", "schematic"] as const;
+
+/**
+ * Сколько первых байтов нужно, чтобы опознать формат.
+ *
+ * Двенадцать, а не четыре: у WEBP метка формата лежит с 8-го байта. На
+ * сервере это же число — длина диапазона в ranged-запросе к Storage,
+ * поэтому оно вынесено в константу, а не повторено цифрой в двух местах.
+ */
+export const HEAD_BYTES = 12;
 
 // ZIP: обычный архив, пустой (50 4B 05 06) и многотомный (50 4B 07 08).
 const ZIP_SIGNATURES = [
@@ -61,21 +92,31 @@ function startsWith(head: Uint8Array, signature: number[]): boolean {
   return signature.every((byte, i) => head[i] === byte);
 }
 
-async function readHead(file: File, length = 12): Promise<Uint8Array> {
+async function readHead(file: File, length = HEAD_BYTES): Promise<Uint8Array> {
   const slice = await file.slice(0, length).arrayBuffer();
   return new Uint8Array(slice);
 }
 
-/** null — файл годится; строка — понятная человеку причина отказа. */
-export async function checkMapFile(file: File): Promise<string | null> {
-  if (file.size === 0) return "That file is empty.";
-  if (file.size > MAP_FILE_MAX_BYTES) {
-    return `The map file must be ${formatBytes(MAP_FILE_MAX_BYTES)} or smaller — yours is ${formatBytes(file.size)}.`;
+/**
+ * Ядро проверки файла карты: размер + сигнатура в первых байтах.
+ *
+ * null — файл годится; строка — понятная человеку причина отказа.
+ * Тексты писались для формы и остаются такими же в ответе сервера:
+ * человек по обе стороны один и тот же, и объяснять ему дважды разными
+ * словами незачем.
+ */
+export function checkMapBytes(
+  head: Uint8Array,
+  size: number,
+  fileName: string
+): string | null {
+  if (size === 0) return "That file is empty.";
+  if (size > MAP_FILE_MAX_BYTES) {
+    return `The map file must be ${formatBytes(MAP_FILE_MAX_BYTES)} or smaller — yours is ${formatBytes(size)}.`;
   }
 
-  const name = file.name.toLowerCase();
+  const name = fileName.toLowerCase();
   const isSchematic = name.endsWith(".schem") || name.endsWith(".schematic");
-  const head = await readHead(file);
 
   const looksZip = ZIP_SIGNATURES.some((sig) => startsWith(head, sig));
   const looksGzip = startsWith(head, GZIP_SIGNATURE);
@@ -85,27 +126,40 @@ export async function checkMapFile(file: File): Promise<string | null> {
   if (looksZip || looksGzip || looksNbt) return null;
 
   return isSchematic
-    ? `“${file.name}” doesn't look like a valid schematic — the file may be corrupted.`
+    ? `“${fileName}” doesn't look like a valid schematic — the file may be corrupted.`
     : "That doesn't look like a .zip, .schem or .schematic file. Pack a world folder into a zip archive first.";
 }
 
-/** null — картинка годится; строка — причина отказа. */
-export async function checkImageFile(file: File): Promise<string | null> {
-  if (file.size === 0) return "That image is empty.";
-  if (file.size > IMAGE_MAX_BYTES) {
-    return `Each image must be ${formatBytes(IMAGE_MAX_BYTES)} or smaller — “${file.name}” is ${formatBytes(file.size)}.`;
+/** Ядро проверки картинки. null — годится; строка — причина отказа. */
+export function checkImageBytes(
+  head: Uint8Array,
+  size: number,
+  fileName: string
+): string | null {
+  if (size === 0) return "That image is empty.";
+  if (size > IMAGE_MAX_BYTES) {
+    return `Each image must be ${formatBytes(IMAGE_MAX_BYTES)} or smaller — “${fileName}” is ${formatBytes(size)}.`;
   }
 
-  const head = await readHead(file);
   const match = IMAGE_SIGNATURES.find((sig) => startsWith(head, sig.bytes));
-  if (!match) return `“${file.name}” isn't a PNG, JPEG, GIF or WebP image.`;
+  if (!match) return `“${fileName}” isn't a PNG, JPEG, GIF or WebP image.`;
   // RIFF — контейнер не только для WebP (там же живёт, например, WAV),
   // поэтому у него проверяем ещё и метку формата.
   if (match.label === "webp") {
     const tag = String.fromCharCode(...head.slice(8, 12));
-    if (tag !== "WEBP") return `“${file.name}” isn't a valid WebP image.`;
+    if (tag !== "WEBP") return `“${fileName}” isn't a valid WebP image.`;
   }
   return null;
+}
+
+/** null — файл годится; строка — понятная человеку причина отказа. */
+export async function checkMapFile(file: File): Promise<string | null> {
+  return checkMapBytes(await readHead(file), file.size, file.name);
+}
+
+/** null — картинка годится; строка — причина отказа. */
+export async function checkImageFile(file: File): Promise<string | null> {
+  return checkImageBytes(await readHead(file), file.size, file.name);
 }
 
 /**
@@ -118,6 +172,10 @@ export async function checkImageFile(file: File): Promise<string | null> {
  * такое, скорее всего, отсекла бы (политика смотрит на первый сегмент
  * пути), но полагаться на «скорее всего» в вопросе чужих папок нельзя —
  * дешевле не пускать мусор в путь вообще.
+ *
+ * ⚠️ Чистка — не проверка. `exe` пройдёт её без единой правки: она
+ * убирает мусор, а не решает, что позволено. Перечень позволенного —
+ * MAP_FILE_EXTENSIONS, и сверяет с ним сервер.
  */
 export function safeExtension(fileName: string, fallback: string): string {
   const raw = fileName.includes(".") ? fileName.split(".").pop() ?? "" : "";

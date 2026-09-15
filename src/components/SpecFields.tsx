@@ -8,7 +8,7 @@ import {
   MC_VERSIONS,
   THEMES,
 } from "@/lib/product-specs";
-import type { ProductSpecs } from "@/lib/products";
+import type { EditableSpecs } from "@/lib/products";
 
 // Характеристики карты в формах загрузки и правки.
 //
@@ -23,21 +23,11 @@ import type { ProductSpecs } from "@/lib/products";
 // published_at сюда не входят вовсе. Вес берётся из файла при загрузке,
 // дату премьеры ставит база (триггер stamp_published_at). Спрошенное у
 // человека число разъедется с реальностью при первой же замене файла.
-
-/** Часть ProductSpecs, которую заполняет человек. */
-export type EditableSpecs = Pick<
-  ProductSpecs,
-  "mcVersions" | "mapTypes" | "gameModes" | "themes" | "mapSize" | "fileFormats"
->;
-
-export const EMPTY_SPECS: EditableSpecs = {
-  mcVersions: [],
-  mapTypes: [],
-  gameModes: [],
-  themes: [],
-  mapSize: null,
-  fileFormats: [],
-};
+//
+// ⚠️ Сам тип EditableSpecs и specsToColumns с 2026-09-13 живут в
+// products.ts: этот файл помечен "use client", а форму характеристик
+// теперь записывает серверный шлюз (/api/creator/map), и тянуть ради
+// чистой функции клиентскую границу в обработчик незачем.
 
 /** Добавить/убрать значение из набора, сохраняя порядок словаря. */
 function toggle(list: string[], value: string, order: readonly string[]): string[] {
@@ -209,16 +199,4 @@ export function SpecFields({
       </Group>
     </div>
   );
-}
-
-/** Форма для записи в БД. Одна на обе формы — колонки не разъедутся. */
-export function specsToColumns(specs: EditableSpecs) {
-  return {
-    mc_versions: specs.mcVersions,
-    map_types: specs.mapTypes,
-    game_modes: specs.gameModes,
-    themes: specs.themes,
-    map_size: specs.mapSize,
-    file_formats: specs.fileFormats,
-  };
 }

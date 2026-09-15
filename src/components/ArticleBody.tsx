@@ -1,22 +1,30 @@
+import Image from "next/image";
 import { Info } from "@phosphor-icons/react/dist/ssr";
-import type { WikiArticle } from "@/lib/wiki";
+import type { ArticleSection } from "@/lib/article-blocks";
 
-// Единственный отрисовщик тела статьи. Блоки из wiki.ts превращаются в
-// разметку ЗДЕСЬ — в данных её нет, поэтому никакого
+// Единственный отрисовщик тела текста — статьи Wiki, лицензии в /terms и
+// поста What's new. До 2026-09-15 назывался WikiArticleBody и принимал
+// статью целиком; принимает он теперь только разделы, потому что больше
+// ему от статьи ничего и не было нужно, а у поста своя шапка.
+//
+// Блоки превращаются в разметку ЗДЕСЬ — в данных её нет, поэтому никакого
 // dangerouslySetInnerHTML на этом пути не появится даже случайно.
 //
-// Четыре вида блока, и они разные по смыслу, а не по виду:
+// Пять видов блока, и они разные по смыслу, а не по виду:
 //   text  — абзац.
 //   steps — нумерованный порядок: шаги, которые делают ПОДРЯД.
 //   list  — маркированный набор: пункты, независимые друг от друга.
 //   note  — оговорка в рамке: то, что человек прочтёт, только если она
 //           выбивается из потока.
+//   image — картинка из public/ в собственной пропорции (появилась с
+//           постами: новость «одиннадцать новых работ» без самих работ
+//           была бы списком названий).
 // Разница между steps и list не косметическая: перепутав их, мы говорим
 // «делай в любом порядке» там, где порядок обязателен.
-export function WikiArticleBody({ article }: { article: WikiArticle }) {
+export function ArticleBody({ sections }: { sections: ArticleSection[] }) {
   return (
     <div className="mt-10 space-y-12">
-      {article.body.map((section) => (
+      {sections.map((section) => (
         <section key={section.heading}>
           <h2 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
             {section.heading}
@@ -69,6 +77,31 @@ export function WikiArticleBody({ article }: { article: WikiArticle }) {
                       </li>
                     ))}
                   </ul>
+                );
+              }
+
+              if (block.kind === "image") {
+                return (
+                  // Настоящие width/height, а не fill в рамке 16:9: рамка
+                  // повторяет пропорцию исходника (article-blocks.ts).
+                  // h-auto держит пропорцию при сжатии до ширины колонки,
+                  // а размеры заранее резервируют место — текст ниже не
+                  // прыгает, когда картинка догружается.
+                  <figure key={key}>
+                    <Image
+                      src={block.src}
+                      alt={block.alt}
+                      width={block.width}
+                      height={block.height}
+                      sizes="(min-width: 768px) 48rem, 100vw"
+                      className="h-auto w-full rounded-2xl"
+                    />
+                    {block.caption && (
+                      <figcaption className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+                        {block.caption}
+                      </figcaption>
+                    )}
+                  </figure>
                 );
               }
 

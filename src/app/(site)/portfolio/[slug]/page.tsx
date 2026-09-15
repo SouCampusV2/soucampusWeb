@@ -1,10 +1,14 @@
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
 import type { Metadata } from "next";
 import { getAllProjects, getProject } from "@/lib/projects";
 import { getViewCounts, VIEW_PATHS } from "@/lib/views";
 import { ViewCount } from "@/components/ViewCount";
 import { PortfolioGallery } from "@/components/PortfolioGallery";
-import { BackLink } from "@/components/BackLink";
+import {
+  PortfolioBackLink,
+  PortfolioBackLinkFallback,
+} from "@/components/PortfolioBackLink";
 
 // Список адресов, которые Next.js соберёт заранее, во время сборки.
 // Раньше брался из массива мгновенно, теперь — запросом в базу, поэтому
@@ -53,31 +57,32 @@ export async function generateMetadata({
 
 export default async function ProjectPage({
   params,
-  searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ from?: string }>;
 }) {
   const { slug } = await params;
-  const { from } = await searchParams;
   const project = await getProject(slug);
   if (!project) notFound();
 
   const viewCounts = await getViewCounts();
 
-  // Cards on the homepage (RecentProjects) and the portfolio catalog both
-  // link here — the back link should return to whichever one sent the
-  // visitor, not always default to the catalog. Carried via ?from=home
-  // rather than router.back() so it also works from a fresh/shared link.
-  const backHref = from === "home" ? "/" : "/portfolio";
-  // Стрелку рисует BackLink иконкой — в подписи её быть не должно.
-  const backLabel = from === "home" ? "Home" : "All work";
-
   return (
     <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-16 sm:py-28">
 
       <div className="mx-auto max-w-3xl">
-        <BackLink href={backHref}>{backLabel}</BackLink>
+        {/* ⚠️ Эта страница НЕ принимает searchParams, и это не забывчивость.
+            Проп `searchParams` сам по себе делает страницу динамической:
+            параметры известны только в момент запроса, значит Next обязан
+            рендерить её каждому заходу — при том, что всё остальное здесь
+            заранее известно. Ради одного слова в ссылке «назад»
+            шестнадцать работ пересобирались на каждого посетителя.
+
+            Теперь адрес читает клиентский PortfolioBackLink, а <Suspense>
+            удерживает эту динамику внутри себя: без границы Next увёл бы
+            на клиент всё дерево страницы. Разбор — в шапке компонента. */}
+        <Suspense fallback={<PortfolioBackLinkFallback />}>
+          <PortfolioBackLink />
+        </Suspense>
 
         {/* Тег и счётчик — в одну строку: оба относятся к работе целиком,
             но счётчик приглушён, это второстепенная информация. */}

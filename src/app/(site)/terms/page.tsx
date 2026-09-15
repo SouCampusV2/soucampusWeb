@@ -4,7 +4,7 @@ import { FileText } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { BASE_RATE, HIGH_RATE, HIGH_RATE_THRESHOLD } from "@/lib/pricing";
 import { PageGlow } from "@/components/PageGlow";
-import { WikiArticleBody } from "@/components/WikiArticleBody";
+import { ArticleBody } from "@/components/ArticleBody";
 import { getWikiArticle } from "@/lib/wiki";
 
 // Лицензия рисуется ИЗ ТОЙ ЖЕ статьи вики, а не переписана сюда своими
@@ -128,7 +128,7 @@ export default function TermsPage() {
             {LICENCE.title}
           </h2>
           <div className="max-w-2xl">
-            <WikiArticleBody article={LICENCE} />
+            <ArticleBody sections={LICENCE.body} />
             <p className="mt-8 text-sm text-zinc-500 dark:text-zinc-400">
               The same text lives in the{" "}
               <Link

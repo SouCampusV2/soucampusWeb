@@ -4,7 +4,7 @@ import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
 import { ArrowLeft, ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { PageGlow } from "@/components/PageGlow";
-import { WikiArticleBody } from "@/components/WikiArticleBody";
+import { ArticleBody } from "@/components/ArticleBody";
 import { BackLink } from "@/components/BackLink";
 import {
   WIKI_ARTICLES,
@@ -125,7 +125,7 @@ export default async function WikiArticlePage({
               {article.summary}
             </p>
 
-            <WikiArticleBody article={article} />
+            <ArticleBody sections={article.body} />
 
             {/* Соседи. Пустая колонка у краёв списка держит «следующую»
                 справа даже когда предыдущей нет — иначе она прыгала бы
