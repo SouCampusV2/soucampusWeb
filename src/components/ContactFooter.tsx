@@ -239,11 +239,15 @@ export function ContactFooter() {
                   aria-label={isPlaceholder ? `${label} (coming soon)` : label}
                   title={isPlaceholder ? "Coming soon" : label}
                   aria-disabled={isPlaceholder || undefined}
-                  className={
+                  /* Иконка 22px = и зона нажатия 22px: соцсети стоят
+                     в ряд вплотную, и на телефоне попасть в нужную
+                     трудно. Растёт только зона, сама иконка прежняя —
+                     ряд на вид не меняется. */
+                  className={`flex items-center justify-center pointer-coarse:h-11 pointer-coarse:w-11 ${
                     isPlaceholder
                       ? "cursor-default text-zinc-300 dark:text-zinc-600"
                       : "cursor-pointer text-zinc-500 transition-colors hover:text-orange-500 dark:text-zinc-400 dark:hover:text-orange-400"
-                  }
+                  }`}
                 >
                   <Icon size={22} weight="fill" />
                 </a>
