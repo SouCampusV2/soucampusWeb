@@ -60,7 +60,12 @@ function Chip({
       onClick={onClick}
       disabled={disabled}
       aria-pressed={active}
-      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40 ${
+      // Чипы характеристик — самая частая цель в форме карты: версий,
+      // режимов и тем набирается несколько десятков, и жмут их подряд.
+      // 30px высоты хватает мыши и не хватает пальцу, поэтому на
+      // тач-экране они выше. Десктопная плотность не меняется: там
+      // список из тридцати чипов и так занимает полэкрана.
+      className={`rounded-full border px-3 py-1.5 text-xs font-medium transition disabled:cursor-not-allowed disabled:opacity-40 pointer-coarse:px-4 pointer-coarse:py-2.5 ${
         active
           ? "border-orange-500 bg-orange-500/10 text-orange-700 dark:text-orange-300"
           : "border-zinc-950/[0.08] text-zinc-600 hover:border-zinc-400 dark:border-zinc-50/[0.08] dark:text-zinc-400 dark:hover:border-zinc-600"

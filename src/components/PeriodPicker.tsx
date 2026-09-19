@@ -32,7 +32,7 @@ export function PeriodPicker({ range }: { range: Range }) {
             key={days}
             type="button"
             onClick={() => router.push(`/admin?days=${days}`)}
-            className={`cursor-pointer rounded-full border px-3 py-1 text-sm transition-colors ${
+            className={`cursor-pointer rounded-full border px-3 py-1 text-sm transition-colors pointer-coarse:px-4 pointer-coarse:py-2.5 ${
               preset === days
                 ? "border-orange-500 bg-orange-500 font-medium text-zinc-950"
                 : "border-zinc-200 text-zinc-600 hover:border-orange-500 dark:border-zinc-800 dark:text-zinc-400"
