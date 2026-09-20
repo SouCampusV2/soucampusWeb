@@ -102,7 +102,15 @@ export function ClientReviews({ reviews }: { reviews: Review[] }) {
         </div>
       </div>
 
-      <div className="mt-12 overflow-hidden">
+      {/* data-draggable — для npm run check:responsive. Он считает
+          поломкой кнопку, отрезанную непрокручиваемым предком: именно так
+          14.09 пропала стрелка на /portfolio. Но карусель обрезает
+          содержимое НАРОЧНО, а добраться до него можно перетаскиванием —
+          и по вёрстке это неотличимо от настоящей потери. Поэтому
+          отличие объявляется здесь, в разметке, а не угадывается
+          скриптом. Ставится только там, где содержимое действительно
+          вытаскивается жестом. */}
+      <div data-draggable className="mt-12 overflow-hidden">
         <div className="mx-auto max-w-6xl px-6">
           <motion.div
             ref={trackRef}
