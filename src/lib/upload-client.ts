@@ -1,5 +1,7 @@
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
+import { PRODUCT_IMAGES_BUCKET } from "@/lib/products";
+import { AVATARS_BUCKET } from "@/lib/upload-limits";
 
 // Браузерная половина шлюза загрузки (2026-09-11).
 //
@@ -82,4 +84,65 @@ export async function uploadMapFile(file: File): Promise<string> {
   if (!confirmResponse.ok) throw new Error(await problemFromGateway(confirmResponse));
 
   return path;
+}
+
+/**
+ * Загрузить картинку через шлюз и вернуть ПУБЛИЧНУЮ ссылку на неё.
+ *
+ * kind решает всё остальное: "product" — обложка, галерея и картинки
+ * описания карты (бакет product-images, нужен статус креатора),
+ * "avatar" — аватар профиля (бакет avatars, хватает входа). Путь в
+ * обоих случаях строит сервер: здесь его не видно нарочно.
+ *
+ * Бросает Error с текстом для человека — формы ловят его тем же
+ * catch'ем, что и всё остальное.
+ */
+export async function uploadImage(
+  file: File,
+  kind: "product" | "avatar"
+): Promise<string> {
+  const sign = await fetch("/api/creator/image", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "sign",
+      kind,
+      fileName: file.name,
+      size: file.size,
+    }),
+  });
+  if (!sign.ok) throw new Error(await problemFromGateway(sign));
+  const { path, token } = (await sign.json()) as { path: string; token: string };
+
+  const bucket = kind === "product" ? PRODUCT_IMAGES_BUCKET : AVATARS_BUCKET;
+  const supabase = createSupabaseBrowser();
+
+  // Байты — напрямую в Storage по одноразовому токену, мимо наших
+  // функций: тот же обход потолка тела запроса у Vercel, что у файла
+  // карты. Разрешение на эту запись уже выдали мы, на один путь.
+  const { error: uploadError } = await supabase.storage
+    .from(bucket)
+    .uploadToSignedUrl(path, token, file, {
+      contentType: file.type || "application/octet-stream",
+    });
+  if (uploadError) {
+    throw new Error(`Couldn't upload the image: ${uploadError.message}`);
+  }
+
+  // Проверка того, что легло: размер у Storage и первые байты. Для
+  // аватара этот же шаг переставляет файл с временного пути на
+  // постоянный, поэтому ссылку строим по пути ИЗ ОТВЕТА, а не по тому,
+  // который выдал sign.
+  const confirm = await fetch("/api/creator/image", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ action: "confirm", kind, path, fileName: file.name }),
+  });
+  if (!confirm.ok) throw new Error(await problemFromGateway(confirm));
+  const { path: finalPath } = (await confirm.json()) as { path: string };
+
+  const { data } = supabase.storage.from(bucket).getPublicUrl(finalPath);
+  // ?v=… у аватара сбивает кэш браузера и CDN: путь постоянный, и без
+  // метки после замены показался бы старый файл.
+  return kind === "avatar" ? `${data.publicUrl}?v=${Date.now()}` : data.publicUrl;
 }

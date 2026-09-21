@@ -16,7 +16,10 @@ import {
   Trash,
 } from "@phosphor-icons/react";
 import type { Notification, NotificationKind } from "@/lib/notifications";
-import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import {
+  deleteNotifications,
+  markNotificationsRead,
+} from "@/lib/social-client";
 import { useHydrated } from "@/lib/useHydrated";
 
 // Время уведомления.
@@ -137,25 +140,21 @@ export function NotificationList({ items }: { items: Notification[] }) {
       return next;
     });
 
-    const supabase = createSupabaseBrowser();
-    await supabase
-      .from("notifications")
-      .update({ read_at: new Date().toISOString() })
-      .in("id", fresh);
+    // Через шлюз (/api/notifications). Чужие id он не тронет: запрос
+    // фильтруется по человеку из сессии — раньше это делала за нас RLS.
+    await markNotificationsRead(fresh).catch(() => {});
   }
 
   const unreadIds = visible
     .filter((item) => !item.readAt && !markedRead.has(item.id))
     .map((item) => item.id);
 
-  // Удаление — тоже напрямую из браузера, политикой "delete own
-  // notifications". Строку убираем из списка сразу и НЕ возвращаем при
-  // ошибке: это почтовый ящик, а не документ, и «не удалилось» человек
-  // увидит сам при следующем открытии страницы.
+  // Удаление — тоже через шлюз. Строку убираем из списка сразу и НЕ
+  // возвращаем при ошибке: это почтовый ящик, а не документ, и «не
+  // удалилось» человек увидит сам при следующем открытии страницы.
   async function remove(id: string) {
     setRemoved((current) => new Set(current).add(id));
-    const supabase = createSupabaseBrowser();
-    await supabase.from("notifications").delete().eq("id", id);
+    await deleteNotifications([id]).catch(() => {});
   }
 
   async function clearAll() {
@@ -166,8 +165,7 @@ export function NotificationList({ items }: { items: Notification[] }) {
       for (const id of ids) next.add(id);
       return next;
     });
-    const supabase = createSupabaseBrowser();
-    await supabase.from("notifications").delete().in("id", ids);
+    await deleteNotifications(ids).catch(() => {});
     setBusy(false);
   }
 

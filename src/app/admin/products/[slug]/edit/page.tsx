@@ -78,11 +78,7 @@ export default async function AdminEditMapPage({
       )}
 
       <div className="mt-8">
-        <EditMapForm
-          product={product}
-          userId={admin.id}
-          reactionOptions={reactionOptions}
-        />
+        <EditMapForm product={product} reactionOptions={reactionOptions} />
       </div>
     </div>
   );

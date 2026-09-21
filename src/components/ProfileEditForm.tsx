@@ -9,6 +9,7 @@ import { Button, BUTTON_COLORS } from "@/components/Button";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { USERNAME_COOLDOWN_DAYS, type Profile } from "@/lib/profiles";
 import { NameColorPicker } from "@/components/NameColorPicker";
+import { uploadImage } from "@/lib/upload-client";
 import { formatDayMonthYear } from "@/lib/dates";
 import { revalidateProfile } from "@/app/(site)/settings/actions";
 
@@ -117,25 +118,23 @@ export function ProfileEditForm({
       }
     }
 
-    // Новый аватар — заливаем в свою папку. Фиксированный путь + upsert:
-    // новый файл перезаписывает старый, мусор в бакете не копится. ?v=…
-    // сбивает кэш браузера/CDN, иначе после замены показался бы старый.
+    // Новый аватар — через шлюз (/api/creator/image, kind: "avatar").
+    // Путь строит сервер, он же проверяет вес и первые байты уже
+    // загруженного файла, и только потом ставит его на постоянное место
+    // <user_id>/avatar. Отказ прежний аватар не трогает — разбор в
+    // шапке обработчика. Готовая ссылка приезжает уже с ?v=…, которая
+    // сбивает кэш браузера и CDN.
     let nextAvatarUrl = avatarUrl;
     if (avatarFile) {
-      const path = `${userId}/avatar`;
-      const { error: uploadError } = await supabase.storage
-        .from("avatars")
-        .upload(path, avatarFile, {
-          upsert: true,
-          contentType: avatarFile.type,
-        });
-      if (uploadError) {
+      try {
+        nextAvatarUrl = await uploadImage(avatarFile, "avatar");
+      } catch (err) {
         setPending(false);
-        setError(`Couldn't upload the avatar: ${uploadError.message}`);
+        setError(
+          err instanceof Error ? err.message : "Couldn't upload the avatar."
+        );
         return;
       }
-      const { data } = supabase.storage.from("avatars").getPublicUrl(path);
-      nextAvatarUrl = `${data.publicUrl}?v=${Date.now()}`;
     }
 
     // Какую СТРОКУ можно менять, решает RLS «own profile update» (свою).
