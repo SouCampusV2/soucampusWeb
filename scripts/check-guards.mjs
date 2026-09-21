@@ -578,6 +578,11 @@ async function main() {
         comment.error !== null,
         comment.error === null ? "комментарий создался — has_purchased() обойдён" : ""
       );
+      // ⚠️ Проверка выше СЛАБАЯ, и это надо знать: с 21.09 отказ придёт и
+      // потому, что политики вставки больше нет вовсе. То есть она
+      // перестала различать «не купил» и «дверь закрыта для всех».
+      // Сильная версия — ниже, в разделе 5: там тот же человек с
+      // ОПЛАЧЕННЫМ заказом, и отказ доказывает именно шлюз.
 
       const otherId = randomUUID();
       const reaction = await asUser
@@ -717,6 +722,95 @@ async function main() {
       await asServer.from("notifications").delete().eq("id", noteId);
     }
 
+    // ⚠️ Дальше — САМАЯ СИЛЬНАЯ ПРОВЕРКА РАЗДЕЛА, и появилась она
+    // потому, что две предыдущие оказались слабыми. «Не купивший не
+    // пишет комментарий» и «оценку не поставить» до 21.09 отвечали
+    // отказом по ДВУМ причинам сразу: и покупки нет, и политики нет.
+    // Такой отказ не различает защиту и её отсутствие — ровно та
+    // болезнь, которую лечили 08.09 (holds("state","live") сравнивала
+    // live с live).
+    //
+    // Поэтому здесь временному человеку заводится настоящий ОПЛАЧЕННЫЙ
+    // заказ на временную карту: has_purchased_for() теперь отвечает
+    // «да», и отказ на прямую вставку доказывает шлюз, а не отсутствие
+    // покупки.
+    let orderId = null;
+    if (productId) {
+      const order = await asServer
+        .from("orders")
+        .insert({
+          stripe_session_id: `cs_guard_${suffix}`,
+          customer_email: email,
+          user_id: userId,
+          status: "paid",
+          total_cents: 100,
+        })
+        .select("id")
+        .single();
+
+      if (order.error) {
+        skip(
+          "покупатель пишет только через шлюз",
+          `не удалось завести заказ: ${order.error.message}`
+        );
+      } else {
+        orderId = order.data.id;
+        const item = await asServer.from("order_items").insert({
+          order_id: orderId,
+          product_id: productId,
+          title: "guard check",
+          price_cents: 100,
+        });
+
+        if (item.error) {
+          skip(
+            "покупатель пишет только через шлюз",
+            `не удалось завести позицию заказа: ${item.error.message}`
+          );
+        } else {
+          // Сначала убеждаемся, что подготовка удалась: если покупка не
+          // видна, оба отказа ниже ничего не докажут.
+          const bought = await asServer.rpc("has_purchased_for", {
+            p_product_id: productId,
+            p_user_id: userId,
+            p_email: email,
+          });
+          if (bought.data !== true) {
+            skip(
+              "покупатель пишет только через шлюз",
+              "has_purchased_for() не увидел заказ — проверка не различит защиту и её отсутствие"
+            );
+          } else {
+            const buyerComment = await asUser.from("product_comments").insert({
+              product_id: productId,
+              user_id: userId,
+              body: "buyer writing straight into the table",
+            });
+            check(
+              "даже КУПИВШИЙ не пишет комментарий из браузера (только через /api/comments)",
+              buyerComment.error !== null,
+              buyerComment.error === null
+                ? "комментарий создался — политика insert own comment if bought вернулась"
+                : ""
+            );
+
+            const buyerRating = await asUser
+              .from("product_ratings")
+              .insert({ product_id: productId, user_id: userId, stars: 4 });
+            check(
+              "даже КУПИВШИЙ не ставит оценку из браузера (только через /api/feedback)",
+              buyerRating.error !== null,
+              buyerRating.error === null
+                ? "оценка встала — политика insert own rating if bought вернулась"
+                : ""
+            );
+          }
+        }
+      }
+    } else {
+      skip("покупатель пишет только через шлюз", "нет временной карты");
+    }
+
     // Функции шлюза: их зовёт только сервер. ⚠️ Postgres выдаёт execute
     // роли PUBLIC по умолчанию, и revoke в миграции — единственное, что
     // это снимает. Не сработай он, любой посетитель проверял бы чужие
@@ -764,7 +858,15 @@ async function main() {
     // -------------------------------------------------------
     // Уборка. В finally, чтобы временный человек, карты и файлы не
     // остались в базе даже если проверка упала посередине.
+    //
+    // ⚠️ ЗАКАЗ УБИРАЕТСЯ ПЕРВЫМ, и порядок здесь не косметика:
+    // order_items ссылается на products с ON DELETE RESTRICT (заказ
+    // нельзя обесценить, удалив товар, — иначе история покупок теряет
+    // смысл). Пока позиция заказа жива, карта не удалится, и временная
+    // карта осталась бы в базе навсегда. order_items уходит каскадом
+    // вместе с заказом.
     // -------------------------------------------------------
+    await asServer.from("orders").delete().eq("stripe_session_id", `cs_guard_${suffix}`);
     for (const id of productIds) {
       await asServer.from("product_comments").delete().eq("product_id", id);
       await asServer.from("product_reactions").delete().eq("product_id", id);
