@@ -224,6 +224,66 @@ export async function getOverview(
   };
 }
 
+export type Funnel = {
+  /** Уникальные браузеры на /marketplace за период. */
+  storefront: number;
+  /** Уникальные браузеры, открывшие хотя бы одну карту. */
+  products: number;
+  /** Из них — те, кто был и там, и там. Единственный честный переход. */
+  both: number;
+  /** Оплаченные заказы за тот же период. Считаются В ДРУГИХ ЕДИНИЦАХ. */
+  orders: number;
+};
+
+/**
+ * Воронка витрины за период.
+ *
+ * ⚠️ ЕДИНИЦА СЧЁТА — БРАУЗЕР, А НЕ ЧЕЛОВЕК. page_views хранит тройку
+ * «страница + посетитель + день», где посетитель — подписанная cookie.
+ * Телефон и ноутбук одного человека здесь двое. Свойство давнее (см.
+ * CLAUDE.md про счётчик просмотров), и воронка его наследует.
+ *
+ * ⚠️ ПОЭТОМУ ШАГ ЗДЕСЬ ОДИН, А НЕ ДВА. «Витрина → карта» считается по
+ * одному и тому же visitor_id — это настоящий переход. «Карта →
+ * покупка» так посчитать НЕЛЬЗЯ: у заказа нет visitor_id, связать его
+ * с браузером нечем. Покупки возвращаются отдельным числом, и делить
+ * одно на другое эта функция не станет: получилось бы отношение двух
+ * величин в разных единицах, то есть цифра, которая выглядит как
+ * конверсия и ею не является.
+ *
+ * Считает база (функция funnel_counts): PostgREST отдаёт максимум 1000
+ * строк, и группировка в TypeScript однажды тихо посчитала бы по первой
+ * тысяче. Разбор — в шапке миграции 20260921160000.
+ */
+export async function getFunnel(
+  range: Range = resolveRange({}),
+  paidOrders: number
+): Promise<Funnel | null> {
+  const { data, error } = await getSupabaseAdmin().rpc("funnel_counts", {
+    p_from: range.from,
+    p_to: range.to,
+  });
+
+  if (error) {
+    // Наружу — «нет данных», в лог — причина. Чаще всего причина одна:
+    // миграция не прогнана, и это надо видеть в логе, а не гадать по
+    // пустой панели.
+    console.warn(`Воронка недоступна: ${error.message}`);
+    return null;
+  }
+
+  // rpc с returns table отдаёт массив строк — здесь она всегда одна.
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row) return null;
+
+  return {
+    storefront: Number(row.storefront_visitors ?? 0),
+    products: Number(row.product_visitors ?? 0),
+    both: Number(row.both_visitors ?? 0),
+    orders: paidOrders,
+  };
+}
+
 /** Центы в «€12.50» — та же форма, что в price_label у товаров. */
 export function formatMoney(cents: number): string {
   return `€${(cents / 100).toFixed(2)}`;
