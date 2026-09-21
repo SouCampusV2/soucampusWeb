@@ -113,8 +113,18 @@ export function ComposedVariant({
 }) {
   const font = FONTS[preset.font].className;
   const accent = ACCENT_TEXT[preset.accent];
+  // ⚠️ Класс `dark` на корне, а не только чёрный фон — и это главное в
+  // тёмном варианте. `dark:` в проекте привязан к классу `.dark`
+  // (globals.css: `&:where(.dark, .dark *)`), то есть к ТЕМЕ САЙТА, а не
+  // к тону секции. Без класса блоки внутри красили текст по светлой
+  // теме: названия шагов, тарифов и цены выходили чёрным по чёрному.
+  // Прогон по содержимому этого не видел — текст в странице был, его
+  // просто нельзя было прочитать; поймал скриншот.
+  //
+  // С классом на корне тёмная тема включается на поддереве варианта, и
+  // каждый блок набора становится тёмным сам, без своей перекраски.
   return (
-    <div className={preset.tone === "dark" ? "bg-zinc-950" : ""}>
+    <div className={preset.tone === "dark" ? "dark bg-zinc-950" : ""}>
       <HeroBlock preset={preset} projects={projects} font={font} accent={accent} />
       <ComposedSections preset={preset} projects={projects} reviews={reviews} stats={stats} />
     </div>
