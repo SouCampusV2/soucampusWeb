@@ -71,8 +71,22 @@ const PLANS = [
   },
 ];
 
-export function PricingSection() {
+export function PricingSection({
+  inLab = false,
+}: {
+  /**
+   * Только для ветки design-lab. На /lab тарифы из layout выключены
+   * (см. ниже), а вариант «Now» рисует их сам — ему этот флаг и нужен.
+   */
+  inLab?: boolean;
+} = {}) {
   const pathname = usePathname();
+
+  // Лаборатория лендинга (design-lab): у каждого варианта свои тарифы,
+  // и блок из layout дорисовал бы под ними ещё и старые — сравнение
+  // стало бы нечестным. Вариант «Now» передаёт inLab и получает блок
+  // ровно в том виде, что на сайте.
+  if (pathname === "/lab" && !inLab) return null;
 
   // В магазине тарифов нет — решение владельца 2026-08-19.
   //

@@ -40,11 +40,11 @@ const displayFont = Unbounded({ subsets: ["latin"], weight: ["600", "700"] });
 
 export function VariantShowcase({
   projects,
-  reviews,
   stats,
 }: {
   projects: Project[];
-  reviews: Review[];
+  /** Отзывы рисует общий остаток страницы (RestOfLanding). */
+  reviews?: Review[];
   stats: Stat[];
 }) {
   const reveal = useReveal();
@@ -205,26 +205,6 @@ export function VariantShowcase({
         </div>
       </section>
 
-      {/* Отзывы — три штуки сеткой, короткими карточками. */}
-      <section className="mx-auto w-full max-w-6xl px-6 py-20">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {reviews.slice(0, 3).map((review, i) => (
-            <motion.figure
-              key={review.slug}
-              {...reveal(i)}
-              className="rounded-2xl border border-zinc-950/[0.08] p-6 dark:border-zinc-50/[0.08]"
-            >
-              <blockquote className="text-sm leading-6 text-zinc-700 dark:text-zinc-300">
-                “{review.text.slice(0, 180)}
-                {review.text.length > 180 ? "…" : ""}”
-              </blockquote>
-              <figcaption className="mt-4 text-sm font-semibold text-zinc-950 dark:text-zinc-50">
-                {review.name} {review.flag}
-              </figcaption>
-            </motion.figure>
-          ))}
-        </div>
-      </section>
     </div>
   );
 }

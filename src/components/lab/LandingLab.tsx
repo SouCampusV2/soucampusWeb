@@ -8,6 +8,7 @@ import { RecentProjects } from "@/components/RecentProjects";
 import { CountriesMarquee } from "@/components/CountriesMarquee";
 import { ClientReviews } from "@/components/ClientReviews";
 import { HowItWorks } from "@/components/HowItWorks";
+import { PricingSection } from "@/components/PricingSection";
 import { VariantEditorial } from "./VariantEditorial";
 import { VariantShowcase } from "./VariantShowcase";
 import { VariantBlocks } from "./VariantBlocks";
@@ -17,7 +18,7 @@ import {
   VariantTimeline,
   VariantTicker,
 } from "./BespokeVariants";
-import { ComposedVariant } from "./ComposedVariant";
+import { ComposedVariant, RestOfLanding, type RestStyle } from "./ComposedVariant";
 import { PRESETS } from "./presets";
 import type { Project } from "@/lib/projects";
 import type { Review } from "@/lib/reviews";
@@ -61,9 +62,65 @@ const BASELINE: Entry = {
       <CountriesMarquee />
       <ClientReviews reviews={reviews} />
       <HowItWorks />
+      {/* На сайте тарифы приходят из layout; на /lab layout их не
+          рисует, поэтому «Now» ставит их сам — иначе он был бы
+          короче настоящей главной. */}
+      <PricingSection inLab />
     </>
   ),
 };
+
+// Остаток страницы у каждого рукописного варианта — ВЕСЬ контент,
+// которого у него нет (все семь отзывов, страны, шаги, тарифы, призыв),
+// в стиле этого варианта. Раньше рукописные показывали треть лендинга
+// и выглядели «чище» просто потому, что были короче.
+const REST: Record<string, RestStyle> = {
+  editorial: {
+    font: "unbounded", accent: "orange", tone: "bands", density: "normal", scale: "normal",
+    motion: "rise", reviewsShape: "lead", stepsShape: "numbers", pricingShape: "rows",
+    countriesShape: "inline", sections: ["reviews", "countries", "steps", "pricing", "cta"],
+  },
+  showcase: {
+    font: "syne", accent: "orange", tone: "plain", density: "normal", scale: "normal",
+    motion: "fade", reviewsShape: "marquee", stepsShape: "timeline", pricingShape: "cards",
+    countriesShape: "marquee", sections: ["reviews", "countries", "steps", "pricing", "cta"],
+  },
+  blocks: {
+    font: "unbounded", accent: "lime", tone: "plain", density: "normal", scale: "normal",
+    motion: "scale", reviewsShape: "grid", stepsShape: "numbers", pricingShape: "bento",
+    countriesShape: "grid", sections: ["countries", "reviews", "steps", "pricing", "cta"],
+  },
+  scrub: {
+    font: "grotesk", accent: "blue", tone: "plain", density: "normal", scale: "normal",
+    motion: "fade", reviewsShape: "stack", stepsShape: "timeline", pricingShape: "rows",
+    countriesShape: "marquee", sections: ["countries", "reviews", "steps", "pricing", "cta"],
+  },
+  spring: {
+    font: "bricolage", accent: "orange", tone: "plain", density: "normal", scale: "normal",
+    motion: "stagger", reviewsShape: "marquee", stepsShape: "cards", pricingShape: "cards",
+    countriesShape: "grid", sections: ["stats", "countries", "reviews", "steps", "pricing", "cta"],
+  },
+  timeline: {
+    font: "unbounded", accent: "lime", tone: "plain", density: "normal", scale: "normal",
+    motion: "stagger", reviewsShape: "grid", stepsShape: "numbers", pricingShape: "bento",
+    countriesShape: "grid", sections: ["countries", "reviews", "steps", "pricing", "cta"],
+  },
+  ticker: {
+    font: "syne", accent: "blue", tone: "plain", density: "normal", scale: "normal",
+    motion: "rise", reviewsShape: "marquee", stepsShape: "cards", pricingShape: "cards",
+    countriesShape: "marquee", sections: ["countries", "reviews", "steps", "pricing", "cta"],
+  },
+};
+
+/** Рукописный вариант + остаток страницы в его стиле. */
+function withRest(id: string, node: React.ReactNode, d: Data) {
+  return (
+    <>
+      {node}
+      <RestOfLanding style={REST[id]} {...d} />
+    </>
+  );
+}
 
 // Написанные руками: у них отличается не раскладка, а сам приём,
 // конфигом такое не выражается.
@@ -74,7 +131,7 @@ const HANDMADE: Entry[] = [
     skill: "typography-scale",
     idea: "Текст слева, огромный тип, тональные полосы, работы списком",
     risk: "На первом экране нет ни одной фотографии",
-    render: (d) => <VariantEditorial {...d} />,
+    render: (d) => withRest("editorial", <VariantEditorial {...d} />, d),
   },
   {
     id: "showcase",
@@ -82,7 +139,7 @@ const HANDMADE: Entry[] = [
     skill: "visual-hierarchy",
     idea: "Постройка во весь первый экран, заголовок поверх, параллакс",
     risk: "Тёмная секция (решение 16.07) и тяжёлый LCP",
-    render: (d) => <VariantShowcase {...d} />,
+    render: (d) => withRest("showcase", <VariantShowcase {...d} />, d),
   },
   {
     id: "blocks",
@@ -90,7 +147,7 @@ const HANDMADE: Entry[] = [
     skill: "layout-grid",
     idea: "Сетка квадратов, все три акцента сразу, появление клетками",
     risk: "Тематическая вёрстка сужает аудиторию",
-    render: (d) => <VariantBlocks {...d} />,
+    render: (d) => withRest("blocks", <VariantBlocks {...d} />, d),
   },
   {
     id: "scrub",
@@ -98,7 +155,7 @@ const HANDMADE: Entry[] = [
     skill: "gsap-scrolltrigger",
     idea: "Первый экран прикреплён и проигрывается прокруткой, а не листается",
     risk: "Два экрана высоты ради одного, и не сразу понятно, почему «не листается»",
-    render: (d) => <VariantScrub {...d} />,
+    render: (d) => withRest("scrub", <VariantScrub {...d} />, d),
   },
   {
     id: "spring",
@@ -106,7 +163,7 @@ const HANDMADE: Entry[] = [
     skill: "react-spring-physics",
     idea: "Движение по физике: карточки тащатся, перелетают и оседают",
     risk: "Перетаскивание на лендинге никому не нужно — эффект ради эффекта",
-    render: (d) => <VariantSpring {...d} />,
+    render: (d) => withRest("spring", <VariantSpring {...d} />, d),
   },
   {
     id: "timeline",
@@ -114,7 +171,7 @@ const HANDMADE: Entry[] = [
     skill: "animejs",
     idea: "Одна поставленная последовательность вместо дюжины отдельных появлений",
     risk: "Пока идут титры, читать нечего — на повторном заходе раздражает",
-    render: (d) => <VariantTimeline {...d} />,
+    render: (d) => withRest("timeline", <VariantTimeline {...d} />, d),
   },
   {
     id: "ticker",
@@ -122,7 +179,7 @@ const HANDMADE: Entry[] = [
     skill: "animated-component-libraries",
     idea: "Бегущая строка, счётчики, светящаяся рамка — набор узнаваемых блоков",
     risk: "Сайт из чужих эффектов выглядит как чужой сайт",
-    render: (d) => <VariantTicker {...d} />,
+    render: (d) => withRest("ticker", <VariantTicker {...d} />, d),
   },
 ];
 

@@ -158,12 +158,14 @@ export function StatsRow({
   scale,
   motionProps,
   shape = "plain",
+  font = displayFont.className,
 }: {
   stats: Stat[];
   density: Density;
   scale: TypeScale;
   motionProps: (i?: number) => object;
   shape?: "plain" | "cards" | "inline";
+  font?: string;
 }) {
   if (shape === "inline") {
     return (
@@ -198,7 +200,7 @@ export function StatsRow({
           }
         >
           <p
-            className={`${displayFont.className} ${H2[scale]} tracking-tight text-zinc-950 dark:text-zinc-50`}
+            className={`${font} ${H2[scale]} tracking-tight text-zinc-950 dark:text-zinc-50`}
           >
             {stat.value}
             <span className="text-orange-600 dark:text-orange-400">
@@ -351,11 +353,14 @@ export function Quote({
   scale,
   motionProps,
   shape = "big",
+  font = displayFont.className,
 }: {
   review: Review | undefined;
   scale: TypeScale;
   motionProps: (i?: number) => object;
   shape?: "big" | "card";
+  /** Дисплейный шрифт варианта — см. lab/fonts.ts. */
+  font?: string;
 }) {
   if (!review) return null;
 
@@ -378,7 +383,7 @@ export function Quote({
   return (
     <motion.figure {...motionProps(0)} className="mx-auto max-w-4xl">
       <blockquote
-        className={`${displayFont.className} ${H2[scale]} leading-snug tracking-tight text-zinc-950 dark:text-zinc-50`}
+        className={`${font} ${H2[scale]} leading-snug tracking-tight text-zinc-950 dark:text-zinc-50`}
       >
         “{review.text}”
       </blockquote>
@@ -424,5 +429,337 @@ export function CallToAction({
         See the work
       </Link>
     </motion.div>
+  );
+}
+
+// ============================================================
+// Секции, которых в первой версии лаборатории не было, — и это была
+// ошибка: варианты показывали пятую часть лендинга, то есть сравнивать
+// их с настоящей страницей было нечестно.
+//
+// Теперь каждый вариант показывает ВЕСЬ контент: работы, страны, все
+// семь отзывов, пять шагов и пять тарифов. Отличается ФОРМА, а не
+// наличие.
+// ============================================================
+
+export type StepsShape = "cards" | "timeline" | "numbers";
+
+export function Steps({
+  steps,
+  shape,
+  density,
+  motionProps,
+  accent = "text-orange-600 dark:text-orange-400",
+  font,
+}: {
+  steps: readonly { title: string; text: string }[];
+  shape: StepsShape;
+  density: Density;
+  motionProps: (i?: number) => object;
+  accent?: string;
+  font: string;
+}) {
+  if (shape === "timeline") {
+    // Вертикальная линия со ступенями: порядок виден глазом, без цифр.
+    return (
+      <ol className="relative ml-3 border-l border-zinc-950/[0.12] dark:border-zinc-50/[0.12]">
+        {steps.map((step, i) => (
+          <motion.li key={step.title} {...motionProps(i)} className="relative pb-8 pl-8 last:pb-0">
+            <span className="absolute -left-[5px] top-1.5 h-2.5 w-2.5 rounded-full bg-orange-500 dark:bg-orange-400" />
+            <h3 className="font-semibold text-zinc-950 dark:text-zinc-50">{step.title}</h3>
+            <p className="mt-1 max-w-xl text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+              {step.text}
+            </p>
+          </motion.li>
+        ))}
+      </ol>
+    );
+  }
+
+  if (shape === "numbers") {
+    return (
+      <div className={`grid sm:grid-cols-2 lg:grid-cols-5 ${GAP[density]}`}>
+        {steps.map((step, i) => (
+          <motion.div key={step.title} {...motionProps(i)}>
+            <p className={`${font} text-4xl ${accent}`}>{i + 1}</p>
+            <h3 className="mt-3 font-semibold text-zinc-950 dark:text-zinc-50">{step.title}</h3>
+            <p className="mt-1 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{step.text}</p>
+          </motion.div>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`grid sm:grid-cols-2 lg:grid-cols-3 ${GAP[density]}`}>
+      {steps.map((step, i) => (
+        <motion.div
+          key={step.title}
+          {...motionProps(i)}
+          className="rounded-2xl border border-zinc-950/[0.08] p-6 dark:border-zinc-50/[0.08]"
+        >
+          <p className={`text-xs font-semibold uppercase tracking-[0.18em] ${accent}`}>
+            Step {i + 1}
+          </p>
+          <h3 className="mt-2 font-semibold text-zinc-950 dark:text-zinc-50">{step.title}</h3>
+          <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">{step.text}</p>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+export type PricingShape = "bento" | "rows" | "cards";
+
+const PLAN_FILL: Record<string, string> = {
+  orange: "bg-orange-500 dark:bg-orange-400",
+  lime: "bg-lime-500 dark:bg-lime-400",
+  blue: "bg-blue-500 dark:bg-blue-400",
+};
+
+export function Pricing({
+  plans,
+  shape,
+  density,
+  motionProps,
+  font,
+}: {
+  plans: { name: string; price: string; description: string; accent: string; wide: boolean }[];
+  shape: PricingShape;
+  density: Density;
+  motionProps: (i?: number) => object;
+  font: string;
+}) {
+  if (shape === "rows") {
+    // Строками: название, цена, описание. Сравнивать тарифы так легче
+    // всего — глаз идёт по одному столбцу цен.
+    return (
+      <div className="divide-y divide-zinc-950/[0.08] dark:divide-zinc-50/[0.08]">
+        {plans.map((plan, i) => (
+          <motion.div
+            key={plan.name}
+            {...motionProps(i)}
+            className="grid gap-2 py-5 sm:grid-cols-[8rem_10rem_1fr] sm:items-baseline"
+          >
+            <p className="font-semibold text-zinc-950 dark:text-zinc-50">{plan.name}</p>
+            <p className={`${font} text-xl text-zinc-950 dark:text-zinc-50`}>{plan.price}</p>
+            <p className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+              {plan.description}
+            </p>
+          </motion.div>
+        ))}
+      </div>
+    );
+  }
+
+  if (shape === "cards") {
+    return (
+      <div className={`grid sm:grid-cols-2 lg:grid-cols-3 ${GAP[density]}`}>
+        {plans.map((plan, i) => (
+          <motion.div
+            key={plan.name}
+            {...motionProps(i)}
+            className="flex flex-col rounded-3xl border border-zinc-950/[0.08] p-6 dark:border-zinc-50/[0.08]"
+          >
+            <span className={`h-1.5 w-10 rounded-full ${PLAN_FILL[plan.accent]}`} />
+            <p className="mt-4 font-semibold text-zinc-950 dark:text-zinc-50">{plan.name}</p>
+            <p className={`${font} mt-1 text-2xl text-zinc-950 dark:text-zinc-50`}>{plan.price}</p>
+            <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+              {plan.description}
+            </p>
+          </motion.div>
+        ))}
+      </div>
+    );
+  }
+
+  // bento — как на сайте сейчас: широкие плитки внизу.
+  return (
+    <div className={`grid sm:grid-cols-6 ${GAP[density]}`}>
+      {plans.map((plan, i) => (
+        <motion.div
+          key={plan.name}
+          {...motionProps(i)}
+          className={`flex flex-col justify-between rounded-3xl border border-zinc-950/[0.08] p-6 dark:border-zinc-50/[0.08] ${
+            plan.wide ? "sm:col-span-3" : "sm:col-span-2"
+          }`}
+        >
+          <div>
+            <p className="font-semibold text-zinc-950 dark:text-zinc-50">{plan.name}</p>
+            <p className="mt-3 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+              {plan.description}
+            </p>
+          </div>
+          <p
+            className={`${font} mt-6 inline-flex w-fit rounded-full px-4 py-1.5 text-sm text-white ${PLAN_FILL[plan.accent]}`}
+          >
+            {plan.price}
+          </p>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+export type CountriesShape = "marquee" | "grid" | "inline";
+
+export function Countries({
+  countries,
+  shape,
+  motionProps,
+}: {
+  countries: readonly { id: string; label: string; src: string }[];
+  shape: CountriesShape;
+  motionProps: (i?: number) => object;
+}) {
+  if (shape === "inline") {
+    // Только подписи, без флагов: тот же факт, сказанный текстом.
+    return (
+      <p className="max-w-3xl text-lg leading-8 text-zinc-600 dark:text-zinc-400">
+        {countries.map((c) => c.label).join(" · ")}
+      </p>
+    );
+  }
+
+  if (shape === "grid") {
+    return (
+      <div className="grid grid-cols-5 gap-4 sm:grid-cols-10">
+        {countries.map((country, i) => (
+          <motion.div
+            key={country.id}
+            {...motionProps(i)}
+            className="flex flex-col items-center gap-2"
+          >
+            <span className="relative h-10 w-10 overflow-hidden rounded-full">
+              <Image src={country.src} alt={country.label} fill sizes="40px" className="object-cover" />
+            </span>
+            <span className="text-center text-[10px] leading-3 text-zinc-500 dark:text-zinc-400">
+              {country.label}
+            </span>
+          </motion.div>
+        ))}
+      </div>
+    );
+  }
+
+  // marquee — бесконечная лента, как на сайте сейчас.
+  return (
+    <div className="overflow-hidden">
+      <motion.div
+        animate={{ x: ["0%", "-50%"] }}
+        transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+        className="flex w-max items-center gap-6"
+      >
+        {[...countries, ...countries].map((country, i) => (
+          <span
+            key={`${country.id}-${i}`}
+            className="relative h-14 w-14 shrink-0 overflow-hidden rounded-full sm:h-20 sm:w-20"
+          >
+            <Image src={country.src} alt={country.label} fill sizes="80px" className="object-cover" />
+          </span>
+        ))}
+      </motion.div>
+    </div>
+  );
+}
+
+export type ReviewsShape = "grid" | "stack" | "lead" | "marquee";
+
+export function Reviews({
+  reviews,
+  shape,
+  density,
+  scale,
+  motionProps,
+  font,
+}: {
+  reviews: Review[];
+  shape: ReviewsShape;
+  density: Density;
+  scale: TypeScale;
+  motionProps: (i?: number) => object;
+  font: string;
+}) {
+  if (shape === "lead") {
+    // Первый отзыв крупной цитатой, остальные компактно под ней. Все
+    // семь на месте, но иерархия явная.
+    const [first, ...rest] = reviews;
+    return (
+      <div>
+        <Quote review={first} scale={scale} motionProps={motionProps} shape="big" font={font} />
+        <div className={`mt-10 grid sm:grid-cols-3 ${GAP[density]}`}>
+          {rest.map((review, i) => (
+            <motion.figure key={review.slug} {...motionProps(i)}>
+              <blockquote className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+                “{review.text.slice(0, 120)}…”
+              </blockquote>
+              <figcaption className="mt-2 text-xs font-semibold text-zinc-950 dark:text-zinc-50">
+                {review.name} {review.flag}
+              </figcaption>
+            </motion.figure>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (shape === "stack") {
+    return (
+      <div className="mx-auto max-w-3xl divide-y divide-zinc-950/[0.08] dark:divide-zinc-50/[0.08]">
+        {reviews.map((review, i) => (
+          <motion.figure key={review.slug} {...motionProps(i)} className="py-6">
+            <blockquote className="text-base leading-7 text-zinc-700 dark:text-zinc-300">
+              “{review.text}”
+            </blockquote>
+            <figcaption className="mt-3 text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+              {review.name} · {review.role} {review.flag}
+            </figcaption>
+          </motion.figure>
+        ))}
+      </div>
+    );
+  }
+
+  if (shape === "marquee") {
+    return (
+      <div
+        data-draggable
+        className={`flex overflow-x-auto pb-4 [scrollbar-width:none] ${GAP[density]}`}
+      >
+        {reviews.map((review, i) => (
+          <motion.figure
+            key={review.slug}
+            {...motionProps(i)}
+            className="w-80 shrink-0 rounded-3xl border border-zinc-950/[0.08] p-6 dark:border-zinc-50/[0.08]"
+          >
+            <blockquote className="text-sm leading-6 text-zinc-700 dark:text-zinc-300">
+              “{review.text}”
+            </blockquote>
+            <figcaption className="mt-4 text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+              {review.name} {review.flag}
+            </figcaption>
+          </motion.figure>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className={`grid sm:grid-cols-2 lg:grid-cols-3 ${GAP[density]}`}>
+      {reviews.map((review, i) => (
+        <motion.figure
+          key={review.slug}
+          {...motionProps(i)}
+          className="rounded-2xl border border-zinc-950/[0.08] p-5 dark:border-zinc-50/[0.08]"
+        >
+          <blockquote className="text-sm leading-6 text-zinc-700 dark:text-zinc-300">
+            “{review.text}”
+          </blockquote>
+          <figcaption className="mt-3 text-xs font-semibold text-zinc-950 dark:text-zinc-50">
+            {review.name} · {review.role} {review.flag}
+          </figcaption>
+        </motion.figure>
+      ))}
+    </div>
   );
 }

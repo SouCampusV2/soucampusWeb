@@ -122,7 +122,7 @@ export function VariantScrub({ projects, stats }: Props) {
 // анимацию». Motion умеет то же самое через spring — библиотека не
 // нужна, нужен подход.
 // ------------------------------------------------------------
-export function VariantSpring({ projects, reviews }: Props) {
+export function VariantSpring({ projects }: Props) {
   const reduced = useReducedMotion();
 
   return (
@@ -148,11 +148,6 @@ export function VariantSpring({ projects, reviews }: Props) {
           ))}
         </div>
 
-        {reviews[0] && (
-          <p className="mt-12 max-w-2xl text-lg leading-8 text-zinc-700 dark:text-zinc-300">
-            “{reviews[0].text}” — {reviews[0].name}
-          </p>
-        )}
       </section>
     </div>
   );

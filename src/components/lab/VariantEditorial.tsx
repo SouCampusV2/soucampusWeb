@@ -37,11 +37,11 @@ const displayFont = Unbounded({ subsets: ["latin"], weight: ["600", "700"] });
 
 export function VariantEditorial({
   projects,
-  reviews,
   stats,
 }: {
   projects: Project[];
-  reviews: Review[];
+  /** Отзывы рисует общий остаток страницы (RestOfLanding). */
+  reviews?: Review[];
   stats: Stat[];
 }) {
   const reveal = useReveal();
@@ -187,28 +187,6 @@ export function VariantEditorial({
         </motion.div>
       </section>
 
-      {/* Отзыв — один, крупной цитатой. Не карусель: карусель говорит
-          «их много», цитата говорит «прочитай эту». */}
-      {reviews[0] && (
-        <section className="border-y border-zinc-950/[0.06] bg-lime-50/60 dark:border-zinc-50/[0.06] dark:bg-lime-950/10">
-          <motion.figure
-            {...reveal()}
-            className="mx-auto w-full max-w-4xl px-6 py-20"
-          >
-            <blockquote
-              className={`${displayFont.className} text-2xl leading-relaxed tracking-tight text-zinc-950 sm:text-3xl dark:text-zinc-50`}
-            >
-              “{reviews[0].text}”
-            </blockquote>
-            <figcaption className="mt-6 text-sm text-zinc-600 dark:text-zinc-400">
-              <span className="font-semibold text-zinc-950 dark:text-zinc-50">
-                {reviews[0].name}
-              </span>{" "}
-              · {reviews[0].role} {reviews[0].flag}
-            </figcaption>
-          </motion.figure>
-        </section>
-      )}
     </div>
   );
 }

@@ -4,19 +4,27 @@ import Image from "next/image";
 import { motion } from "motion/react";
 import { PageGlow } from "@/components/PageGlow";
 import { DURATION, EASE, staggerIndex } from "./motion-tokens";
+import { FONTS, type FontId } from "./fonts";
+import { COUNTRIES, HEADINGS, PLANS, STEPS } from "./content";
 import {
   CallToAction,
+  Countries,
   H1,
-  Quote,
+  Pricing,
+  Reviews,
   SECTION_PAD,
   Shell,
   StatsRow,
+  Steps,
   Work,
-  displayFont,
   toneSurface,
   useKitMotion,
+  type CountriesShape,
   type Density,
   type MotionKind,
+  type PricingShape,
+  type ReviewsShape,
+  type StepsShape,
   type Tone,
   type TypeScale,
   type WorkLayout,
@@ -28,57 +36,67 @@ import type { Stat } from "@/lib/stats";
 // ============================================================
 // Сборка варианта по описанию.
 //
-// Вариант здесь — это НАБОР РЕШЕНИЙ, записанный словами: какой первый
-// экран, сколько воздуха, какого размера заголовки, чем крашены
-// поверхности, как появляются блоки, в каком порядке идут секции и как
-// показаны работы. Из тех же данных получаются заметно разные страницы.
+// ⚠️ КАЖДЫЙ ВАРИАНТ ПОКАЗЫВАЕТ ВЕСЬ ЛЕНДИНГ. Первая версия лаборатории
+// срезала контент до пяти секций — и это была ошибка: сравнивали не
+// дизайн, а упрощение. Макет, красивый на трёх блоках, разваливается на
+// семи отзывах и пяти тарифах, и узнать это надо ЗДЕСЬ, а не после
+// переноса.
 //
-// ⚠️ Текст в вариантах РАЗНЫЙ, и это не лень копирайтера. Композиция и
-// формулировка — одно решение: «Worlds built by hand» просит крупного
-// начертания и тишины вокруг, а «Ready-made maps, ready today» просит
-// плотной сетки и кнопки рядом. Сравнивать макеты на одинаковом тексте
-// значит сравнивать только отступы.
+// Отличаются: первый экран, шрифт, акцент, плотность, шкала, тон,
+// порядок секций, форма каждой секции и способ появления. Не
+// отличается только текст самих секций — он с живого сайта.
 // ============================================================
 
 export type HeroStyle =
-  /** Всё по центру — как сейчас на сайте. */
   | "centered"
-  /** Левый край, широкое поле справа. */
   | "left"
-  /** Текст слева, фотография справа. */
   | "split"
-  /** Фотография во всю ширину, текст поверх. */
   | "overlay"
-  /** Узкая колонка по центру — «мобильный на десктопе». */
   | "column"
-  /** Мелкая надстрочная строка, затем огромный заголовок. */
   | "kicker";
 
-export type Section = "stats" | "work" | "quote" | "cta";
+export type Section =
+  | "stats"
+  | "work"
+  | "countries"
+  | "reviews"
+  | "steps"
+  | "pricing"
+  | "cta";
+
+export type Accent = "orange" | "lime" | "blue";
+
+const ACCENT_TEXT: Record<Accent, string> = {
+  orange: "text-orange-600 dark:text-orange-400",
+  lime: "text-lime-600 dark:text-lime-400",
+  blue: "text-blue-600 dark:text-blue-400",
+};
 
 export type Preset = {
   id: string;
   label: string;
-  /** Какой привезённый скилл дал идею. */
   skill: string;
-  /** Что именно проверяет этот вариант. */
   idea: string;
-  /** Чем за это платим. */
   risk: string;
   kicker?: string;
   headline: string;
   sub: string;
   hero: HeroStyle;
+  font: FontId;
+  accent: Accent;
   tone: Tone;
   density: Density;
   scale: TypeScale;
   motion: MotionKind;
+  /** Порядок секций. Набор всегда полный, меняется только очередь. */
   sections: Section[];
   work: WorkLayout;
   workCount?: number;
   statsShape?: "plain" | "cards" | "inline";
-  quoteShape?: "big" | "card";
-  /** Показать ли свечение за первым экраном (наш PageGlow). */
+  reviewsShape?: ReviewsShape;
+  stepsShape?: StepsShape;
+  pricingShape?: PricingShape;
+  countriesShape?: CountriesShape;
   glow?: boolean;
 };
 
@@ -93,13 +111,52 @@ export function ComposedVariant({
   reviews: Review[];
   stats: Stat[];
 }) {
+  const font = FONTS[preset.font].className;
+  const accent = ACCENT_TEXT[preset.accent];
+  return (
+    <div className={preset.tone === "dark" ? "bg-zinc-950" : ""}>
+      <HeroBlock preset={preset} projects={projects} font={font} accent={accent} />
+      <ComposedSections preset={preset} projects={projects} reviews={reviews} stats={stats} />
+    </div>
+  );
+}
+
+/** Все секции варианта, кроме первого экрана. */
+function ComposedSections({
+  preset,
+  projects,
+  reviews,
+  stats,
+}: {
+  preset: Preset;
+  projects: Project[];
+  reviews: Review[];
+  stats: Stat[];
+}) {
   const props = useKitMotion(preset.motion);
+  const font = FONTS[preset.font].className;
+  const accent = ACCENT_TEXT[preset.accent];
   const dark = preset.tone === "dark";
+  const headingColor = dark ? "text-zinc-50" : "text-zinc-950 dark:text-zinc-50";
+
+  const heading = (text: string, sub?: string) => (
+    <div className="mb-8">
+      <motion.h2
+        {...props(0)}
+        className={`${font} text-3xl tracking-tight sm:text-4xl ${headingColor}`}
+      >
+        {text}
+      </motion.h2>
+      {sub && (
+        <motion.p {...props(1)} className="mt-2 text-zinc-600 dark:text-zinc-400">
+          {sub}
+        </motion.p>
+      )}
+    </div>
+  );
 
   return (
     <div className={dark ? "bg-zinc-950" : ""}>
-      <HeroBlock preset={preset} projects={projects} />
-
       {preset.sections.map((section, i) => (
         <Shell key={section} tone={preset.tone} index={i + 1} density={preset.density}>
           {section === "stats" && (
@@ -109,19 +166,13 @@ export function ComposedVariant({
               scale={preset.scale === "loud" ? "normal" : preset.scale}
               motionProps={props}
               shape={preset.statsShape ?? "plain"}
+              font={font}
             />
           )}
 
           {section === "work" && (
             <>
-              <motion.h2
-                {...props(0)}
-                className={`${displayFont.className} mb-8 text-3xl tracking-tight sm:text-4xl ${
-                  dark ? "text-zinc-50" : "text-zinc-950 dark:text-zinc-50"
-                }`}
-              >
-                Selected work
-              </motion.h2>
+              {heading(HEADINGS.work, HEADINGS.workSub)}
               <Work
                 projects={projects}
                 layout={preset.work}
@@ -132,22 +183,63 @@ export function ComposedVariant({
             </>
           )}
 
-          {section === "quote" && (
-            <Quote
-              review={reviews[0]}
-              scale={preset.scale}
-              motionProps={props}
-              shape={preset.quoteShape ?? "big"}
-            />
+          {section === "countries" && (
+            <>
+              {heading(HEADINGS.countries)}
+              <Countries
+                countries={COUNTRIES}
+                shape={preset.countriesShape ?? "marquee"}
+                motionProps={props}
+              />
+            </>
+          )}
+
+          {section === "reviews" && (
+            <>
+              {heading(HEADINGS.reviews)}
+              <Reviews
+                reviews={reviews}
+                shape={preset.reviewsShape ?? "grid"}
+                density={preset.density}
+                scale={preset.scale}
+                motionProps={props}
+                font={font}
+              />
+            </>
+          )}
+
+          {section === "steps" && (
+            <>
+              {heading(HEADINGS.steps)}
+              <Steps
+                steps={STEPS}
+                shape={preset.stepsShape ?? "cards"}
+                density={preset.density}
+                motionProps={props}
+                accent={accent}
+                font={font}
+              />
+            </>
+          )}
+
+          {section === "pricing" && (
+            <>
+              {heading(HEADINGS.pricing, HEADINGS.pricingSub)}
+              <Pricing
+                plans={PLANS}
+                shape={preset.pricingShape ?? "bento"}
+                density={preset.density}
+                motionProps={props}
+                font={font}
+              />
+            </>
           )}
 
           {section === "cta" && (
             <div className="flex flex-col items-start gap-6">
               <motion.h2
                 {...props(0)}
-                className={`${displayFont.className} max-w-2xl text-3xl tracking-tight sm:text-4xl ${
-                  dark ? "text-zinc-50" : "text-zinc-950 dark:text-zinc-50"
-                }`}
+                className={`${font} max-w-2xl text-3xl tracking-tight sm:text-4xl ${headingColor}`}
               >
                 Tell me what you want built.
               </motion.h2>
@@ -161,16 +253,26 @@ export function ComposedVariant({
 }
 
 // ------------------------------------------------------------
-// Первый экран. Единственное место, где варианты расходятся сильно, —
-// поэтому он и вынесен отдельно, а не сведён к параметру отступа.
+// Первый экран — единственное место, где варианты расходятся сильно,
+// поэтому он вынесен отдельно, а не сведён к параметру отступа.
 // ------------------------------------------------------------
-function HeroBlock({ preset, projects }: { preset: Preset; projects: Project[] }) {
+function HeroBlock({
+  preset,
+  projects,
+  font,
+  accent,
+}: {
+  preset: Preset;
+  projects: Project[];
+  font: string;
+  accent: string;
+}) {
   const dark = preset.tone === "dark";
   const textOnDark = dark || preset.hero === "overlay";
   const photo = projects[0];
 
-  // Появление первого экрана — всегда сразу (animate), а не по
-  // прокрутке: он уже на экране, и ждать от него нечего.
+  // Первый экран появляется сразу (animate), а не по прокрутке: он уже
+  // на экране, ждать от него нечего.
   const intro = (i: number) => ({
     initial: { opacity: 0, y: preset.motion === "none" ? 0 : 16 },
     animate: { opacity: 1, y: 0 },
@@ -184,7 +286,7 @@ function HeroBlock({ preset, projects }: { preset: Preset; projects: Project[] }
   const title = (
     <motion.h1
       {...intro(1)}
-      className={`${displayFont.className} ${H1[preset.scale]} tracking-tight ${
+      className={`${font} ${H1[preset.scale]} tracking-tight ${
         textOnDark ? "text-[#fbfbff]" : "text-zinc-950 dark:text-zinc-50"
       }`}
     >
@@ -207,7 +309,7 @@ function HeroBlock({ preset, projects }: { preset: Preset; projects: Project[] }
     <motion.p
       {...intro(0)}
       className={`text-sm font-semibold uppercase tracking-[0.2em] ${
-        textOnDark ? "text-orange-300" : "text-orange-600 dark:text-orange-400"
+        textOnDark ? "text-orange-300" : accent
       }`}
     >
       {preset.kicker}
@@ -246,9 +348,7 @@ function HeroBlock({ preset, projects }: { preset: Preset; projects: Project[] }
 
   if (preset.hero === "split") {
     return (
-      <section
-        className={`${toneSurface(preset.tone, 0)} ${SECTION_PAD[preset.density]}`}
-      >
+      <section className={`${toneSurface(preset.tone, 0)} ${SECTION_PAD[preset.density]}`}>
         <div className="mx-auto grid w-full max-w-6xl items-center gap-10 px-6 lg:grid-cols-2">
           <div>
             {kicker}
@@ -276,13 +376,7 @@ function HeroBlock({ preset, projects }: { preset: Preset; projects: Project[] }
     );
   }
 
-  const alignment =
-    preset.hero === "centered"
-      ? "items-center text-center"
-      : preset.hero === "column"
-        ? "items-start"
-        : "items-start";
-
+  const alignment = preset.hero === "centered" ? "items-center text-center" : "items-start";
   const width = preset.hero === "column" ? "max-w-2xl" : "max-w-6xl";
 
   return (
@@ -299,5 +393,63 @@ function HeroBlock({ preset, projects }: { preset: Preset; projects: Project[] }
         </div>
       </div>
     </section>
+  );
+}
+
+// ============================================================
+// Остаток лендинга для написанных руками вариантов.
+//
+// У семи рукописных вариантов своё — первый экран и приём движения, а
+// шаги, тарифы, страны и все семь отзывов им рисовать заново незачем.
+// Раньше их не было вовсе, и сравнение было нечестным: рукописный
+// вариант выглядел короче и чище просто потому, что показывал треть
+// страницы. Теперь каждый дорисовывает остаток В СВОЁМ СТИЛЕ — шрифт,
+// акцент, тон и формы секций задаются тем же описанием, что у собранных.
+// ============================================================
+
+export type RestStyle = Pick<
+  Preset,
+  | "font"
+  | "accent"
+  | "tone"
+  | "density"
+  | "scale"
+  | "motion"
+  | "reviewsShape"
+  | "stepsShape"
+  | "pricingShape"
+  | "countriesShape"
+> & {
+  /** Какие секции дорисовать и в каком порядке. */
+  sections: Section[];
+};
+
+export function RestOfLanding({
+  style,
+  projects,
+  reviews,
+  stats,
+}: {
+  style: RestStyle;
+  projects: Project[];
+  reviews: Review[];
+  stats: Stat[];
+}) {
+  // Тот же рендер, что у собранных вариантов: первый экран не нужен,
+  // поэтому рисуем только секции — через описание без героя.
+  const preset: Preset = {
+    id: "rest",
+    label: "",
+    skill: "",
+    idea: "",
+    risk: "",
+    headline: "",
+    sub: "",
+    hero: "left",
+    work: "grid",
+    ...style,
+  };
+  return (
+    <ComposedSections preset={preset} projects={projects} reviews={reviews} stats={stats} />
   );
 }
