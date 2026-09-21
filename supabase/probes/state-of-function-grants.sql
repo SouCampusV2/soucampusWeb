@@ -27,9 +27,15 @@
 --   has_purchased_for          — только service_role
 --   consume_rate_limit         — только service_role
 --   replace_product_images     — только service_role
---   has_purchased              — authenticated ЗДЕСЬ НОРМА: её зовут
---                                политики чтения и сам клиент («уже
---                                куплено» на странице карты).
+--   has_purchased              — authenticated + service_role, и ничего
+--                                больше. Её зовёт сам клиент («уже
+--                                куплено» на странице карты) — это
+--                                чтение о себе, и путь A тут штатный.
+--                                ⚠️ Если в acl видно `=X/postgres` или
+--                                `anon=X/postgres` — не прогнана
+--                                20260921150000. Дырой это не является
+--                                (аноним получит «нет»: человек берётся
+--                                из JWT), но право лишнее.
 
 select
   p.proname as function,
