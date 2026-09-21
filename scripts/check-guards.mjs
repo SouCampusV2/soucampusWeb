@@ -172,6 +172,8 @@ async function main() {
   // finally пройдётся по списку, даже если проверка упала посередине.
   const productIds = [];
   const storedFiles = [];
+  const storedImages = [];
+  const storedAvatars = [];
 
   try {
     // -------------------------------------------------------
@@ -589,6 +591,175 @@ async function main() {
     } else {
       skip("комментарий и реакция", "нет временной карты, к которой их привязать");
     }
+
+    // -------------------------------------------------------
+    // 5. Последние шесть путей записи — шлюз 21.09.
+    //
+    // Пути №5, №9–13: картинки, аватар, оценка, реакция, свои
+    // уведомления. Доказательство — снятые политики
+    // (20260921130000_social_gateway_policies).
+    //
+    // ⚠️ У уведомлений отказ выглядит ИНАЧЕ, чем у остальных. Запрос
+    // update/delete без подходящей политики ошибки НЕ даёт: он просто
+    // не находит ни одной строки и отвечает успехом. Поэтому там
+    // проверяется не ошибка, а строка в базе — прочитанная служебным
+    // ключом. Это тот же урок, что «сравнение до/после ничего не
+    // доказывает» от 08.09, в другом обличье: здесь доказывает
+    // только состояние.
+    // -------------------------------------------------------
+    console.log("\nШлюз 21.09: картинки, отклики, уведомления");
+
+    const imagePath = `${userId}/guard-${suffix}.png`;
+    const imageUpload = await asUser.storage
+      .from("product-images")
+      .upload(imagePath, new Blob(["not a real png"]), { contentType: "image/png" });
+    if (!imageUpload.error) storedImages.push(imagePath);
+    check(
+      "картинку карты в бакет из браузера не загрузить (только через /api/creator/image)",
+      imageUpload.error !== null,
+      imageUpload.error === null
+        ? "картинка легла мимо шлюза — политика product-images вернулась или 20260921130000 не прогнана"
+        : ""
+    );
+
+    const avatarPath = `${userId}/avatar`;
+    const avatarUpload = await asUser.storage
+      .from("avatars")
+      .upload(avatarPath, new Blob(["not a real png"]), {
+        contentType: "image/png",
+        upsert: true,
+      });
+    if (!avatarUpload.error) storedAvatars.push(avatarPath);
+    check(
+      "аватар в бакет из браузера не загрузить (только через /api/creator/image)",
+      avatarUpload.error !== null,
+      avatarUpload.error === null
+        ? "аватар лёг мимо шлюза — политика avatars вернулась или 20260921130000 не прогнана"
+        : ""
+    );
+
+    if (productId) {
+      const rating = await asUser
+        .from("product_ratings")
+        .insert({ product_id: productId, user_id: userId, stars: 5 });
+      check(
+        "оценку из браузера не поставить (только через /api/feedback)",
+        rating.error !== null,
+        rating.error === null
+          ? "оценка встала мимо шлюза — политика product_ratings вернулась"
+          : ""
+      );
+
+      // ⚠️ Раньше эта проверка прошла бы: реакция СЕБЕ была разрешена
+      // политикой, и отказ ловился только на чужом user_id (см. выше).
+      // Теперь запрещено и своё — писать реакции может лишь шлюз.
+      const ownReaction = await asUser
+        .from("product_reactions")
+        .insert({ product_id: productId, user_id: userId });
+      check(
+        "реакцию себе из браузера не поставить (только через /api/feedback)",
+        ownReaction.error !== null,
+        ownReaction.error === null
+          ? "реакция встала мимо шлюза — политика product_reactions вернулась"
+          : ""
+      );
+    } else {
+      skip("оценка и своя реакция", "нет временной карты, к которой их привязать");
+    }
+
+    // Уведомление для проверки заводим служебным ключом — как это делает
+    // сам сайт.
+    const seededNote = await asServer
+      .from("notifications")
+      .insert({
+        user_id: userId,
+        kind: "announcement",
+        title: `guard check ${suffix}`,
+        body: "temporary row, deleted by the script",
+      })
+      .select("id")
+      .single();
+
+    if (seededNote.error) {
+      skip("свои уведомления", `не удалось завести строку: ${seededNote.error.message}`);
+    } else {
+      const noteId = seededNote.data.id;
+      await asUser
+        .from("notifications")
+        .update({ read_at: new Date().toISOString() })
+        .eq("id", noteId);
+      const afterRead = await asServer
+        .from("notifications")
+        .select("read_at")
+        .eq("id", noteId)
+        .maybeSingle();
+      check(
+        "своё уведомление из браузера не отметить прочитанным (только через /api/notifications)",
+        afterRead.data?.read_at == null,
+        afterRead.data?.read_at != null
+          ? "read_at записался — политика mark own notifications read вернулась"
+          : ""
+      );
+
+      await asUser.from("notifications").delete().eq("id", noteId);
+      const afterDelete = await asServer
+        .from("notifications")
+        .select("id")
+        .eq("id", noteId)
+        .maybeSingle();
+      check(
+        "своё уведомление из браузера не удалить (только через /api/notifications)",
+        afterDelete.data != null,
+        afterDelete.data == null
+          ? "строка исчезла — политика delete own notifications вернулась"
+          : ""
+      );
+      await asServer.from("notifications").delete().eq("id", noteId);
+    }
+
+    // Функции шлюза: их зовёт только сервер. ⚠️ Postgres выдаёт execute
+    // роли PUBLIC по умолчанию, и revoke в миграции — единственное, что
+    // это снимает. Не сработай он, любой посетитель проверял бы чужие
+    // покупки перебором и удалял бы чужие комментарии от чужого имени.
+    const purchasedFor = await asUser.rpc("has_purchased_for", {
+      p_product_id: productId ?? randomUUID(),
+      p_user_id: randomUUID(),
+      p_email: "someone@example.invalid",
+    });
+    check(
+      "has_purchased_for из браузера не позвать",
+      purchasedFor.error !== null,
+      purchasedFor.error === null
+        ? "функция выполнилась — execute у authenticated/public не отозван"
+        : ""
+    );
+
+    const deleteFor = await asUser.rpc("soft_delete_comment_for", {
+      p_comment_id: randomUUID(),
+      p_actor: randomUUID(),
+    });
+    check(
+      "soft_delete_comment_for из браузера не позвать",
+      deleteFor.error !== null,
+      deleteFor.error === null
+        ? "функция выполнилась — execute у authenticated/public не отозван"
+        : ""
+    );
+
+    const deleteOld = await asUser.rpc("soft_delete_comment", {
+      p_comment_id: randomUUID(),
+    });
+    // ⚠️ Здесь мало «пришла ошибка»: функция отвечает ошибкой и на
+    // несуществующий комментарий (comment_not_found). Нужна именно
+    // ошибка ПРАВ, иначе проверка зелёная при открытой двери.
+    const deniedOld =
+      deleteOld.error !== null &&
+      !`${deleteOld.error.message}`.includes("comment_not_found");
+    check(
+      "старую soft_delete_comment из браузера не позвать",
+      deniedOld,
+      deniedOld ? "" : "функция доступна authenticated — revoke из 20260921130000 не прогнан"
+    );
   } finally {
     // -------------------------------------------------------
     // Уборка. В finally, чтобы временный человек, карты и файлы не
@@ -603,6 +774,13 @@ async function main() {
     if (storedFiles.length > 0) {
       await asServer.storage.from(PRODUCT_FILES_BUCKET).remove(storedFiles);
     }
+    if (storedImages.length > 0) {
+      await asServer.storage.from("product-images").remove(storedImages);
+    }
+    if (storedAvatars.length > 0) {
+      await asServer.storage.from("avatars").remove(storedAvatars);
+    }
+    await asServer.from("notifications").delete().eq("user_id", userId);
     await asServer.auth.admin.deleteUser(userId);
   }
 

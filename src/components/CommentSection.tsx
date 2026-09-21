@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Trash } from "@phosphor-icons/react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { deleteComment, postComment } from "@/lib/social-client";
 import { Avatar } from "@/components/Avatar";
 import { Button } from "@/components/Button";
 // Из comment-shape.ts, а НЕ из lib/comments.ts: тот тянет служебный
@@ -153,33 +154,29 @@ export function CommentSection({
     setPending(true);
     setError(null);
 
-    const supabase = createSupabaseBrowser();
-    const { error: insertError } = await supabase
-      .from("product_comments")
-      .insert({ product_id: productId, user_id: userId, body: text });
-
-    if (insertError) {
-      // Текст ошибки базы наружу не отдаём — он рассказывает о схеме. Но
-      // метки, которые триггеры ставят САМИ (20260822130000_rate_limits),
-      // — наш собственный словарь, а не внутренности Postgres: они затем и
-      // заведены, чтобы форма могла объяснить отказ человеку.
-      //
-      // Отказ без объяснения хуже отсутствия ограничения: человек видит
-      // «не работает» и жмёт ещё, то есть давит ровно туда, куда мы его не пускаем.
-      const message = insertError.message ?? "";
-      if (message.includes("comment_too_fast")) {
-        setError("Slow down a little — one comment every 20 seconds.");
-      } else if (message.includes("comment_rate_limit")) {
-        const perHour = message.split("comment_rate_limit:")[1]?.match(/\d+/)?.[0];
-        setError(
-          `You've hit the limit of ${perHour ?? 10} comments per hour. Try again later.`
-        );
-      } else {
-        setError("Couldn't post your comment. Only buyers can comment.");
-      }
-    } else {
+    // Через шлюз (/api/comments): он проверяет покупку, оба лимита
+    // частоты и потолок длины. Отказ приезжает уже человеческим
+    // текстом — «одно сообщение в 20 секунд», «try again in N min», —
+    // и показывать его можно как есть.
+    //
+    // ⚠️ Раньше здесь разбирались метки, которые ставили триггеры
+    // базы (comment_too_fast, comment_rate_limit). Разбора больше нет
+    // не потому, что лимиты ушли, а потому, что они переехали в
+    // обработчик вместе с записью: служебный ключ триггеры лимитов не
+    // будит. Числа те же — см. rate-limit.ts.
+    try {
+      await postComment(productId, text);
       setBody("");
       await reload();
+    } catch (err) {
+      // Отказ без объяснения хуже отсутствия ограничения: человек
+      // видит «не работает» и жмёт ещё, то есть давит ровно туда, куда
+      // мы его не пускаем.
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Couldn't post your comment. Only buyers can comment."
+      );
     }
 
     setPending(false);
@@ -187,14 +184,18 @@ export function CommentSection({
   }
 
   async function remove(id: string) {
-    const supabase = createSupabaseBrowser();
-    // Метку «кто удалил» ставит сама база по тому, кто позвал функцию:
+    // Метку «кто удалил» по-прежнему ставит база, а не этот вызов:
     // передавать её отсюда значило бы позволить автору карты пометить
-    // чужое удаление как «передумал сам».
-    const { error: rpcError } = await supabase.rpc("soft_delete_comment", {
-      p_comment_id: id,
-    });
-    if (!rpcError) await reload();
+    // чужое удаление как «передумал сам». Изменилось только, кто зовёт
+    // функцию — теперь шлюз, служебным ключом, с явным указанием, кто
+    // удаляет (см. /api/comments).
+    try {
+      await deleteComment(id);
+      await reload();
+    } catch {
+      // Молча, как и раньше: кнопка удаления есть только у того, кто
+      // имеет право, и сказать тут нечего, кроме «попробуйте ещё».
+    }
   }
 
   const liveCount = comments.filter((c) => !c.deletedBy).length;

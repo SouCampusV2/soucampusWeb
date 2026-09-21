@@ -185,7 +185,7 @@ export default async function AddMapPage() {
       )}
 
       <div className="mt-10">
-        <UploadMapForm userId={admin.id} reactionOptions={reactionOptions} />
+        <UploadMapForm reactionOptions={reactionOptions} />
       </div>
     </div>
   );

@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Star, StarHalf } from "@phosphor-icons/react";
-import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { rateProduct } from "@/lib/social-client";
 
 // Интерактивные звёзды выставления оценки (в «My purchases»). Клик —
 // upsert в product_ratings (одна оценка на пару товар+пользователь). RLS
@@ -34,28 +34,15 @@ export function RatingStars({
     setStars(value); // оптимистично
     setSaving(true);
 
-    const supabase = createSupabaseBrowser();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      setStars(prev);
-      setSaving(false);
-      return;
+    // Через шлюз (/api/feedback): он проверяет вход, покупку и лимит.
+    // Кто ставит оценку, отсюда больше не сообщается — сервер знает это
+    // из сессии. Пока это делал браузер, «чей» user_id отправить решал
+    // он же, и единственной защитой была политика RLS.
+    try {
+      await rateProduct(productId, value);
+    } catch {
+      setStars(prev); // откат, если сервер отклонил
     }
-
-    const { error } = await supabase.from("product_ratings").upsert(
-      {
-        product_id: productId,
-        user_id: user.id,
-        stars: value,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "product_id,user_id" },
-    );
-
-    if (error) setStars(prev); // откат, если БД отклонила
     setSaving(false);
   }
 

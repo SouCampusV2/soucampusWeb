@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { setReaction } from "@/lib/social-client";
 
 // Кнопка реакции на странице карты — рядом с «Add to cart».
 //
@@ -88,25 +89,14 @@ export function ReactionButton({
     setMine(next);
     setCount((c) => c + (next ? 1 : -1));
 
-    const supabase = createSupabaseBrowser();
-    const { data: session } = await supabase.auth.getSession();
-    const userId = session.session?.user?.id;
-
-    const { error } = userId
-      ? next
-        ? await supabase
-            .from("product_reactions")
-            .insert({ product_id: productId, user_id: userId })
-        : await supabase
-            .from("product_reactions")
-            .delete()
-            .eq("product_id", productId)
-            .eq("user_id", userId)
-      : { error: new Error("no session") };
-
-    if (error) {
-      // Откат: показанное число должно совпадать с тем, что в базе, даже
-      // если человек об этом не узнает.
+    // Через шлюз (/api/feedback): вход, лимит и запись — на сервере.
+    // Кто реагирует, отсюда не сообщается: сервер берёт человека из
+    // сессии, а не из тела запроса.
+    try {
+      await setReaction(productId, next);
+    } catch {
+      // Откат: показанное число должно совпадать с тем, что в базе,
+      // даже если человек об этом не узнает.
       setMine(!next);
       setCount((c) => c + (next ? -1 : 1));
     }

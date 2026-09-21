@@ -18,13 +18,11 @@ import { FileArrowUp, Warning } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { SelectField } from "@/components/SelectField";
 import { TextField, PriceField } from "@/components/MapFormParts";
-import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import {
-  PRODUCT_IMAGES_BUCKET,
   SHOP_CATEGORIES,
   type ProductCategory,
 } from "@/lib/products";
-import { uploadMapFile } from "@/lib/upload-client";
+import { uploadImage, uploadMapFile } from "@/lib/upload-client";
 import { updateMap } from "@/lib/map-client";
 import type { EditableProduct } from "@/lib/moderation";
 import { templateFor } from "@/lib/rejection";
@@ -34,7 +32,6 @@ import type { ReactionOption } from "@/lib/reactions";
 import {
   checkImageFile,
   checkMapFile,
-  safeExtension,
   MAP_FILE_ACCEPT,
 } from "@/lib/upload-limits";
 import {
@@ -62,11 +59,9 @@ const FORM_CATEGORIES = SHOP_CATEGORIES.filter((c) => c.slug !== "free");
  */
 export function EditMapForm({
   product,
-  userId,
   reactionOptions,
 }: {
   product: EditableProduct;
-  userId: string;
   /** Список реакций из базы — читает его страница, форма клиентская. */
   reactionOptions: ReactionOption[];
 }) {
@@ -119,17 +114,14 @@ export function EditMapForm({
     }
     setError(null);
 
-    const supabase = createSupabaseBrowser();
-    const path = `${userId}/desc-${Date.now()}.${safeExtension(file.name, "jpg")}`;
-    const { error: uploadError } = await supabase.storage
-      .from(PRODUCT_IMAGES_BUCKET)
-      .upload(path, file, { contentType: file.type });
-    if (uploadError) {
-      setError(`Couldn't upload the image: ${uploadError.message}`);
-      return;
+    // Через шлюз (/api/creator/image): путь строит сервер, он же
+    // проверяет права, вес и первые байты уже загруженного объекта.
+    try {
+      const url = await uploadImage(file, "product");
+      editor.chain().focus().setImage({ src: url }).run();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't upload the image.");
     }
-    const { data } = supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path);
-    editor.chain().focus().setImage({ src: data.publicUrl }).run();
   }
 
   async function pickMapFile(event: React.ChangeEvent<HTMLInputElement>) {
@@ -181,8 +173,6 @@ export function EditMapForm({
     }
 
     setPending(true);
-    const supabase = createSupabaseBrowser();
-    const stamp = Date.now();
 
     try {
       // 1) Новый файл карты — только если выбрали. Не выбрали — ниже
@@ -198,15 +188,9 @@ export function EditMapForm({
 
       // 2) Новые картинки — параллельно; уже сохранённые остаются как есть.
       const uploads = await Promise.all(
-        images.map(async (image, i) => {
+        images.map(async (image) => {
           if (image.kind === "existing") return image.url;
-          const path = `${userId}/${stamp}-${i}.${safeExtension(image.file.name, "jpg")}`;
-          const { error: imgError } = await supabase.storage
-            .from(PRODUCT_IMAGES_BUCKET)
-            .upload(path, image.file, { contentType: image.file.type });
-          if (imgError) throw new Error(`Couldn't upload an image: ${imgError.message}`);
-          const { data } = supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path);
-          return data.publicUrl;
+          return uploadImage(image.file, "product");
         })
       );
 

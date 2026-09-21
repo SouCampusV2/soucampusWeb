@@ -23,21 +23,18 @@ const RichTextEditor = dynamic(
 import { FileArrowUp } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { SelectField } from "@/components/SelectField";
-import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import {
   EMPTY_SPECS,
-  PRODUCT_IMAGES_BUCKET,
   SHOP_CATEGORIES,
   type EditableSpecs,
   type ProductCategory,
 } from "@/lib/products";
-import { uploadMapFile } from "@/lib/upload-client";
+import { uploadImage, uploadMapFile } from "@/lib/upload-client";
 import { createMap } from "@/lib/map-client";
 import { TextField, PriceField } from "@/components/MapFormParts";
 import {
   checkImageFile,
   checkMapFile,
-  safeExtension,
   MAP_FILE_ACCEPT,
 } from "@/lib/upload-limits";
 import { GalleryPicker, useImagePicker } from "@/components/GalleryPicker";
@@ -55,10 +52,10 @@ const FORM_CATEGORIES = SHOP_CATEGORIES.filter((c) => c.slug !== "free");
  * ProfileEditForm), а не мастер из шагов: полей немного, шаг за шагом
  * добавил бы кликов без выгоды.
  *
- * Отправка последовательная: файл карты → картинки → сама карта.
- * Первый и третий шаги идут через свои обработчики (шлюз записи),
- * картинки пока пишутся в Storage напрямую — граница проведена по
- * бакету, см. ARCHITECTURE.md § 5.3.
+ * Отправка последовательная: файл карты → картинки → сама карта. С
+ * 21.09 все три шага идут через свои обработчики: форма не называет ни
+ * одного пути в Storage и ни одного состояния карты — см.
+ * ARCHITECTURE.md § 5.3–5.4.
  *
  * Промежуточная неудача не оставляет «полу-опубликованный» товар
  * видимым: до последнего шага строки products вообще не существует, а
@@ -67,10 +64,8 @@ const FORM_CATEGORIES = SHOP_CATEGORIES.filter((c) => c.slug !== "free");
  * показываем ошибку и даём попробовать ещё раз.
  */
 export function UploadMapForm({
-  userId,
   reactionOptions,
 }: {
-  userId: string;
   /** Список реакций из базы — читает его страница, форма клиентская. */
   reactionOptions: ReactionOption[];
 }) {
@@ -139,21 +134,15 @@ export function UploadMapForm({
     }
 
     setError(null);
-    const supabase = createSupabaseBrowser();
-    const ext = safeExtension(file.name, "jpg");
-    const path = `${userId}/desc-${Date.now()}.${ext}`;
-
-    const { error: uploadError } = await supabase.storage
-      .from(PRODUCT_IMAGES_BUCKET)
-      .upload(path, file, { contentType: file.type });
-
-    if (uploadError) {
-      setError(`Couldn't upload the image: ${uploadError.message}`);
-      return;
+    // Через шлюз (/api/creator/image): путь строит сервер, он же
+    // проверяет права, вес и первые байты уже загруженного объекта.
+    // Проверка выше осталась удобством — она бережёт время и трафик.
+    try {
+      const url = await uploadImage(file, "product");
+      editor.chain().focus().setImage({ src: url }).run();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't upload the image.");
     }
-
-    const { data } = supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path);
-    editor.chain().focus().setImage({ src: data.publicUrl }).run();
   }
 
   async function pickMapFile(event: React.ChangeEvent<HTMLInputElement>) {
@@ -195,12 +184,6 @@ export function UploadMapForm({
 
     setPending(true);
     setStage("file");
-    const supabase = createSupabaseBrowser();
-    // Общий префикс для файла и всех картинок этого товара — папка на
-    // человека же остаётся плоской, а имена не пересекаются с другими
-    // товарами того же креатора.
-    const stamp = Date.now();
-
     try {
       // 1) Файл карты — через шлюз (/api/creator/upload).
       //
@@ -211,27 +194,21 @@ export function UploadMapForm({
       // никто. Разбор — в шапке src/app/api/creator/upload/route.ts.
       const filePath = await uploadMapFile(mapFile);
 
-      // 2) Картинки — в публичный бакет. ПАРАЛЛЕЛЬНО (Promise.all), а не
+      // 2) Картинки — тоже через шлюз (/api/creator/image). ПАРАЛЛЕЛЬНО
+      // (Promise.all), а не
       // по очереди: загрузки друг от друга не зависят, и очередь просто
       // складывала их время. Порядок результатов Promise.all совпадает с
       // порядком входного массива, поэтому coverIndex остаётся валиден.
       setStage("images");
       const imageUrls = await Promise.all(
-        images.map(async (image, i) => {
+        images.map(async (image) => {
           // Уже сохранённой картинки здесь не бывает: форма начинается с
           // пустой галереи, и взять такую неоткуда. Ветка нужна ТИПУ —
           // он общий с формой правки, где сохранённые как раз обычное
           // дело. Врать компилятору через `as` ради одной строки не
           // стоит: тип общий именно потому, что формы одинаковы.
           if (image.kind === "existing") return image.url;
-          const ext = safeExtension(image.file.name, "jpg");
-          const path = `${userId}/${stamp}-${i}.${ext}`;
-          const { error: imgError } = await supabase.storage
-            .from(PRODUCT_IMAGES_BUCKET)
-            .upload(path, image.file, { contentType: image.file.type });
-          if (imgError) throw new Error(`Couldn't upload an image: ${imgError.message}`);
-          const { data } = supabase.storage.from(PRODUCT_IMAGES_BUCKET).getPublicUrl(path);
-          return data.publicUrl;
+          return uploadImage(image.file, "product");
         })
       );
       const coverUrl = imageUrls[coverIndex];
