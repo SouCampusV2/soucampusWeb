@@ -158,6 +158,24 @@ async function main() {
   }
   const userId = created.data.user.id;
 
+  // Второй временный человек — нужен ровно для одной проверки: «чужой
+  // user_id». Выдуманный id туда не годится, он упирается во внешний
+  // ключ на auth.users и даёт отказ, ничего не доказывающий.
+  let otherUserId = null;
+  const otherCreated = await asServer.auth.admin.createUser({
+    email: `guardcheck+other-${suffix}@example.invalid`,
+    password: `Gc-${randomUUID()}`,
+    email_confirm: true,
+  });
+  if (otherCreated.error) {
+    console.error(
+      "Второй временный человек не завёлся:",
+      otherCreated.error.message
+    );
+  } else {
+    otherUserId = otherCreated.data.user.id;
+  }
+
   const asUser = createClient(url, anonKey, {
     auth: { autoRefreshToken: false, persistSession: false },
   });
@@ -165,6 +183,7 @@ async function main() {
   if (signedIn.error) {
     console.error("Не удалось войти временным пользователем:", signedIn.error.message);
     await asServer.auth.admin.deleteUser(userId);
+    if (otherUserId) await asServer.auth.admin.deleteUser(otherUserId);
     process.exit(1);
   }
 
@@ -584,15 +603,27 @@ async function main() {
       // Сильная версия — ниже, в разделе 5: там тот же человек с
       // ОПЛАЧЕННЫМ заказом, и отказ доказывает именно шлюз.
 
-      const otherId = randomUUID();
-      const reaction = await asUser
-        .from("product_reactions")
-        .insert({ product_id: productId, user_id: otherId });
-      check(
-        "реакцию за другого человека не поставить",
-        reaction.error !== null,
-        reaction.error === null ? "реакция создалась с чужим user_id" : ""
-      );
+      // ⚠️ ТРЕТЬЯ «ВСЕГДА ЗЕЛЁНАЯ» ПРОВЕРКА, найденная 21.09.
+      // Здесь стоял `randomUUID()` в качестве чужого человека — и отказ
+      // приходил от ВНЕШНЕГО КЛЮЧА (user_id ссылается на auth.users), а
+      // не от защиты. То есть проверка была бы зелёной даже с RLS,
+      // выключенной начисто. Теперь чужой человек — настоящий, второй
+      // временный аккаунт: отказ доказывает защиту, а не схему.
+      if (otherUserId) {
+        const reaction = await asUser
+          .from("product_reactions")
+          .insert({ product_id: productId, user_id: otherUserId });
+        check(
+          "реакцию за другого человека не поставить",
+          reaction.error !== null,
+          reaction.error === null ? "реакция создалась с чужим user_id" : ""
+        );
+      } else {
+        skip(
+          "реакцию за другого человека не поставить",
+          "не удалось завести второго временного человека — с выдуманным id отказ пришёл бы от внешнего ключа и ничего бы не доказал"
+        );
+      }
     } else {
       skip("комментарий и реакция", "нет временной карты, к которой их привязать");
     }
@@ -884,6 +915,7 @@ async function main() {
     }
     await asServer.from("notifications").delete().eq("user_id", userId);
     await asServer.auth.admin.deleteUser(userId);
+    if (otherUserId) await asServer.auth.admin.deleteUser(otherUserId);
   }
 
   console.log(
