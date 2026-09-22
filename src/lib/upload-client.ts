@@ -1,5 +1,5 @@
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
-import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
+import { PRODUCT_FILES_BUCKET } from "@/lib/orders-shape";
 import { PRODUCT_IMAGES_BUCKET } from "@/lib/products";
 import { AVATARS_BUCKET } from "@/lib/upload-limits";
 

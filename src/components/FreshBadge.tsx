@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useSyncExternalStore } from "react";
-import { isFreshPurchase, FRESH_PURCHASE_MS } from "@/lib/orders";
+import { isFreshPurchase, FRESH_PURCHASE_MS } from "@/lib/orders-shape";
 
 // Бейдж «NEW» на только что купленной карте (решение владельца
 // 2026-08-26: заказ моложе двух минут).
