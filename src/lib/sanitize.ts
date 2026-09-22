@@ -1,4 +1,5 @@
 import sanitizeHtml from "sanitize-html";
+import { isOwnImageUrl } from "@/lib/map-submission";
 
 // Очистка описания карты — ОДНА функция на все места, где креаторский
 // HTML попадает в dangerouslySetInnerHTML.
@@ -48,8 +49,14 @@ const ALLOWED_TAGS = [
  * обязан видеть ровно то, что получит покупатель. Две копии списка
  * (так было до 2026-08-08) дают самый неприятный вид расхождения —
  * одобрено одно, показано другое.
+ *
+ * `supabaseUrl` параметром — ради тестов, как у `isOwnImageUrl`;
+ * вызывающие его не передают.
  */
-export function sanitizeDescription(html: string): string {
+export function sanitizeDescription(
+  html: string,
+  supabaseUrl: string = process.env.NEXT_PUBLIC_SUPABASE_URL ?? ""
+): string {
   return sanitizeHtml(html, {
     allowedTags: ALLOWED_TAGS,
 
@@ -70,6 +77,29 @@ export function sanitizeDescription(html: string): string {
     // Картинкам дополнительно data: — редактор показывает только что
     // выбранный файл как data-URI, пока идёт загрузка в Storage.
     allowedSchemesByTag: { img: ["http", "https", "data"] },
+
+    // Картинка — только наша (пункт 11 приоритетов, закрыт 2026-09-22).
+    //
+    // ⚠️ Схема здесь не защищает: https бывает у любого сервера. Картинку
+    // из описания браузер каждого посетителя страницы карты запрашивает
+    // сам, и владелец чужого сервера получал бы IP и время визита всех,
+    // кто её открыл. С 13.09 то же правило стоит на обложке в шлюзе —
+    // здесь зовётся ТА ЖЕ функция, а не вторая копия: разойдись они,
+    // автор положил бы в описание то, что шлюз не пустил в обложку.
+    //
+    // Тег выбрасывается ЦЕЛИКОМ, а не остаётся без src: пустой <img>
+    // рисуется у браузера рамкой «картинка сломана».
+    //
+    // data: пропускается мимо проверки намеренно: такая картинка лежит
+    // внутри самой разметки, наружу за ней браузер не ходит, значит и
+    // сливать нечего. Редактор держит ею только что выбранный файл, пока
+    // тот грузится в Storage (см. выше).
+    exclusiveFilter: (frame) => {
+      if (frame.tag !== "img") return false;
+      const src = frame.attribs.src ?? "";
+      if (src.startsWith("data:")) return false;
+      return !isOwnImageUrl(src, supabaseUrl);
+    },
 
     // Чужая ссылка в новой вкладке без noopener даёт открытой странице
     // доступ к window.opener нашей. Дописываем сами, на автора не
