@@ -1,0 +1,187 @@
+/* theme-factory: Midnight Galaxy. Четыре цвета темы и только они. */
+.root {
+  --deep: #2b1e3e;
+  --cosmic: #4a4e8f;
+  --lavender: #a490c2;
+  --silver: #e6e6fa;
+
+  position: relative;
+  color: var(--silver);
+  font-family: var(--f-arimo), Arial, sans-serif;
+  background:
+    radial-gradient(ellipse 60% 50% at 80% 10%, rgba(74, 78, 143, 0.55), transparent),
+    radial-gradient(ellipse 50% 40% at 10% 90%, rgba(164, 144, 194, 0.25), transparent),
+    var(--deep);
+}
+
+/* Звёзды: две сетки точек разного шага, медленно мерцают. */
+.root::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 20px 30px, var(--silver), transparent),
+    radial-gradient(1px 1px at 140px 90px, var(--lavender), transparent),
+    radial-gradient(1.5px 1.5px at 80px 160px, var(--silver), transparent);
+  background-size: 200px 200px, 260px 260px, 330px 330px;
+  opacity: 0.45;
+  animation: twinkle 6s ease-in-out infinite alternate;
+}
+
+@keyframes twinkle {
+  to {
+    opacity: 0.2;
+  }
+}
+
+.root ::selection {
+  background: var(--lavender);
+  color: var(--deep);
+}
+
+.root :focus-visible {
+  outline: 2px solid var(--lavender);
+  outline-offset: 3px;
+}
+
+.deck {
+  position: relative;
+  height: 100dvh;
+  overflow-y: auto;
+  scroll-snap-type: y mandatory;
+  outline: none;
+}
+
+.slide {
+  position: relative;
+  display: flex;
+  min-height: 100dvh;
+  align-items: center;
+  scroll-snap-align: start;
+  padding: 72px clamp(20px, 6vw, 96px);
+}
+
+.slideInner {
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.slideTitle {
+  margin: 0;
+  font-size: clamp(2.25rem, 4.5vw, 3.75rem);
+  font-weight: 700;
+  line-height: 1.05;
+}
+
+.kicker {
+  margin: 0;
+  color: var(--lavender);
+  font-weight: 700;
+}
+
+.footer {
+  position: absolute;
+  inset: auto clamp(20px, 6vw, 96px) 24px;
+  display: flex;
+  justify-content: space-between;
+  margin: 0;
+  font-size: 13px;
+  color: rgba(230, 230, 250, 0.45);
+}
+
+.btnSolid,
+.btnLine {
+  display: inline-flex;
+  align-items: center;
+  min-height: 52px;
+  padding: 0 28px;
+  font-weight: 700;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.btnSolid {
+  background: var(--lavender);
+  color: var(--deep);
+}
+
+.btnSolid:hover {
+  background: var(--silver);
+}
+
+.btnLine {
+  box-shadow: inset 0 0 0 2px var(--lavender);
+}
+
+.btnLine:hover {
+  background: var(--cosmic);
+}
+
+.tile {
+  display: block;
+  overflow: hidden;
+  background: rgba(74, 78, 143, 0.35);
+  transition: background-color 200ms ease;
+}
+
+.tile:hover {
+  background: var(--cosmic);
+}
+
+.dots {
+  position: fixed;
+  right: 20px;
+  top: 50%;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transform: translateY(-50%);
+}
+
+.dot {
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 2px solid var(--lavender);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  transition:
+    background-color 200ms ease,
+    transform 200ms ease;
+}
+
+.dot[aria-current="step"] {
+  background: var(--lavender);
+  transform: scale(1.25);
+}
+
+.counter {
+  position: fixed;
+  left: clamp(20px, 6vw, 96px);
+  top: 20px;
+  z-index: 10;
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--lavender);
+}
+
+@media (max-width: 760px) {
+  .deck {
+    scroll-snap-type: y proximity;
+  }
+  .dots {
+    right: 8px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .root::before {
+    animation: none;
+  }
+}

@@ -1,0 +1,146 @@
+/* redesign-skill: тот же бренд, один акцент. Серые — одного (тёплого)
+   семейства («Mixing warm and cool grays» — пункт аудита). */
+.root {
+  --bg: #fbfaf8;
+  --card: #ffffff;
+  --ink: #1c1917;
+  --muted: #57534e;
+  --line: #e7e5e4;
+  --accent: #f97316;
+  --accent-text: #c2410c;
+
+  min-height: 100dvh;
+  overflow-x: clip;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-jakarta), system-ui, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  .root {
+    --bg: #0f0e0d;
+    --card: #1a1817;
+    --ink: #f5f5f4;
+    --muted: #a8a29e;
+    --line: #2e2a27;
+    --accent-text: #fb923c;
+  }
+}
+
+.root ::selection {
+  background: var(--accent);
+  color: #1c1917;
+}
+
+.root :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.display {
+  font-family: var(--r-display), sans-serif;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    background-color 200ms ease,
+    transform 200ms ease;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btnAccent {
+  background: var(--accent);
+  color: #1c1917;
+}
+
+.btnAccent:hover {
+  background: #fb923c;
+}
+
+.btnLine {
+  box-shadow: inset 0 0 0 1.5px var(--ink);
+}
+
+.btnLine:hover {
+  background: var(--card);
+}
+
+/* Свечение сохранено (это узнаваемая деталь главной), но одно и тише. */
+.glow {
+  position: absolute;
+  inset: -80px 0 auto;
+  z-index: -1;
+  height: 520px;
+  background: radial-gradient(ellipse 50% 60% at 50% 40%, rgba(249, 115, 22, 0.22), transparent 70%);
+  pointer-events: none;
+}
+
+.root > section,
+.root > header {
+  position: relative;
+  isolation: isolate;
+}
+
+.marquee {
+  overflow: hidden;
+  padding: 28px 0;
+  border-bottom: 1px solid var(--line);
+  mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent);
+}
+
+.track {
+  display: flex;
+  width: max-content;
+  animation: marquee 38s linear infinite;
+}
+
+.marquee:hover .track {
+  animation-play-state: paused;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.reviews {
+  display: flex;
+  gap: 16px;
+  margin: 40px 0 0;
+  padding: 0 max(20px, calc((100vw - 72rem) / 2 + 20px)) 12px;
+  overflow-x: auto;
+  list-style: none;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 max(20px, calc((100vw - 72rem) / 2 + 20px));
+}
+
+.skin {
+  position: relative;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.skin::before {
+  content: "";
+  position: absolute;
+  inset: 12%;
+  border-radius: 999px;
+  background: radial-gradient(closest-side, rgba(249, 115, 22, 0.35), transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .track {
+    animation: none;
+  }
+}

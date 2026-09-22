@@ -1,0 +1,466 @@
+/* mobile-native: приложение в кармане. Все :hover — только под
+   (hover: hover) and (pointer: fine), см. конец файла. */
+.root {
+  --bg: #f2f1ee;
+  --card: #ffffff;
+  --ink: #141414;
+  --muted: #6b6a66;
+  --accent: #e8572a;
+  --tabbar: 64px;
+
+  min-height: 100svh;
+  background: #dcdad4;
+  color: var(--ink);
+  font-family: var(--p-sans), system-ui, sans-serif;
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  .root {
+    --bg: #121212;
+    --card: #1e1e1e;
+    --ink: #f2f2f2;
+    --muted: #a3a3a3;
+    background: #000;
+  }
+}
+
+.root a,
+.root button {
+  color: inherit;
+  text-decoration: none;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.root :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+/* Колонка-«телефон»: на мобильном во всю ширину, на десктопе по центру. */
+.app {
+  position: relative;
+  max-width: 480px;
+  min-height: 100svh;
+  margin: 0 auto;
+  padding-bottom: calc(var(--tabbar) + env(safe-area-inset-bottom) + 90px);
+  background: var(--bg);
+  box-shadow: 0 0 60px rgba(0, 0, 0, 0.08);
+}
+
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(10px + env(safe-area-inset-top)) 16px 10px;
+  background: color-mix(in srgb, var(--bg) 85%, transparent);
+  backdrop-filter: blur(16px);
+}
+
+.brand {
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.topBtn {
+  height: 36px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--ink);
+  color: var(--bg) !important;
+  font: inherit;
+  font-weight: 700;
+  font-size: 15px;
+  transition: transform 120ms ease-out;
+}
+
+.topBtn:active {
+  transform: scale(0.96);
+}
+
+/* 100svh, а не 100dvh: не прыгает, когда адресная строка прячется. */
+.hero {
+  position: relative;
+  display: flex;
+  min-height: calc(100svh - 120px);
+  align-items: flex-end;
+  margin: 0 12px;
+  overflow: hidden;
+  border-radius: 28px;
+  scroll-margin-top: 64px;
+}
+
+.heroImg {
+  position: absolute;
+  inset: 0;
+}
+
+.heroImg img {
+  object-fit: cover;
+}
+
+.heroText {
+  position: relative;
+  padding: 80px 20px 24px;
+  color: #fff;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.75));
+}
+
+.h1 {
+  margin: 0;
+  font-size: 38px;
+  font-weight: 800;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+}
+
+.lede {
+  margin: 10px 0 0;
+  font-size: 16px;
+  opacity: 0.85;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 12px;
+}
+
+.stats div {
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  border-radius: 18px;
+  background: var(--card);
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.3;
+}
+
+.stats b {
+  font-size: 24px;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.section {
+  padding: 28px 0 0;
+  scroll-margin-top: 64px;
+}
+
+.h2 {
+  margin: 0 16px;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.hint {
+  margin: 2px 16px 12px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.strip {
+  display: flex;
+  gap: 10px;
+  margin: 0;
+  padding: 0 16px 4px;
+  list-style: none;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 16px;
+  overscroll-behavior-x: contain;
+  touch-action: pan-x pan-y;
+  scrollbar-width: none;
+}
+
+.strip::-webkit-scrollbar {
+  display: none;
+}
+
+.strip li {
+  scroll-snap-align: start;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  width: 240px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  transition: transform 120ms ease-out;
+}
+
+.card:active {
+  transform: scale(0.97);
+}
+
+.cardImg {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 5;
+  margin-bottom: 8px;
+  overflow: hidden;
+  border-radius: 20px;
+  background: var(--card);
+}
+
+.cardImg img {
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.cardTitle {
+  font-weight: 700;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 16px;
+  padding: 0;
+  list-style: none;
+}
+
+.chips li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--card);
+  font-size: 14px;
+}
+
+.reviews,
+.plans {
+  display: grid;
+  gap: 8px;
+  margin: 12px 12px 0;
+  padding: 0;
+  list-style: none;
+}
+
+.reviews li,
+.plans li {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 20px;
+  background: var(--card);
+  font-size: 15px;
+}
+
+.reviews p {
+  margin: 0;
+}
+
+.planRow {
+  display: flex;
+  justify-content: space-between;
+  font-variant-numeric: tabular-nums;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  margin: 28px 16px 0;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+/* ── Нижняя панель вкладок ── */
+.tabbar {
+  position: fixed;
+  left: 50%;
+  bottom: 0;
+  z-index: 30;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr) auto;
+  align-items: center;
+  width: min(480px, 100%);
+  height: calc(var(--tabbar) + env(safe-area-inset-bottom));
+  padding: 0 8px env(safe-area-inset-bottom);
+  transform: translateX(-50%);
+  background: color-mix(in srgb, var(--card) 88%, transparent);
+  backdrop-filter: blur(20px) saturate(1.4);
+  border-top: 1px solid color-mix(in srgb, var(--ink) 8%, transparent);
+}
+
+.tab {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted) !important;
+}
+
+.tab[aria-current="true"] {
+  color: var(--accent) !important;
+}
+
+.tabOrder {
+  height: 40px;
+  margin-left: 6px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: #fff !important;
+  font: inherit;
+  font-weight: 800;
+  transition: transform 120ms ease-out;
+}
+
+.tabOrder:active {
+  transform: scale(0.95);
+}
+
+/* ── Шторка Vaul ── */
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 61;
+  display: flex;
+  flex-direction: column;
+  max-width: 480px;
+  max-height: 92svh;
+  margin: 0 auto;
+  border-radius: 28px 28px 0 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--p-sans), system-ui, sans-serif;
+  outline: none;
+}
+
+.handle {
+  margin-top: 10px;
+}
+
+.sheetBody {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  padding: 16px 16px calc(24px + env(safe-area-inset-bottom));
+  overscroll-behavior: contain;
+}
+
+.sheetImg {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 20px;
+}
+
+.sheetImg img {
+  object-fit: cover;
+}
+
+.sheetTitle {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.sheetSteps {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.sheetSteps li {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--card);
+  font-size: 15px;
+}
+
+.facts {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.facts dt {
+  color: var(--muted);
+}
+
+.facts dd {
+  margin: 0;
+  font-weight: 700;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 52px;
+  border-radius: 16px;
+  font-weight: 800;
+  transition: transform 120ms ease-out;
+}
+
+.btn:active {
+  transform: scale(0.98);
+}
+
+.btnPrimary {
+  background: var(--accent);
+  color: #fff !important;
+}
+
+.btnSecondary {
+  background: var(--card);
+}
+
+/* Hover — только там, где есть настоящий курсор. */
+@media (hover: hover) and (pointer: fine) {
+  .tab:hover {
+    color: var(--ink) !important;
+  }
+  .card:hover .cardImg img {
+    transform: scale(1.03);
+    transition: transform 400ms ease-out;
+  }
+}

@@ -1,4 +1,8 @@
 @import "tailwindcss";
+/* design-lab: утилиты входа/выхода (animate-in, fade-in…) для варианта
+   лаборатории на baseline-ui. Tailwind v4 генерирует только использованные
+   классы, так что остальному сайту это ничего не стоит. */
+@import "tw-animate-css";
 
 /* `dark:`-классы Tailwind срабатывают от класса .dark на <html>
    (не от системной темы) — класс проставляет ThemeProvider.tsx по клику

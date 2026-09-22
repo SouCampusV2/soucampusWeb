@@ -1,0 +1,1006 @@
+/* Лендинг «с нуля» (design-lab). Своя система, ничего из globals.css
+   и docs/DESIGN.md: токены ниже — единственный источник цвета и шрифта
+   на странице.
+
+   Палитра из самой игры — «оверворлд днём»:
+     sky    бледное небо, фон страницы
+     ink    тёмно-синие «чернила» вместо чёрного
+     grass  трава, единственный цвет действия (кнопки)
+     dirt   земля, второй тон (блоки, мелкие акценты)
+   Ночью — тот же мир ночью: тёмное небо, светлые чернила, трава ярче.
+   Контраст проверен на пары текст/фон: ink на sky ≈ 13:1, ink-soft на
+   sky ≈ 6:1, белый на grass ≈ 5.4:1. */
+
+.page {
+  --sky: #d7e8f4;
+  --sky-deep: #bcd6ea;
+  --paper: #eef5fb;
+  --ink: #13233f;
+  --ink-soft: #40526f;
+  --line: rgba(19, 35, 63, 0.16);
+  --grass: #3d7a22;
+  --grass-hover: #336a1b;
+  --on-grass: #ffffff;
+  --dirt: #7a4e2d;
+  --stone: #8b939c;
+  --plank: #b48a55;
+  --sun: #f2c14a;
+
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --gutter: clamp(16px, 4vw, 56px);
+  --max: 1320px;
+
+  min-height: 100dvh;
+  width: 100%;
+  overflow-x: clip;
+  background: var(--sky);
+  color: var(--ink);
+  font-family: var(--f-text), system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+}
+
+@media (prefers-color-scheme: dark) {
+  .page {
+    --sky: #0f1b2e;
+    --sky-deep: #172842;
+    --paper: #14243b;
+    --ink: #e4edf8;
+    --ink-soft: #a3b4cc;
+    --line: rgba(228, 237, 248, 0.16);
+    --grass: #7cc04b;
+    --grass-hover: #8fd05c;
+    --on-grass: #0f1b2e;
+    --dirt: #a36d44;
+    --stone: #6b747e;
+    --plank: #9b7545;
+  }
+}
+
+/* Поверхности браузера, которые обычно остаются «ничьими» (impeccable,
+   craft floor): выделение, фокус, ползунки. */
+.page ::selection {
+  background: var(--sun);
+  color: #13233f;
+}
+
+.page :focus-visible {
+  outline: 3px solid var(--sun);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.page a {
+  color: inherit;
+}
+
+.main {
+  display: flex;
+  flex-direction: column;
+}
+
+.muted {
+  color: var(--ink-soft);
+}
+
+/* ── Шапка ─────────────────────────────────────────── */
+
+.top {
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 20px var(--gutter);
+}
+
+.wordmark {
+  font-family: var(--f-display);
+  font-weight: 900;
+  font-size: 28px;
+  letter-spacing: 0.01em;
+  text-decoration: none;
+  line-height: 1;
+}
+
+.topNav {
+  display: flex;
+  gap: 28px;
+  margin-left: auto;
+}
+
+.topNav a {
+  text-decoration: none;
+  color: var(--ink-soft);
+  transition: color 200ms var(--ease-out);
+}
+
+.topNav a:hover {
+  color: var(--ink);
+}
+
+@media (max-width: 720px) {
+  .topNav {
+    display: none;
+  }
+  .top > .btn {
+    margin-left: auto;
+  }
+}
+
+/* ── Кнопки ────────────────────────────────────────── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 24px;
+  border-radius: 6px;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 220ms var(--ease-out),
+    transform 220ms var(--ease-out),
+    box-shadow 220ms var(--ease-out);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btnGrass {
+  background: var(--grass);
+  color: var(--on-grass) !important;
+  /* «Грань блока»: нижний край темнее — кнопка читается как кубик,
+     а не как плоская плашка. При нажатии грань уходит. */
+  box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.22);
+}
+
+.btnGrass:hover {
+  background: var(--grass-hover);
+}
+
+.btnGrass:active {
+  box-shadow: inset 0 -1px 0 rgba(0, 0, 0, 0.22);
+}
+
+.btnLine {
+  box-shadow: inset 0 0 0 2px var(--ink);
+}
+
+.btnLine:hover {
+  background: var(--ink);
+  color: var(--sky) !important;
+}
+
+.btnSmall {
+  min-height: 40px;
+  padding: 0 16px;
+  font-size: 15px;
+}
+
+.btnBig {
+  min-height: 60px;
+  padding: 0 32px;
+  font-size: 19px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.textLink {
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--grass);
+}
+
+/* ── Hero ──────────────────────────────────────────── */
+
+/* Первый экран — ровно экран: заголовок в две строки, под ним строка
+   «текст + кнопки», а картинка забирает всё оставшееся место. Так
+   постройка блоками происходит на глазах, а не под сгибом. */
+.hero {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(20px, 2.4vw, 32px);
+  min-height: calc(100dvh - 80px);
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: clamp(16px, 2.5vw, 32px) var(--gutter) 0;
+}
+
+.heroTitle {
+  margin: 0;
+  font-family: var(--f-display);
+  font-weight: 900;
+  font-size: clamp(3.4rem, 9vw, 8.75rem);
+  line-height: 0.86;
+  letter-spacing: -0.005em;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+.heroAside {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px 40px;
+}
+
+.lede {
+  margin: 0;
+  max-width: 46ch;
+  font-size: clamp(18px, 1.5vw, 20px);
+  color: var(--ink-soft);
+}
+
+.heroFigure {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+}
+
+.heroCaption {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 12px;
+  font-size: 15px;
+  color: var(--ink-soft);
+}
+
+.heroCaption a {
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* Постройка блоками. Картинка под сеткой видна сразу — анимируются
+   только «блоки неба» над ней. */
+.build {
+  position: relative;
+  flex: 1;
+  min-height: 340px;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--sky-deep);
+}
+
+.buildImg {
+  object-fit: cover;
+}
+
+.cells {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(var(--cols), 1fr);
+  grid-template-rows: repeat(var(--rows), 1fr);
+}
+
+.cell {
+  background: var(--sky);
+  /* Клетка перекрывает соседей на пиксель — иначе на дробных размерах
+     между квадратами просвечивают тонкие линии картинки. */
+  margin: -0.5px;
+  animation: place 640ms var(--ease-out) var(--d) both;
+}
+
+@keyframes place {
+  0% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  35% {
+    opacity: 1;
+    transform: translateY(-6%) scale(1.02);
+    background: var(--sky-deep);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(18%) scale(0.6);
+  }
+}
+
+@media (max-width: 640px) {
+  .build {
+    flex: none;
+    aspect-ratio: 4 / 3;
+    min-height: 0;
+  }
+}
+
+/* ── Цифры фразой ──────────────────────────────────── */
+
+.proof {
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: clamp(80px, 11vw, 160px) var(--gutter);
+}
+
+.proofText {
+  margin: 0;
+  max-width: 30ch;
+  font-family: var(--f-display);
+  font-weight: 700;
+  font-size: clamp(2rem, 4.6vw, 4rem);
+  line-height: 1.05;
+  color: var(--ink-soft);
+}
+
+.proofText strong {
+  color: var(--ink);
+  font-weight: 900;
+}
+
+/* Флаг не отрывается от названия страны, но между странами строка
+   переносится: запятая стоит СНАРУЖИ неразрывного куска. */
+.country {
+  white-space: nowrap;
+}
+
+.flag {
+  display: inline-block;
+  width: 0.62em;
+  height: auto;
+  margin: 0 0.18em 0 0.08em;
+  vertical-align: 0.02em;
+  border-radius: 2px;
+}
+
+/* ── Общие секции ──────────────────────────────────── */
+
+.section {
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: clamp(72px, 10vw, 144px) var(--gutter);
+}
+
+.h2 {
+  margin: 0;
+  font-family: var(--f-display);
+  font-weight: 900;
+  font-size: clamp(2.6rem, 5.6vw, 4.75rem);
+  line-height: 0.92;
+  text-transform: uppercase;
+  text-wrap: balance;
+}
+
+/* ── Лента работ ───────────────────────────────────── */
+
+.pan {
+  position: relative;
+  background: var(--paper);
+}
+
+.panSticky {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 40px;
+  padding: 72px 0;
+}
+
+.panHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.track {
+  display: flex;
+  gap: clamp(20px, 3vw, 40px);
+  padding: 0 var(--gutter);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scroll-padding: 0 var(--gutter);
+  scrollbar-width: thin;
+  scrollbar-color: var(--stone) transparent;
+}
+
+.work {
+  flex: 0 0 min(88vw, 760px);
+  display: grid;
+  gap: 20px;
+  scroll-snap-align: start;
+}
+
+.workImage {
+  position: relative;
+  display: block;
+  aspect-ratio: 16 / 10;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--sky-deep);
+}
+
+.workImage img {
+  object-fit: cover;
+  transition: transform 900ms var(--ease-out);
+}
+
+.workImage:hover img {
+  transform: scale(1.035);
+}
+
+.workBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px 32px;
+}
+
+.workTitle {
+  margin: 0;
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-size: 34px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.workTitle a {
+  text-decoration: none;
+}
+
+.workSummary {
+  grid-column: 1;
+  margin: 0;
+  max-width: 48ch;
+  color: var(--ink-soft);
+}
+
+.workFacts {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 4px 16px;
+  margin: 0;
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+}
+
+.workFacts > div {
+  display: contents;
+}
+
+.workFacts dt {
+  color: var(--ink-soft);
+}
+
+.workFacts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+@media (max-width: 640px) {
+  .workBody {
+    grid-template-columns: 1fr;
+  }
+  .workFacts {
+    grid-column: 1;
+    grid-row: auto;
+  }
+}
+
+/* Широкий экран и без «меньше движения»: ленту двигает скролл (JS
+   задаёт высоту секции и transform). Прокрутку вбок выключаем — иначе
+   у ленты было бы два способа ехать, и они бы спорили. */
+@media (min-width: 900px) and (prefers-reduced-motion: no-preference) {
+  .panSticky {
+    position: sticky;
+    top: 0;
+    height: 100dvh;
+    padding: 0;
+    overflow: hidden;
+  }
+
+  .track {
+    width: max-content;
+    overflow: visible;
+    will-change: transform;
+  }
+
+  .work {
+    flex-basis: min(56vw, 820px);
+  }
+}
+
+/* ── Отзывы ────────────────────────────────────────── */
+
+.reviews {
+  display: grid;
+  grid-template-columns: minmax(180px, 280px) minmax(0, 1fr);
+  gap: 56px;
+  margin-top: 56px;
+}
+
+.reviewNames {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+}
+
+.reviewName {
+  position: relative;
+  padding: 8px 0 8px 22px;
+  border: 0;
+  background: none;
+  color: var(--ink-soft);
+  font: inherit;
+  font-size: 19px;
+  text-align: left;
+  cursor: pointer;
+  transition: color 200ms var(--ease-out);
+}
+
+/* Маркер выбранного — маленький блок травы, а не цветная полоска. */
+.reviewName::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  background: var(--grass);
+  transform: scale(0);
+  transition: transform 260ms var(--ease-out);
+}
+
+.reviewName:hover {
+  color: var(--ink);
+}
+
+.reviewName[aria-selected="true"] {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.reviewName[aria-selected="true"]::before {
+  transform: scale(1);
+}
+
+.reviewPanel {
+  margin: 0;
+  min-height: 16rem;
+}
+
+.quote {
+  margin: 0;
+  max-width: 34ch;
+  font-size: clamp(22px, 2.4vw, 32px);
+  line-height: 1.35;
+  animation: quoteIn 480ms var(--ease-out) both;
+}
+
+@keyframes quoteIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+    filter: blur(4px);
+  }
+}
+
+.quoteBy {
+  display: flex;
+  flex-direction: column;
+  margin-top: 28px;
+  font-size: 16px;
+}
+
+.quoteName {
+  font-weight: 600;
+}
+
+@media (max-width: 760px) {
+  .reviews {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .reviewNames {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 4px 20px;
+  }
+}
+
+/* ── Шаги и башня ──────────────────────────────────── */
+
+.process {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  gap: 56px;
+}
+
+.processAside {
+  position: sticky;
+  top: 12vh;
+  align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 48px;
+}
+
+.tower {
+  display: flex;
+  flex-direction: column-reverse;
+  width: 88px;
+}
+
+.block {
+  display: block;
+  width: 88px;
+  height: 88px;
+  box-shadow: inset 0 -8px 0 rgba(0, 0, 0, 0.18), inset 0 8px 0 rgba(255, 255, 255, 0.12);
+  opacity: 0;
+  transform: translateY(-40px);
+  transition:
+    opacity 260ms var(--ease-out),
+    transform 520ms cubic-bezier(0.34, 1.5, 0.64, 1);
+}
+
+.block[data-placed="true"] {
+  opacity: 1;
+  transform: none;
+}
+
+.block_dirt {
+  background: var(--dirt);
+}
+.block_stone {
+  background: var(--stone);
+}
+.block_plank {
+  background: var(--plank);
+}
+.block_grass {
+  background: linear-gradient(var(--grass) 0 28%, var(--dirt) 28%);
+}
+
+.steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  gap: 16px;
+  padding: 36px 0;
+  border-top: 2px solid var(--line);
+  opacity: 0.45;
+  transition: opacity 400ms var(--ease-out);
+}
+
+.step[data-reached="true"] {
+  opacity: 1;
+}
+
+.stepNum {
+  font-family: var(--f-display);
+  font-weight: 900;
+  font-size: 44px;
+  line-height: 0.9;
+  font-variant-numeric: tabular-nums;
+}
+
+.stepTitle {
+  margin: 0 0 6px;
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-size: 32px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.stepText {
+  margin: 0;
+  max-width: 44ch;
+  color: var(--ink-soft);
+}
+
+@media (max-width: 860px) {
+  .process {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
+  .processAside {
+    position: static;
+  }
+  .tower {
+    display: none;
+  }
+  .step {
+    opacity: 1;
+  }
+}
+
+/* ── Калькулятор ───────────────────────────────────── */
+
+.estimator {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 64px;
+  align-items: center;
+}
+
+.estimatorText {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 24px;
+}
+
+.estimatorText > p {
+  margin: 0;
+  max-width: 46ch;
+}
+
+.range {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  width: 100%;
+  max-width: 460px;
+  font-weight: 600;
+}
+
+.range output {
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-soft);
+}
+
+.range input {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: var(--grass);
+  height: 28px;
+  cursor: pointer;
+}
+
+.quoteBox {
+  display: flex;
+  gap: 48px;
+  padding: 8px 0;
+}
+
+.quoteBox > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.bigNumber {
+  font-family: var(--f-display);
+  font-weight: 900;
+  font-size: clamp(2.6rem, 5vw, 4rem);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+
+/* План участка: поле 1000×1000 блоков. Сетка лежит ПОВЕРХ постройки
+   (::after), чтобы по ней можно было считать чанки и на зелёном.
+   Шаг сетки — 64 блока (4 чанка): при шаге в один чанк на поле было бы
+   62 линии, и оно превратилось бы в серую рябь. */
+.plotWrap {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin: 0;
+  font-size: 15px;
+}
+
+.plot {
+  position: relative;
+  aspect-ratio: 1;
+  width: 100%;
+  border-radius: 6px;
+  background: var(--paper);
+  overflow: hidden;
+}
+
+.plot::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 6.4% 6.4%;
+  background-position: left bottom;
+  pointer-events: none;
+}
+
+.plotArea {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  background: var(--grass);
+  transform-origin: left bottom;
+  transform: scale(var(--w), var(--l));
+  transition: transform 380ms var(--ease-out);
+}
+
+@media (max-width: 860px) {
+  .estimator {
+    grid-template-columns: 1fr;
+    gap: 40px;
+  }
+  .plotWrap {
+    max-width: 420px;
+  }
+}
+
+/* ── Тарифы ────────────────────────────────────────── */
+
+.plansHead {
+  display: grid;
+  gap: 16px;
+}
+
+.plansHead p {
+  margin: 0;
+  max-width: 50ch;
+}
+
+.plans {
+  list-style: none;
+  margin: 48px 0 0;
+  padding: 0;
+}
+
+.plan {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(140px, 1fr) minmax(0, 2.4fr);
+  gap: 8px 32px;
+  align-items: baseline;
+  padding: 24px 0;
+  border-top: 2px solid var(--line);
+}
+
+.planName {
+  font-family: var(--f-display);
+  font-weight: 800;
+  font-size: 30px;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.planPrice {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.planText {
+  color: var(--ink-soft);
+  max-width: 60ch;
+}
+
+/* Lifetime выделен целиком строкой — это единственная разовая покупка
+   в списке, и отличается она по сути, а не по цвету. */
+.planStrong {
+  margin-top: 16px;
+  padding: 28px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--ink);
+  color: var(--sky);
+}
+
+.planStrong .planText {
+  color: inherit;
+  opacity: 0.8;
+}
+
+@media (max-width: 760px) {
+  .plan {
+    grid-template-columns: 1fr auto;
+  }
+  .planText {
+    grid-column: 1 / -1;
+  }
+}
+
+/* ── Финал и подвал ────────────────────────────────── */
+
+.finale {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 40px;
+  width: 100%;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: clamp(96px, 14vw, 200px) var(--gutter);
+}
+
+.finaleTitle {
+  margin: 0;
+  max-width: 12ch;
+  font-family: var(--f-display);
+  font-weight: 900;
+  font-size: clamp(3.6rem, 10vw, 9rem);
+  line-height: 0.86;
+  text-transform: uppercase;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px 40px;
+  max-width: var(--max);
+  margin: 0 auto;
+  padding: 32px var(--gutter) 48px;
+  border-top: 2px solid var(--line);
+  font-size: 15px;
+}
+
+.socials,
+.legal {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.legal {
+  margin-left: auto;
+}
+
+.socials a,
+.legal a {
+  color: var(--ink-soft);
+  text-decoration: none;
+}
+
+.socials a:hover,
+.legal a:hover {
+  color: var(--ink);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+/* ── Меньше движения ───────────────────────────────── */
+
+@media (prefers-reduced-motion: reduce) {
+  .cells {
+    display: none;
+  }
+  .quote,
+  .block,
+  .step,
+  .plotArea,
+  .workImage img {
+    animation: none;
+    transition: none;
+  }
+}

@@ -1,0 +1,436 @@
+/* find-animation-opportunities: спокойная страница, движение только
+   там, где оно прошло «ворота». Метки аудита — бирюзовые. */
+.root {
+  --bg: #f6f6f4;
+  --ink: #1b1c1e;
+  --muted: #62646a;
+  --line: #e2e2de;
+  --pin: #0f8f86;
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+
+  min-height: 100dvh;
+  overflow-x: clip;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--r-sans), system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+.root :focus-visible {
+  outline: 2px solid var(--pin);
+  outline-offset: 3px;
+}
+
+.root a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 20px 20px 20px;
+  padding-right: 200px;
+}
+
+.brand {
+  font-weight: 800;
+}
+
+.nav {
+  display: flex;
+  gap: 20px;
+  color: var(--muted);
+}
+
+@media (max-width: 640px) {
+  .header {
+    padding-right: 20px;
+    padding-top: 64px;
+  }
+}
+
+.auditToggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 40;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--pin);
+  color: #fff;
+  font: 700 14px var(--r-sans), sans-serif;
+  cursor: pointer;
+}
+
+.panel {
+  position: fixed;
+  top: 64px;
+  right: 16px;
+  z-index: 40;
+  width: min(380px, calc(100vw - 32px));
+  max-height: calc(100dvh - 180px);
+  overflow-y: auto;
+  padding: 18px;
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: 0 20px 50px -20px rgba(0, 0, 0, 0.35), 0 0 0 1px var(--line);
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.panel ol,
+.panel ul {
+  display: grid;
+  gap: 12px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+
+.panel ol li {
+  display: grid;
+  grid-template-columns: 26px 1fr;
+  gap: 10px;
+}
+
+.panel code {
+  font-size: 12px;
+  color: var(--pin);
+}
+
+.panelTitle {
+  margin: 0 0 10px;
+  font-weight: 800;
+}
+
+.pinWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pin,
+.pinStatic {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  background: var(--pin);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.pin {
+  box-shadow: 0 0 0 4px rgba(15, 143, 134, 0.2);
+}
+
+.main {
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.hero {
+  padding: 64px 0 40px;
+}
+
+.h1 {
+  margin: 0;
+  max-width: 17ch;
+  font-size: clamp(2.4rem, 5.6vw, 4rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+}
+
+.lede {
+  max-width: 48ch;
+  margin: 18px 0 0;
+  font-size: 19px;
+  color: var(--muted);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin-top: 28px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  height: 46px;
+  padding: 0 20px;
+  border: 0;
+  border-radius: 12px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btnDark {
+  background: var(--ink);
+  color: #fff !important;
+}
+
+.btnGhost {
+  background: #fff;
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+/* №1 — отклик на нажатие. Единственное движение у кнопок. */
+.press {
+  transition: transform 140ms var(--ease-out);
+}
+
+.press:active {
+  transform: scale(0.97);
+}
+
+.statsRow {
+  display: grid;
+  gap: 6px;
+  padding: 24px 0;
+  border-block: 1px solid var(--line);
+}
+
+.statsRow p {
+  margin: 0;
+}
+
+.statsRow b {
+  font-size: 22px;
+}
+
+.section {
+  padding: 72px 0 0;
+}
+
+.h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+/* №2 — ступенчатое появление сетки. */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px 16px;
+  margin-top: 20px;
+}
+
+.grid > * {
+  transition:
+    opacity 300ms var(--ease-out),
+    transform 300ms var(--ease-out);
+  transition-delay: calc(var(--i) * 50ms);
+}
+
+.grid[data-stagger="hidden"] > * {
+  opacity: 0;
+  transform: translateY(8px);
+}
+
+@media (max-width: 760px) {
+  .grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 15px;
+}
+
+.cardImg {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  margin-bottom: 8px;
+  overflow: hidden;
+  border-radius: 12px;
+  background: var(--line);
+}
+
+.cardImg img {
+  object-fit: cover;
+}
+
+.cardTitle {
+  font-weight: 700;
+}
+
+/* №3 — аккордеон. */
+.steps {
+  margin: 20px 0 0;
+  padding: 0;
+  list-style: none;
+  border-top: 1px solid var(--line);
+}
+
+.steps li {
+  border-bottom: 1px solid var(--line);
+}
+
+.stepBtn {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  padding: 16px 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stepNum {
+  color: var(--muted);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
+.stepPanel {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transition:
+    grid-template-rows 200ms var(--ease-out),
+    opacity 200ms var(--ease-out);
+}
+
+.stepPanel[data-open="true"] {
+  grid-template-rows: 1fr;
+  opacity: 1;
+}
+
+.stepPanel > div {
+  overflow: hidden;
+}
+
+.stepPanel p {
+  margin: 0 0 16px 28px;
+  color: var(--muted);
+}
+
+/* №4 — оценка. */
+.estimate {
+  display: grid;
+  gap: 12px;
+  max-width: 520px;
+  margin-top: 20px;
+}
+
+.estimate input {
+  accent-color: var(--ink);
+}
+
+.estimateOut {
+  margin: 0;
+  font-size: 20px;
+}
+
+.fadeSwap {
+  display: inline-block;
+  animation: swap 160ms ease-out;
+}
+
+@keyframes swap {
+  from {
+    opacity: 0.6;
+    filter: blur(2px);
+  }
+}
+
+.reviews {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 28px;
+  margin-top: 20px;
+}
+
+.reviews figure {
+  margin: 0;
+}
+
+.reviews blockquote {
+  margin: 0 0 8px;
+}
+
+@media (max-width: 760px) {
+  .reviews {
+    grid-template-columns: 1fr;
+  }
+}
+
+.table {
+  width: 100%;
+  margin-top: 20px;
+  border-collapse: collapse;
+}
+
+.table th,
+.table td {
+  padding: 12px 8px 12px 0;
+  border-bottom: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.table td:nth-child(2) {
+  white-space: nowrap;
+  font-weight: 700;
+}
+
+.final {
+  padding-bottom: 72px;
+}
+
+.footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  max-width: 960px;
+  margin: 0 auto;
+  padding: 24px 20px 110px;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 14px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .press,
+  .grid > *,
+  .stepPanel {
+    transition: none;
+  }
+  .fadeSwap {
+    animation: none;
+  }
+}

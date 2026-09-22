@@ -1,0 +1,128 @@
+/* taste-skill: «Pure monochrome + single saturated pop» (§4.2) —
+   нейтральный цинк и один электрический синий. Одна палитра, один
+   акцент на всю страницу (COLOR CONSISTENCY LOCK). */
+.root {
+  --bg: #f4f4f5;
+  --card: #ffffff;
+  --ink: #18181b;
+  --muted: #5b5b64;
+  --line: rgba(24, 24, 27, 0.12);
+  --accent: #2346f0;
+  --on-accent: #ffffff;
+  --shadow: rgba(35, 70, 240, 0.35);
+
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--t-sans), system-ui, sans-serif;
+  overflow-x: clip;
+}
+
+@media (prefers-color-scheme: dark) {
+  .root {
+    --bg: #0e0e11;
+    --card: #18181c;
+    --ink: #f4f4f5;
+    --muted: #a1a1aa;
+    --line: rgba(244, 244, 245, 0.12);
+    --accent: #5b7bff;
+    --on-accent: #0e0e11;
+    --shadow: rgba(0, 0, 0, 0.7);
+  }
+}
+
+.root ::selection {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.root :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+/* Правило радиусов (§4.4 SHAPE LOCK): интерактивное — пилюля,
+   поверхности — 16px, картинки внутри — 12px. */
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    transform 200ms cubic-bezier(0.16, 1, 0.3, 1),
+    background-color 200ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.pill:active {
+  transform: scale(0.98);
+}
+
+.pillAccent {
+  background: var(--accent);
+  color: var(--on-accent);
+}
+
+.pillAccent:hover {
+  background: color-mix(in srgb, var(--accent) 85%, var(--ink));
+}
+
+.pillGhost {
+  box-shadow: inset 0 0 0 1px var(--line);
+}
+
+.pillGhost:hover {
+  background: var(--card);
+}
+
+.pillInverse {
+  background: var(--on-accent);
+  color: var(--accent);
+}
+
+.pillOutlineInverse {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--on-accent) 50%, transparent);
+}
+
+/* Бегущая строка стран: две одинаковые копии подряд, сдвиг на ширину
+   одной — стык не виден. */
+.marquee {
+  overflow: hidden;
+  padding: 22px 0;
+  border-top: 1px solid var(--line);
+  mask-image: linear-gradient(90deg, transparent, #000 8%, #000 92%, transparent);
+}
+
+.marqueeTrack {
+  display: flex;
+  width: max-content;
+  animation: marquee 40s linear infinite;
+}
+
+.marquee:hover .marqueeTrack {
+  animation-play-state: paused;
+}
+
+@keyframes marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.strip {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 0 max(20px, calc((100vw - 1280px) / 2 + 40px)) 12px;
+  scroll-padding: 0 max(20px, calc((100vw - 1280px) / 2 + 40px));
+  scrollbar-width: thin;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .marqueeTrack {
+    animation: none;
+    flex-wrap: wrap;
+  }
+}

@@ -1,0 +1,444 @@
+/* gsap-scrolltrigger: светло-серая сцена, чёрная широкая типографика
+   (Archivo, ось ширины), один горячий акцент. */
+.page {
+  --bg: #edeef0;
+  --ink: #0e0e10;
+  --muted: #5d6068;
+  --accent: #ff5a1f;
+
+  min-height: 100dvh;
+  overflow-x: clip;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--st-sans), system-ui, sans-serif;
+  font-size: 17px;
+  line-height: 1.55;
+}
+
+.page :focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+}
+
+.page a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.muted {
+  color: var(--muted);
+}
+
+.header {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 20;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px clamp(16px, 4vw, 48px);
+  mix-blend-mode: difference;
+  color: #fff;
+}
+
+.brand {
+  font-weight: 800;
+  font-stretch: 125%;
+  letter-spacing: -0.02em;
+}
+
+.pill,
+.pillGhost {
+  display: inline-flex;
+  align-items: center;
+  height: 44px;
+  padding: 0 20px;
+  border-radius: 999px;
+  font-weight: 700;
+  transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.pill {
+  background: var(--accent);
+  color: #fff !important;
+}
+
+.header .pill {
+  mix-blend-mode: normal;
+  background: #fff;
+  color: #000 !important;
+}
+
+.pillGhost {
+  box-shadow: inset 0 0 0 2px currentColor;
+}
+
+.pill:active,
+.pillGhost:active {
+  transform: scale(0.97);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ── Hero ── */
+.hero {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+.mask {
+  position: absolute;
+  inset: 0;
+  clip-path: inset(28% 34% 28% 34% round 24px);
+}
+
+.mask img {
+  object-fit: cover;
+}
+
+.heroTitle {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0 0.3em;
+  margin: 0;
+  padding: 0 16px;
+  font-size: clamp(2.6rem, 7.5vw, 7.5rem);
+  font-weight: 900;
+  font-stretch: 112%;
+  line-height: 0.92;
+  letter-spacing: -0.04em;
+  text-align: center;
+  color: var(--ink);
+  pointer-events: none;
+}
+
+.wordL,
+.wordR {
+  display: inline-block;
+}
+
+.heroEnd {
+  position: absolute;
+  left: clamp(16px, 4vw, 48px);
+  bottom: clamp(24px, 6vh, 64px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 460px;
+  padding: 22px;
+  border-radius: 20px;
+  background: rgba(237, 238, 240, 0.9);
+  opacity: 0;
+}
+
+.heroEnd p {
+  margin: 0;
+  font-size: 18px;
+}
+
+/* Без движения: hero обычный, всё видно сразу. */
+@media (prefers-reduced-motion: reduce) {
+  .mask {
+    clip-path: none;
+  }
+  .heroTitle {
+    color: #fff;
+    text-shadow: 0 2px 30px rgba(0, 0, 0, 0.5);
+  }
+  .heroEnd {
+    opacity: 1;
+  }
+}
+
+/* ── Цифры ── */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 120px clamp(16px, 4vw, 48px) 80px;
+}
+
+.stats > div {
+  border-top: 3px solid var(--ink);
+  padding-top: 14px;
+}
+
+.stats p {
+  margin: 0;
+}
+
+.statValue {
+  font-size: clamp(3.5rem, 9vw, 8rem);
+  font-weight: 900;
+  font-stretch: 75%;
+  line-height: 0.9;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 700px) {
+  .stats {
+    grid-template-columns: 1fr;
+  }
+}
+
+.h2 {
+  margin: 0 0 24px;
+  font-size: clamp(2.4rem, 6vw, 5rem);
+  font-weight: 900;
+  font-stretch: 112%;
+  line-height: 0.95;
+  letter-spacing: -0.04em;
+}
+
+/* ── Горизонтальная лента ── */
+.hscroll {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100dvh;
+  padding: 80px 0;
+  overflow: hidden;
+}
+
+.hscroll .h2 {
+  padding: 0 clamp(16px, 4vw, 48px);
+}
+
+.track {
+  display: flex;
+  gap: 24px;
+  width: max-content;
+  padding: 0 clamp(16px, 4vw, 48px);
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  width: min(42vw, 620px);
+}
+
+.cardFrame {
+  position: relative;
+  display: block;
+  aspect-ratio: 4 / 3;
+  margin-bottom: 12px;
+  overflow: hidden;
+  border-radius: 20px;
+}
+
+.cardImg {
+  position: absolute;
+  inset: 0 -14%;
+}
+
+.cardImg img {
+  object-fit: cover;
+}
+
+.cardTitle {
+  font-weight: 800;
+  font-size: 22px;
+}
+
+/* На узких экранах лента — обычная горизонтальная прокрутка. */
+@media (max-width: 899px) {
+  .hscroll {
+    min-height: 0;
+  }
+  .track {
+    width: auto;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+  }
+  .card {
+    flex: 0 0 82vw;
+    scroll-snap-align: start;
+  }
+  .cardImg {
+    inset: 0;
+  }
+}
+
+/* ── Шаги ── */
+.steps {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 100dvh;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 80px clamp(16px, 4vw, 48px);
+}
+
+.progressTrack {
+  height: 6px;
+  margin-bottom: 40px;
+  border-radius: 999px;
+  background: rgba(14, 14, 16, 0.1);
+  overflow: hidden;
+}
+
+.progress {
+  height: 100%;
+  background: var(--accent);
+  transform-origin: left center;
+}
+
+.stepList {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 24px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.stepList h3 {
+  margin: 8px 0 6px;
+  font-size: 26px;
+  font-weight: 900;
+  font-stretch: 112%;
+  letter-spacing: -0.02em;
+}
+
+.stepNum {
+  font-weight: 800;
+  color: var(--accent);
+}
+
+@media (max-width: 900px) {
+  .stepList {
+    grid-template-columns: 1fr;
+  }
+}
+
+.section {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 120px clamp(16px, 4vw, 48px) 0;
+}
+
+.reviews {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.review {
+  margin: 0;
+  padding: 24px;
+  border-radius: 20px;
+  background: #fff;
+}
+
+.review blockquote {
+  margin: 0 0 12px;
+}
+
+@media (max-width: 900px) {
+  .reviews {
+    grid-template-columns: 1fr;
+  }
+}
+
+.countries {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 40px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+}
+
+.countries li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.plans {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.plans li {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border-radius: 18px;
+  background: #fff;
+}
+
+.plans li[data-strong="true"] {
+  background: var(--ink);
+  color: #fff;
+}
+
+.plans li[data-strong="true"] .muted {
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.planPrice {
+  font-size: 26px;
+  font-weight: 900;
+  font-stretch: 75%;
+}
+
+@media (max-width: 900px) {
+  .plans {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.final {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 160px clamp(16px, 4vw, 48px) 120px;
+}
+
+/* Заливка: текст прозрачный, фон-градиент с растущей шириной
+   просвечивает сквозь буквы (background-clip: text). */
+.fill {
+  margin: 0;
+  font-size: clamp(3rem, 10vw, 9rem);
+  font-weight: 900;
+  font-stretch: 112%;
+  line-height: 0.9;
+  letter-spacing: -0.045em;
+  color: rgba(14, 14, 16, 0.15);
+  background: linear-gradient(var(--ink), var(--ink)) no-repeat left / 100% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+.socials {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 40px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--muted);
+}
