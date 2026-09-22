@@ -2,6 +2,7 @@ import { getSupabase } from "@/lib/supabase";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import {
   COMMENT_COLUMNS,
+  COMMENT_FEED,
   commentAuthors,
   rowToComment,
   // ⚠️ Именно ИМПОРТ, а не только реэкспорт ниже. `export type { Comment }`
@@ -20,10 +21,10 @@ export type { Comment } from "@/lib/comment-shape";
 
 // Комментарии под картой (миграция 20260821180000).
 //
-// Писать может только купивший — и решает это БАЗА (политика
-// "insert own comment if bought" через has_purchased). Здесь нет и не
-// должно быть проверки прав: запись идёт из браузера прямо в таблицу,
-// наш код в этом пути не стоит.
+// Здесь только ЧТЕНИЕ. Пишет и удаляет шлюз /api/comments (с 21.09):
+// он проверяет покупку через has_purchased_for и держит лимиты. Лента
+// читается из представления public_comments (с 22.09) — таблица
+// product_comments браузеру и анониму закрыта, открыта только админке.
 
 /**
  * Колонки ленты. Одна строка на все три места, где лента читается
@@ -35,7 +36,7 @@ export async function getComments(productId: string): Promise<Comment[]> {
   const db = getSupabase();
 
   const { data, error } = await db
-    .from("product_comments")
+    .from(COMMENT_FEED)
     .select(COMMENT_COLUMNS)
     .eq("product_id", productId)
     .order("created_at", { ascending: false });

@@ -22,6 +22,18 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { isHexColor } from "@/lib/creators";
 
+/**
+ * Откуда лента читается снаружи — представление, а не таблица
+ * (миграция 20260922120000).
+ *
+ * ⚠️ Текст удалённого комментария представление уже не отдаёт: его
+ * режет база, а не показ. До 22.09 резал только rowToComment, а
+ * product_comments отдавала body удалённого любому, кто спросит её
+ * напрямую из консоли. Сама таблица браузеру закрыта; читает её только
+ * админка служебным ключом — ей текст снятого нужен.
+ */
+export const COMMENT_FEED = "public_comments";
+
 /** Колонки ленты. Один список на все три места, где она читается. */
 export const COMMENT_COLUMNS =
   "id, product_id, user_id, body, deleted_by, created_at, updated_at";
