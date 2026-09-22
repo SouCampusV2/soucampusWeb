@@ -19,7 +19,10 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       onClick={toggleTheme}
       aria-label="Toggle dark mode"
       title="Toggle dark mode"
-      className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-zinc-200 text-zinc-500 transition-colors hover:text-orange-500 dark:border-zinc-800 dark:text-zinc-400 dark:hover:text-orange-400 ${className}`}
+      /* Крупнее там, где нажимают пальцем: 32px — граница, за которой
+         начинаются промахи, а кружок стоит в футере рядом с другими
+         ссылками. Меряется указатель, а не ширина экрана. */
+      className={`flex h-8 w-8 cursor-pointer items-center justify-center rounded-full border border-zinc-200 text-zinc-500 transition-colors hover:text-orange-500 pointer-coarse:h-11 pointer-coarse:w-11 dark:border-zinc-800 dark:text-zinc-400 dark:hover:text-orange-400 ${className}`}
     >
       {theme === "dark" ? <Moon size={16} /> : <Sun size={16} />}
     </button>

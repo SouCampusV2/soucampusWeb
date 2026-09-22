@@ -75,7 +75,16 @@ export function AuthField({
             type="button"
             onClick={() => setShow((v) => !v)}
             aria-label={show ? "Hide password" : "Show password"}
-            className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-zinc-400 transition-colors hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"
+            /* ⚠️ Зона нажатия была 18×18 — размер самой иконки. На
+               телефоне это промах почти гарантированно, и промахиваются
+               здесь в поле пароля, где не видно, что набрал. Кнопка
+               осталась той же на вид (иконка 18px), но получила padding:
+               видимое и нажимаемое — разные вещи, и совпадать они
+               обязаны только у крупных элементов.
+
+               Отступ поля справа (pr-11) не меняется: кнопка растёт
+               внутрь, поверх пустого места, которое там и так было. */
+            className="absolute right-1.5 top-1/2 flex h-11 w-11 -translate-y-1/2 cursor-pointer items-center justify-center text-zinc-400 transition-colors hover:text-zinc-700 dark:text-zinc-500 dark:hover:text-zinc-300"
           >
             {show ? <EyeSlash size={18} /> : <Eye size={18} />}
           </button>

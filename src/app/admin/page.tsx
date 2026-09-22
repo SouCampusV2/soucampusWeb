@@ -1,5 +1,12 @@
 import Link from "next/link";
-import { getOverview, formatMoney, resolveRange, type Range } from "@/lib/analytics";
+import {
+  getOverview,
+  getFunnel,
+  formatMoney,
+  resolveRange,
+  type Funnel,
+  type Range,
+} from "@/lib/analytics";
 import { SalesChart } from "@/components/SalesChart";
 import { PeriodPicker } from "@/components/PeriodPicker";
 import { INLINE_LINK, NEW_TAB } from "@/components/Button";
@@ -20,6 +27,9 @@ export default async function AdminHomePage({
 }) {
   const range = resolveRange(await searchParams);
   const overview = await getOverview(range);
+  // Число заказов берём из сводки, а не считаем второй раз: два места,
+  // считающие одно и то же, рано или поздно ответят по-разному.
+  const funnel = overview ? await getFunnel(range, overview.orders) : null;
 
   if (!overview) {
     return (
@@ -111,6 +121,11 @@ export default async function AdminHomePage({
         </Panel>
       </div>
 
+      <h2 className="mt-10 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
+        From the storefront to a map
+      </h2>
+      <FunnelPanel funnel={funnel} />
+
       {/* Состояние площадки — не деньги, поэтому ниже и мельче. Числа
           кликабельны: увидел «3 waiting» — сразу пошёл разбирать. */}
       <div className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -193,6 +208,75 @@ function Stat({
     </Link>
   ) : (
     <div className={className}>{body}</div>
+  );
+}
+
+/**
+ * Воронка витрины.
+ *
+ * ⚠️ ПОДПИСИ ЗДЕСЬ ВАЖНЕЕ ЧИСЕЛ, и они намеренно длиннее обычного.
+ * Единица счёта — браузер, а не человек: телефон и ноутбук одного
+ * покупателя это двое. И шаг тут ровно один — «витрина → карта»,
+ * посчитанный по одному и тому же браузеру. Покупки стоят рядом
+ * отдельным числом и НЕ делятся на предыдущее: у заказа нет id
+ * посетителя, связать покупку с браузером нечем, и «конверсия» из
+ * двух разных единиц была бы выдумкой с двумя знаками после запятой.
+ */
+function FunnelPanel({ funnel }: { funnel: Funnel | null }) {
+  if (!funnel) {
+    return (
+      <div className="mt-4">
+        <Empty>
+          View data is unavailable. If this is a fresh database, the
+          funnel_counts migration has not been run yet.
+        </Empty>
+      </div>
+    );
+  }
+
+  const steps = [
+    { label: "Opened the storefront", value: funnel.storefront },
+    { label: "Opened a map page", value: funnel.products },
+    { label: "Did both", value: funnel.both },
+  ];
+  // Шкала — от самого большого шага, а не от суммы: полоска должна
+  // показывать долю от входа в воронку.
+  const peak = Math.max(...steps.map((s) => s.value), 1);
+
+  return (
+    <div className="mt-4 space-y-3">
+      {steps.map((step) => (
+        <div key={step.label}>
+          <div className="flex items-baseline justify-between text-sm">
+            <span className="text-zinc-700 dark:text-zinc-300">{step.label}</span>
+            <span className="font-semibold text-zinc-950 dark:text-zinc-50">
+              {step.value}
+            </span>
+          </div>
+          <div className="mt-1 h-2 overflow-hidden rounded-full bg-zinc-950/[0.06] dark:bg-zinc-50/[0.08]">
+            <div
+              className="h-full rounded-full bg-orange-500 dark:bg-orange-400"
+              style={{ width: `${Math.round((step.value / peak) * 100)}%` }}
+            />
+          </div>
+        </div>
+      ))}
+
+      <div className="flex items-baseline justify-between border-t border-zinc-200 pt-3 text-sm dark:border-zinc-800">
+        <span className="text-zinc-700 dark:text-zinc-300">Paid orders</span>
+        <span className="font-semibold text-zinc-950 dark:text-zinc-50">
+          {funnel.orders}
+        </span>
+      </div>
+
+      <p className="text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+        Counted per browser, not per person — a phone and a laptop are two.
+        The first three lines follow the same browser through the site.
+        Orders are counted differently and are not a percentage of the
+        lines above: an order carries no visitor id, so it cannot be tied
+        back to a browser.
+      </p>
+    </div>
   );
 }
 

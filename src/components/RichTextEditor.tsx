@@ -83,7 +83,11 @@ export function RichTextEditorSkeleton() {
       aria-hidden
       className="overflow-hidden rounded-2xl border border-zinc-950/[0.08] dark:border-zinc-50/[0.08]"
     >
-      <div className="h-[42px] border-b border-zinc-950/[0.08] bg-zinc-950/[0.02] dark:border-zinc-50/[0.08] dark:bg-zinc-50/[0.02]" />
+      {/* Высота повторяет настоящую панель: 16px иконка + p-1.5 + py-1.5.
+          На тач-экране кнопки крупнее (p-2.5 в EditorToolbar), поэтому и
+          заглушка выше — иначе она обещала бы не ту высоту именно там,
+          где прыжок вёрстки заметнее всего. */}
+      <div className="h-[42px] border-b border-zinc-950/[0.08] bg-zinc-950/[0.02] pointer-coarse:h-[50px] dark:border-zinc-50/[0.08] dark:bg-zinc-50/[0.02]" />
       <div className="min-h-[10rem] px-4 py-3">
         <div className="h-3 w-2/3 animate-pulse rounded-full bg-zinc-950/[0.06] dark:bg-zinc-50/[0.08]" />
       </div>

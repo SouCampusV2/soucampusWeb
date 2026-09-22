@@ -323,7 +323,12 @@ export default function CartPage() {
                       type="button"
                       onClick={() => remove(item)}
                       aria-label={`Remove ${item.title} from cart`}
-                      className="cursor-pointer text-zinc-400 hover:text-red-600 dark:hover:text-red-400"
+                      /* ⚠️ Зона нажатия была 18×18 — ровно иконка. Хуже
+                         того, действие разрушающее и без подтверждения:
+                         промах по соседней строке убирает из корзины не
+                         тот товар, и заметить это можно уже на оплате.
+                         На тач-экране кнопка 44px, на вид прежняя. */
+                      className="flex shrink-0 cursor-pointer items-center justify-center text-zinc-400 hover:text-red-600 pointer-coarse:h-11 pointer-coarse:w-11 dark:hover:text-red-400"
                     >
                       <Trash size={18} />
                     </button>

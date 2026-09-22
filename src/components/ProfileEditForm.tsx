@@ -387,7 +387,12 @@ export function ProfileEditForm({
               free for anyone else to take.
             </p>
           )}
-        <div className="grid grid-cols-2 gap-3">
+        {/* Две колонки — только с sm. На телефоне это были два поля по
+            ~150px: имя влезает, фамилия обрезается на вводе, и набирать
+            в них неудобно обеими руками. Правило из RESPONSIVE_PLAN:
+            сетка, которая идёт в две колонки без sm-шага, подозрительна
+            по умолчанию. */}
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <Field id="firstName" label="First name" value={firstName} onChange={setFirstName} />
           <Field id="lastName" label="Last name" value={lastName} onChange={setLastName} />
         </div>

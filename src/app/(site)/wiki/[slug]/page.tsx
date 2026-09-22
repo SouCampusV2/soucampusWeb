@@ -95,11 +95,16 @@ export default async function WikiArticlePage({
                             // экрана цвет не произносит, и без него
                             // «где я» слышно не было бы.
                             aria-current={current ? "page" : undefined}
-                            className={
+                            // Список статей раздела — то же, что в футере:
+                            // строки по 18px с просветом 10. Здесь это
+                            // заметнее, потому что по нему ходят: вики
+                            // читают переходами между соседними статьями.
+                            // Padding только на тач-экране.
+                            className={`inline-block pointer-coarse:py-1.5 ${
                               current
                                 ? "text-sm font-semibold text-orange-600 dark:text-orange-400"
                                 : "text-sm text-zinc-600 hover:text-orange-600 dark:text-zinc-400 dark:hover:text-orange-400"
-                            }
+                            }`}
                           >
                             {item.title}
                           </Link>

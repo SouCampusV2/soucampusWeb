@@ -73,12 +73,16 @@ export function ClientReviews({ reviews }: { reviews: Review[] }) {
   return (
     <section id="reviews" className="scroll-mt-24 bg-[#fbfbff] py-16 dark:bg-zinc-950 sm:py-28">
       <div className="mx-auto max-w-6xl px-6">
+        {/* min-w-0 по той же причине, что в PortfolioHero: без него
+            заголовок не даёт ряду стрелок сжаться, и на узком экране
+            правая стрелка уходит за край. Ряд здесь устроен ровно так же,
+            значит и лечится одинаково. */}
         <div className="flex items-end justify-between gap-6">
           <motion.h2
             initial={{ opacity: 0, y: 16 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl"
+            className="min-w-0 text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl"
           >
             Hear from clients working with me
           </motion.h2>
@@ -98,7 +102,15 @@ export function ClientReviews({ reviews }: { reviews: Review[] }) {
         </div>
       </div>
 
-      <div className="mt-12 overflow-hidden">
+      {/* data-draggable — для npm run check:responsive. Он считает
+          поломкой кнопку, отрезанную непрокручиваемым предком: именно так
+          14.09 пропала стрелка на /portfolio. Но карусель обрезает
+          содержимое НАРОЧНО, а добраться до него можно перетаскиванием —
+          и по вёрстке это неотличимо от настоящей потери. Поэтому
+          отличие объявляется здесь, в разметке, а не угадывается
+          скриптом. Ставится только там, где содержимое действительно
+          вытаскивается жестом. */}
+      <div data-draggable className="mt-12 overflow-hidden">
         <div className="mx-auto max-w-6xl px-6">
           <motion.div
             ref={trackRef}

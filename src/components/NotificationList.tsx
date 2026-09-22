@@ -313,7 +313,14 @@ function Row({
           onClick={onRead}
           aria-label="Mark as read"
           title="Mark as read"
-          className="absolute right-10 top-3 cursor-pointer rounded-full p-1 text-zinc-400 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+          /* ⚠️ Зона нажатия была 24×24 при иконке 16. Это две главные
+             кнопки страницы, и стоят они в углу карточки, по которой
+             тоже можно нажать (клик по карточке = прочитано + переход).
+             Промах мимо крестика открывает уведомление вместо удаления —
+             то есть цена промаха здесь не «ничего не произошло», а
+             «случилось другое». На тач-экране обе растут до 40px, между
+             ними остаётся зазор. */
+          className="absolute right-12 top-2 cursor-pointer rounded-full p-1 text-zinc-400 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 pointer-coarse:flex pointer-coarse:h-10 pointer-coarse:w-10 pointer-coarse:items-center pointer-coarse:justify-center dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
         >
           <Check size={16} weight="bold" />
         </button>
@@ -324,7 +331,7 @@ function Row({
         onClick={onRemove}
         aria-label="Delete notification"
         title="Delete"
-        className="absolute right-3 top-3 cursor-pointer rounded-full p-1 text-zinc-400 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+        className="absolute right-2 top-2 cursor-pointer rounded-full p-1 text-zinc-400 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 pointer-coarse:flex pointer-coarse:h-10 pointer-coarse:w-10 pointer-coarse:items-center pointer-coarse:justify-center dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
       >
         <X size={16} weight="bold" />
       </button>

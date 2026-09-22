@@ -131,6 +131,12 @@ export function ContactFooter() {
               <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
                 Studio
               </h3>
+              {/* Ссылки футера — 18px по высоте при просвете 10px, то
+                  есть шаг 28px: для пальца мало, промах попадает в
+                  соседнюю строку. На тач-экранах у них появляется
+                  вертикальный padding (шаг становится 40px); на десктопе
+                  футер не меняется — там курсор, и лишняя высота только
+                  растянула бы подвал. */}
               <ul className="mt-3 space-y-2 text-sm text-zinc-500 dark:text-zinc-400">
                 {/* Без пункта Marketplace (решение владельца 15.09): у
                     магазина своя колонка рядом, и ссылка на него внутри
@@ -142,7 +148,7 @@ export function ContactFooter() {
                   <li key={link.href}>
                     <Link
                       href={link.href}
-                      className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                      className="inline-block transition-colors hover:text-zinc-950 pointer-coarse:py-1.5 dark:hover:text-zinc-50"
                       data-page-transition="true"
                     >
                       {link.label}
@@ -184,7 +190,7 @@ export function ContactFooter() {
                       // колонки нет ни с одной страницы (шапка компонента).
                       <Link
                         href={link.href}
-                        className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                        className="inline-block transition-colors hover:text-zinc-950 pointer-coarse:py-1.5 dark:hover:text-zinc-50"
                       >
                         {link.label}
                       </Link>
@@ -202,7 +208,7 @@ export function ContactFooter() {
                 <li>
                   <Link
                     href="/terms"
-                    className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                    className="inline-block transition-colors hover:text-zinc-950 pointer-coarse:py-1.5 dark:hover:text-zinc-50"
                     data-page-transition={wave}
                   >
                     Terms of Service
@@ -211,7 +217,7 @@ export function ContactFooter() {
                 <li>
                   <Link
                     href="/privacy"
-                    className="transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
+                    className="inline-block transition-colors hover:text-zinc-950 pointer-coarse:py-1.5 dark:hover:text-zinc-50"
                     data-page-transition={wave}
                   >
                     Privacy Policy
@@ -233,11 +239,15 @@ export function ContactFooter() {
                   aria-label={isPlaceholder ? `${label} (coming soon)` : label}
                   title={isPlaceholder ? "Coming soon" : label}
                   aria-disabled={isPlaceholder || undefined}
-                  className={
+                  /* Иконка 22px = и зона нажатия 22px: соцсети стоят
+                     в ряд вплотную, и на телефоне попасть в нужную
+                     трудно. Растёт только зона, сама иконка прежняя —
+                     ряд на вид не меняется. */
+                  className={`flex items-center justify-center pointer-coarse:h-11 pointer-coarse:w-11 ${
                     isPlaceholder
                       ? "cursor-default text-zinc-300 dark:text-zinc-600"
                       : "cursor-pointer text-zinc-500 transition-colors hover:text-orange-500 dark:text-zinc-400 dark:hover:text-orange-400"
-                  }
+                  }`}
                 >
                   <Icon size={22} weight="fill" />
                 </a>

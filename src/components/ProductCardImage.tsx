@@ -55,6 +55,11 @@ export function ProductCardImage({
   // и только с lg они прячутся до hover, чтобы не спорить с фото.
   const buttonClasses =
     "pointer-events-auto z-20 transition-opacity focus-visible:opacity-100 lg:opacity-0 lg:group-hover:opacity-100";
+  // Кружок стрелки крупнее на тач-экране. Ровно там он и нужен: с lg
+  // стрелки вообще спрятаны до наведения, то есть 32px — это размер
+  // для мыши, которой промахнуться нечем, а на телефоне они видны
+  // всегда и жмутся пальцем поверх фото.
+  const arrowSize = "h-8 w-8 pointer-coarse:h-10 pointer-coarse:w-10";
   // Полупрозрачный тёмный кружок вместо акцентного: стрелки лежат ПОВЕРХ
   // фото, где оранжевый спорил бы с любым кадром. Тот же приём, что у
   // чипов на фотографиях (DESIGN.md) — без dark:-вариантов, читается
@@ -83,7 +88,7 @@ export function ProductCardImage({
             onClick={(e) => step(e, -1)}
             className={buttonClasses}
           >
-            <ArrowCircle direction="left" className="h-8 w-8" colorClassName={arrowColor} />
+            <ArrowCircle direction="left" className={arrowSize} colorClassName={arrowColor} />
           </button>
           <button
             type="button"
@@ -91,7 +96,7 @@ export function ProductCardImage({
             onClick={(e) => step(e, 1)}
             className={buttonClasses}
           >
-            <ArrowCircle direction="right" className="h-8 w-8" colorClassName={arrowColor} />
+            <ArrowCircle direction="right" className={arrowSize} colorClassName={arrowColor} />
           </button>
         </div>
       )}

@@ -129,7 +129,7 @@ export function CatalogFilterBar() {
             key={f.value}
             type="button"
             onClick={() => apply({ q: query, state: f.value })}
-            className={`cursor-pointer rounded-full px-3 py-1.5 text-sm font-medium transition-colors ${
+            className={`cursor-pointer rounded-full px-3 py-1.5 text-sm font-medium transition-colors pointer-coarse:px-4 pointer-coarse:py-2.5 ${
               currentState === f.value
                 ? "bg-orange-500 text-zinc-950 dark:bg-orange-400"
                 : "text-zinc-600 hover:bg-zinc-950/[0.05] dark:text-zinc-400 dark:hover:bg-zinc-50/[0.06]"

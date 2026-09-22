@@ -261,7 +261,17 @@ function FilterPanel({
       // 2026-09-06). До этого подвал был sticky внутри общей прокрутки —
       // то есть плавал поверх полей, а при коротком списке останавливался
       // там, где кончился контент, а не внизу попапа.
-      className="absolute right-0 z-40 mt-2 flex max-h-[70vh] w-[min(24rem,calc(100vw-3rem))] flex-col overflow-hidden rounded-2xl border border-white/60 bg-[#fbfbff]/90 shadow-xl shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-110 dark:border-white/10 dark:bg-zinc-900/90 dark:backdrop-brightness-75"
+      // ⚠️ НА ТЕЛЕФОНЕ ЭТО НИЖНЯЯ ПАНЕЛЬ, А НЕ ВЫПАДАШКА, и вот почему.
+      // Выпадашка висела на absolute под кнопкой, то есть её верх стоял
+      // там, где кончается кнопка, — а это примерно 400px сверху. Плюс
+      // max-h-[70vh] (568px на iPhone) давало низ на 972px при экране
+      // 812: подвал с кнопкой Apply оказывался за краем экрана. То
+      // есть попап открывался ради кнопки, до которой нельзя было
+      // дотянуться. Измерено на 375×812, а не предположено.
+      //
+      // Снизу она и должна быть: там большой палец. На sm и выше всё
+      // по-прежнему — обычная выпадашка под кнопкой, привязанная к ней.
+      className="fixed inset-x-4 bottom-4 z-40 flex max-h-[75dvh] flex-col overflow-hidden rounded-2xl border border-white/60 bg-[#fbfbff]/90 shadow-xl shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-110 sm:absolute sm:inset-x-auto sm:bottom-auto sm:right-0 sm:mt-2 sm:max-h-[70vh] sm:w-[min(24rem,calc(100vw-3rem))] dark:border-white/10 dark:bg-zinc-900/90 dark:backdrop-brightness-75"
     >
       <div className="flex shrink-0 items-center justify-between px-5 pb-3 pt-5">
         <h3 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">

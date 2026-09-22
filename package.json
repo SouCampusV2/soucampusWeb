@@ -11,6 +11,7 @@
     "check:views": "node scripts/check-views.mjs",
     "check:limits": "node scripts/check-rate-limits.mjs",
     "check:guards": "node scripts/check-guards.mjs",
+    "check:responsive": "node scripts/check-responsive.mjs",
     "clear:storage": "node scripts/clear-product-storage.mjs"
   },
   "dependencies": {
