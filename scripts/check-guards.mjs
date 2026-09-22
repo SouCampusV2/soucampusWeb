@@ -885,6 +885,193 @@ async function main() {
       deniedOld,
       deniedOld ? "" : "функция доступна authenticated — revoke из 20260921130000 не прогнан"
     );
+
+    // -------------------------------------------------------
+    // Представления — только чтение (20260922120000).
+    //
+    // Найдено 22.09: public_profiles принимал update и delete от
+    // АНОНИМА. Supabase выдаёт anon/authenticated все права на новый
+    // объект в public, простое представление Postgres обновляет сам, а
+    // security_invoker = false пишет в profiles правами владельца — мимо
+    // RLS и мимо сторожей полей, которые смотрят только на роль
+    // authenticated. `grant select` в миграциях этого не снимал: grant
+    // добавляет право, а не заменяет набор.
+    //
+    // Проверяется СОСТОЯНИЕ строки, а не ошибка: отказ RLS на update —
+    // это ноль строк и успех, а здесь нас интересует, дошла ли запись.
+    // -------------------------------------------------------
+    console.log("\nПредставления — только чтение");
+
+    const asAnon = createClient(url, anonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    // Заведомо известное значение, от которого будет видно любую запись.
+    const seedBio = `guard-seed-${suffix}`;
+    await asServer.from("profiles").update({ bio: seedBio }).eq("id", userId);
+
+    const viewWriters = [
+      ["аноним", asAnon],
+      ["вошедший", asUser],
+    ];
+
+    // Сначала обе правки, потом оба удаления. Удаление, если дверь
+    // открыта, уносит строку — и всё, что проверялось бы после него,
+    // проверяло бы пустоту.
+    for (const [who, client] of viewWriters) {
+      // Каждый раз заново: предыдущий писатель мог затереть seed.
+      await asServer.from("profiles").update({ bio: seedBio }).eq("id", userId);
+      await client
+        .from("public_profiles")
+        .update({ bio: `written-through-view-${suffix}` })
+        .eq("id", userId);
+      const afterUpdate = await asServer
+        .from("profiles")
+        .select("bio")
+        .eq("id", userId)
+        .maybeSingle();
+      check(
+        `${who} не пишет в profiles через public_profiles`,
+        afterUpdate.data?.bio === seedBio,
+        afterUpdate.data?.bio === seedBio
+          ? ""
+          : `bio стало «${afterUpdate.data?.bio}» — revoke all из 20260922120000 не прогнан`
+      );
+    }
+
+    for (const [who, client] of viewWriters) {
+      const before = await asServer
+        .from("profiles")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle();
+      if (before.data?.id !== userId) {
+        skip(
+          `${who} не удаляет профиль через public_profiles`,
+          "строки уже нет — её унёс предыдущий писатель, проверять нечего"
+        );
+        continue;
+      }
+      await client.from("public_profiles").delete().eq("id", userId);
+      const afterDelete = await asServer
+        .from("profiles")
+        .select("id")
+        .eq("id", userId)
+        .maybeSingle();
+      check(
+        `${who} не удаляет профиль через public_profiles`,
+        afterDelete.data?.id === userId,
+        afterDelete.data?.id === userId
+          ? ""
+          : "строки profiles больше нет — удалена через представление"
+      );
+    }
+
+    // -------------------------------------------------------
+    // Текст удалённого комментария (20260922120000 + 20260922130000).
+    //
+    // Два свойства, и оба обязательны. «Удалённый текст не виден» без
+    // «живой текст виден» проходил бы и у представления, которое прячет
+    // всё подряд, — то есть у сломанной ленты.
+    // -------------------------------------------------------
+    console.log("\nТекст удалённого комментария");
+
+    const feedProduct = productIds[0];
+    if (!feedProduct) {
+      skip(
+        "текст удалённого комментария не отдаётся",
+        "временная карта не завелась выше — комментарий повесить не на что"
+      );
+    } else {
+      const secret = `guard-removed-${suffix}`;
+      const visible = `guard-live-${suffix}`;
+      const removed = await asServer
+        .from("product_comments")
+        .insert({
+          product_id: feedProduct,
+          user_id: userId,
+          body: secret,
+          deleted_by: "moderator",
+          deleted_at: new Date().toISOString(),
+        })
+        .select("id")
+        .single();
+      const live = await asServer
+        .from("product_comments")
+        .insert({ product_id: feedProduct, user_id: userId, body: visible })
+        .select("id")
+        .single();
+
+      if (removed.error || live.error) {
+        skip(
+          "текст удалённого комментария не отдаётся",
+          `служебный ключ не завёл комментарии: ${removed.error?.message ?? live.error?.message}`
+        );
+      } else {
+        const viaView = await asAnon
+          .from("public_comments")
+          .select("id, body")
+          .in("id", [removed.data.id, live.data.id]);
+        const byId = new Map((viaView.data ?? []).map((r) => [r.id, r.body]));
+
+        check(
+          "public_comments отдаёт живой текст",
+          byId.get(live.data.id) === visible,
+          viaView.error
+            ? `представление не читается: ${viaView.error.message} — 20260922120000 не прогнана?`
+            : "живой комментарий пришёл без текста — лента сломана"
+        );
+        check(
+          "public_comments не отдаёт текст удалённого",
+          byId.has(removed.data.id) && byId.get(removed.data.id) === "",
+          byId.get(removed.data.id) === secret
+            ? "текст удалённого пришёл — case в представлении не работает"
+            : "удалённого комментария нет в ленте — на его месте не нарисовать «removed»"
+        );
+
+        // ⚠️ Прямое чтение таблицы закрывает ВТОРАЯ миграция, после
+        // деплоя. Пока она не прогнана, эта проверка падает — и так и
+        // должно быть: дверь в этот момент действительно открыта.
+        const direct = await asAnon
+          .from("product_comments")
+          .select("body")
+          .eq("id", removed.data.id);
+        const leaked = (direct.data ?? []).some((r) => r.body === secret);
+        check(
+          "таблицу product_comments аноним не читает",
+          !leaked,
+          leaked ? "текст удалённого читается напрямую — 20260922130000 не прогнана" : ""
+        );
+
+        // ⚠️ Без читаемого представления эта проверка зелёная ВСЕГДА:
+        // отказ пришёл бы оттого, что представления нет, а не оттого,
+        // что в него нельзя писать. «Отказ по двум причинам не
+        // доказывает ни одну» (21.09) — поэтому skip.
+        if (viaView.error) {
+          skip(
+            "через public_comments комментарий не «воскресить»",
+            "представление не читается — проверять запись в него бессмысленно"
+          );
+        } else {
+          await asUser
+            .from("public_comments")
+            .update({ deleted_by: null })
+            .eq("id", removed.data.id);
+          const stillRemoved = await asServer
+            .from("product_comments")
+            .select("deleted_by")
+            .eq("id", removed.data.id)
+            .maybeSingle();
+          check(
+            "через public_comments комментарий не «воскресить»",
+            stillRemoved.data?.deleted_by === "moderator",
+            stillRemoved.data?.deleted_by === "moderator"
+              ? ""
+              : "метка удаления снята через представление — revoke all не прогнан"
+          );
+        }
+      }
+    }
   } finally {
     // -------------------------------------------------------
     // Уборка. В finally, чтобы временный человек, карты и файлы не

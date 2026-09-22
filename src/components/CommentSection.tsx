@@ -14,6 +14,7 @@ import { Button } from "@/components/Button";
 import { LocalTime } from "@/components/LocalTime";
 import {
   COMMENT_COLUMNS,
+  COMMENT_FEED,
   commentAuthors,
   rowToComment,
   type Comment,
@@ -22,11 +23,11 @@ import {
 
 // Комментарии под картой.
 //
-// КТО МОЖЕТ ПИСАТЬ — решает БАЗА (политика "insert own comment if bought"
-// через has_purchased). Здесь поле лишь блокируется, если человек не
-// купил: это удобство, а не защита. Форма пишет в таблицу прямо из
-// браузера, и разблокировать поле из инструментов разработчика — дело
-// секунды; отказ придёт от базы, а не отсюда.
+// КТО МОЖЕТ ПИСАТЬ — решает сервер: шлюз /api/comments проверяет покупку
+// (has_purchased_for) до записи. Здесь поле лишь блокируется, если
+// человек не купил: это удобство, а не защита. Разблокировать поле из
+// инструментов разработчика — дело секунды; отказ придёт от шлюза, а не
+// отсюда.
 //
 // ⚠️ Купившим считается и тот, кто скачал БЕСПЛАТНУЮ карту: заказ на
 // нулевую сумму — тоже оплаченный заказ (миграция 20260812120000).
@@ -119,7 +120,7 @@ export function CommentSection({
   async function reload() {
     const supabase = createSupabaseBrowser();
     const { data } = await supabase
-      .from("product_comments")
+      .from(COMMENT_FEED)
       .select(COMMENT_COLUMNS)
       .eq("product_id", productId)
       .order("created_at", { ascending: false });
