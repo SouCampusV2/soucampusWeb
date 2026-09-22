@@ -144,3 +144,149 @@
     animation: none;
   }
 }
+
+/* ── Страницы студии ── */
+
+/* Текущий пункт шапки: цвет текста как при наведении плюс линия акцента
+   снизу. */
+.navLink[aria-current="page"] {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: var(--accent);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 8px;
+}
+
+/* Раскрывающиеся панели: наследник PortfolioHero с живого /portfolio,
+   но на чистом CSS. flex-grow на :hover и :focus-within, без Motion и
+   без JS, работает и с клавиатуры (Tab раскрывает панель). */
+.panels {
+  display: flex;
+  gap: 12px;
+  height: 480px;
+}
+
+.panel {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 1rem;
+  transition: flex-grow 500ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.panels:not(:hover):not(:focus-within) .panel:first-child,
+.panel:hover,
+.panel:focus-within {
+  flex-grow: 4;
+}
+
+.panelText {
+  opacity: 0;
+  transform: translateY(8px);
+  transition:
+    opacity 300ms ease,
+    transform 300ms ease;
+}
+
+.panels:not(:hover):not(:focus-within) .panel:first-child .panelText,
+.panel:hover .panelText,
+.panel:focus-within .panelText {
+  opacity: 1;
+  transform: none;
+  transition-delay: 150ms;
+}
+
+@media (max-width: 767px) {
+  .panels {
+    flex-direction: column;
+    height: auto;
+  }
+  .panel {
+    height: 280px;
+    flex: none;
+  }
+  .panelText {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* FAQ: details с плавной высотой через interpolate-size там, где он есть.
+   Где его нет, открывается мгновенно, как обычный details. */
+.faq details {
+  border-bottom: 1px solid var(--line);
+  interpolate-size: allow-keywords;
+}
+
+.faq details::details-content {
+  height: 0;
+  overflow: clip;
+  transition:
+    height 300ms ease,
+    content-visibility 300ms allow-discrete;
+}
+
+.faq details[open]::details-content {
+  height: auto;
+}
+
+.faq summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 22px 0;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 600;
+  font-size: 1.0625rem;
+}
+
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq summary::after {
+  content: "+";
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1.5px var(--line);
+  font-size: 20px;
+  font-weight: 400;
+  transition: transform 300ms ease;
+}
+
+.faq details[open] summary::after {
+  transform: rotate(45deg);
+  color: var(--accent-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .panel,
+  .panelText,
+  .faq details::details-content,
+  .faq summary::after {
+    transition: none;
+  }
+}
+
+.field {
+  width: 100%;
+  height: 48px;
+  padding: 0 14px;
+  border-radius: 12px;
+  background: var(--bg);
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  box-shadow: inset 0 0 0 1.5px var(--line);
+  outline: none;
+}
+
+.field:focus {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}

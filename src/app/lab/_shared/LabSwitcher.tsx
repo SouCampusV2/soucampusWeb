@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
+import { LAB_PAGES, labHref, type LabPage } from "./pages";
 
-type Entry = { slug: string; label: string; skill: string; idea: string };
+type Entry = { slug: string; label: string; skill: string; idea: string; pages: LabPage[] };
 
 // Переключатель вариантов — плашка внизу экрана, как в прошлой лаборатории.
 //
@@ -13,8 +14,21 @@ type Entry = { slug: string; label: string; skill: string; idea: string };
 // вариантов. Иначе он бы красил собой каждый из двадцати пяти дизайнов.
 //
 // Клавиши: [ и ] — предыдущий и следующий вариант, L — список.
+// Над плашкой — вкладки страниц студии (Home, Portfolio, Contact, About).
+// При переходе к соседнему варианту страница сохраняется: сравнивать
+// About с About удобнее, чем каждый раз возвращаться на лендинг.
 // Ввод в поля (калькуляторы в вариантах) клавиши не перехватывает.
-export function LabSwitcher({ current, variants, bottom }: { current: number; variants: Entry[]; bottom?: number }) {
+export function LabSwitcher({
+  current,
+  variants,
+  page,
+  bottom,
+}: {
+  current: number;
+  variants: Entry[];
+  page: LabPage;
+  bottom?: number;
+}) {
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [modal, setModal] = useState(false);
@@ -23,20 +37,25 @@ export function LabSwitcher({ current, variants, bottom }: { current: number; va
   const prev = variants[(current - 1 + total) % total];
   const next = variants[(current + 1) % total];
   const entry = variants[current];
+  // Соседний вариант без этой страницы покажет лендинг — и вкладка это
+  // честно отразит, потому что page приходит с сервера.
+  const hrefFor = (v: Entry) => labHref(v.slug, v.pages.includes(page) ? page : "home");
+  const prevHref = hrefFor(prev);
+  const nextHref = hrefFor(next);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
       const target = e.target as HTMLElement;
       if (target.closest("input, textarea, select, [contenteditable]")) return;
       if (e.metaKey || e.ctrlKey || e.altKey) return;
-      if (e.key === "[") router.push(`/lab?v=${prev.slug}`);
-      else if (e.key === "]") router.push(`/lab?v=${next.slug}`);
+      if (e.key === "[") router.push(prevHref);
+      else if (e.key === "]") router.push(nextHref);
       else if (e.key === "l" || e.key === "L") setOpen((o) => !o);
       else if (e.key === "Escape") setOpen(false);
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [router, prev.slug, next.slug]);
+  }, [router, prevHref, nextHref]);
 
   // Пока у варианта открыто модальное окно (шторка Vaul, диалог Radix),
   // переключатель прячется: иначе он накрывает кнопки внутри окна. Такие
@@ -80,7 +99,7 @@ export function LabSwitcher({ current, variants, bottom }: { current: number; va
             {variants.map((v, i) => (
               <li key={v.slug}>
                 <Link
-                  href={`/lab?v=${v.slug}`}
+                  href={hrefFor(v)}
                   onClick={() => setOpen(false)}
                   aria-current={i === current ? "page" : undefined}
                   className={`flex gap-3 rounded-xl px-3 py-2 hover:bg-white/10 ${
@@ -91,6 +110,11 @@ export function LabSwitcher({ current, variants, bottom }: { current: number; va
                   <span className="min-w-0">
                     <span className="font-semibold text-white">{v.label}</span>{" "}
                     <span className="text-neutral-400">/ {v.skill}</span>
+                    {v.pages.length > 0 && (
+                      <span className="ml-1.5 rounded-full bg-lime-400/15 px-1.5 py-0.5 text-[11px] font-medium text-lime-300">
+                        +{v.pages.length} pages
+                      </span>
+                    )}
                     <span className="block text-neutral-400">{v.idea}</span>
                   </span>
                 </Link>
@@ -100,8 +124,30 @@ export function LabSwitcher({ current, variants, bottom }: { current: number; va
         </div>
       )}
 
+      {entry.pages.length > 0 && (
+        <nav
+          aria-label="Page"
+          className="flex max-w-full gap-0.5 overflow-x-auto rounded-full bg-neutral-900/95 p-1 text-xs text-neutral-300 shadow-2xl ring-1 ring-white/10 backdrop-blur"
+        >
+          {LAB_PAGES.map(({ id, label }) =>
+            id === "home" || entry.pages.includes(id) ? (
+              <Link
+                key={id}
+                href={labHref(entry.slug, id)}
+                aria-current={id === page ? "page" : undefined}
+                className={`rounded-full px-3 py-1.5 transition-colors hover:bg-white/10 ${
+                  id === page ? "bg-white/15 font-semibold text-white" : ""
+                }`}
+              >
+                {label}
+              </Link>
+            ) : null,
+          )}
+        </nav>
+      )}
+
       <div className="flex max-w-full items-center gap-1 rounded-full bg-neutral-900/95 p-1 text-sm text-neutral-200 shadow-2xl ring-1 ring-white/10 backdrop-blur">
-        <Link href={`/lab?v=${prev.slug}`} className={btn} aria-label={`Previous: ${prev.label}`}>
+        <Link href={prevHref} className={btn} aria-label={`Previous: ${prev.label}`}>
           ‹
         </Link>
         <button
@@ -117,7 +163,7 @@ export function LabSwitcher({ current, variants, bottom }: { current: number; va
           <span className="font-semibold text-white">{entry.label}</span>{" "}
           <span className="hidden text-neutral-400 sm:inline">/ {entry.skill}</span>
         </button>
-        <Link href={`/lab?v=${next.slug}`} className={btn} aria-label={`Next: ${next.label}`}>
+        <Link href={nextHref} className={btn} aria-label={`Next: ${next.label}`}>
           ›
         </Link>
       </div>

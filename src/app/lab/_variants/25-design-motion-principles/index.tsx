@@ -1,18 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Albert_Sans } from "next/font/google";
 import {
   COUNTRIES,
   HERO,
   PLANS,
   PLANS_NOTE,
-  SOCIALS,
   STEPS,
   noDash,
   pickWork,
   type LabData,
 } from "../../_shared/content";
-import { CopyInvite, Enter, Lenses, Plans } from "./client";
+import { labLink } from "../../_shared/pages";
+import { CopyInvite, Enter, Plans } from "./client";
+import { SLUG, Shell } from "./shell";
 import s from "./styles.module.css";
 
 // Вариант 25 — design-motion-principles (Kyle Zantos). Ветка design-lab.
@@ -26,24 +26,14 @@ import s from "./styles.module.css";
 //             кубоидов» и рамка кнопки, переливающаяся через @property;
 //   Selective Emil Kowalski — навигация и формы: там движения нет.
 // Каждый приём подписан в коде той линзой, из которой он взят.
-const albert = Albert_Sans({ subsets: ["latin"], variable: "--l-sans", preload: false });
+// Шрифт, шапка и подвал — в shell.tsx.
 
 export function DesignMotionPrinciples({ data }: { data: LabData }) {
   const { projects, reviews, stats } = data;
   const work = pickWork(projects, 6);
 
   return (
-    <Lenses>
-      <div className={`${albert.variable} ${s.root}`}>
-        {/* Emil: навигация — самое частое действие, без анимации. */}
-        <header className={s.header}>
-          <Link href="/" className={s.brand}>SouCampus</Link>
-          <nav aria-label="Main" className={s.nav}>
-            <Link href="/portfolio">Portfolio</Link>
-            <Link href="/marketplace">Marketplace</Link>
-          </nav>
-        </header>
-
+    <Shell page="home">
         <section className={s.hero}>
           <div>
             <Enter>
@@ -54,10 +44,10 @@ export function DesignMotionPrinciples({ data }: { data: LabData }) {
             </Enter>
             <Enter i={2} className={s.actions}>
               {/* Jhey: рамка из conic-gradient, угол крутит @property. */}
-              <Link href={HERO.primary.href} className={s.glow}>
+              <Link href={labLink(SLUG, HERO.primary.href)} className={s.glow}>
                 <span>{HERO.primary.label}</span>
               </Link>
-              <Link href={HERO.secondary.href} className={s.ghost}>{HERO.secondary.label}</Link>
+              <Link href={labLink(SLUG, HERO.secondary.href)} className={s.ghost}>{HERO.secondary.label}</Link>
             </Enter>
           </div>
 
@@ -156,18 +146,12 @@ export function DesignMotionPrinciples({ data }: { data: LabData }) {
             <h2 className={s.h1}>Tell me what you want built</h2>
           </Enter>
           <Enter i={1} className={s.actions}>
-            <Link href={HERO.primary.href} className={s.glow}>
+            <Link href={labLink(SLUG, HERO.primary.href)} className={s.glow}>
               <span>{HERO.primary.label}</span>
             </Link>
             <CopyInvite />
           </Enter>
-          <ul className={s.socials}>
-            {SOCIALS.map((l) => (
-              <li key={l.label}><a href={l.href} target="_blank" rel="noreferrer">{l.label}</a></li>
-            ))}
-          </ul>
         </section>
-      </div>
-    </Lenses>
+    </Shell>
   );
 }

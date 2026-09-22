@@ -1,18 +1,18 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Archivo_Black, JetBrains_Mono } from "next/font/google";
 import {
   COUNTRIES,
   DISCORD_INVITE,
   HERO,
   PLANS,
   PLANS_NOTE,
-  SOCIALS,
   STEPS,
   noDash,
   pickWork,
   type LabData,
 } from "../../_shared/content";
+import { labLink } from "../../_shared/pages";
+import { SLUG, Shell } from "./shell";
 import s from "./styles.module.css";
 
 // Вариант 6 — brutalist-skill «Industrial Brutalism» (Leonxlnx).
@@ -29,29 +29,13 @@ import s from "./styles.module.css";
 //   • фото — в растр: серые, с точечной сеткой поверх (§7);
 //   • семантика: <data>, <dl>, <output> для цифр (§8.2).
 // JS в браузер не уходит: вариант целиком серверный.
-const macro = Archivo_Black({ subsets: ["latin"], weight: "400", variable: "--b-macro", preload: false });
-const micro = JetBrains_Mono({ subsets: ["latin"], variable: "--b-micro", preload: false });
 
 export function Brutalist({ data }: { data: LabData }) {
   const { projects, reviews, stats } = data;
   const work = pickWork(projects, 6);
 
   return (
-    <div className={`${macro.variable} ${micro.variable} ${s.root}`}>
-      <div className={s.noise} aria-hidden="true" />
-
-      <header className={s.bar}>
-        <Link href="/" className={s.macroSm}>SOUCAMPUS®</Link>
-        <nav aria-label="Main" className={s.nav}>
-          <Link href="/portfolio">[ PORTFOLIO ]</Link>
-          <Link href="/marketplace">[ MARKETPLACE ]</Link>
-          <Link href="/about">[ ABOUT ]</Link>
-        </nav>
-        <Link href={HERO.primary.href} className={s.redBtn}>
-          ORDER A MAP &gt;&gt;&gt;
-        </Link>
-      </header>
-
+    <Shell page="home">
       {/* Hero: огромный текст, справа — колонка телеметрии. */}
       <section className={s.hero}>
         <h1 className={s.mega}>SouCampus crafts your ideas and dreams</h1>
@@ -60,8 +44,8 @@ export function Brutalist({ data }: { data: LabData }) {
           <p className={s.lede}>{HERO.lede}</p>
           <div className={s.barcode} aria-hidden="true" />
           <div className={s.heroActions}>
-            <Link href={HERO.primary.href} className={s.redBtn}>{HERO.primary.label.toUpperCase()} &gt;&gt;&gt;</Link>
-            <Link href={HERO.secondary.href} className={s.inkBtn}>{HERO.secondary.label.toUpperCase()}</Link>
+            <Link href={labLink(SLUG, HERO.primary.href)} className={s.redBtn}>{HERO.primary.label.toUpperCase()} &gt;&gt;&gt;</Link>
+            <Link href={labLink(SLUG, HERO.secondary.href)} className={s.inkBtn}>{HERO.secondary.label.toUpperCase()}</Link>
           </div>
         </aside>
       </section>
@@ -97,7 +81,7 @@ export function Brutalist({ data }: { data: LabData }) {
       <section aria-labelledby="b-work">
         <div className={s.sectionHead}>
           <h2 id="b-work" className={s.macro}>RECENT BUILDS</h2>
-          <Link href={HERO.secondary.href} className={s.micro}>&lt; FULL INDEX &gt;</Link>
+          <Link href={labLink(SLUG, HERO.secondary.href)} className={s.micro}>&lt; FULL INDEX &gt;</Link>
         </div>
         <div className={s.workGrid}>
           {work.map((p, i) => (
@@ -182,19 +166,10 @@ export function Brutalist({ data }: { data: LabData }) {
       <section className={s.final}>
         <h2 className={s.mega}>TELL ME WHAT YOU WANT BUILT</h2>
         <div className={s.heroActions}>
-          <Link href={HERO.primary.href} className={s.redBtn}>ORDER A MAP &gt;&gt;&gt;</Link>
+          <Link href={labLink(SLUG, HERO.primary.href)} className={s.redBtn}>ORDER A MAP &gt;&gt;&gt;</Link>
           <a href={DISCORD_INVITE} target="_blank" rel="noreferrer" className={s.inkBtn}>DISCORD</a>
         </div>
       </section>
-
-      <footer className={s.footer}>
-        <span>© SOUCAMPUS BUILDS</span>
-        <ul>
-          {SOCIALS.map((l) => (
-            <li key={l.label}><a href={l.href} target="_blank" rel="noreferrer">{l.label.toUpperCase()}</a></li>
-          ))}
-        </ul>
-      </footer>
-    </div>
+    </Shell>
   );
 }

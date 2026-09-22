@@ -1,19 +1,19 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Outfit } from "next/font/google";
 import {
   COUNTRIES,
   DISCORD_INVITE,
   HERO,
   PLANS,
   PLANS_NOTE,
-  SOCIALS,
   STEPS,
   noDash,
   pickWork,
   type LabData,
 } from "../../_shared/content";
 import { PinnedGallery, ReviewCarousel, ScrubText } from "./client";
+import { labLink } from "../../_shared/pages";
+import { Pill, SLUG, Shell } from "./shell";
 import s from "./styles.module.css";
 
 // Вариант 3 — gpt-taste (Leonxlnx). Ветка design-lab.
@@ -37,7 +37,6 @@ import s from "./styles.module.css";
 //
 // ⚠️ Скилл требует GSAP. Здесь те же приёмы на motion — он уже в
 // проекте, новая зависимость ради одного варианта не окупается.
-const outfit = Outfit({ subsets: ["latin"], variable: "--g-sans", preload: false });
 
 export function GptTaste({ data }: { data: LabData }) {
   const { projects, reviews, stats } = data;
@@ -45,22 +44,7 @@ export function GptTaste({ data }: { data: LabData }) {
   const [a, b, c] = work;
 
   return (
-    <main className={`${outfit.variable} ${s.root} w-full max-w-full overflow-x-hidden`}>
-      <div className={s.grain} aria-hidden="true" />
-
-      {/* Плавающая стеклянная пилюля — единственный элемент с blur,
-          потому что он fixed (§6 performance из soft-skill тоже). */}
-      <header className="fixed inset-x-0 top-5 z-40 flex justify-center px-4">
-        <nav aria-label="Main" className="flex items-center gap-1 rounded-full border border-white/10 bg-white/[0.06] p-1.5 pl-5 text-[14px] text-white/80 backdrop-blur-xl">
-          <Link href="/" className="mr-3 font-semibold text-white">SouCampus</Link>
-          <Link href="/portfolio" className="hidden rounded-full px-3 py-2 hover:bg-white/10 sm:block">Portfolio</Link>
-          <Link href="/marketplace" className="hidden rounded-full px-3 py-2 hover:bg-white/10 sm:block">Marketplace</Link>
-          <Link href={HERO.primary.href} className="rounded-full bg-white px-4 py-2 font-medium text-black transition-transform active:scale-[0.97]">
-            {HERO.primary.label}
-          </Link>
-        </nav>
-      </header>
-
+    <Shell page="home">
       {/* ATTENTION — кино: картинка на весь экран под тёмной радиальной
           вуалью, слова по центру, в заголовок вставлены «пилюли» построек. */}
       <section className="relative flex min-h-[100dvh] flex-col items-center justify-center px-5 pb-20 pt-32 text-center">
@@ -77,10 +61,10 @@ export function GptTaste({ data }: { data: LabData }) {
         </h1>
         <p className="mt-8 max-w-2xl text-lg text-white/70">{HERO.lede}</p>
         <div className="mt-10 flex flex-wrap justify-center gap-3">
-          <Link href={HERO.primary.href} className="rounded-full bg-white px-8 py-4 font-medium text-black transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.03] active:scale-[0.98]">
+          <Link href={labLink(SLUG, HERO.primary.href)} className="rounded-full bg-white px-8 py-4 font-medium text-black transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-[1.03] active:scale-[0.98]">
             {HERO.primary.label}
           </Link>
-          <Link href={HERO.secondary.href} className="rounded-full border border-white/25 px-8 py-4 font-medium text-white transition-colors hover:bg-white/10">
+          <Link href={labLink(SLUG, HERO.secondary.href)} className="rounded-full border border-white/25 px-8 py-4 font-medium text-white transition-colors hover:bg-white/10">
             {HERO.secondary.label}
           </Link>
         </div>
@@ -138,7 +122,7 @@ export function GptTaste({ data }: { data: LabData }) {
 
       <PinnedGallery
         title="Recent builds"
-        link={{ href: HERO.secondary.href, label: HERO.secondary.label }}
+        link={{ href: labLink(SLUG, HERO.secondary.href), label: HERO.secondary.label }}
         items={work.map((p) => ({ slug: p.slug, title: p.title, image: p.image, tag: p.tag, summary: noDash(p.summary) }))}
       />
 
@@ -189,7 +173,7 @@ export function GptTaste({ data }: { data: LabData }) {
           Tell me what you want built
         </h2>
         <div className="mt-12 flex flex-wrap justify-center gap-3">
-          <Link href={HERO.primary.href} className="rounded-full bg-[#e8ff5a] px-10 py-5 text-lg font-medium text-black transition-transform hover:scale-[1.03] active:scale-[0.98]">
+          <Link href={labLink(SLUG, HERO.primary.href)} className="rounded-full bg-[#e8ff5a] px-10 py-5 text-lg font-medium text-black transition-transform hover:scale-[1.03] active:scale-[0.98]">
             {HERO.primary.label}
           </Link>
           <a href={DISCORD_INVITE} target="_blank" rel="noreferrer" className="rounded-full border border-white/25 px-10 py-5 text-lg font-medium text-white hover:bg-white/10">
@@ -198,23 +182,6 @@ export function GptTaste({ data }: { data: LabData }) {
         </div>
       </section>
 
-      <footer className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6 border-t border-white/10 px-5 py-10 text-sm text-white/50">
-        <span>SouCampus builds</span>
-        <ul className="flex flex-wrap gap-6">
-          {SOCIALS.map((l) => (
-            <li key={l.label}><a href={l.href} target="_blank" rel="noreferrer" className="hover:text-white">{l.label}</a></li>
-          ))}
-        </ul>
-      </footer>
-    </main>
-  );
-}
-
-/** Картинка-пилюля внутри заголовка (§6 Inline Typography Images). */
-function Pill({ src }: { src: string }) {
-  return (
-    <span className="relative mx-[0.2em] inline-block h-[0.78em] w-[1.9em] translate-y-[0.06em] overflow-hidden rounded-full align-baseline">
-      <Image src={src} alt="" fill sizes="160px" className="object-cover" />
-    </span>
+    </Shell>
   );
 }

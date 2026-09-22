@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Pixelify_Sans } from "next/font/google";
 import {
   COUNTRIES,
   DISCORD_INVITE,
@@ -13,6 +12,8 @@ import {
   type LabData,
 } from "../../_shared/content";
 import { AdvancementToasts, Inventory, Trades } from "./client";
+import { labHref, labLink } from "../../_shared/pages";
+import { SLUG, pixel } from "./shell";
 import s from "./styles.module.css";
 
 // Вариант 7 — impeccable (pbakaus). Ветка design-lab.
@@ -38,7 +39,6 @@ import s from "./styles.module.css";
 //
 // Launcher impeccable в проект не установлен (см. .claude/skills/README),
 // поэтому по его же запасному пути контекст читался из кода напрямую.
-const pixel = Pixelify_Sans({ subsets: ["latin"], weight: ["400", "500", "600", "700"], variable: "--i-pixel", preload: false });
 
 // Сила «пинга» у каждой строки: сколько из пяти столбиков горит.
 const PING = [5, 5, 4, 5, 3];
@@ -65,11 +65,11 @@ export function Impeccable({ data }: { data: LabData }) {
           </div>
           <p className="sr-only">{HERO.title}</p>
           <nav aria-label="Main" className={s.menu}>
-            <Link href={HERO.primary.href} className={`${s.btn} ${s.btnWide}`}>{HERO.primary.label}</Link>
-            <Link href={HERO.secondary.href} className={`${s.btn} ${s.btnWide}`}>{HERO.secondary.label}</Link>
+            <Link href={labLink(SLUG, HERO.primary.href)} className={`${s.btn} ${s.btnWide}`}>{HERO.primary.label}</Link>
+            <Link href={labLink(SLUG, HERO.secondary.href)} className={`${s.btn} ${s.btnWide}`}>{HERO.secondary.label}</Link>
             <div className={s.menuRow}>
               <Link href="/marketplace" className={s.btn}>Maps for sale</Link>
-              <Link href="/about" className={s.btn}>About</Link>
+              <Link href={labHref(SLUG, "about")} className={s.btn}>About</Link>
             </div>
           </nav>
           <p className={s.lede}>{HERO.lede}</p>
@@ -174,7 +174,7 @@ export function Impeccable({ data }: { data: LabData }) {
         <section className={`${s.section} ${s.final}`}>
           <h2 className={s.finalTitle}>Tell me what you want built</h2>
           <div className={s.menuRow}>
-            <Link href={HERO.primary.href} className={`${s.btn} ${s.btnWide}`}>{HERO.primary.label}</Link>
+            <Link href={labLink(SLUG, HERO.primary.href)} className={`${s.btn} ${s.btnWide}`}>{HERO.primary.label}</Link>
             <a href={DISCORD_INVITE} target="_blank" rel="noreferrer" className={`${s.btn} ${s.btnWide}`}>Join Discord server</a>
           </div>
         </section>

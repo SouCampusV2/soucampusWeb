@@ -4,6 +4,7 @@ import { getAllReviews } from "@/lib/reviews";
 import { getStats } from "@/lib/stats";
 import { VARIANTS } from "./_variants";
 import { LabSwitcher } from "./_shared/LabSwitcher";
+import { isLabPage } from "./_shared/pages";
 
 // Лаборатория лендинга, вторая версия (ветка design-lab, 2026-09-21).
 //
@@ -15,6 +16,11 @@ import { LabSwitcher } from "./_shared/LabSwitcher";
 // ⚠️ Страница вне группы (site): без навбара, футера, волны перехода.
 // У каждого варианта своя шапка и подвал — это часть дизайна, и
 // сравнивать варианты под нашим навбаром было бы нечестно.
+//
+// Страница студии — второй параметр (?p=portfolio|contact|about). Её
+// рисует тот же вариант, если он её умеет (поле pages); не умеет —
+// показывается лендинг. Отсутствующая страница не должна давать 404:
+// переключатель сохраняет ?p= при переходе между вариантами.
 //
 // Выбор варианта — в адресе (?v=slug), рендерит его СЕРВЕР: в браузер
 // уезжает только выбранный вариант со своими клиентскими кусками, а не
@@ -37,9 +43,9 @@ export const viewport: Viewport = {
 export default async function LabPage({
   searchParams,
 }: {
-  searchParams: Promise<{ v?: string }>;
+  searchParams: Promise<{ v?: string; p?: string }>;
 }) {
-  const [{ v }, projects, reviews, stats] = await Promise.all([
+  const [{ v, p }, projects, reviews, stats] = await Promise.all([
     searchParams,
     getAllProjects(),
     getAllReviews(),
@@ -48,16 +54,24 @@ export default async function LabPage({
 
   const index = Math.max(0, VARIANTS.findIndex((variant) => variant.slug === v));
   const current = VARIANTS[index];
-  const Variant = current.Component;
+  const page = isLabPage(p) && p !== "home" && current.pages?.[p] ? p : "home";
+  const Variant = page === "home" ? current.Component : current.pages![page]!;
 
   return (
     <>
       {/* key: при смене варианта React не пытается «переиспользовать»
           дерево прошлого — у разных вариантов нет ничего общего. */}
-      <Variant key={current.slug} data={{ projects, reviews, stats }} />
+      <Variant key={`${current.slug}/${page}`} data={{ projects, reviews, stats }} />
       <LabSwitcher
         current={index}
-        variants={VARIANTS.map(({ slug, label, skill, idea }) => ({ slug, label, skill, idea }))}
+        page={page}
+        variants={VARIANTS.map(({ slug, label, skill, idea, pages }) => ({
+          slug,
+          label,
+          skill,
+          idea,
+          pages: pages ? (Object.keys(pages) as (keyof typeof pages)[]) : [],
+        }))}
         bottom={current.switcherBottom}
       />
     </>

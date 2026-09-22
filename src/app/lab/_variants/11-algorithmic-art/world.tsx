@@ -22,7 +22,7 @@ import { useEffect, useRef, useState } from "react";
 // ============================================================
 
 /** Детерминированный генератор (mulberry32): одно зерно — один мир. */
-function rng(seed: number) {
+export function rng(seed: number) {
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;
@@ -84,18 +84,32 @@ function biome(h: number, m: number): RGB {
 
 const CELL = 7; // экранных пикселей на блок
 
-function generate(seed: number, cols: number, rows: number) {
+/**
+ * Поле высот. edge — насколько сильно опускаются края: 0.25 даёт
+ * материк во весь экран (первый экран лендинга), ~0.9 — остров посреди
+ * воды (страницы студии). scale — частота шума на клетку: на маленьком
+ * поле нужна крупнее, иначе рельеф не успевает измениться и остров
+ * выходит плоской кляксой.
+ */
+export function heightMap(seed: number, cols: number, rows: number, edge = 0.25, scale = 0.018) {
   const height = valueNoise(seed);
-  const moist = valueNoise(seed ^ 0x9e3779b9);
-  const scale = 0.018;
   const hmap = new Float32Array(cols * rows);
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       // Поднимаем центр карты: так на экране чаще выходит суша, а не океан.
-      const edge = Math.hypot((x / cols - 0.5) * 1.2, y / rows - 0.5);
-      hmap[y * cols + x] = fbm(height, x * scale, y * scale, 5) + 0.12 - edge * 0.25;
+      const d = Math.hypot((x / cols - 0.5) * 1.2, y / rows - 0.5);
+      hmap[y * cols + x] = fbm(height, x * scale, y * scale, 5) + 0.12 - d * edge;
     }
   }
+  return hmap;
+}
+
+/** Уровень, выше которого клетка — суша (песок и всё, что выше). */
+export const SEA_LEVEL = 0.455;
+
+/** Раскраска поля высот биомами с отмывкой рельефа. */
+export function paint(seed: number, hmap: Float32Array, cols: number, rows: number, scale = 0.018) {
+  const moist = valueNoise(seed ^ 0x9e3779b9);
   const img = new ImageData(cols, rows);
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
@@ -105,7 +119,7 @@ function generate(seed: number, cols: number, rows: number) {
       const [r, g, b] = biome(h, m);
       // Отмывка: свет с северо-запада. Вода — плоская, её не тенюем.
       const nw = hmap[Math.max(0, y - 1) * cols + Math.max(0, x - 1)];
-      const shade = h < 0.455 ? 1 : 1 + Math.max(-0.35, Math.min(0.35, (h - nw) * 9));
+      const shade = h < SEA_LEVEL ? 1 : 1 + Math.max(-0.35, Math.min(0.35, (h - nw) * 9));
       img.data[i * 4] = Math.min(255, r * shade);
       img.data[i * 4 + 1] = Math.min(255, g * shade);
       img.data[i * 4 + 2] = Math.min(255, b * shade);
@@ -113,6 +127,10 @@ function generate(seed: number, cols: number, rows: number) {
     }
   }
   return img;
+}
+
+function generate(seed: number, cols: number, rows: number) {
+  return paint(seed, heightMap(seed, cols, rows), cols, rows);
 }
 
 function clouds(seed: number, cols: number, rows: number) {

@@ -71,3 +71,8 @@
     animation: none;
   }
 }
+
+/* FAQ на <details>: у Safari свой треугольник, list-none его не прячет. */
+.details summary::-webkit-details-marker {
+  display: none;
+}

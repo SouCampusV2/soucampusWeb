@@ -2,12 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { labHref, type LabPage } from "../../_shared/pages";
 
-const LINKS = [
-  { href: "/portfolio", label: "Portfolio" },
+const SLUG = "agency";
+
+const LINKS: { href: string; label: string; page?: LabPage }[] = [
+  { href: labHref(SLUG, "portfolio"), label: "Portfolio", page: "portfolio" },
   { href: "/marketplace", label: "Marketplace" },
-  { href: "/about", label: "About" },
-  { href: "/contact", label: "Order a map" },
+  { href: labHref(SLUG, "about"), label: "About", page: "about" },
+  { href: labHref(SLUG, "contact"), label: "Order a map", page: "contact" },
 ];
 
 // Остров-навбар (soft-skill §5.A): стеклянная пилюля, оторванная от
@@ -15,7 +18,7 @@ const LINKS = [
 // на весь экран с тяжёлым стеклом, ссылки выезжают снизу по очереди.
 //
 // ⚠️ blur здесь законен: элемент fixed (§6 — blur только на fixed).
-export function IslandNav() {
+export function IslandNav({ page }: { page: LabPage }) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -33,7 +36,12 @@ export function IslandNav() {
     <>
       <header className="fixed inset-x-0 top-6 z-50 flex justify-center px-4">
         <div className="flex w-max items-center gap-6 rounded-full bg-white/70 py-2 pl-6 pr-2 shadow-[0_10px_40px_-15px_rgba(30,36,50,0.3)] ring-1 ring-black/5 backdrop-blur-xl">
-          <Link href="/" className="font-extrabold tracking-tight">SouCampus</Link>
+          <Link href={labHref(SLUG, "home")} className="font-extrabold tracking-tight">SouCampus</Link>
+          {/* Где я — одним словом в пилюле. Меню спрятано за гамбургером,
+              и без этой подписи на странице не видно, какая она. */}
+          {page !== "home" && (
+            <span className="hidden text-sm capitalize text-[#5b606b] sm:inline">{page}</span>
+          )}
           <button
             type="button"
             onClick={() => setOpen((o) => !o)}
@@ -62,10 +70,11 @@ export function IslandNav() {
               <Link
                 href={l.href}
                 onClick={() => setOpen(false)}
+                aria-current={l.page === page ? "page" : undefined}
                 style={{ transitionDelay: open ? `${100 + i * 60}ms` : "0ms" }}
                 className={`block text-[clamp(2.5rem,7vw,5rem)] font-extrabold tracking-[-0.04em] transition-all duration-700 ease-[cubic-bezier(0.32,0.72,0,1)] ${
                   open ? "translate-y-0 opacity-100" : "translate-y-12 opacity-0"
-                }`}
+                } aria-[current=page]:text-[#5b606b]`}
               >
                 {l.label}
               </Link>

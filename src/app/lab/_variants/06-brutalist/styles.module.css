@@ -462,3 +462,212 @@
 .footer a:hover {
   color: var(--red);
 }
+
+/* ── Страницы студии (Portfolio, Contact, About) ── */
+
+/* Текущая страница в шапке — красным, как наведение: в этом архетипе
+   у состояния нет другого способа выделиться, кроме аварийного цвета. */
+.nav a[aria-current="page"],
+.bar > .redBtn[aria-current="page"] {
+  color: var(--red);
+}
+
+/* !important — потому что он же стоит у .redBtn: без него текст
+   оставался цвета бумаги на бумаге, и кнопка выглядела пустой рамкой. */
+.bar > .redBtn[aria-current="page"] {
+  background: var(--paper);
+  color: var(--red) !important;
+}
+
+.grid2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--ink);
+  border-bottom: 1px solid var(--ink);
+}
+
+.grid4 {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--ink);
+  border-bottom: 1px solid var(--ink);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 900px) {
+  .grid2,
+  .grid4 {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (min-width: 901px) and (max-width: 1200px) {
+  .grid4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* Таблица-указатель: строка целиком — ссылка на постройку. */
+.table tbody tr:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.table a {
+  display: block;
+}
+
+.num {
+  font-variant-numeric: tabular-nums;
+  color: var(--dim);
+  white-space: nowrap;
+}
+
+.table tbody tr:hover .num {
+  color: var(--red);
+}
+
+@media (max-width: 760px) {
+  .hideSm {
+    display: none;
+  }
+}
+
+/* Журнал: возраст | событие | запись. Та же линия в пиксель, что у сеток. */
+.log {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  border-bottom: 1px solid var(--ink);
+}
+
+.log li {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 18rem) minmax(0, 1fr);
+  gap: 1px;
+  background: var(--ink);
+  border-top: 1px solid var(--ink);
+}
+
+/* max-width: none — у .body есть 60ch, и без сброса под узким абзацем
+   проступал чернильный фон строки: справа шла чёрная полоса. */
+.log li > * {
+  max-width: none;
+  margin: 0;
+  padding: 20px;
+  background: var(--paper);
+}
+
+.log .age {
+  font-family: var(--b-macro), sans-serif;
+  font-size: 44px;
+  line-height: 0.85;
+  letter-spacing: -0.04em;
+  text-transform: uppercase;
+  color: var(--red);
+}
+
+@media (max-width: 900px) {
+  .log li {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* FAQ на <details>: без JS, маркер браузера убран, знак — текстом. */
+.faq {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.faq details {
+  border-bottom: 1px solid var(--ink);
+}
+
+.faq summary {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: baseline;
+  padding: 18px 20px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.faq summary:hover {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.faq summary::after {
+  content: "[ + ]";
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.faq details[open] summary::after {
+  content: "[ − ]";
+  color: var(--red);
+}
+
+.faq details[open] summary {
+  border-bottom: 1px dashed var(--ink);
+}
+
+.faq .answer {
+  padding: 18px 20px 24px 126px;
+}
+
+@media (max-width: 760px) {
+  .faq summary {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+  .faq summary > .micro {
+    display: none;
+  }
+  .faq .answer {
+    padding-left: 20px;
+  }
+}
+
+.tagList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tagList li {
+  padding: 8px 10px;
+  border: 1px solid var(--ink);
+  font-size: 12px;
+  letter-spacing: 0.08em;
+}
+
+.tagList li:hover {
+  background: var(--red);
+  border-color: var(--red);
+  color: var(--paper);
+}
+
+.quote {
+  margin: 0;
+  padding: 56px 20px;
+  font-family: var(--b-macro), sans-serif;
+  font-size: clamp(1.6rem, 3.2vw, 2.8rem);
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  text-transform: uppercase;
+  border-bottom: 2px solid var(--ink);
+  max-width: none;
+}

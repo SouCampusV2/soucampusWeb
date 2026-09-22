@@ -700,3 +700,470 @@
     animation: none;
   }
 }
+
+/* ══ Внутренние экраны (Portfolio, Contact, About) ══════════════════════ */
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+.screen {
+  min-height: 100dvh;
+  padding-top: 32px;
+}
+
+.screenHead {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  max-width: 1040px;
+  margin: 0 auto 48px;
+}
+
+.screenTitle {
+  margin: 0;
+  font-size: clamp(22px, 3vw, 30px);
+  font-weight: 500;
+  text-align: center;
+  text-shadow: 2px 2px 0 #3f3f3f;
+}
+
+/* Вкладки, как в «Create New World»: активная светлее и «приподнята». */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px;
+}
+
+.tab {
+  min-width: 150px;
+  background: #4a4a4a;
+  color: #a0a0a0;
+}
+
+.tab[aria-current="page"] {
+  background: var(--stone);
+  color: #fff;
+  transform: translateY(-4px);
+  box-shadow:
+    inset 2px 2px 0 var(--stone-hi),
+    inset -2px -4px 0 var(--stone-lo),
+    0 4px 0 #000;
+}
+
+.done {
+  display: flex;
+  justify-content: center;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding-top: 8px;
+}
+
+.btnOff {
+  opacity: 0.5;
+  cursor: default;
+  pointer-events: none;
+}
+
+/* Поле ввода игры: чёрный прямоугольник в серой рамке, белый текст. */
+.field {
+  display: block;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 10px;
+  font: inherit;
+  font-size: 18px;
+  color: #e0e0e0;
+  background: #000;
+  border: 2px solid #a0a0a0;
+  outline: none;
+  border-radius: 0;
+  appearance: none;
+}
+
+.field:focus {
+  border-color: #fff;
+}
+
+.field::placeholder {
+  color: #777;
+}
+
+/* ── Select World ── */
+.worldWrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+  gap: 20px;
+  align-items: start;
+  max-width: 1040px;
+  margin: 0 auto 32px;
+}
+
+@media (max-width: 900px) {
+  .worldWrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+.worlds {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  max-height: 560px;
+  margin: 12px 0;
+  padding: 6px;
+  overflow-y: auto;
+  list-style: none;
+  background: rgba(0, 0, 0, 0.5);
+  border-block: 2px solid #000;
+  scrollbar-color: #8b8b8b #000;
+}
+
+.world {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 4px;
+  font: inherit;
+  font-size: 16px;
+  text-align: left;
+  color: inherit;
+  background: none;
+  border: 2px solid transparent;
+  cursor: pointer;
+}
+
+.world:hover {
+  border-color: #555;
+}
+
+.world[aria-pressed="true"] {
+  border-color: #fff;
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.worldIcon {
+  position: relative;
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border: 2px solid #000;
+}
+
+.worldText {
+  min-width: 0;
+}
+
+.empty {
+  padding: 16px;
+  color: #aaa;
+  text-align: center;
+}
+
+/* ── Multiplayer: форма и книга ── */
+.mpGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .mpGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.formGrid {
+  display: grid;
+  gap: 12px;
+}
+
+.formLabel {
+  display: grid;
+  gap: 6px;
+  font-size: 16px;
+}
+
+.yellowInline {
+  display: block;
+  color: var(--yellow);
+}
+
+.serverIconBlock {
+  width: 64px;
+  height: 64px;
+  flex-shrink: 0;
+  background: linear-gradient(#5d9b2f 0 35%, #866043 35%);
+  box-shadow: inset -6px -6px 0 rgba(0, 0, 0, 0.25);
+  border: 2px solid #000;
+}
+
+.serverSelected {
+  border-color: #fff;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+/* Книга: бумага, тёмные чернила, номер страницы справа сверху. */
+.book {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 460px;
+  padding: 28px 32px 20px;
+  color: #1f1f1f;
+  background: #f3e9cf;
+  border: 2px solid #000;
+  box-shadow:
+    inset 4px 4px 0 #fff8e2,
+    inset -4px -4px 0 #c9b98f,
+    8px 8px 0 rgba(0, 0, 0, 0.45);
+  font-size: 17px;
+}
+
+.book:focus-visible {
+  outline-offset: 4px;
+}
+
+.bookPageNo {
+  margin: 0 0 16px;
+  text-align: right;
+  font-size: 15px;
+  color: #555;
+}
+
+.bookPage {
+  flex: 1;
+}
+
+.bookPage p {
+  margin: 0;
+  line-height: 1.45;
+}
+
+.bookTitle {
+  margin: 0 0 12px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.bookNav {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 16px;
+}
+
+.bookArrow {
+  min-width: 44px;
+  min-height: 44px;
+  font: inherit;
+  font-size: 22px;
+  color: #7a5b2d;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.bookArrow:hover:not(:disabled) {
+  color: #b5462f;
+}
+
+.bookArrow:disabled {
+  visibility: hidden;
+}
+
+/* ── Advancements: цепочка рамок, соединённых линией ── */
+.advTree {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 24px;
+  list-style: none;
+  background:
+    linear-gradient(rgba(0, 0, 0, 0.35), rgba(0, 0, 0, 0.35)),
+    #6b4c2a;
+  border: 2px solid #000;
+  box-shadow: inset 0 0 0 2px #3a2a18;
+}
+
+.adv {
+  position: relative;
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  gap: 16px;
+  padding-bottom: 28px;
+}
+
+/* Линия связи — белая с чёрной обводкой, как в игре. */
+.adv:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 29px;
+  top: 64px;
+  bottom: 0;
+  width: 6px;
+  background: #fff;
+  border-inline: 2px solid #000;
+}
+
+.advFrame {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #fff;
+  text-align: center;
+  line-height: 1;
+  text-shadow: 2px 2px 0 #3f3f3f;
+  background: #c6a449;
+  border: 2px solid #000;
+  box-shadow:
+    inset 3px 3px 0 #f1d98a,
+    inset -3px -3px 0 #7a5f1d;
+}
+
+/* Последняя — «испытание»: фиолетовая рамка, как challenge-достижения. */
+.adv:last-child .advFrame {
+  background: #9b52c9;
+  box-shadow:
+    inset 3px 3px 0 #d7a6f5,
+    inset -3px -3px 0 #5a2a7c;
+}
+
+.advCard {
+  padding: 10px 14px;
+  background: var(--tip-bg);
+  border: 2px solid transparent;
+  border-image: linear-gradient(#5000ff, #28007f) 1;
+}
+
+.advCard p {
+  margin: 6px 0 0;
+  font-size: 16px;
+  color: #ddd;
+}
+
+.advCard h3 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 500;
+}
+
+/* ── Статистика ── */
+.statsTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 17px;
+}
+
+.statsTable th,
+.statsTable td {
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 400;
+}
+
+.statsTable tr:nth-child(odd) {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.statsTable td {
+  text-align: right;
+  color: #55ffff;
+}
+
+/* ── Хотбар: 9 слотов, выбранный обведён ── */
+.hotbar {
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 60px));
+  gap: 0;
+  justify-content: center;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid #000;
+  width: max-content;
+  max-width: 100%;
+}
+
+.hotSlot {
+  position: relative;
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  font-size: 13px;
+  text-align: center;
+  line-height: 1;
+  color: #fff;
+  border: 2px solid #8b8b8b;
+  cursor: default;
+}
+
+.hotSlot:hover,
+.hotSlot:focus-visible {
+  border-color: #fff;
+  outline: 2px solid #000;
+  z-index: 1;
+}
+
+.hotSlot .tooltip {
+  left: 50%;
+  top: auto;
+  bottom: calc(100% + 10px);
+  transform: translateX(-50%);
+  min-width: 0;
+  white-space: nowrap;
+}
+
+@media (hover: hover) {
+  .hotSlot:hover .tooltip {
+    display: block;
+  }
+}
+
+.hotSlot:focus-visible .tooltip {
+  display: block;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chips li {
+  padding: 6px 10px;
+  font-size: 15px;
+  background: rgba(0, 0, 0, 0.55);
+  border: 2px solid #555;
+}
+
+.twoCol {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .twoCol {
+    grid-template-columns: 1fr;
+  }
+}

@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Sora } from "next/font/google";
 import {
   COUNTRIES,
   DISCORD_INVITE,
@@ -13,6 +12,8 @@ import {
   pickWork,
   type LabData,
 } from "../../_shared/content";
+import { labLink } from "../../_shared/pages";
+import { LEGEND, ROOT, SLUG, newSeed, sora } from "./shell";
 import { World } from "./world";
 
 // Вариант 11 — algorithmic-art (Anthropic). Ветка design-lab.
@@ -26,21 +27,13 @@ import { World } from "./world";
 // p5.js, которым скилл пользуется по умолчанию, не подключён: для
 // поля шума и двух слоёв хватает canvas 2D и сорока строк, а p5 весит
 // ~1 МБ. Алгоритм от этого не меняется.
-const sora = Sora({ subsets: ["latin"], variable: "--a-sans", preload: false });
-
-/** Новое зерно на каждый запрос: «свой мир у каждого посетителя». */
-function newSeed() {
-  return Math.floor(Math.random() * 99999);
-}
-
-const LEGEND = ["#243f8a", "#3a6ebe", "#d6c88c", "#3a742e", "#6ca446", "#80807c", "#ecf0f4"];
 
 export function AlgorithmicArt({ data }: { data: LabData }) {
   const { projects, reviews, stats } = data;
   const work = pickWork(projects, 4);
 
   return (
-    <div className={`${sora.variable} min-h-[100dvh] overflow-x-clip bg-[#0d1210] font-[family-name:var(--a-sans)] text-[#e7eee8] selection:bg-[#e7d9a0] selection:text-[#0d1210]`}>
+    <div className={`${sora.variable} ${ROOT}`}>
       <section className="relative flex min-h-[100dvh] items-end overflow-hidden md:items-center">
         <World initialSeed={newSeed()} />
         <div className="relative z-10 m-4 max-w-xl rounded-2xl bg-[#0d1210]/82 p-7 backdrop-blur-md md:m-12 md:p-10">
@@ -48,8 +41,8 @@ export function AlgorithmicArt({ data }: { data: LabData }) {
           <h1 className="mt-3 text-[clamp(2.25rem,4.6vw,3.75rem)] font-semibold leading-[1.05] tracking-[-0.03em]">{HERO.title}</h1>
           <p className="mt-5 text-[17px] leading-relaxed text-[#e7eee8]/75">{HERO.lede}</p>
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link href={HERO.primary.href} className="rounded-full bg-[#e7d9a0] px-6 py-3 font-semibold text-[#0d1210] transition-transform active:scale-[0.98]">{HERO.primary.label}</Link>
-            <Link href={HERO.secondary.href} className="rounded-full px-6 py-3 font-semibold ring-1 ring-[#e7eee8]/30 hover:bg-white/10">{HERO.secondary.label}</Link>
+            <Link href={labLink(SLUG, HERO.primary.href)} className="rounded-full bg-[#e7d9a0] px-6 py-3 font-semibold text-[#0d1210] transition-transform active:scale-[0.98]">{HERO.primary.label}</Link>
+            <Link href={labLink(SLUG, HERO.secondary.href)} className="rounded-full px-6 py-3 font-semibold ring-1 ring-[#e7eee8]/30 hover:bg-white/10">{HERO.secondary.label}</Link>
           </div>
         </div>
       </section>
@@ -81,7 +74,7 @@ export function AlgorithmicArt({ data }: { data: LabData }) {
       <section aria-labelledby="a-work" className="mx-auto max-w-6xl px-5 py-24">
         <div className="flex flex-wrap items-baseline justify-between gap-4">
           <h2 id="a-work" className="text-[clamp(2rem,4vw,3rem)] font-semibold tracking-[-0.03em]">Places I have built</h2>
-          <Link href={HERO.secondary.href} className="text-[#e7d9a0] underline underline-offset-4">{HERO.secondary.label}</Link>
+          <Link href={labLink(SLUG, HERO.secondary.href)} className="text-[#e7d9a0] underline underline-offset-4">{HERO.secondary.label}</Link>
         </div>
         <div className="mt-10 grid gap-6 md:grid-cols-2">
           {work.map((p, i) => (
@@ -144,7 +137,7 @@ export function AlgorithmicArt({ data }: { data: LabData }) {
       <section className="mx-auto max-w-6xl px-5 pb-16 pt-24">
         <h2 className="max-w-3xl text-[clamp(2.5rem,6vw,5rem)] font-semibold leading-[1] tracking-[-0.04em]">Tell me what world you want built</h2>
         <div className="mt-10 flex flex-wrap gap-3">
-          <Link href={HERO.primary.href} className="rounded-full bg-[#e7d9a0] px-7 py-3.5 font-semibold text-[#0d1210]">{HERO.primary.label}</Link>
+          <Link href={labLink(SLUG, HERO.primary.href)} className="rounded-full bg-[#e7d9a0] px-7 py-3.5 font-semibold text-[#0d1210]">{HERO.primary.label}</Link>
           <a href={DISCORD_INVITE} target="_blank" rel="noreferrer" className="rounded-full px-7 py-3.5 font-semibold ring-1 ring-[#e7eee8]/30 hover:bg-white/10">Discord</a>
         </div>
         <ul className="mt-20 flex flex-wrap gap-6 border-t border-[#e7eee8]/15 pt-8 text-sm text-[#e7eee8]/55">

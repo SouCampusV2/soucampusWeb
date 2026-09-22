@@ -6,6 +6,7 @@ import { useRef } from "react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
+import { Header } from "./chrome";
 import s from "./styles.module.css";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
@@ -140,10 +141,7 @@ export function ScrollPage(p: Props) {
 
   return (
     <div ref={root} className={s.page}>
-      <header className={s.header}>
-        <Link href="/" className={s.brand}>SouCampus</Link>
-        <Link href={p.hero.primary.href} className={s.pill}>{p.hero.primary.label}</Link>
-      </header>
+      <Header page="home" />
 
       <section className={`s-hero ${s.hero}`}>
         <div className={`s-mask ${s.mask}`}>

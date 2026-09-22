@@ -522,3 +522,467 @@
     transform: rotateX(-24deg) rotateY(38deg);
   }
 }
+
+/* ══ Страницы студии ═══════════════════════════════════════════════════ */
+
+/* Emil: текущий пункт — цветом, без движения. */
+.nav a[aria-current="page"] {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.intro {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 56px 20px 24px;
+}
+
+.eyebrow {
+  margin: 0 0 12px;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* ── Portfolio: вкладки фильтра ── */
+.tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 28px;
+  padding: 5px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.tab {
+  position: relative;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  font: inherit;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.tab[aria-selected="true"] {
+  color: #fff;
+}
+
+.tabBg {
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: var(--ink);
+}
+
+.tabText {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.tabCount {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.6;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Contact: плита карты ── */
+.slabWrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 32px;
+  align-items: center;
+}
+
+@media (max-width: 860px) {
+  .slabWrap {
+    grid-template-columns: 1fr;
+  }
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.formRow label {
+  display: grid;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--muted);
+}
+
+.input {
+  height: 48px;
+  padding: 0 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--bg);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  font: inherit;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  outline: none;
+}
+
+.input:focus {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.result {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin: 22px 0 0;
+}
+
+.result dt {
+  font-size: 14px;
+}
+
+.result dd {
+  margin: 4px 0 0;
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+
+.rolling {
+  display: inline-flex;
+  overflow: hidden;
+}
+
+/* Jhey: кубоид из пяти граней. --w и --d приходят из размера карты,
+   толщина --h постоянная. Грани расставлены transform'ами вокруг центра,
+   как у блока на лендинге, только стороны разные. */
+.slabScene {
+  --size: min(60vmin, 320px);
+  --h: calc(var(--size) * 0.16);
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: calc(var(--size) * 1.35);
+  perspective: 1100px;
+}
+
+.slab {
+  position: relative;
+  width: var(--w);
+  height: var(--h);
+  transform-style: preserve-3d;
+  transform: rotateX(-28deg) rotateY(-38deg);
+  transition:
+    width 450ms cubic-bezier(0.23, 1, 0.32, 1),
+    height 450ms cubic-bezier(0.23, 1, 0.32, 1);
+  animation: sway 9s ease-in-out infinite alternate;
+}
+
+@keyframes sway {
+  to {
+    transform: rotateX(-28deg) rotateY(-18deg);
+  }
+}
+
+.slabTop,
+.slabFront,
+.slabBack,
+.slabLeft,
+.slabRight {
+  position: absolute;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.12);
+  transition:
+    width 450ms cubic-bezier(0.23, 1, 0.32, 1),
+    height 450ms cubic-bezier(0.23, 1, 0.32, 1),
+    transform 450ms cubic-bezier(0.23, 1, 0.32, 1),
+    left 450ms cubic-bezier(0.23, 1, 0.32, 1),
+    top 450ms cubic-bezier(0.23, 1, 0.32, 1);
+}
+
+.slabFront,
+.slabBack,
+.slabLeft,
+.slabRight {
+  top: 0;
+  height: var(--h);
+  background:
+    linear-gradient(#5fae3a 0 26%, transparent 26%),
+    repeating-conic-gradient(#8a5d3b 0% 25%, #7a5234 0% 50%) 0 0 / 16px 16px;
+}
+
+.slabFront,
+.slabBack {
+  left: 0;
+  width: var(--w);
+}
+
+.slabFront {
+  transform: translateZ(calc(var(--d) / 2));
+}
+
+.slabBack {
+  transform: rotateY(180deg) translateZ(calc(var(--d) / 2));
+}
+
+.slabLeft,
+.slabRight {
+  left: calc((var(--w) - var(--d)) / 2);
+  width: var(--d);
+}
+
+.slabLeft {
+  transform: rotateY(-90deg) translateZ(calc(var(--w) / 2));
+  filter: brightness(0.85);
+}
+
+.slabRight {
+  transform: rotateY(90deg) translateZ(calc(var(--w) / 2));
+  filter: brightness(0.92);
+}
+
+.slabTop {
+  left: 0;
+  top: calc((var(--h) - var(--d)) / 2);
+  width: var(--w);
+  height: var(--d);
+  background: repeating-conic-gradient(#5fae3a 0% 25%, #6cbf44 0% 50%) 0 0 / 16px 16px;
+  transform: rotateX(90deg) translateZ(calc(var(--h) / 2));
+}
+
+.slabLabel {
+  position: absolute;
+  bottom: 0;
+  margin: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+
+/* ── FAQ ── */
+.faq {
+  display: grid;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.faqItem {
+  border-radius: 16px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.faqQ {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  padding: 18px 20px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 18px;
+  font-weight: 650;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+}
+
+.faqIcon {
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(31, 157, 85, 0.12);
+  color: var(--accent);
+  font-size: 20px;
+  line-height: 1;
+}
+
+.faqA {
+  margin: 0;
+  padding: 0 20px 20px;
+  max-width: 70ch;
+  color: var(--muted);
+}
+
+/* ── About: линия пути, заполняемая скроллом (Jhey, чистый CSS) ── */
+/* Обёртка держит и список, и линию заполнения: внутри <ol> допустимы
+   только <li>, поэтому линия — соседний элемент, а не ребёнок списка. */
+.pathWrap {
+  position: relative;
+  margin-top: 24px;
+}
+
+.path {
+  position: relative;
+  margin: 0;
+  padding: 0 0 0 36px;
+  list-style: none;
+}
+
+.path::before,
+.pathFill {
+  content: "";
+  position: absolute;
+  left: 11px;
+  top: 8px;
+  bottom: 8px;
+  width: 3px;
+  border-radius: 999px;
+}
+
+.path::before {
+  background: rgba(0, 0, 0, 0.08);
+}
+
+/* Заполнение — scroll-driven animation: без JS и без слушателя скролла.
+   Где animation-timeline не поддержан, линия просто залита целиком. */
+.pathFill {
+  background: var(--accent);
+  transform-origin: top;
+}
+
+@supports (animation-timeline: view()) {
+  .pathFill {
+    animation: fillPath linear both;
+    animation-timeline: view();
+    animation-range: entry 20% exit 60%;
+  }
+}
+
+@keyframes fillPath {
+  from {
+    transform: scaleY(0);
+  }
+  to {
+    transform: scaleY(1);
+  }
+}
+
+.stage {
+  position: relative;
+  padding: 0 0 28px;
+}
+
+.stage::before {
+  content: "";
+  position: absolute;
+  left: -31px;
+  top: 8px;
+  width: 13px;
+  height: 13px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow:
+    0 0 0 3px var(--accent),
+    var(--shadow);
+}
+
+.stageCard {
+  padding: 20px;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.stageCard h3 {
+  margin: 4px 0 6px;
+  font-size: 21px;
+}
+
+.stageCard p {
+  margin: 0;
+}
+
+.stageAge {
+  font-weight: 800;
+  color: var(--accent);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── About: навыки с переезжающей подсветкой ── */
+.skillGroups {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-top: 20px;
+}
+
+@media (max-width: 760px) {
+  .skillGroups {
+    grid-template-columns: 1fr;
+  }
+}
+
+.skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  border-radius: 18px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+
+.skill {
+  position: relative;
+  padding: 9px 14px;
+  border-radius: 12px;
+  cursor: default;
+}
+
+.skillBg {
+  position: absolute;
+  inset: 0;
+  border-radius: 12px;
+  background: rgba(31, 157, 85, 0.12);
+}
+
+.skillText {
+  position: relative;
+  font-weight: 600;
+}
+
+.aboutHero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.3fr) minmax(0, 0.7fr);
+  align-items: center;
+  gap: 32px;
+}
+
+@media (max-width: 860px) {
+  .aboutHero {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .slab {
+    animation: none;
+  }
+  .slab,
+  .slabTop,
+  .slabFront,
+  .slabBack,
+  .slabLeft,
+  .slabRight {
+    transition: none;
+  }
+}

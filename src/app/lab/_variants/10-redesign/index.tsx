@@ -1,18 +1,17 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Unbounded } from "next/font/google";
 import {
   COUNTRIES,
-  DISCORD_INVITE,
   HERO,
   PLANS,
   PLANS_NOTE,
-  SOCIALS,
   STEPS,
   noDash,
   pickWork,
   type LabData,
 } from "../../_shared/content";
+import { labHref, labLink } from "../../_shared/pages";
+import { SLUG, Shell } from "./shell";
 import s from "./styles.module.css";
 
 // Вариант 10 — redesign-skill «redesign-existing-projects» (Leonxlnx).
@@ -35,24 +34,13 @@ import s from "./styles.module.css";
 //     прилипанием (работает пальцем, колесом и клавиатурой без JS);
 //   • текст на оранжевом — тёмный: белый на #F97316 даёт 2.8:1.
 // Компоненты сайта НЕ импортируются: всё написано заново в этой папке.
-const unbounded = Unbounded({ subsets: ["latin"], weight: ["500", "700", "800"], variable: "--r-display", preload: false });
 
 export function Redesign({ data }: { data: LabData }) {
   const { projects, reviews, stats } = data;
   const work = pickWork(projects, 3);
 
   return (
-    <div className={`${unbounded.variable} ${s.root}`}>
-      <header className="mx-auto flex h-[72px] max-w-6xl items-center justify-between px-5">
-        <Link href="/" className={`${s.display} text-lg font-bold`}>SouCampus</Link>
-        <nav aria-label="Main" className="hidden gap-7 text-[15px] text-[var(--muted)] md:flex">
-          <Link href="/portfolio" className="hover:text-[var(--ink)]">Portfolio</Link>
-          <Link href="/about" className="hover:text-[var(--ink)]">About me</Link>
-          <Link href="/marketplace" className="hover:text-[var(--ink)]">Marketplace</Link>
-        </nav>
-        <Link href={HERO.primary.href} className={`${s.btn} ${s.btnAccent} h-10 px-4 text-sm`}>{HERO.primary.label}</Link>
-      </header>
-
+    <Shell page="home">
       {/* 1. Hero — тот же текст и те же две кнопки. */}
       <section className="relative mx-auto flex max-w-6xl flex-col items-center px-5 pb-20 pt-20 text-center md:pt-28">
         <div className={s.glow} aria-hidden="true" />
@@ -61,8 +49,8 @@ export function Redesign({ data }: { data: LabData }) {
         </h1>
         <p className="mt-6 max-w-[52ch] text-lg leading-relaxed text-[var(--muted)]">{HERO.lede}</p>
         <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-          <Link href={HERO.secondary.href} className={`${s.btn} ${s.btnAccent} h-12 px-6`}>{HERO.secondary.label}</Link>
-          <Link href={HERO.primary.href} className={`${s.btn} ${s.btnLine} h-12 px-6`}>{HERO.primary.label}</Link>
+          <Link href={labLink(SLUG, HERO.secondary.href)} className={`${s.btn} ${s.btnAccent} h-12 px-6`}>{HERO.secondary.label}</Link>
+          <Link href={labLink(SLUG, HERO.primary.href)} className={`${s.btn} ${s.btnLine} h-12 px-6`}>{HERO.primary.label}</Link>
         </div>
       </section>
 
@@ -87,7 +75,7 @@ export function Redesign({ data }: { data: LabData }) {
             <h2 id="r-work" className={`${s.display} text-[clamp(1.75rem,3.5vw,2.75rem)] font-bold tracking-[-0.03em]`}>A few recent projects</h2>
             <p className="mt-2 text-[var(--muted)]">See the full catalog in Portfolio.</p>
           </div>
-          <Link href="/portfolio" className="font-semibold underline decoration-[var(--accent)] decoration-2 underline-offset-[6px]">Portfolio</Link>
+          <Link href={labHref(SLUG, "portfolio")} className="font-semibold underline decoration-[var(--accent)] decoration-2 underline-offset-[6px]">Portfolio</Link>
         </div>
         <div className="mt-10 grid gap-4 md:grid-cols-6 md:grid-rows-[repeat(2,minmax(0,280px))]">
           {work.map((p, i) => (
@@ -169,7 +157,7 @@ export function Redesign({ data }: { data: LabData }) {
             <p className="mt-4 max-w-[46ch] text-lg leading-relaxed text-[var(--muted)]">
               8 years building worlds in Minecraft professionally. My goal is to turn every idea into a map worth exploring.
             </p>
-            <Link href="/about" className="mt-6 inline-block font-semibold underline decoration-[var(--accent)] decoration-2 underline-offset-[6px]">About me</Link>
+            <Link href={labHref(SLUG, "about")} className="mt-6 inline-block font-semibold underline decoration-[var(--accent)] decoration-2 underline-offset-[6px]">About me</Link>
           </div>
         </div>
       </section>
@@ -198,32 +186,6 @@ export function Redesign({ data }: { data: LabData }) {
           })}
         </div>
       </section>
-
-      {/* 9. Подвал */}
-      <footer className="border-t border-[var(--line)]">
-        <div className="mx-auto grid max-w-6xl gap-8 px-5 py-14 md:grid-cols-[1.4fr_1fr_1fr]">
-          <div>
-            <p className={`${s.display} text-xl font-bold`}>SouCampus</p>
-            <p className="mt-3 max-w-xs text-[var(--muted)]">Custom Minecraft builds on order: castles, spawns, cities, and everything in between.</p>
-            <div className="mt-6 flex flex-wrap gap-3">
-              <Link href={HERO.primary.href} className={`${s.btn} ${s.btnAccent} h-11 px-5`}>{HERO.primary.label}</Link>
-              <a href={DISCORD_INVITE} target="_blank" rel="noreferrer" className={`${s.btn} ${s.btnLine} h-11 px-5`}>Discord</a>
-            </div>
-          </div>
-          <ul className="flex flex-col gap-2 text-[var(--muted)]">
-            <li className="font-semibold text-[var(--ink)]">Studio</li>
-            <li><Link href="/portfolio" className="hover:text-[var(--ink)]">Portfolio</Link></li>
-            <li><Link href="/about" className="hover:text-[var(--ink)]">About me</Link></li>
-            <li><Link href="/contact" className="hover:text-[var(--ink)]">Contact</Link></li>
-          </ul>
-          <ul className="flex flex-col gap-2 text-[var(--muted)]">
-            <li className="font-semibold text-[var(--ink)]">Follow</li>
-            {SOCIALS.slice(1, 5).map((l) => (
-              <li key={l.label}><a href={l.href} target="_blank" rel="noreferrer" className="hover:text-[var(--ink)]">{l.label}</a></li>
-            ))}
-          </ul>
-        </div>
-      </footer>
-    </div>
+    </Shell>
   );
 }
