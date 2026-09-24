@@ -144,12 +144,13 @@ export default function AboutPage() {
       <main className="w-full mx-auto max-w-6xl flex-1 px-6">
       {/* No top glow here — AuthorCta right above already bleeds one in;
           a second `-top-32` gradient stacked directly under it read as a
-          duplicate/second light source. Instead, a gradient anchored to
-          this section's own bottom fades it out before the plain TIMELINE
-          list below. mt-16 puts real breathing room between the two
-          sections instead of having them sit flush against each other. */}
-      <section className="relative mt-8 pb-16 pt-20 sm:mt-16">
-        <div className="mx-auto max-w-2xl text-center">
+          duplicate/second light source. mt-16 puts real breathing room
+          between the two sections instead of having them sit flush.
+          Since 24.09 everything from here down is one left-aligned column
+          at max-w-3xl — the advancement panel's width — so the heading,
+          the panel, the paragraphs and the skills share one left edge. */}
+      <section className="relative mt-8 pt-20 sm:mt-16">
+        <div className="mx-auto max-w-3xl">
           <span className="text-sm font-semibold text-lime-600">
             A Long Journey
           </span>
@@ -176,7 +177,7 @@ export default function AboutPage() {
           всему сайту: рамки и тултипы в игре квадратные, скруглённые
           читались бы как обычные карточки сайта. Скруглена только внешняя
           панель — она часть страницы, а не игры. */}
-      <ol className="pixel-texture mx-auto mt-12 max-w-3xl overflow-hidden rounded-3xl border border-zinc-950/[0.06] p-4 sm:mt-16 sm:p-8 dark:border-zinc-50/[0.08]">
+      <ol className="pixel-texture mx-auto mt-10 max-w-3xl overflow-hidden rounded-3xl border border-zinc-950/[0.06] p-4 sm:mt-12 sm:p-8 dark:border-zinc-50/[0.08]">
         {TIMELINE.map((item, i) => {
           const last = i === TIMELINE.length - 1;
           return (
@@ -221,7 +222,7 @@ export default function AboutPage() {
       {/* Straight after the advancements (moved up 24.09, owner's call):
           the story ends at "today", and "how I work with people" is where
           today leads, before the list of tools. */}
-      <div className="mx-auto mt-12 max-w-xl text-center sm:mt-24">
+      <div className="mx-auto mt-10 max-w-3xl sm:mt-12">
         <p className="leading-7 text-zinc-600 dark:text-zinc-400">
           And of course, a big part of my work is about people. Every client comes not
           with an exact blueprint, but with an image, a feeling, a
@@ -243,7 +244,7 @@ export default function AboutPage() {
       {/* Left-aligned, unlike the centred text around it: the section's
           width matches the advancement panel above (max-w-3xl), so their
           left edges line up and the two read as one column. */}
-      <section className="mx-auto mt-12 max-w-3xl sm:mt-24">
+      <section className="mx-auto mt-16 max-w-3xl sm:mt-20">
         <span className="text-sm font-semibold text-lime-600">Skills & toolkit</span>
         <h2
           className={`${displayFont.className} mt-3 text-3xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl`}
