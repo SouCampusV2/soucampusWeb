@@ -4,6 +4,7 @@ import { FadeIn } from "@/components/FadeIn";
 import Link from "next/link";
 import Image from "next/image";
 import type { Project } from "@/lib/projects";
+import { HashHighlight } from "@/components/HashHighlight";
 
 // Проекты приходят пропсом, а не импортом массива: это клиентский
 // компонент ("use client"), он живёт в браузере и в базу ходить не может
@@ -14,6 +15,7 @@ export function RecentProjects({ projects }: { projects: Project[] }) {
 
   return (
     <section className="mx-auto max-w-6xl px-6 py-16 sm:py-28">
+      <HashHighlight />
       <FadeIn>
         <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
           Recent projects
@@ -27,8 +29,10 @@ export function RecentProjects({ projects }: { projects: Project[] }) {
         {recent.map((project, i) => (
           <FadeIn key={project.slug} y={24} delay={i * 100}>
             <Link
+              // Цель ссылки «Home» со страницы работы (PortfolioBackLink).
+              id={`home-work-${project.slug}`}
               href={`/portfolio/${project.slug}?from=home`}
-              className="group block overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800"
+              className="group block scroll-mt-28 overflow-hidden rounded-2xl border border-zinc-200 ring-orange-500 ring-offset-4 ring-offset-[#fbfbff] transition-shadow duration-500 data-[returned=true]:ring-2 dark:ring-offset-zinc-950 dark:border-zinc-800"
             >
               <div className="relative aspect-[4/3] overflow-hidden">
                 <Image

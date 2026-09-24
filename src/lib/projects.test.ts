@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { rowToProject } from "./projects";
+import { footprintInPitches, rowToProject } from "./projects";
 
 // Раньше здесь проверялась целостность массива в projects.ts (уникальные
 // slug'и, непустые поля). Эту работу теперь делает сама база: not null на
@@ -19,6 +19,9 @@ const row = {
   price_label: "€150",
   size_label: "250×250",
   deadline_label: "1 week",
+  size_x: 250,
+  size_z: 250,
+  price_amount: 150,
   is_featured: true,
   project_images: null,
 };
@@ -55,5 +58,24 @@ describe("rowToProject", () => {
     });
 
     expect(project.gallery).toEqual(["/первое.png", "/второе.png", "/третье.png"]);
+  });
+});
+
+describe("footprintInPitches", () => {
+  it("переводит площадь в футбольные поля (105×68 м)", () => {
+    // 200×200 = 40 000 м² / 7 140 = 5.60…
+    expect(footprintInPitches({ size: "200×200", sizeX: 200, sizeZ: 200 })).toBe(5.6);
+    expect(footprintInPitches({ size: "75×75", sizeX: 75, sizeZ: 75 })).toBe(0.8);
+    // Больше десяти — целыми: 2000×2000 = 560.2…
+    expect(footprintInPitches({ size: "2000×2000", sizeX: 2000, sizeZ: 2000 })).toBe(560);
+  });
+
+  it("молчит, когда подпись размера — не простое N×M", () => {
+    // Несколько островов по 150×150: площадь одного не площадь работы.
+    expect(footprintInPitches({ size: "150×150 each", sizeX: 150, sizeZ: 150 })).toBeNull();
+  });
+
+  it("молчит без чисел", () => {
+    expect(footprintInPitches({ size: "200×200", sizeX: null, sizeZ: 200 })).toBeNull();
   });
 });
