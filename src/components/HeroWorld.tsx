@@ -79,13 +79,43 @@ type RGB = [number, number, number];
 
 // Палитра биомов — единственное, что задано руками. Это цвета самой игры,
 // а не акценты сайта: карта должна читаться как карта Minecraft.
-function biome(h: number, m: number): RGB {
-  if (h < 0.4) return [36, 72, 138];
-  if (h < 0.455) return [58, 110, 190];
-  if (h < 0.48) return [214, 200, 140];
-  if (h < 0.62) return m > 0.52 ? [58, 116, 46] : [108, 164, 70];
-  if (h < 0.7) return m > 0.5 ? [44, 92, 50] : [94, 136, 64];
-  if (h < 0.78) return [128, 128, 124];
+//
+// Биом решают три поля, как в самой игре: высота (h), влажность (m) и
+// температура (t). Шум фрактальный, поэтому значения кучкуются вокруг
+// 0.5 — отсюда пороги в районе 0.44–0.56, а не 0.3/0.7: при широких
+// порогах крайние биомы (пустыня, тайга) почти не выпадали бы.
+function biome(h: number, m: number, t: number): RGB {
+  const hot = t > 0.55;
+  const cold = t < 0.45;
+  const wet = m > 0.53;
+  const dry = m < 0.47;
+
+  if (h < 0.4) return [36, 72, 138]; // глубокая вода
+  if (h < 0.455) return hot ? [52, 128, 186] : [58, 110, 190]; // мелководье, в тепле бирюзовее
+  if (h < 0.48) {
+    // Берег: в жаре и суши — красный песок бэдлендса, в холоде — галька.
+    if (hot && dry) return [206, 124, 60];
+    if (cold) return [150, 150, 140];
+    return [214, 200, 140];
+  }
+  if (h < 0.62) {
+    if (hot) {
+      if (dry) return m < 0.43 ? [222, 206, 146] : [176, 168, 82]; // пустыня / саванна
+      return wet ? [42, 132, 34] : [140, 160, 64]; // джунгли / сухая саванна
+    }
+    if (cold) return wet ? [52, 92, 70] : [226, 234, 238]; // тайга / снежная равнина
+    if (wet && h < 0.51) return [76, 98, 58]; // болото у воды
+    if (wet) return [58, 116, 46]; // лес
+    if (m > 0.5 && t > 0.5) return [226, 168, 196]; // вишнёвая роща, редкая
+    return dry ? [132, 172, 80] : [108, 164, 70]; // равнина / луг
+  }
+  if (h < 0.7) {
+    if (hot && dry) return h < 0.66 ? [188, 96, 48] : [214, 140, 80]; // бэдлендс полосами
+    if (hot) return [28, 100, 30]; // густые джунгли
+    if (cold) return [44, 78, 62]; // ельник
+    return wet ? [44, 92, 50] : [120, 158, 84]; // тёмный лес / березняк
+  }
+  if (h < 0.78) return cold ? [236, 240, 244] : [128, 128, 124]; // камень, в холоде уже снег
   return [236, 240, 244];
 }
 
@@ -96,6 +126,7 @@ const SCALE = 0.018; // частота шума на клетку
 function terrain(seed: number, cols: number, rows: number) {
   const height = valueNoise(seed);
   const moist = valueNoise(seed ^ 0x9e3779b9);
+  const temp = valueNoise(seed ^ 0x7f4a7c15);
   const hmap = new Float32Array(cols * rows);
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
@@ -110,7 +141,10 @@ function terrain(seed: number, cols: number, rows: number) {
       const i = y * cols + x;
       const h = hmap[i];
       const m = fbm(moist, x * SCALE * 1.4, y * SCALE * 1.4, 3);
-      const [r, g, b] = biome(h, m);
+      // Температура меняется медленнее влажности: климатические пояса
+      // крупнее лесов внутри них.
+      const t = fbm(temp, x * SCALE * 0.8, y * SCALE * 0.8, 3);
+      const [r, g, b] = biome(h, m, t);
       // Свет с северо-запада. Вода плоская, её не тенюем.
       const nw = hmap[Math.max(0, y - 1) * cols + Math.max(0, x - 1)];
       const shade = h < SEA_LEVEL ? 1 : 1 + Math.max(-0.35, Math.min(0.35, (h - nw) * 9));
@@ -123,18 +157,52 @@ function terrain(seed: number, cols: number, rows: number) {
   return img;
 }
 
+// Облака набегают постепенно. Каждой клетке облака назначается момент
+// появления (в секундах от старта) из трёх слагаемых:
+//   · «рождение» облака — отдельное поле шума, крупное: соседние клетки
+//     одного облака получают близкие числа, разные облака — разные.
+//     Поэтому облака возникают в случайных местах по одному, а не
+//     полосой слева направо;
+//   · глубина клетки внутри облака — плотная середина раньше, края
+//     позже: облако РАСТЁТ, а не проявляется целиком;
+//   · немного случайного разброса, чтобы край рос рвано, блоками.
+// Итоговая плотность та же, что была: клетка облака — где v > 0.6.
+const CLOUD_ALPHA = 170;
+const CLOUD_START = 1.5; // первые секунды небо чистое
+const CLOUD_SPREAD = 20; // за сколько секунд рождаются все облака
+const CLOUD_GROW = 5; // сколько растёт одно облако от середины к краю
+const CLOUD_FADE = 1.2; // сколько проявляется одна клетка
+
 function clouds(seed: number, cols: number, rows: number) {
   const n = valueNoise(seed ^ 0x51ed270b);
-  const img = new ImageData(cols, rows);
+  const birth = valueNoise(seed ^ 0x2545f491);
+  const jitter = rng(seed ^ 0x68e31da4);
+  const appearAt = new Float32Array(cols * rows).fill(Infinity);
+  let last = 0;
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
       const v = fbm(n, x * 0.05, y * 0.08, 3);
-      const i = (y * cols + x) * 4;
-      img.data[i] = img.data[i + 1] = img.data[i + 2] = 255;
-      img.data[i + 3] = v > 0.6 ? 170 : 0;
+      if (v <= 0.6) continue;
+      const b = Math.min(1, Math.max(0, (fbm(birth, x * 0.02, y * 0.03, 2) - 0.3) / 0.4));
+      const depth = 1 - Math.min(1, (v - 0.6) / 0.15);
+      const at = CLOUD_START + b * CLOUD_SPREAD + depth * CLOUD_GROW + jitter() * 0.8;
+      appearAt[y * cols + x] = at;
+      last = Math.max(last, at);
     }
   }
-  return img;
+  const img = new ImageData(cols, rows);
+  for (let i = 0; i < img.data.length; i += 4) {
+    img.data[i] = img.data[i + 1] = img.data[i + 2] = 255;
+  }
+  return { img, appearAt, done: last + CLOUD_FADE };
+}
+
+/** Прозрачность облаков на момент elapsed (сек). */
+function paintClouds(img: ImageData, appearAt: Float32Array, elapsed: number) {
+  for (let i = 0; i < appearAt.length; i++) {
+    const k = (elapsed - appearAt[i]) / CLOUD_FADE;
+    img.data[i * 4 + 3] = k <= 0 ? 0 : k >= 1 ? CLOUD_ALPHA : Math.round(k * CLOUD_ALPHA);
+  }
 }
 
 const randomSeed = () => Math.floor(Math.random() * 99999);
@@ -156,6 +224,23 @@ export function HeroWorld() {
     let visible = true;
     let land: HTMLCanvasElement | null = null;
     let sky: HTMLCanvasElement | null = null;
+    let cloud: ReturnType<typeof clouds> | null = null;
+    // Отсчёт облаков идёт от первого показа мира и не сбрасывается при
+    // смене размера окна: пересобранное небо сразу догоняет нужную фазу.
+    const start = performance.now();
+    let lastCloudPaint = -Infinity;
+
+    // Небо перерисовывается не каждый кадр, а раз в ~100 мс и только пока
+    // облака ещё набегают — дальше картинка неподвижна и её лишь сдвигают.
+    function updateSky(now: number) {
+      if (!sky || !cloud) return;
+      const elapsed = reduce ? Infinity : (now - start) / 1000;
+      if (elapsed - lastCloudPaint < 0.1) return;
+      if (lastCloudPaint > cloud.done) return;
+      lastCloudPaint = elapsed;
+      paintClouds(cloud.img, cloud.appearAt, elapsed);
+      sky.getContext("2d")!.putImageData(cloud.img, 0, 0);
+    }
 
     function build() {
       if (!canvas) return;
@@ -173,11 +258,14 @@ export function HeroWorld() {
       sky = document.createElement("canvas");
       sky.width = cc;
       sky.height = rows;
-      sky.getContext("2d")!.putImageData(clouds(seed, cc, rows), 0, 0);
+      cloud = clouds(seed, cc, rows);
+      lastCloudPaint = -Infinity;
+      updateSky(performance.now());
     }
 
     function draw(t: number) {
       if (!canvas || !ctx || !land || !sky) return;
+      updateSky(t);
       const cell = CELL * (canvas.width / canvas.clientWidth);
       ctx.imageSmoothingEnabled = false;
       const spanLand = land.width * cell - canvas.width;
