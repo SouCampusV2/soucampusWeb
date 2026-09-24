@@ -20,8 +20,17 @@ function rng(seed: number) {
   };
 }
 
-/** Значимый шум на решётке 256×256 с гладкой интерполяцией. */
-function valueNoise(seed: number) {
+type Noise = (x: number, y: number) => number;
+
+/** Остаток, всегда неотрицательный: -1 mod 5 = 4, а не -1, как у «%». */
+const wrap = (i: number, period: number) => ((i % period) + period) % period;
+
+/**
+ * Значимый шум на решётке 256×256 с гладкой интерполяцией. По X решётка
+ * повторяется через `period` узлов (≤ 256) — из этого сделан бесшовный
+ * мир, см. tiled().
+ */
+function valueNoise(seed: number, period = 256): Noise {
   const r = rng(seed);
   const size = 256;
   const table = new Float32Array(size * size);
@@ -32,7 +41,7 @@ function valueNoise(seed: number) {
     const yi = Math.floor(y);
     const xf = fade(x - xi);
     const yf = fade(y - yi);
-    const at = (i: number, j: number) => table[((j & 255) << 8) | (i & 255)];
+    const at = (i: number, j: number) => table[((j & 255) << 8) | wrap(i, period)];
     const a = at(xi, yi);
     const b = at(xi + 1, yi);
     const c = at(xi, yi + 1);
@@ -48,7 +57,7 @@ function valueNoise(seed: number) {
  * и полосами, и после нарезки на уровни это становится формой биомов.
  * У градиентного шума сетки не видно. Выход — около 0.5, как у valueNoise.
  */
-function perlinNoise(seed: number) {
+function perlinNoise(seed: number, period = 256): Noise {
   const r = rng(seed);
   const order = Array.from({ length: 256 }, (_, i) => i);
   for (let i = 255; i > 0; i--) {
@@ -68,18 +77,42 @@ function perlinNoise(seed: number) {
     const Y = Math.floor(y);
     const xf = x - X;
     const yf = y - Y;
-    const xi = X & 255;
+    const xi = wrap(X, period);
+    const xj = wrap(X + 1, period); // сосед справа — через край решётки
     const yi = Y & 255;
     const u = fade(xf);
     const v = fade(yf);
     const n00 = dot(xi, yi, xf, yf);
-    const n10 = dot(xi + 1, yi, xf - 1, yf);
+    const n10 = dot(xj, yi, xf - 1, yf);
     const n01 = dot(xi, yi + 1, xf, yf - 1);
-    const n11 = dot(xi + 1, yi + 1, xf - 1, yf - 1);
+    const n11 = dot(xj, yi + 1, xf - 1, yf - 1);
     const top = n00 + (n10 - n00) * u;
     const bottom = n01 + (n11 - n01) * u;
     return 0.5 + (top + (bottom - top) * v) * 0.5;
   };
+}
+
+/**
+ * Шум, повторяющийся по X ровно через `cols` клеток. Мир бесшовный по
+ * горизонтали: две его копии встык не дают шва, и фон едет в одну сторону
+ * бесконечно, а не туда-обратно (с 24.09 — облака влево, земля вправо).
+ *
+ * Решётке задаётся период round(scale × cols) узлов, а частота по X
+ * чуть подгоняется (sx), чтобы ширина делилась ровно. Октавы fbm при этом
+ * повторяются сами: их период вдвое, вчетверо… короче и делит ширину.
+ * Возвращает функцию от КЛЕТОК (x, y), а не от координат шума.
+ */
+function tiled(
+  make: (seed: number, period: number) => Noise,
+  seed: number,
+  scale: number,
+  cols: number,
+  scaleY = scale,
+): (x: number, y: number, octaves: number) => number {
+  const period = Math.min(256, Math.max(1, Math.round(scale * cols)));
+  const sx = period / cols;
+  const noise = make(seed, period);
+  return (x, y, octaves) => fbm(noise, x * sx, y * scaleY, octaves);
 }
 
 /** Случайное число 0..1 для клетки: одно и то же для той же клетки и зерна. */
@@ -231,18 +264,21 @@ const WARP = 18; // на сколько клеток искривлены гра
 const WARP_SCALE = 0.012; // частота искривления: плавные изгибы, а не рябь
 
 export function terrain(seed: number, cols: number, rows: number) {
-  const height = valueNoise(seed);
-  const temp = perlinNoise(seed ^ 0x7f4a7c15);
-  const moist = perlinNoise(seed ^ 0x9e3779b9);
-  const warpX = perlinNoise(seed ^ 0x3c6ef372);
-  const warpY = perlinNoise(seed ^ 0xa54ff53a);
-  const detail = valueNoise(seed ^ 0x1f83d9ab);
+  // Каждый шум — бесшовный по X с периодом ровно в ширину мира (tiled).
+  const height = tiled(valueNoise, seed, SCALE, cols);
+  const temp = tiled(perlinNoise, seed ^ 0x7f4a7c15, CLIMATE_SCALE, cols);
+  const moist = tiled(perlinNoise, seed ^ 0x9e3779b9, CLIMATE_SCALE, cols);
+  const warpX = tiled(perlinNoise, seed ^ 0x3c6ef372, WARP_SCALE, cols);
+  const warpY = tiled(perlinNoise, seed ^ 0xa54ff53a, WARP_SCALE, cols);
+  const detail = tiled(valueNoise, seed ^ 0x1f83d9ab, 0.15, cols);
   const hmap = new Float32Array(cols * rows);
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
-      // Центр карты приподнят: на экране чаще суша, а не океан.
-      const d = Math.hypot((x / cols - 0.5) * 1.2, y / rows - 0.5);
-      hmap[y * cols + x] = fbm(height, x * SCALE, y * SCALE, 5) + 0.12 - d * 0.25;
+      // Середина по высоте приподнята: на экране чаще суша, а не океан.
+      // Только по Y: подъём, зависящий от X, сломал бы бесшовность. 0.3 —
+      // средний вклад прежней составляющей по X, чтобы доля суши не уехала.
+      const d = Math.hypot(0.3, y / rows - 0.5);
+      hmap[y * cols + x] = height(x, y, 5) + 0.12 - d * 0.25;
     }
   }
   const img = new Uint8ClampedArray(cols * rows * 4);
@@ -256,10 +292,10 @@ export function terrain(seed: number, cols: number, rows: number) {
       // сдвиг плавный, пятен он не добавляет.
       // Множитель 4, а не 2: разброс Перлина вокруг 0.5 уже, чем у
       // value noise, и при прежнем он гнул бы границы вдвое слабее.
-      const wx = x + (warpX(x * WARP_SCALE, y * WARP_SCALE) - 0.5) * 4 * WARP;
-      const wy = y + (warpY(x * WARP_SCALE, y * WARP_SCALE) - 0.5) * 4 * WARP;
-      const [t0, t1, tw] = softLevel(fbm(temp, wx * CLIMATE_SCALE, wy * CLIMATE_SCALE, 2), TEMP_LEVELS);
-      const [m0, m1, mw] = softLevel(fbm(moist, wx * CLIMATE_SCALE, wy * CLIMATE_SCALE, 2), HUMIDITY_LEVELS);
+      const wx = x + (warpX(x, y, 1) - 0.5) * 4 * WARP;
+      const wy = y + (warpY(x, y, 1) - 0.5) * 4 * WARP;
+      const [t0, t1, tw] = softLevel(temp(wx, wy, 2), TEMP_LEVELS);
+      const [m0, m1, mw] = softLevel(moist(wx, wy, 2), HUMIDITY_LEVELS);
       // На полосе перехода блок целиком достаётся ОДНОМУ из двух биомов,
       // с вероятностью по весу. Переход постепенный, но из чётких блоков,
       // как рваная граница биомов в самой игре.
@@ -269,11 +305,12 @@ export function terrain(seed: number, cols: number, rows: number) {
       const m = cellHash(seed ^ 0x5bd1e995, x, y) < mw ? m1 : m0;
       const [r, g, b] = biome(h, t, m);
       // Свет с северо-запада. Вода плоская, её не тенюем.
-      const nw = hmap[Math.max(0, y - 1) * cols + Math.max(0, x - 1)];
+      // Сосед слева берётся через край (wrap): иначе на шве тень легла бы иначе.
+      const nw = hmap[Math.max(0, y - 1) * cols + wrap(x - 1, cols)];
       let shade = h < SEA_LEVEL ? 1 : 1 + Math.max(-0.35, Math.min(0.35, (h - nw) * 9));
       // Фактура внутри биома: ±5% яркости по мелкому шуму. Лес выглядит
       // лесом, а не заливкой, но в другой биом не превращается.
-      if (h >= SEA_LEVEL) shade *= 0.95 + detail(x * 0.15, y * 0.15) * 0.1;
+      if (h >= SEA_LEVEL) shade *= 0.95 + detail(x, y, 1) * 0.1;
       img[i * 4] = Math.min(255, r * shade);
       img[i * 4 + 1] = Math.min(255, g * shade);
       img[i * 4 + 2] = Math.min(255, b * shade);
@@ -300,16 +337,17 @@ const CLOUD_GROW = 5; // сколько растёт одно облако от 
 const CLOUD_FADE = 1.2; // сколько проявляется одна клетка
 
 export function clouds(seed: number, cols: number, rows: number) {
-  const n = valueNoise(seed ^ 0x51ed270b);
-  const birth = valueNoise(seed ^ 0x2545f491);
+  // Бесшовные по X, как и земля: небо тоже едет в одну сторону.
+  const n = tiled(valueNoise, seed ^ 0x51ed270b, 0.05, cols, 0.08);
+  const birth = tiled(valueNoise, seed ^ 0x2545f491, 0.02, cols, 0.03);
   const jitter = rng(seed ^ 0x68e31da4);
   const appearAt = new Float32Array(cols * rows).fill(Infinity);
   let last = 0;
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
-      const v = fbm(n, x * 0.05, y * 0.08, 3);
+      const v = n(x, y, 3);
       if (v <= 0.6) continue;
-      const b = Math.min(1, Math.max(0, (fbm(birth, x * 0.02, y * 0.03, 2) - 0.3) / 0.4));
+      const b = Math.min(1, Math.max(0, (birth(x, y, 2) - 0.3) / 0.4));
       const depth = 1 - Math.min(1, (v - 0.6) / 0.15);
       const at = CLOUD_START + b * CLOUD_SPREAD + depth * CLOUD_GROW + jitter() * 0.8;
       appearAt[y * cols + x] = at;
