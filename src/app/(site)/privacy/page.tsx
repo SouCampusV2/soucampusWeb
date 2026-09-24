@@ -20,7 +20,11 @@ import { SITE_NAME, SITE_URL, SUPPORT_EMAIL } from "@/lib/site";
 // утверждение проверяемо по коду:
 //   • сам IP не хранится, только хэш с солью → src/lib/visitor-cookie.ts, /api/view
 //   • карту мы не видим                      → /api/stripe/webhook, src/lib/orders.ts
-//   • удалённые карты живут месяц            → решение владельца 2026-08-16
+//   • файл удалённой карты остаётся купившим → решение владельца 2026-09-10
+//     (до 24.09 здесь стояло «живут месяц» — решение 16.08, которое код
+//      так и не исполнил, а 10.09 отменило по сути; страница обещала ложь)
+//   • записи лимитов частоты — сутки          → ops.rate_events, src/lib/rate-limit.ts
+//   • аккаунт удаляется по письму, не кнопкой → кнопки удаления нет
 //
 // ⚠️ Если код изменится, а страница нет — она станет ложью, и это хуже
 // её отсутствия. Правишь сбор данных — правь и этот файл.
@@ -45,7 +49,7 @@ const CONTROLLER = {
   detail: "an individual based in Estonia",
 };
 
-const LAST_UPDATED = "25 August 2026";
+const LAST_UPDATED = "24 September 2026";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -103,6 +107,10 @@ const SECTIONS: Section[] = [
       {
         term: "Visits",
         text: "A count of page views, described in its own section below because of how carefully it avoids identifying you.",
+      },
+      {
+        term: "Limits against abuse",
+        text: "When you do something that can be repeated to cause harm — post a comment, react, start a checkout, upload a file — we note which account did it and when, so one account cannot flood the site. These records are deleted after a day.",
       },
     ],
   },
@@ -182,15 +190,15 @@ const SECTIONS: Section[] = [
     bullets: [
       {
         term: "Your account",
-        text: "For as long as it exists. Delete it and the profile goes with it.",
+        text: "For as long as it exists. Write to us and we delete it, and the profile goes with it.",
       },
       {
         term: "Orders",
         text: "Kept after an account is deleted, because accounting law requires records of sales to be retained. They are kept for that purpose alone.",
       },
       {
-        term: "Deleted maps",
-        text: "Files of a removed map are kept for 30 days, then deleted for good.",
+        term: "Removed maps",
+        text: "A removed map disappears from the site, but its file is kept, so anyone who already bought it can still download what they paid for.",
       },
       {
         term: "Visit counts",
@@ -227,8 +235,10 @@ export default function PrivacyPage() {
     // Клип на полноширинном <main>, ограничение ширины — на секциях внутри
     // (см. PageGlow: max-w-* на одном элементе с overflow-x-clip отрезает
     // то самое свечение, которое должен вмещать).
+    // ⚠️ Ширина у /privacy и /terms ОДНА: колонка max-w-3xl по центру для
+    // всей страницы (24.09). Меняешь здесь — меняй и в terms/page.tsx.
     <main className="relative w-full overflow-x-clip px-6">
-      <section className="relative mx-auto max-w-6xl pb-8 pt-20 sm:pb-16">
+      <section className="relative mx-auto max-w-3xl pb-8 pt-20 sm:pb-16">
         <PageGlow color="rgba(251,146,60,0.35)" />
         <span className="text-sm font-semibold text-orange-500">Legal</span>
         <h1
@@ -236,7 +246,7 @@ export default function PrivacyPage() {
         >
           Privacy Policy
         </h1>
-        <p className="mt-4 max-w-2xl text-zinc-600 dark:text-zinc-400">
+        <p className="mt-4 text-zinc-600 dark:text-zinc-400">
           What this site collects, why, and what you can do about it. Written
           to describe what the code actually does — not to be long.
         </p>
@@ -245,8 +255,8 @@ export default function PrivacyPage() {
         </p>
       </section>
 
-      <section className="mx-auto max-w-6xl pb-10">
-        <div className="mx-auto max-w-3xl">
+      <section className="mx-auto max-w-3xl pb-10">
+        <div>
           {SECTIONS.map((section) => (
             <div key={section.id} id={section.id} className="scroll-mt-24 py-8">
               <h2 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
@@ -282,8 +292,8 @@ export default function PrivacyPage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-6xl pb-16 sm:pb-28">
-        <div className="mx-auto max-w-3xl rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-900 sm:p-12">
+      <section className="mx-auto max-w-3xl pb-16 sm:pb-28">
+        <div className="rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-900 sm:p-12">
           <ShieldCheck size={32} className="text-orange-400" weight="duotone" />
           <h2 className="mt-4 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
             Get in touch
