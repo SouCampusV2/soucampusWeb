@@ -22,10 +22,18 @@ import { useHydrated } from "@/lib/useHydrated";
 // HTML на всех), поэтому число в плашке рисуется только после гидратации
 // (useHydrated) — иначе сервер и клиент напечатали бы разные числа.
 //
-// Цена в производительности: генерация — один раз на зерно и размер
-// экрана (~60 тыс. клеток, миллисекунды), дальше каждый кадр только
-// сдвигает две готовые картинки. Кадры останавливаются, когда первый
-// экран ушёл из вида, и не идут вовсе при prefers-reduced-motion.
+// Как рисуется и движется (с 24.09, вечер). Мир генерируется ОДИН раз на
+// зерно и размер экрана в маленький холст «пиксель = блок», один раз
+// переносится увеличенным без сглаживания на видимый холст, а плывёт тот
+// CSS-трансформацией через Web Animations API. Такую анимацию ведёт
+// поток композитора: сдвиг дробный и равномерный, и паузы основного
+// потока (React, прокрутка) её не задевают.
+// ⚠️ До этого каждый кадр перерисовывал весь холст из JS со сдвигом,
+// округлённым до пикселя. При скорости ~0.1 пикселя за кадр шаг в пиксель
+// выпадал то через три кадра, то через пять — фон «потряхивало». Не
+// возвращать покадровую отрисовку ради движения.
+// Анимации ставятся на паузу, когда первый экран ушёл из вида, и не
+// запускаются вовсе при prefers-reduced-motion.
 
 /** Детерминированный генератор (mulberry32): одно зерно — один мир. */
 function rng(seed: number) {
@@ -60,6 +68,54 @@ function valueNoise(seed: number) {
   };
 }
 
+/**
+ * Градиентный шум Перлина (улучшенный, с квинтичным сглаживанием) —
+ * тот же класс шума, что у Minecraft. Нужен климату: у value noise выше
+ * на низкой частоте проступает сетка — пятна тянутся вдоль осей ромбами
+ * и полосами, и после нарезки на уровни это становится формой биомов.
+ * У градиентного шума сетки не видно. Выход — около 0.5, как у valueNoise.
+ */
+function perlinNoise(seed: number) {
+  const r = rng(seed);
+  const order = Array.from({ length: 256 }, (_, i) => i);
+  for (let i = 255; i > 0; i--) {
+    const j = Math.floor(r() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  const perm = new Uint8Array(512);
+  for (let i = 0; i < 512; i++) perm[i] = order[i & 255];
+  const GRAD = [[1, 1], [-1, 1], [1, -1], [-1, -1], [1, 0], [-1, 0], [0, 1], [0, -1]];
+  const fade = (t: number) => t * t * t * (t * (t * 6 - 15) + 10);
+  const dot = (i: number, j: number, dx: number, dy: number) => {
+    const g = GRAD[perm[perm[i] + j] & 7];
+    return g[0] * dx + g[1] * dy;
+  };
+  return (x: number, y: number) => {
+    const X = Math.floor(x);
+    const Y = Math.floor(y);
+    const xf = x - X;
+    const yf = y - Y;
+    const xi = X & 255;
+    const yi = Y & 255;
+    const u = fade(xf);
+    const v = fade(yf);
+    const n00 = dot(xi, yi, xf, yf);
+    const n10 = dot(xi + 1, yi, xf - 1, yf);
+    const n01 = dot(xi, yi + 1, xf, yf - 1);
+    const n11 = dot(xi + 1, yi + 1, xf - 1, yf - 1);
+    const top = n00 + (n10 - n00) * u;
+    const bottom = n01 + (n11 - n01) * u;
+    return 0.5 + (top + (bottom - top) * v) * 0.5;
+  };
+}
+
+/** Случайное число 0..1 для клетки: одно и то же для той же клетки и зерна. */
+function cellHash(seed: number, x: number, y: number) {
+  let h = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + seed) | 0;
+  h = Math.imul(h ^ (h >>> 13), 1274126177);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+}
+
 /** Фрактальный шум: октавы, каждая вдвое мельче и вдвое тише. */
 function fbm(noise: (x: number, y: number) => number, x: number, y: number, octaves: number) {
   let sum = 0;
@@ -91,20 +147,40 @@ function fbm(noise: (x: number, y: number) => number, x: number, y: number, octa
 
 type RGB = [number, number, number];
 
-// Пороги уровней — ДОЛИ суши, а не числа «на глаз»: фрактальный шум
-// кучкуется вокруг 0.5, и равные интервалы дали бы крайним уровням почти
-// ничего. Числа сняты замером на 300 мирах (двухоктавный шум):
+// Пороги уровней — ДОЛИ суши, а не числа «на глаз»: шум кучкуется вокруг
+// 0.5, и равные интервалы дали бы крайним уровням почти ничего. Числа
+// сняты замером на 300 мирах (двухоктавный Перлин — у него распределение
+// уже, чем у value noise, поэтому при смене шума пороги пересчитаны):
 // температура — 6% мороз, 20% холод, 34% умеренно, 20% тепло, 20% жара;
 // влажность — пять равных частей. Мороз нарочно редкий: снега на первом
 // экране должно быть мало.
-const TEMP_LEVELS = [0.24, 0.381, 0.548, 0.655];
-const HUMIDITY_LEVELS = [0.347, 0.453, 0.548, 0.655];
+const TEMP_LEVELS = [0.334, 0.427, 0.522, 0.584];
+const HUMIDITY_LEVELS = [0.406, 0.47, 0.522, 0.584];
 
-const level = (v: number, cuts: number[]) => {
+// Полуширина перехода между уровнями, в единицах шума. Меньше половины
+// самого узкого промежутка между порогами (0.043), иначе переход
+// захватывал бы третий уровень.
+const BLEND = 0.016;
+
+/**
+ * Уровень 0..4 и его сосед по мягкой границе: [нижний, верхний, вес
+ * верхнего]. Около порога клетка принадлежит двум уровням сразу с весами
+ * по плавной кривой — так игра смешивает цвет травы и листвы на стыке
+ * биомов (biome blend), и биомы перетекают друг в друга, а не обрываются
+ * ступенькой.
+ */
+function softLevel(v: number, cuts: number[]): [number, number, number] {
   let i = 0;
   while (i < cuts.length && v >= cuts[i]) i++;
-  return i; // 0..4
-};
+  const smooth = (k: number) => k * k * (3 - 2 * k);
+  if (i < cuts.length && cuts[i] - v < BLEND) {
+    return [i, i + 1, smooth((v - (cuts[i] - BLEND)) / (2 * BLEND))];
+  }
+  if (i > 0 && v - cuts[i - 1] < BLEND) {
+    return [i - 1, i, smooth((v - (cuts[i - 1] - BLEND)) / (2 * BLEND))];
+  }
+  return [i, i, 0];
+}
 
 // Цвета — самой игры, а не акценты сайта: карта должна читаться как
 // карта Minecraft. Строка — температура (мороз → жара), столбец —
@@ -177,15 +253,16 @@ function biome(h: number, t: number, m: number): RGB {
 const SEA_LEVEL = 0.455;
 const CELL = 7; // экранных пикселей на блок
 const SCALE = 0.018; // частота рельефа на клетку
-const CLIMATE_SCALE = 0.009; // частота климата: вдвое реже рельефа
-const WARP = 22; // на сколько клеток искривлены границы климата
+const CLIMATE_SCALE = 0.008; // частота климата: вдвое реже рельефа
+const WARP = 18; // на сколько клеток искривлены границы климата
+const WARP_SCALE = 0.012; // частота искривления: плавные изгибы, а не рябь
 
 function terrain(seed: number, cols: number, rows: number) {
   const height = valueNoise(seed);
-  const temp = valueNoise(seed ^ 0x7f4a7c15);
-  const moist = valueNoise(seed ^ 0x9e3779b9);
-  const warpX = valueNoise(seed ^ 0x3c6ef372);
-  const warpY = valueNoise(seed ^ 0xa54ff53a);
+  const temp = perlinNoise(seed ^ 0x7f4a7c15);
+  const moist = perlinNoise(seed ^ 0x9e3779b9);
+  const warpX = perlinNoise(seed ^ 0x3c6ef372);
+  const warpY = perlinNoise(seed ^ 0xa54ff53a);
   const detail = valueNoise(seed ^ 0x1f83d9ab);
   const hmap = new Float32Array(cols * rows);
   for (let y = 0; y < rows; y++) {
@@ -204,10 +281,19 @@ function terrain(seed: number, cols: number, rows: number) {
       // ещё одним шумом. Границы биомов становятся извилистыми, как у
       // игры, а не ровными пятнами-кругами. Биом при этом цельный:
       // сдвиг плавный, пятен он не добавляет.
-      const wx = x + (warpX(x * 0.02, y * 0.02) - 0.5) * 2 * WARP;
-      const wy = y + (warpY(x * 0.02, y * 0.02) - 0.5) * 2 * WARP;
-      const t = level(fbm(temp, wx * CLIMATE_SCALE, wy * CLIMATE_SCALE, 2), TEMP_LEVELS);
-      const m = level(fbm(moist, wx * CLIMATE_SCALE, wy * CLIMATE_SCALE, 2), HUMIDITY_LEVELS);
+      // Множитель 4, а не 2: разброс Перлина вокруг 0.5 уже, чем у
+      // value noise, и при прежнем он гнул бы границы вдвое слабее.
+      const wx = x + (warpX(x * WARP_SCALE, y * WARP_SCALE) - 0.5) * 4 * WARP;
+      const wy = y + (warpY(x * WARP_SCALE, y * WARP_SCALE) - 0.5) * 4 * WARP;
+      const [t0, t1, tw] = softLevel(fbm(temp, wx * CLIMATE_SCALE, wy * CLIMATE_SCALE, 2), TEMP_LEVELS);
+      const [m0, m1, mw] = softLevel(fbm(moist, wx * CLIMATE_SCALE, wy * CLIMATE_SCALE, 2), HUMIDITY_LEVELS);
+      // На полосе перехода блок целиком достаётся ОДНОМУ из двух биомов,
+      // с вероятностью по весу. Переход постепенный, но из чётких блоков,
+      // как рваная граница биомов в самой игре.
+      // ⚠️ Смешивать ЦВЕТА нельзя (пробовали 24.09): соседние блоки
+      // отличались на доли тона, и полоса перехода читалась как размытие.
+      const t = cellHash(seed, x, y) < tw ? t1 : t0;
+      const m = cellHash(seed ^ 0x5bd1e995, x, y) < mw ? m1 : m0;
       const [r, g, b] = biome(h, t, m);
       // Свет с северо-запада. Вода плоская, её не тенюем.
       const nw = hmap[Math.max(0, y - 1) * cols + Math.max(0, x - 1)];
@@ -275,109 +361,145 @@ function paintClouds(img: ImageData, appearAt: Float32Array, elapsed: number) {
 const randomSeed = () => Math.floor(Math.random() * 99999);
 
 export function HeroWorld() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const boxRef = useRef<HTMLDivElement>(null);
+  const landRef = useRef<HTMLCanvasElement>(null);
+  const skyRef = useRef<HTMLCanvasElement>(null);
   const hydrated = useHydrated();
   // Своё число на сервере и в браузере — не беда: до гидратации оно нигде
   // не напечатано, а рисует холст только эффект, то есть браузер.
   const [seed, setSeed] = useState(randomSeed);
 
   useEffect(() => {
-    const canvas = canvasRef.current;
-    const ctx = canvas?.getContext("2d");
-    if (!canvas || !ctx) return;
+    const box = boxRef.current;
+    const land = landRef.current;
+    const sky = skyRef.current;
+    const landCtx = land?.getContext("2d");
+    const skyCtx = sky?.getContext("2d");
+    if (!box || !land || !sky || !landCtx || !skyCtx) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-    let frame = 0;
+    let anims: Animation[] = [];
     let visible = true;
-    let land: HTMLCanvasElement | null = null;
-    let sky: HTMLCanvasElement | null = null;
     let cloud: ReturnType<typeof clouds> | null = null;
+    let timer = 0;
     // Отсчёт облаков идёт от первого показа мира и не сбрасывается при
     // смене размера окна: пересобранное небо сразу догоняет нужную фазу.
     const start = performance.now();
-    let lastCloudPaint = -Infinity;
 
-    // Небо перерисовывается не каждый кадр, а раз в ~100 мс и только пока
-    // облака ещё набегают — дальше картинка неподвижна и её лишь сдвигают.
-    function updateSky(now: number) {
-      if (!sky || !cloud) return;
-      const elapsed = reduce ? Infinity : (now - start) / 1000;
-      if (elapsed - lastCloudPaint < 0.1) return;
-      if (lastCloudPaint > cloud.done) return;
-      lastCloudPaint = elapsed;
+    // Данные мира лежат в маленьких холстах «пиксель = блок» вне страницы,
+    // а на видимые переносятся увеличенными БЕЗ сглаживания. Увеличивать
+    // силами браузера (image-rendering: pixelated) нельзя: композитор,
+    // двигая слой, масштабирует его сглаживанием, и блоки расплываются —
+    // проверено 24.09. Готовая картинка 1:1 им только сдвигается.
+    const landData = document.createElement("canvas");
+    const skyData = document.createElement("canvas");
+
+    function blit(from: HTMLCanvasElement, to: CanvasRenderingContext2D) {
+      to.imageSmoothingEnabled = false;
+      to.clearRect(0, 0, to.canvas.width, to.canvas.height);
+      to.drawImage(from, 0, 0, to.canvas.width, to.canvas.height);
+    }
+
+    // Небо перерисовывается раз в 100 мс и только пока облака набегают.
+    function paintSky() {
+      if (!cloud || !skyCtx) return;
+      const elapsed = reduce ? Infinity : (performance.now() - start) / 1000;
       paintClouds(cloud.img, cloud.appearAt, elapsed);
-      sky.getContext("2d")!.putImageData(cloud.img, 0, 0);
+      skyData.getContext("2d")!.putImageData(cloud.img, 0, 0);
+      blit(skyData, skyCtx);
+      if (elapsed > cloud.done) window.clearInterval(timer);
+    }
+
+    /** Туда-обратно без шва на краю поля; ease-in-out повторяет прежний синус. */
+    function drift(el: HTMLElement, span: number, oneWayMs: number, phase: number) {
+      if (reduce) {
+        el.style.transform = `translate3d(${-span * phase}px,0,0)`;
+        return;
+      }
+      const a = el.animate(
+        [{ transform: "translate3d(0,0,0)" }, { transform: `translate3d(${-span}px,0,0)` }],
+        {
+          duration: oneWayMs,
+          iterations: Infinity,
+          direction: "alternate",
+          easing: "ease-in-out",
+          delay: -oneWayMs * phase,
+        },
+      );
+      if (!visible) a.pause();
+      anims.push(a);
     }
 
     function build() {
-      if (!canvas) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width = canvas.clientWidth * dpr;
-      canvas.height = canvas.clientHeight * dpr;
+      if (!box || !land || !sky || !landCtx) return;
+      anims.forEach((a) => a.cancel());
+      anims = [];
+      window.clearInterval(timer);
+      const width = box.clientWidth;
+      const height = box.clientHeight;
       // Поле шире экрана на 40% — есть куда медленно плыть.
-      const cols = Math.ceil((canvas.clientWidth * 1.4) / CELL);
-      const rows = Math.ceil(canvas.clientHeight / CELL) + 2;
-      land = document.createElement("canvas");
-      land.width = cols;
-      land.height = rows;
-      land.getContext("2d")!.putImageData(terrain(seed, cols, rows), 0, 0);
+      const cols = Math.ceil((width * 1.4) / CELL);
+      const rows = Math.ceil(height / CELL) + 1;
+      // Земля — в разрешении экрана (dpr до 2): это её чёткие края.
+      // Облака — в CSS-пикселях: они полупрозрачные, на ретине лишняя
+      // чёткость им не нужна, а холст неба самый большой (~1.8 ширины экрана).
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      landData.width = cols;
+      landData.height = rows;
+      landData.getContext("2d")!.putImageData(terrain(seed, cols, rows), 0, 0);
+      land.width = cols * CELL * dpr;
+      land.height = rows * CELL * dpr;
+      land.style.width = `${cols * CELL}px`;
+      land.style.height = `${rows * CELL}px`;
+      blit(landData, landCtx);
       const cc = Math.ceil(cols * 1.3);
-      sky = document.createElement("canvas");
-      sky.width = cc;
-      sky.height = rows;
+      skyData.width = cc;
+      skyData.height = rows;
+      sky.width = cc * CELL;
+      sky.height = rows * CELL;
+      sky.style.width = `${cc * CELL}px`;
+      sky.style.height = `${rows * CELL}px`;
       cloud = clouds(seed, cc, rows);
-      lastCloudPaint = -Infinity;
-      updateSky(performance.now());
-    }
-
-    function draw(t: number) {
-      if (!canvas || !ctx || !land || !sky) return;
-      updateSky(t);
-      const cell = CELL * (canvas.width / canvas.clientWidth);
-      ctx.imageSmoothingEnabled = false;
-      const spanLand = land.width * cell - canvas.width;
-      const spanSky = sky.width * cell - canvas.width;
-      // Туда-обратно по синусу: без шва на краю поля.
-      const p = reduce ? 0.5 : (Math.sin(t / 26000) + 1) / 2;
-      const q = reduce ? 0.3 : (Math.sin(t / 9000) + 1) / 2;
-      ctx.drawImage(land, -Math.round(p * spanLand), 0, land.width * cell, land.height * cell);
-      ctx.globalAlpha = 0.55;
-      ctx.drawImage(sky, -Math.round(q * spanSky), 0, sky.width * cell, sky.height * cell);
-      ctx.globalAlpha = 1;
-      if (!reduce && visible) frame = requestAnimationFrame(draw);
-    }
-
-    function restart() {
-      cancelAnimationFrame(frame);
-      frame = requestAnimationFrame(draw);
+      paintSky();
+      if (!reduce) timer = window.setInterval(paintSky, 100);
+      drift(land, cols * CELL - width, 82000, 0.5);
+      drift(sky, cc * CELL - width, 28000, 0.3);
     }
 
     build();
-    restart();
 
-    // Первый экран ушёл из вида — кадры не нужны никому.
+    // Первый экран ушёл из вида — анимации не нужны никому.
     const observer = new IntersectionObserver(([entry]) => {
       visible = entry.isIntersecting;
-      if (visible) restart();
-      else cancelAnimationFrame(frame);
+      anims.forEach((a) => (visible ? a.play() : a.pause()));
     });
-    observer.observe(canvas);
+    observer.observe(box);
 
+    let resizeTimer = 0;
     const onResize = () => {
-      build();
-      restart();
+      // Пересборка мира — десятки миллисекунд; во время перетаскивания
+      // края окна она шла бы на каждый пиксель.
+      window.clearTimeout(resizeTimer);
+      resizeTimer = window.setTimeout(build, 150);
     };
     window.addEventListener("resize", onResize);
     return () => {
-      cancelAnimationFrame(frame);
+      anims.forEach((a) => a.cancel());
+      window.clearInterval(timer);
+      window.clearTimeout(resizeTimer);
       observer.disconnect();
       window.removeEventListener("resize", onResize);
     };
   }, [seed]);
 
+  const layer = "absolute left-0 top-0 max-w-none will-change-transform";
+
   return (
     <>
-      <canvas ref={canvasRef} className="absolute inset-0 h-full w-full" aria-hidden="true" />
+      <div ref={boxRef} className="absolute inset-0 overflow-hidden" aria-hidden="true">
+        <canvas ref={landRef} className={layer} />
+        <canvas ref={skyRef} className={`${layer} opacity-55`} />
+      </div>
       {hydrated && (
         <div className="absolute bottom-5 right-5 z-10 flex items-center gap-3 rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/80 py-1.5 pl-4 pr-1.5 text-sm text-zinc-950 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/80 dark:text-zinc-50">
           <span className="tabular-nums">
