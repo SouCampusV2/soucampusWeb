@@ -27,6 +27,24 @@ describe("terrain", () => {
     expect(terrain(1, COLS, ROWS)).not.toEqual(terrain(2, COLS, ROWS));
   });
 
+  it("tiles horizontally without a seam", () => {
+    // Фон едет в одну сторону бесконечно: две копии мира встык. Шов
+    // между правым и левым краем обязан быть не заметнее, чем разница
+    // между двумя соседними столбцами внутри карты.
+    const img = terrain(777, COLS, ROWS);
+    const columnDiff = (a: number, b: number) => {
+      let sum = 0;
+      for (let y = 0; y < ROWS; y++) {
+        for (let c = 0; c < 3; c++) sum += Math.abs(img[(y * COLS + a) * 4 + c] - img[(y * COLS + b) * 4 + c]);
+      }
+      return sum / ROWS;
+    };
+    let inner = 0;
+    for (let x = 1; x < COLS; x++) inner += columnDiff(x - 1, x);
+    inner /= COLS - 1;
+    expect(columnDiff(COLS - 1, 0)).toBeLessThan(inner * 2);
+  });
+
   it("keeps snow rare across many worlds", () => {
     // Снег — единственные почти белые клетки с голубым отливом: у песка
     // и пустыни синий канал заметно ниже красного. Порог с запасом над

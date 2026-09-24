@@ -41,7 +41,7 @@ export function Hero() {
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6, delay: 0.1 }}
-          className="max-w-2xl rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/85 p-7 backdrop-blur-xl sm:p-10 dark:border-zinc-50/[0.08] dark:bg-zinc-950/80"
+          className="max-w-2xl rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/60 p-7 backdrop-blur-xl sm:p-10 dark:border-zinc-50/[0.08] dark:bg-zinc-950/60"
         >
           <h1 className="tracking-tight text-zinc-950 dark:text-zinc-50">
             <span

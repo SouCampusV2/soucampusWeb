@@ -54,6 +54,19 @@ export function HeroWorld() {
   // не напечатано, а рисует холст только эффект, то есть браузер.
   const [seed, setSeed] = useState(randomSeed);
 
+  // Зерно для запросов к воркеру. Живёт в ref, а не в зависимостях эффекта
+  // ниже: эффект с холстами и анимациями не должен перезапускаться при
+  // смене зерна (см. «рывок» в комментарии к нему).
+  const seedRef = useRef(seed);
+  // Функцию «попроси новый мир» выставляет эффект с холстами, зовёт — эффект зерна.
+  const requestRef = useRef<(() => void) | null>(null);
+
+  // Холсты, воркер и движение — ОДИН раз на всё время жизни страницы.
+  // ⚠️ До 24.09 этот эффект зависел от [seed] и пересоздавался на каждый
+  // «New world»: отмена его анимаций мгновенно возвращала холст в нулевую
+  // позицию (первый рывок), а новый мир появлялся с середины пути и сразу
+  // на полной скорости (второй). Теперь смена зерна только шлёт запрос, а
+  // новый мир приходит через плавную смену (crossfade) — см. show().
   useEffect(() => {
     const box = boxRef.current;
     const land = landRef.current;
@@ -68,14 +81,20 @@ export function HeroWorld() {
     let cloud: { img: Uint8ClampedArray; image: ImageData; appearAt: Float32Array; done: number } | null = null;
     let timer = 0;
     // Номер последнего запроса к воркеру. Ответ на более старый (успели
-    // сменить размер окна) выбрасывается: рисовать мир чужого размера нельзя.
+    // нажать «New world» ещё раз или сменить размер окна) выбрасывается.
     let requestId = 0;
     // Мир считает воркер (hero-world.worker.ts), а не этот эффект: иначе
     // ~100 мс генерации на телефоне блокировали бы основной поток и TBT.
     const worker = new Worker(new URL("./hero-world.worker.ts", import.meta.url));
-    // Отсчёт облаков идёт от первого показа мира и не сбрасывается при
-    // смене размера окна: пересобранное небо сразу догоняет нужную фазу.
-    const start = performance.now();
+    // Отсчёт облаков — от показа ТЕКУЩЕГО мира: у нового мира небо снова
+    // чистое и облака набегают заново, а при смене размера окна того же
+    // мира отсчёт не сбрасывается и пересобранное небо догоняет фазу.
+    let start = performance.now();
+    let shownSeed: number | null = null;
+    // Мир, ждущий своей очереди, пока гаснет предыдущий. Если за это время
+    // пришёл ещё один, показан будет последний.
+    let pending: WorldResponse | null = null;
+    let fadingOut: Animation | null = null;
 
     // Данные мира лежат в маленьких холстах «пиксель = блок» вне страницы,
     // а на видимые переносятся увеличенными БЕЗ сглаживания. Увеличивать
@@ -85,10 +104,17 @@ export function HeroWorld() {
     const landData = document.createElement("canvas");
     const skyData = document.createElement("canvas");
 
+    /**
+     * Две копии мира встык: он бесшовный по X (world-gen.ts → tiled), и
+     * сдвиг ровно на ширину одной копии незаметно возвращает картинку в
+     * начало — отсюда бесконечное движение в одну сторону.
+     */
     function blit(from: HTMLCanvasElement, to: CanvasRenderingContext2D) {
+      const half = to.canvas.width / 2;
       to.imageSmoothingEnabled = false;
       to.clearRect(0, 0, to.canvas.width, to.canvas.height);
-      to.drawImage(from, 0, 0, to.canvas.width, to.canvas.height);
+      to.drawImage(from, 0, 0, half, to.canvas.height);
+      to.drawImage(from, half, 0, half, to.canvas.height);
     }
 
     // Небо перерисовывается раз в 100 мс и только пока облака набегают.
@@ -101,45 +127,78 @@ export function HeroWorld() {
       if (elapsed > cloud.done) window.clearInterval(timer);
     }
 
-    /** Туда-обратно без шва на краю поля; ease-in-out повторяет прежний синус. */
-    function drift(el: HTMLElement, span: number, oneWayMs: number, phase: number) {
+    /**
+     * Бесконечно в одну сторону: сдвиг на ширину одной копии (tile), дальше
+     * картинка совпадает с начальной и цикл повторяется без шва.
+     * ⚠️ До 24.09 движение шло туда-обратно (alternate), и облака в какой-то
+     * момент разворачивались. Скорость задана временем, за которое фон
+     * проходит ширину экрана, — одинаково на телефоне и на мониторе.
+     */
+    function drift(el: HTMLElement, tile: number, screenMs: number, direction: "left" | "right") {
+      const from = direction === "left" ? 0 : -tile;
+      const to = direction === "left" ? -tile : 0;
       if (reduce) {
-        el.style.transform = `translate3d(${-span * phase}px,0,0)`;
+        el.style.transform = `translate3d(${-tile / 2}px,0,0)`;
         return;
       }
       const a = el.animate(
-        [{ transform: "translate3d(0,0,0)" }, { transform: `translate3d(${-span}px,0,0)` }],
-        {
-          duration: oneWayMs,
-          iterations: Infinity,
-          direction: "alternate",
-          easing: "ease-in-out",
-          delay: -oneWayMs * phase,
-        },
+        [{ transform: `translate3d(${from}px,0,0)` }, { transform: `translate3d(${to}px,0,0)` }],
+        { duration: (screenMs * tile) / box!.clientWidth, iterations: Infinity, easing: "linear" },
       );
       if (!visible) a.pause();
       anims.push(a);
     }
 
-    /** Просит воркер посчитать мир под текущий размер первого экрана. */
-    function build() {
-      if (!box) return;
-      // Поле шире экрана на 40% — есть куда медленно плыть.
-      const cols = Math.ceil((box.clientWidth * 1.4) / CELL);
-      const rows = Math.ceil(box.clientHeight / CELL) + 1;
-      const request: WorldRequest = { id: ++requestId, seed, cols, rows, skyCols: Math.ceil(cols * 1.3) };
-      worker.postMessage(request);
+    // Разгон с места: скорость анимаций растёт от нуля за 2.5 с, мир
+    // трогается плавно, а не с полного хода. Скорость меняется раз в
+    // 100 мс через updatePlaybackRate — он согласует её с композитором.
+    // ⚠️ Прямая запись playbackRate каждый кадр (пробовали 24.09) держала
+    // анимацию в ожидании синхронизации: замер показал 2.5 с стоянки, а
+    // потом сразу полную скорость — паузу вместо разгона.
+    let rampTimer = 0;
+    function rampUp() {
+      window.clearInterval(rampTimer);
+      if (reduce) return;
+      const t0 = performance.now();
+      const step = () => {
+        const k = Math.min(1, (performance.now() - t0) / 2500);
+        const rate = k * k * (3 - 2 * k); // плавно трогается и плавно выходит на скорость
+        anims.forEach((a) => a.updatePlaybackRate(Math.max(rate, 0.02)));
+        if (k >= 1) window.clearInterval(rampTimer);
+      };
+      step();
+      rampTimer = window.setInterval(step, 100);
     }
 
-    /** Ответ воркера: рисуем готовый мир и запускаем движение. */
-    worker.onmessage = (event: MessageEvent<WorldResponse>) => {
-      const world = event.data;
-      if (world.id !== requestId || !box || !land || !sky || !landCtx) return;
+    /** Просит воркер посчитать мир под текущее зерно и размер первого экрана. */
+    function build() {
+      if (!box) return;
+      // Ширина одной копии мира — не меньше экрана (иначе при двух копиях
+      // встык на экране не хватило бы картинки). Земля — 1.25 экрана,
+      // небо — 2 экрана: облака едут быстрее, и короткий цикл повторял бы
+      // одни и те же облака слишком часто.
+      const cols = Math.ceil((box.clientWidth * 1.25) / CELL);
+      const rows = Math.ceil(box.clientHeight / CELL) + 1;
+      const request: WorldRequest = {
+        id: ++requestId,
+        seed: seedRef.current,
+        cols,
+        rows,
+        skyCols: Math.ceil((box.clientWidth * 2) / CELL),
+      };
+      worker.postMessage(request);
+    }
+    requestRef.current = build;
+
+    /** Рисует готовый мир и запускает движение заново. */
+    function draw(world: WorldResponse) {
+      if (!box || !land || !sky || !landCtx) return;
       const { cols, rows, skyCols } = world;
-      const width = box.clientWidth;
       anims.forEach((a) => a.cancel());
       anims = [];
       window.clearInterval(timer);
+      if (world.seed !== shownSeed) start = performance.now();
+      shownSeed = world.seed;
       // Земля — в разрешении экрана (dpr до 2): это её чёткие края.
       // Облака — в CSS-пикселях: они полупрозрачные, на ретине лишняя
       // чёткость им не нужна, а холст неба самый большой (~1.8 ширины экрана).
@@ -147,28 +206,71 @@ export function HeroWorld() {
       landData.width = cols;
       landData.height = rows;
       landData.getContext("2d")!.putImageData(new ImageData(world.land, cols, rows), 0, 0);
-      land.width = cols * CELL * dpr;
+      // Холсты — на ДВЕ копии мира по ширине (см. blit).
+      land.width = 2 * cols * CELL * dpr;
       land.height = rows * CELL * dpr;
-      land.style.width = `${cols * CELL}px`;
+      land.style.width = `${2 * cols * CELL}px`;
       land.style.height = `${rows * CELL}px`;
       blit(landData, landCtx);
       skyData.width = skyCols;
       skyData.height = rows;
-      sky.width = skyCols * CELL;
+      sky.width = 2 * skyCols * CELL;
       sky.height = rows * CELL;
-      sky.style.width = `${skyCols * CELL}px`;
+      sky.style.width = `${2 * skyCols * CELL}px`;
       sky.style.height = `${rows * CELL}px`;
       // ImageData берёт массив как есть, без копии: paintClouds правит
       // world.sky, а картинка видит правку.
       cloud = { img: world.sky, image: new ImageData(world.sky, skyCols, rows), appearAt: world.appearAt, done: world.done };
       paintSky();
       if (!reduce) timer = window.setInterval(paintSky, 100);
-      drift(land, cols * CELL - width, 82000, 0.5);
-      // Облака на 15% медленнее, чем было (28 с → 33 с), — по просьбе владельца.
-      drift(sky, skyCols * CELL - width, 33000, 0.3);
-    };
+      // Скорости — прежние, пересчитанные в «экран за столько-то»: земля
+      // проходила 0.4 экрана за 82 с (экран за ~205 с), облака 0.82 экрана
+      // за 33 с (экран за ~40 с; 33 с — уже на 15% медленнее, 24.09).
+      drift(land, cols * CELL, 205000, "right");
+      drift(sky, skyCols * CELL, 40000, "left");
+      rampUp();
+    }
 
-    build();
+    /** Проявление: и первого мира поверх синего фона, и каждого следующего. */
+    function fadeIn(ms: number) {
+      if (!box) return;
+      box.style.opacity = "1";
+      if (!reduce) box.animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: "ease-out" });
+    }
+
+    /**
+     * Показ пришедшего мира. Первый просто проявляется. Следующий — через
+     * смену: прежний, не останавливаясь, гаснет, в невидимый момент
+     * подменяется, новый проявляется. Всё — анимации прозрачности, их
+     * ведёт композитор, как и движение.
+     */
+    function show(world: WorldResponse) {
+      if (!box) return;
+      if (reduce || shownSeed === null) {
+        draw(world);
+        fadeIn(700);
+        return;
+      }
+      pending = world;
+      if (fadingOut) return; // уже гаснет — подменим на самый свежий
+      fadingOut = box.animate([{ opacity: 1 }, { opacity: 0 }], {
+        duration: 250,
+        easing: "ease-in",
+        fill: "forwards",
+      });
+      fadingOut.onfinish = () => {
+        const next = pending;
+        pending = null;
+        if (next) draw(next);
+        fadingOut?.cancel();
+        fadingOut = null;
+        fadeIn(600);
+      };
+    }
+
+    worker.onmessage = (event: MessageEvent<WorldResponse>) => {
+      if (event.data.id === requestId) show(event.data);
+    };
 
     // Первый экран ушёл из вида — анимации не нужны никому.
     const observer = new IntersectionObserver(([entry]) => {
@@ -186,20 +288,31 @@ export function HeroWorld() {
     };
     window.addEventListener("resize", onResize);
     return () => {
+      requestRef.current = null;
       worker.terminate();
+      fadingOut?.cancel();
+      window.clearInterval(rampTimer);
       anims.forEach((a) => a.cancel());
       window.clearInterval(timer);
       window.clearTimeout(resizeTimer);
       observer.disconnect();
       window.removeEventListener("resize", onResize);
     };
+  }, []);
+
+  // Смена зерна — только запрос нового мира. Объявлен ПОСЛЕ эффекта с
+  // холстами: эффекты идут по порядку, и к первому запуску этого
+  // requestRef уже выставлен. Он же даёт и самый первый мир.
+  useEffect(() => {
+    seedRef.current = seed;
+    requestRef.current?.();
   }, [seed]);
 
   const layer = "absolute left-0 top-0 max-w-none will-change-transform";
 
   return (
     <>
-      <div ref={boxRef} className="absolute inset-0 overflow-hidden" aria-hidden="true">
+      <div ref={boxRef} className="absolute inset-0 overflow-hidden opacity-0" aria-hidden="true">
         <canvas ref={landRef} className={layer} />
         <canvas ref={skyRef} className={`${layer} opacity-55`} />
       </div>
