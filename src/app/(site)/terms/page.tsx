@@ -71,10 +71,15 @@ export default function TermsPage() {
   return (
     // Клип — на полноширинном <main>, ограничение ширины уехало на секции
     // внутри: иначе max-w-6xl отрезал бы свечение по бокам (см. PageGlow).
+    // ⚠️ Ширина у /terms и /privacy ОДНА (24.09, просьба владельца): вся
+    // страница — колонка max-w-3xl по центру, от заголовка до карточки.
+    // До этого у /terms заголовок и разделы стояли слева на 6xl, а карточка
+    // по центру на 2xl, у /privacy — заголовок слева, текст по центру.
+    // Меняешь ширину здесь — меняй и в соседнем файле.
     <main className="relative w-full overflow-x-clip px-6">
       {/* Hero — общее свечение сайта (orange, основной акцент: страница не
           привязана к одной секции). */}
-      <section className="relative mx-auto max-w-6xl pb-8 pt-20 sm:pb-16">
+      <section className="relative mx-auto max-w-3xl pb-8 pt-20 sm:pb-16">
         <PageGlow color="rgba(251,146,60,0.35)" />
         <span className="text-sm font-semibold text-orange-500">Legal</span>
         <h1
@@ -82,21 +87,22 @@ export default function TermsPage() {
         >
           Terms of Service
         </h1>
-        <p className="mt-4 max-w-2xl text-zinc-600 dark:text-zinc-400">
-          This page is a placeholder — the full terms will go live before the
-          marketplace opens. Below is the outline of what it will cover.
+        <p className="mt-4 text-zinc-600 dark:text-zinc-400">
+          Pricing and licensing below are final. The rest of the terms is
+          still being written and will be published before the shop starts
+          taking real payments — the outline is at the bottom.
         </p>
       </section>
 
       {/* Real content, not a placeholder like the section below — linked
           directly from the "How the price is calculated" badge on the
           Contact page's instant estimator (BuildEstimator.tsx). */}
-      <section id="pricing" className="mx-auto max-w-6xl scroll-mt-24 py-10 sm:py-16">
+      <section id="pricing" className="mx-auto max-w-3xl scroll-mt-24 py-10 sm:py-16">
         <span className="text-sm font-semibold text-orange-500">Pricing</span>
         <h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
           How pricing works
         </h2>
-        <p className="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400">
+        <p className="mt-3 text-zinc-600 dark:text-zinc-400">
           The same formula behind the instant estimate on the{" "}
           <span className="font-medium text-zinc-950 dark:text-zinc-50">
             Contact
@@ -122,12 +128,12 @@ export default function TermsPage() {
           «скоро»: на него ссылается статья вики, и он же — ответ на самый
           частый вопрос покупателя. */}
       {LICENCE && (
-        <section id="licensing" className="mx-auto max-w-6xl scroll-mt-24 py-10 sm:py-16">
+        <section id="licensing" className="mx-auto max-w-3xl scroll-mt-24 py-10 sm:py-16">
           <span className="text-sm font-semibold text-orange-500">Licensing</span>
           <h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
             {LICENCE.title}
           </h2>
-          <div className="max-w-2xl">
+          <div>
             <ArticleBody sections={LICENCE.body} />
             <p className="mt-8 text-sm text-zinc-500 dark:text-zinc-400">
               The same text lives in the{" "}
@@ -144,16 +150,16 @@ export default function TermsPage() {
         </section>
       )}
 
-      <section className="mx-auto max-w-6xl py-16 sm:py-28">
-        <div className="mx-auto max-w-2xl rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-900 sm:p-12">
+      <section className="mx-auto max-w-3xl py-16 sm:py-28">
+        <div className="rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-900 sm:p-12">
           <FileText size={32} className="text-orange-400" weight="duotone" />
           <h2 className="mt-4 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
             Coming soon
           </h2>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
             Full terms covering orders, payment, revisions, and liability are
-            being written and will be published here ahead of the marketplace
-            launch. Until then, order terms are agreed directly in
+            being written and will be published here before real payments are
+            switched on. Until then, order terms are agreed directly in
             Discord for every commission.
           </p>
 
