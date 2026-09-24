@@ -11,6 +11,28 @@ export type Review = {
   flag: string;
   text: string;
   accent: "orange" | "lime";
+  /** Аватары клиента — из public/reviews. Пусто — рисуется заглушка. */
+  avatars: string[];
+};
+
+// Аватары живут в коде, а не в базе, и это сознательно: сами файлы лежат в
+// public/, то есть приезжают деплоем. Колонка в базе ссылалась бы на файл,
+// которого в ветке может ещё не быть, а миграция ради десяти картинок —
+// два прогона (preview и прод) на то, что меняется раз в полгода.
+// Ключ — slug отзыва. Массив, потому что отзыв бывает от двоих
+// (Luke & Sven): у каждого свой аватар, и склеивать их в одну картинку
+// значило бы рисовать то, чего клиент не присылал.
+// Есть тест: каждый путь отсюда обязан существовать в public/.
+export const REVIEW_AVATARS: Record<string, string[]> = {
+  erik: ["/reviews/erik.png"],
+  ghost: ["/reviews/ghost.png"],
+  rambomine: ["/reviews/rambomine.png"],
+  "the-erik-cz": ["/reviews/the-erik-cz.png"],
+  scooter: ["/reviews/scooter.png"],
+  "luke-and-sven": ["/reviews/luke.png", "/reviews/sven.png"],
+  nathan: ["/reviews/nathan.png"],
+  giel: ["/reviews/giel.png"],
+  muthely: ["/reviews/muthely.png"],
 };
 
 type ReviewRow = {
@@ -33,6 +55,7 @@ export function rowToReview(row: ReviewRow): Review {
     // TypeScript про эту проверку не знает и видит просто string,
     // поэтому сужаем тип здесь, с явным запасным вариантом.
     accent: row.accent === "lime" ? "lime" : "orange",
+    avatars: REVIEW_AVATARS[row.slug] ?? [],
   };
 }
 

@@ -2,20 +2,24 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
-import { Skeleton } from "@/components/Skeleton";
+import { ReviewAvatar } from "@/components/ReviewAvatar";
 import { Button } from "@/components/Button";
 import { ArrowButton } from "@/components/ArrowButton";
 import { Flag } from "@/components/Flag";
 import type { Review } from "@/lib/reviews";
+import { ACCENT_CARD, ACCENT_RING } from "@/lib/review-accent";
 
 type Accent = Review["accent"];
 
-// Only two card accents (orange/lime) — the CTA button stays orange either
-// way (primary color per DESIGN.md), the accent only tints the card itself.
-const ACCENT_CARD: Record<Accent, string> = {
-  orange: "bg-orange-100 text-zinc-950 dark:bg-orange-950 dark:text-zinc-50",
-  lime: "bg-lime-100 text-zinc-950 dark:bg-lime-950 dark:text-zinc-50",
-};
+// Возврат со страницы отзыва: её ссылка «назад» ведёт на /#review-<slug>.
+// Якорь нарочно НЕ совпадает ни с одним id на странице — иначе браузер (и
+// Next) прокрутил бы к карточке сам, через scrollIntoView, а тот сдвигает
+// и горизонтальный overflow-hidden карусели. Её положение задаёт только
+// `x` из Motion, и чужой сдвиг сбил бы его на ширину карточки. Поэтому
+// якорь разбирает сама карусель: листает к карточке и прокручивает
+// страницу к секции.
+const RETURN_HASH_PREFIX = "#review-";
+const HIGHLIGHT_MS = 2200;
 
 // Card width used to be a fixed 340px, always — on a 375px phone that's
 // almost the entire screen with no room to peek the next card, and the
@@ -53,25 +57,68 @@ export function ClientReviews({ reviews }: { reviews: Review[] }) {
   const firstCardRef = useRef<HTMLQuoteElement>(null);
   const trackRef = useRef<HTMLDivElement>(null);
 
+  const [returnedTo, setReturnedTo] = useState<string | null>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+
   useEffect(() => {
+    // Меряет карточку и ряд; возвращает, сколько карточек помещается —
+    // он нужен и здесь, и ниже, при возврате к отзыву, а стейт к тому
+    // моменту ещё не обновится.
     function measure() {
       const card = firstCardRef.current;
       const track = trackRef.current;
-      if (!card || !track) return;
+      if (!card || !track) return null;
       const width = card.getBoundingClientRect().width;
+      const fits = Math.max(1, Math.round(track.clientWidth / (width + CARD_GAP)));
       setCardWidth(width);
-      setVisible(Math.max(1, Math.round(track.clientWidth / (width + CARD_GAP))));
+      setVisible(fits);
+      return fits;
     }
-    measure();
-    window.addEventListener("resize", measure);
-    return () => window.removeEventListener("resize", measure);
+
+    function returnToReview(fits: number) {
+      const hash = window.location.hash;
+      if (!hash.startsWith(RETURN_HASH_PREFIX)) return;
+      const slug = decodeURIComponent(hash.slice(RETURN_HASH_PREFIX.length));
+      const target = reviews.findIndex((r) => r.slug === slug);
+      if (target === -1) return;
+
+      // Ставим нужную карточку первой, насколько позволяет край: у
+      // последних двух на десктопе сдвигаться дальше некуда, и они
+      // окажутся видны правее — но видны.
+      setIndex(Math.min(target, Math.max(0, reviews.length - fits)));
+      setReturnedTo(slug);
+
+      // Next после перехода сам прокручивает страницу к началу сегмента
+      // (ему не нашлось элемента с таким id), и делает это раньше нас,
+      // в фазе коммита. Кадр спустя — уже наша очередь.
+      requestAnimationFrame(() =>
+        sectionRef.current?.scrollIntoView({ block: "start" }),
+      );
+    }
+
+    const fits = measure();
+    if (fits !== null) returnToReview(fits);
+    const onResize = () => measure();
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+    // reviews приходят пропсом с сервера и между рендерами не меняются;
+    // перезапускать разбор якоря при их смене незачем.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Подсветка карточки, к которой вернулись, гаснет сама — это подсказка
+  // «ты был здесь», а не выделение, которое надо снимать.
+  useEffect(() => {
+    if (!returnedTo) return;
+    const timer = setTimeout(() => setReturnedTo(null), HIGHLIGHT_MS);
+    return () => clearTimeout(timer);
+  }, [returnedTo]);
 
   const step = cardWidth + CARD_GAP;
   const maxIndex = Math.max(0, reviews.length - visible);
 
   return (
-    <section id="reviews" className="scroll-mt-24 bg-[#fbfbff] py-16 dark:bg-zinc-950 sm:py-28">
+    <section ref={sectionRef} id="reviews" className="scroll-mt-24 bg-[#fbfbff] py-16 dark:bg-zinc-950 sm:py-28">
       <div className="mx-auto max-w-6xl px-6">
         {/* min-w-0 по той же причине, что в PortfolioHero: без него
             заголовок не даёт ряду стрелок сжаться, и на узком экране
@@ -110,7 +157,11 @@ export function ClientReviews({ reviews }: { reviews: Review[] }) {
           отличие объявляется здесь, в разметке, а не угадывается
           скриптом. Ставится только там, где содержимое действительно
           вытаскивается жестом. */}
-      <div data-draggable className="mt-12 overflow-hidden">
+      {/* py-2 при mt-10 вместо прежнего mt-12 — место под рамку карточки, к
+          которой вернулись со страницы отзыва (ring + offset = 6px):
+          overflow-hidden срезал бы её сверху и снизу. Видимый отступ от
+          заголовка тот же. */}
+      <div data-draggable className="mt-10 overflow-hidden py-2">
         <div className="mx-auto max-w-6xl px-6">
           <motion.div
             ref={trackRef}
@@ -130,15 +181,17 @@ export function ClientReviews({ reviews }: { reviews: Review[] }) {
               <blockquote
                 key={review.name}
                 ref={i === 0 ? firstCardRef : undefined}
-                className={`flex w-[78vw] shrink-0 flex-col justify-between rounded-3xl p-6 sm:w-[340px] ${
+                className={`flex w-[78vw] shrink-0 flex-col justify-between rounded-3xl p-6 ring-orange-500 ring-offset-4 ring-offset-[#fbfbff] transition-shadow duration-500 dark:ring-offset-zinc-950 sm:w-[340px] ${
                   i % 2 === 1 ? "sm:mt-8" : ""
-                } ${ACCENT_CARD[review.accent]}`}
+                } ${returnedTo === review.slug ? "ring-2" : "ring-0"} ${ACCENT_CARD[review.accent]}`}
               >
                 <div>
-                  {/* TODO: replace with real client photo */}
-                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-full">
-                    <Skeleton className="h-full w-full" />
-                  </div>
+                  <ReviewAvatar
+                    avatars={review.avatars}
+                    name={review.name}
+                    size="md"
+                    ringClassName={ACCENT_RING[review.accent]}
+                  />
 
                   <p className="mt-6 text-base font-medium leading-6 text-zinc-950 dark:text-zinc-50">
                     &ldquo;{review.text}&rdquo;

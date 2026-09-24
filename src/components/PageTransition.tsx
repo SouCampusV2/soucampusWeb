@@ -138,7 +138,14 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     if (pathname === prevPathname.current) return;
     prevPathname.current = pathname;
     pendingHref.current = null;
-    window.scrollTo(0, 0);
+    // Адрес с якорем (`/#reviews`, `/terms#pricing`) просит не верх
+    // страницы, а место на ней. До 24.09 этот эффект не различал одно и
+    // другое и дважды отправлял наверх любой переход — поэтому «назад» со
+    // страницы отзыва приводило к началу главной, а не к отзывам. Прокрутку
+    // к якорю делает Next (или сама секция, как ClientReviews), здесь её
+    // достаточно не затереть.
+    const toTop = !window.location.hash;
+    if (toTop) window.scrollTo(0, 0);
     // Framer Motion's own "height: auto" measurement (used by the mobile
     // nav dropdown's open/close animation) saves the scroll position before
     // it measures layout and restores it afterwards, asynchronously, in its
@@ -148,7 +155,7 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
     // fires, then ~30ms later Framer's own processBatch/measureAllKeyframes
     // calls scrollTo again with the old value. A second, delayed correction
     // reliably lands after that internal restore and wins the race.
-    const rescroll = setTimeout(() => window.scrollTo(0, 0), 100);
+    const rescroll = toTop ? setTimeout(() => window.scrollTo(0, 0), 100) : undefined;
     setPhase("revealing");
 
     const timer = setTimeout(() => {
