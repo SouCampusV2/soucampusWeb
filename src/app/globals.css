@@ -109,3 +109,19 @@ body {
 .dark .author-ring-4 {
   background-color: var(--color-lime-800);
 }
+
+/* Пиксельная текстура «блок» для дерева достижений на /about.
+   Плитка 64×64 из клеток 8×8 четырёх оттенков — как текстура блока
+   в игре, но в нейтральных zinc-тонах сайта, а не в цветах земли.
+   Собрана скриптом (случайный узор с фиксированным зерном), поэтому
+   правится палитра, а не отдельные клетки. Тёмная версия — тот же узор
+   вокруг zinc-900; класс .dark на <html>, как у .author-ring-* выше. */
+.pixel-texture {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' shape-rendering='crispEdges'%3E%3Crect width='64' height='64' fill='%23f1f1f3'/%3E%3Cg fill='%23e7e7ea'%3E%3Crect x='16' y='0' width='8' height='8'/%3E%3Crect x='0' y='16' width='8' height='8'/%3E%3Crect x='16' y='16' width='8' height='8'/%3E%3Crect x='40' y='24' width='8' height='8'/%3E%3Crect x='48' y='24' width='8' height='8'/%3E%3Crect x='32' y='32' width='8' height='8'/%3E%3Crect x='56' y='32' width='8' height='8'/%3E%3Crect x='24' y='40' width='8' height='8'/%3E%3Crect x='40' y='40' width='8' height='8'/%3E%3Crect x='0' y='48' width='8' height='8'/%3E%3Crect x='40' y='48' width='8' height='8'/%3E%3Crect x='8' y='56' width='8' height='8'/%3E%3Crect x='16' y='56' width='8' height='8'/%3E%3Crect x='24' y='56' width='8' height='8'/%3E%3Crect x='48' y='56' width='8' height='8'/%3E%3Crect x='56' y='56' width='8' height='8'/%3E%3C/g%3E%3Cg fill='%23f8f8fa'%3E%3Crect x='40' y='8' width='8' height='8'/%3E%3Crect x='48' y='16' width='8' height='8'/%3E%3Crect x='24' y='24' width='8' height='8'/%3E%3Crect x='16' y='40' width='8' height='8'/%3E%3Crect x='56' y='40' width='8' height='8'/%3E%3Crect x='32' y='56' width='8' height='8'/%3E%3C/g%3E%3Cg fill='%23dcdce0'%3E%3Crect x='8' y='16' width='8' height='8'/%3E%3Crect x='32' y='16' width='8' height='8'/%3E%3Crect x='16' y='48' width='8' height='8'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 64px 64px;
+  image-rendering: pixelated;
+}
+
+.dark .pixel-texture {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' shape-rendering='crispEdges'%3E%3Crect width='64' height='64' fill='%2318181b'/%3E%3Cg fill='%23202024'%3E%3Crect x='16' y='0' width='8' height='8'/%3E%3Crect x='0' y='16' width='8' height='8'/%3E%3Crect x='16' y='16' width='8' height='8'/%3E%3Crect x='40' y='24' width='8' height='8'/%3E%3Crect x='48' y='24' width='8' height='8'/%3E%3Crect x='32' y='32' width='8' height='8'/%3E%3Crect x='56' y='32' width='8' height='8'/%3E%3Crect x='24' y='40' width='8' height='8'/%3E%3Crect x='40' y='40' width='8' height='8'/%3E%3Crect x='0' y='48' width='8' height='8'/%3E%3Crect x='40' y='48' width='8' height='8'/%3E%3Crect x='8' y='56' width='8' height='8'/%3E%3Crect x='16' y='56' width='8' height='8'/%3E%3Crect x='24' y='56' width='8' height='8'/%3E%3Crect x='48' y='56' width='8' height='8'/%3E%3Crect x='56' y='56' width='8' height='8'/%3E%3C/g%3E%3Cg fill='%23141417'%3E%3Crect x='40' y='8' width='8' height='8'/%3E%3Crect x='48' y='16' width='8' height='8'/%3E%3Crect x='24' y='24' width='8' height='8'/%3E%3Crect x='16' y='40' width='8' height='8'/%3E%3Crect x='56' y='40' width='8' height='8'/%3E%3Crect x='32' y='56' width='8' height='8'/%3E%3C/g%3E%3Cg fill='%2327272a'%3E%3Crect x='8' y='16' width='8' height='8'/%3E%3Crect x='32' y='16' width='8' height='8'/%3E%3Crect x='16' y='48' width='8' height='8'/%3E%3C/g%3E%3C/svg%3E");
+}

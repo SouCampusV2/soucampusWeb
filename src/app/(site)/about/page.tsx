@@ -17,7 +17,6 @@ import {
   Armchair,
   House,
 } from "@phosphor-icons/react/dist/ssr";
-import { Skeleton } from "@/components/Skeleton";
 import { AuthorCta } from "@/components/AuthorCta";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_SAMEAS, SITE_TAGLINE, SITE_URL } from "@/lib/site";
@@ -105,22 +104,35 @@ const TIMELINE = [
 // - Texturing: block-palette/material choice → PaintBrushHousehold.
 // - Landscape / Architecture / Interior / Exterior: the four "genres" of a
 //   build → Mountains / Buildings / Armchair / House.
-const SKILLS = [
-  { label: "WorldEdit", icon: Selection },
-  { label: "VoxelSniper", icon: Target },
-  { label: "Axiom", icon: MagicWand },
-  { label: "Arceon", icon: Cube },
-  { label: "GoBrush", icon: PaintBrush },
-  { label: "GoPaint", icon: PaintRoller },
-  { label: "EzEdit", icon: Lightning },
-  { label: "Communication with client", icon: ChatsCircle },
-  { label: "Level design", icon: MapTrifold },
-  { label: "Composition", icon: FrameCorners },
-  { label: "Texturing", icon: PaintBrushHousehold },
-  { label: "Landscape", icon: Mountains },
-  { label: "Architecture", icon: Buildings },
-  { label: "Interior", icon: Armchair },
-  { label: "Exterior", icon: House },
+//
+// Two groups since 24.09 (split taken from the lab): plugins are one kind
+// of skill, craft is another, and a single pile of fifteen pills hid that.
+const SKILL_GROUPS = [
+  {
+    title: "Tools",
+    skills: [
+      { label: "WorldEdit", icon: Selection },
+      { label: "VoxelSniper", icon: Target },
+      { label: "Axiom", icon: MagicWand },
+      { label: "Arceon", icon: Cube },
+      { label: "GoBrush", icon: PaintBrush },
+      { label: "GoPaint", icon: PaintRoller },
+      { label: "EzEdit", icon: Lightning },
+    ],
+  },
+  {
+    title: "Craft",
+    skills: [
+      { label: "Communication with client", icon: ChatsCircle },
+      { label: "Level design", icon: MapTrifold },
+      { label: "Composition", icon: FrameCorners },
+      { label: "Texturing", icon: PaintBrushHousehold },
+      { label: "Landscape", icon: Mountains },
+      { label: "Architecture", icon: Buildings },
+      { label: "Interior", icon: Armchair },
+      { label: "Exterior", icon: House },
+    ],
+  },
 ];
 
 export default function AboutPage() {
@@ -155,48 +167,60 @@ export default function AboutPage() {
         </div>
       </section>
 
-      <div className="mt-12 flex flex-col gap-12 sm:mt-24 sm:gap-20">
-        {TIMELINE.map((item) => (
-          <div key={item.age} className="mx-auto max-w-xl text-center">
-            <div
-              className={`${displayFont.className} bg-gradient-to-r from-lime-300 to-lime-700 bg-clip-text text-4xl text-transparent sm:text-5xl`}
+      {/* Путь — дерево достижений, как экран Advancements в игре (перенесено
+          из лаборатории, вариант «Inventory», 24.09, в цвета сайта). Рамки
+          соединены линией; фон — пиксельная текстура блока (.pixel-texture
+          в globals.css). Последняя рамка, «сегодня», оранжевая: в игре так
+          выделено испытание — самое трудное достижение в дереве.
+          ⚠️ Углы здесь квадратные намеренно, в отличие от rounded-3xl по
+          всему сайту: рамки и тултипы в игре квадратные, скруглённые
+          читались бы как обычные карточки сайта. Скруглена только внешняя
+          панель — она часть страницы, а не игры. */}
+      <ol className="pixel-texture mx-auto mt-12 max-w-3xl overflow-hidden rounded-3xl border border-zinc-950/[0.06] p-4 sm:mt-16 sm:p-8 dark:border-zinc-50/[0.08]">
+        {TIMELINE.map((item, i) => {
+          const last = i === TIMELINE.length - 1;
+          return (
+            <li
+              key={item.age}
+              className="relative grid grid-cols-[3.5rem_minmax(0,1fr)] gap-3 pb-6 last:pb-0 sm:grid-cols-[4rem_minmax(0,1fr)] sm:gap-4 sm:pb-8"
             >
-              {item.age}
-            </div>
-            <h3 className="mt-3 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
-              {item.title}
-            </h3>
-            <p className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400">{item.text}</p>
-          </div>
-        ))}
-      </div>
+              {/* Линия связи: светлая с тёмной обводкой, как в игре. Идёт от
+                  низа рамки до низа пункта — к рамке следующего. */}
+              {!last && (
+                <span
+                  aria-hidden="true"
+                  className="absolute bottom-0 left-[calc(1.75rem-5px)] top-14 w-[10px] border-x-2 border-zinc-950 bg-zinc-50 sm:left-[calc(2rem-5px)] sm:top-16"
+                />
+              )}
+              <span
+                className={`${displayFont.className} relative z-10 grid size-14 place-items-center border-2 border-zinc-950 px-1 text-center text-[11px] leading-tight text-zinc-950 sm:size-16 sm:text-xs ${
+                  last
+                    ? "bg-orange-400 shadow-[inset_3px_3px_0_var(--color-orange-200),inset_-3px_-3px_0_var(--color-orange-700)]"
+                    : "bg-lime-400 shadow-[inset_3px_3px_0_var(--color-lime-200),inset_-3px_-3px_0_var(--color-lime-700)]"
+                }`}
+              >
+                {item.age.replace("Age ", "")}
+              </span>
+              {/* Тултип достижения. Рамка — градиент синего вместо игрового
+                  фиолетового; border-image не дружит со скруглением, отсюда
+                  тоже квадратные углы. */}
+              <div className="border-2 border-transparent bg-[#fbfbff] px-4 py-3 [border-image:linear-gradient(var(--color-blue-500),var(--color-blue-700))_1] sm:px-5 sm:py-4 dark:bg-zinc-950">
+                <p className="text-sm font-semibold text-lime-600 dark:text-lime-400">
+                  {item.age}: advancement made!
+                </p>
+                <h3 className="mt-1 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
+                  {item.title}
+                </h3>
+                <p className="mt-2 leading-7 text-zinc-600 dark:text-zinc-400">{item.text}</p>
+              </div>
+            </li>
+          );
+        })}
+      </ol>
 
-      <section className="mx-auto mt-12 max-w-3xl text-center sm:mt-24">
-        <span className="text-sm font-semibold text-lime-600">Skills & toolkit</span>
-        <h2
-          className={`${displayFont.className} mt-3 text-3xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl`}
-        >
-          What I build with
-        </h2>
-        <p className="mt-4 leading-7 text-zinc-600 dark:text-zinc-400">
-          A builder needs more than the right plugin — a wide toolkit and an eye
-          for composition and space, built up over 8 years across servers and
-          studios:
-        </p>
-
-        <div className="mt-8 flex flex-wrap justify-center gap-3">
-          {SKILLS.map(({ label, icon: Icon }) => (
-            <span
-              key={label}
-              className="flex items-center gap-2 rounded-full bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
-            >
-              <Icon size={18} className="shrink-0 text-lime-600 dark:text-lime-400" />
-              {label}
-            </span>
-          ))}
-        </div>
-      </section>
-
+      {/* Straight after the advancements (moved up 24.09, owner's call):
+          the story ends at "today", and "how I work with people" is where
+          today leads, before the list of tools. */}
       <div className="mx-auto mt-12 max-w-xl text-center sm:mt-24">
         <p className="leading-7 text-zinc-600 dark:text-zinc-400">
           And of course, a big part of my work is about people. Every client comes not
@@ -216,13 +240,41 @@ export default function AboutPage() {
         </p>
       </div>
 
-      {/* TODO: replace with a real photo */}
-      <div className="relative mt-12 aspect-[21/9] w-full overflow-hidden rounded-3xl sm:mt-20">
-        <Skeleton className="h-full w-full" />
-        <span className="absolute inset-0 flex items-center justify-center text-sm font-medium text-zinc-400">
-          Photo coming soon
-        </span>
-      </div>
+      {/* Left-aligned, unlike the centred text around it: the section's
+          width matches the advancement panel above (max-w-3xl), so their
+          left edges line up and the two read as one column. */}
+      <section className="mx-auto mt-12 max-w-3xl sm:mt-24">
+        <span className="text-sm font-semibold text-lime-600">Skills & toolkit</span>
+        <h2
+          className={`${displayFont.className} mt-3 text-3xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl`}
+        >
+          What I build with
+        </h2>
+        <p className="mt-4 leading-7 text-zinc-600 dark:text-zinc-400">
+          A builder needs more than the right plugin — a wide toolkit and an eye
+          for composition and space, built up over 8 years across servers and
+          studios:
+        </p>
+
+        <div className="mt-8 grid gap-8 sm:grid-cols-2">
+          {SKILL_GROUPS.map((group) => (
+            <div key={group.title}>
+              <h3 className="font-semibold text-zinc-950 dark:text-zinc-50">{group.title}</h3>
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {group.skills.map(({ label, icon: Icon }) => (
+                  <li
+                    key={label}
+                    className="flex items-center gap-2 rounded-full bg-zinc-100 px-4 py-2.5 text-sm font-medium text-zinc-700 dark:bg-zinc-900 dark:text-zinc-300"
+                  >
+                    <Icon size={18} className="shrink-0 text-lime-600 dark:text-lime-400" />
+                    {label}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
+      </section>
       </main>
     </>
   );
