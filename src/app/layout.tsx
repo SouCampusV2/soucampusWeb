@@ -60,6 +60,14 @@ export const metadata: Metadata = {
   },
 
   alternates: { canonical: "/" },
+
+  // Search Console, ресурс https://soucampus.online/ — ЗАПАСНОЙ способ
+  // подтверждения; основной — файл public/google2167305e79148318.html.
+  // Два способа сразу потому, что 24.09 выяснилось: подтверждение через
+  // DNS-запись (21.07) пропало — TXT затёрли при настройке почты, и Google
+  // перестал считать сайт подтверждённым. Не удалять ни то, ни другое:
+  // Google перепроверяет подтверждение и снимает его, не найдя.
+  verification: { google: "rtWUjyHjaTO9CtShg8jsHFEMiJpZreBJGIOJG2AZhcU" },
 };
 
 export default function RootLayout({
