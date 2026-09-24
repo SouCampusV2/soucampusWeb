@@ -23,6 +23,10 @@ const displayFont = Unbounded({
 // занимает место в потоке, без этого над картой осталась бы полоса
 // фона. Поменяется высота навбара — меняй и здесь.
 //
+// Панель прижата к левому КРАЮ ЭКРАНА (px-4 / md:px-12), а не к левому
+// краю контейнера навбара (max-w-6xl) — так было в лаборатории, и так
+// попросил владелец 24.09: на широком экране карта справа видна шире.
+//
 // PageGlow здесь больше нет: свечение рисовалось на фоне страницы, а
 // фоном теперь служит карта.
 export function Hero() {
@@ -30,7 +34,7 @@ export function Hero() {
     <section className="relative -mt-[4.5rem] flex min-h-[100dvh] items-end overflow-hidden bg-[#24488a] sm:-mt-20 md:items-center">
       <HeroWorld />
 
-      <div className="relative mx-auto w-full max-w-6xl px-4 pb-24 pt-32 md:pb-0">
+      <div className="relative w-full px-4 pb-24 pt-32 md:px-12 md:pb-0">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
