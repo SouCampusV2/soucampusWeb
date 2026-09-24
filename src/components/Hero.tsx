@@ -19,9 +19,11 @@ const displayFont = Unbounded({
 // (полупрозрачный цвет страницы + blur), поэтому следует теме сама.
 //
 // ⚠️ Секция заезжает ПОД навбар отрицательным отступом ровно на его
-// высоту (h-[4.5rem] / sm:h-20 на <nav> в Navbar.tsx): навбар sticky и
-// занимает место в потоке, без этого над картой осталась бы полоса
-// фона. Поменяется высота навбара — меняй и здесь.
+// высоту: h-[4.5rem] / sm:h-20 на <nav> в Navbar.tsx ПЛЮС 2px рамки
+// (`border` на <header>, по 1px сверху и снизу). Навбар sticky и занимает
+// место в потоке, без этого над картой осталась бы полоса фона — до
+// 24.09 (вечер) без рамки там и оставалась белая полоска в 2px. Поменяется высота
+// навбара или его рамка — меняй и здесь.
 //
 // Панель прижата к левому КРАЮ ЭКРАНА (px-4 / md:px-12), а не к левому
 // краю контейнера навбара (max-w-6xl) — так было в лаборатории, и так
@@ -31,7 +33,7 @@ const displayFont = Unbounded({
 // фоном теперь служит карта.
 export function Hero() {
   return (
-    <section className="relative -mt-[4.5rem] flex min-h-[100dvh] items-end overflow-hidden bg-[#24488a] sm:-mt-20 md:items-center">
+    <section className="relative -mt-[calc(4.5rem+2px)] flex min-h-[100dvh] items-end overflow-hidden bg-[#24488a] sm:-mt-[calc(5rem+2px)] md:items-center">
       <HeroWorld />
 
       <div className="relative w-full px-4 pb-24 pt-32 md:px-12 md:pb-0">
