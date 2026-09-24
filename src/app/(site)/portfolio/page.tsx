@@ -7,6 +7,7 @@ import { getViewCounts, getSiteViews, VIEW_PATHS } from "@/lib/views";
 import { PortfolioHero } from "@/components/PortfolioHero";
 import { ViewCount } from "@/components/ViewCount";
 import { SiteViews } from "@/components/SiteViews";
+import { HashHighlight } from "@/components/HashHighlight";
 
 // Same display font as the hero headings — the card title rhymes with them.
 const displayFont = Unbounded({
@@ -54,6 +55,7 @@ export default async function PortfolioPage() {
 
   return (
     <main className="w-full mx-auto max-w-6xl flex-1 px-6">
+      <HashHighlight />
       <PortfolioHero projects={featured} />
 
       <div className="mt-16 border-t border-zinc-200 pt-10 dark:border-zinc-800 sm:mt-28 sm:pt-16">
@@ -75,8 +77,12 @@ export default async function PortfolioPage() {
           {gridProjects.map((project, i) => (
             <Link
               key={project.slug}
+              // id — цель ссылки «назад» со страницы работы
+              // (PortfolioBackLink); scroll-mt — чтобы карточка не
+              // уехала под навбар.
+              id={`work-${project.slug}`}
               href={`/portfolio/${project.slug}`}
-              className={`group relative block overflow-hidden rounded-2xl border border-zinc-200 dark:border-zinc-800 ${SPAN_PATTERN[i % SPAN_PATTERN.length]}`}
+              className={`group relative block scroll-mt-28 overflow-hidden rounded-2xl border border-zinc-200 ring-orange-500 ring-offset-4 ring-offset-[#fbfbff] transition-shadow duration-500 data-[returned=true]:ring-2 dark:ring-offset-zinc-950 dark:border-zinc-800 ${SPAN_PATTERN[i % SPAN_PATTERN.length]}`}
             >
               {/* Below `lg:` the grid has no fixed row height (that's a
                   lg:auto-rows-[220px] thing, for the bento span pattern) —

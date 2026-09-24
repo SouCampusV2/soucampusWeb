@@ -47,12 +47,26 @@ import { BackLink } from "@/components/BackLink";
 //      когда каталога не было в HTML вовсе;
 //   3. подмена происходит ровно в одном случае — пришёл с главной, — и
 //      меняется в ней только надпись.
-export function PortfolioBackLink() {
+//
+// ------------------------------------------------------------
+// Куда именно «назад» (2026-09-24)
+// ------------------------------------------------------------
+// Не в начало экрана, а к карточке ЭТОЙ работы: `#work-<slug>` в каталоге
+// и `#home-work-<slug>` на главной. Карточки носят эти id, и прокручивает
+// к ним сам Next. До 24.09 любой переход с якорем всё равно приезжал на
+// верх — PageTransition затирал прокрутку (разбор в его эффекте).
+//
+// Исключение — работы из hero-карусели /portfolio: они и есть верх
+// страницы, а id на панели карусели заставил бы браузер сдвигать её
+// overflow вбок (тот же довод, что у отзывов в ClientReviews).
+type Target = { slug: string; featured: boolean };
+
+export function PortfolioBackLink(target: Target) {
   const from = useSearchParams().get("from");
   return from === "home" ? (
-    <BackLink href="/">Home</BackLink>
+    <BackLink href={`/#home-work-${target.slug}`}>Home</BackLink>
   ) : (
-    <PortfolioBackLinkFallback />
+    <PortfolioBackLinkFallback {...target} />
   );
 }
 
@@ -63,6 +77,10 @@ export function PortfolioBackLink() {
  * рисующие одну ссылку, однажды разъедутся — ровно эту болезнь лечил
  * общий BackLink, когда таких ссылок было пять.
  */
-export function PortfolioBackLinkFallback() {
-  return <BackLink href="/portfolio">All work</BackLink>;
+export function PortfolioBackLinkFallback({ slug, featured }: Target) {
+  return (
+    <BackLink href={featured ? "/portfolio" : `/portfolio#work-${slug}`}>
+      All work
+    </BackLink>
+  );
 }
