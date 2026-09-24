@@ -45,6 +45,36 @@ describe("terrain", () => {
     expect(columnDiff(COLS - 1, 0)).toBeLessThan(inner * 2);
   });
 
+  it("does not repeat itself inside one width", () => {
+    // Бесшовность не должна превращаться в обои. 24.09 все октавы fbm
+    // получили один период решётки, и мелкие октавы повторялись по ширине
+    // 2, 4, 8, 16 раз — ряды одинаковых бугров. Шов при этом был чистым, и
+    // тест выше молчал. Здесь: карта, сдвинутая на полширины, должна
+    // отличаться от себя почти как два разных мира (проверено: на той
+    // ошибке отношение падало ниже порога).
+    const diff = (a: Uint8ClampedArray, b: Uint8ClampedArray, shift: number) => {
+      let sum = 0;
+      for (let y = 0; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) {
+          const i = (y * COLS + x) * 4;
+          const j = (y * COLS + ((x + shift) % COLS)) * 4;
+          for (let c = 0; c < 3; c++) sum += Math.abs(a[i + c] - b[j + c]);
+        }
+      }
+      return sum;
+    };
+    let self = 0;
+    let other = 0;
+    for (let seed = 1; seed <= 20; seed++) {
+      const a = terrain(seed * 131, COLS, ROWS);
+      const b = terrain(seed * 131 + 1, COLS, ROWS);
+      self += diff(a, a, COLS / 2);
+      other += diff(a, b, 0);
+    }
+    // Замер: 0.865 на той ошибке, 0.970 после исправления.
+    expect(self / other).toBeGreaterThan(0.93);
+  });
+
   it("keeps snow rare across many worlds", () => {
     // Снег — единственные почти белые клетки с голубым отливом: у песка
     // и пустыни синий канал заметно ниже красного. Порог с запасом над

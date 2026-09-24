@@ -93,13 +93,18 @@ function perlinNoise(seed: number, period = 256): Noise {
 }
 
 /**
- * Шум, повторяющийся по X ровно через `cols` клеток. Мир бесшовный по
+ * Фрактальный шум (октавы, каждая вдвое мельче и вдвое тише), повторяющийся
+ * по X ровно через `cols` клеток. Мир бесшовный по
  * горизонтали: две его копии встык не дают шва, и фон едет в одну сторону
  * бесконечно, а не туда-обратно (с 24.09 — облака влево, земля вправо).
  *
  * Решётке задаётся период round(scale × cols) узлов, а частота по X
- * чуть подгоняется (sx), чтобы ширина делилась ровно. Октавы fbm при этом
- * повторяются сами: их период вдвое, вчетверо… короче и делит ширину.
+ * чуть подгоняется (sx), чтобы ширина делилась ровно. У КАЖДОЙ октавы —
+ * свой шум и свой период: вдвое больше предыдущего, ровно под её вдвое
+ * большую частоту. Так каждая октава повторяется один раз на ширину мира.
+ * ⚠️ Первая версия (24.09) давала всем октавам один период — и октава k
+ * повторялась по ширине 2^k раз: ряды одинаковых бугров, «обои». Шов при
+ * этом был чистым; поймал глаз на превью ссылки, где мир узкий.
  * Возвращает функцию от КЛЕТОК (x, y), а не от координат шума.
  */
 function tiled(
@@ -109,10 +114,23 @@ function tiled(
   cols: number,
   scaleY = scale,
 ): (x: number, y: number, octaves: number) => number {
-  const period = Math.min(256, Math.max(1, Math.round(scale * cols)));
-  const sx = period / cols;
-  const noise = make(seed, period);
-  return (x, y, octaves) => fbm(noise, x * sx, y * scaleY, octaves);
+  const base = Math.max(1, Math.round(scale * cols));
+  const sx = base / cols;
+  const octaves: Noise[] = [];
+  const octave = (k: number) =>
+    (octaves[k] ??= make((seed + Math.imul(k, 0x9e3779b1)) | 0, Math.min(256, base << k)));
+  return (x, y, count) => {
+    let sum = 0;
+    let amp = 0.5;
+    let norm = 0;
+    for (let k = 0; k < count; k++) {
+      const freq = 1 << k;
+      sum += octave(k)(x * sx * freq, y * scaleY * freq) * amp;
+      norm += amp;
+      amp *= 0.5;
+    }
+    return sum / norm;
+  };
 }
 
 /** Случайное число 0..1 для клетки: одно и то же для той же клетки и зерна. */
@@ -120,21 +138,6 @@ function cellHash(seed: number, x: number, y: number) {
   let h = (Math.imul(x, 374761393) + Math.imul(y, 668265263) + seed) | 0;
   h = Math.imul(h ^ (h >>> 13), 1274126177);
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
-}
-
-/** Фрактальный шум: октавы, каждая вдвое мельче и вдвое тише. */
-function fbm(noise: (x: number, y: number) => number, x: number, y: number, octaves: number) {
-  let sum = 0;
-  let amp = 0.5;
-  let freq = 1;
-  let norm = 0;
-  for (let o = 0; o < octaves; o++) {
-    sum += noise(x * freq, y * freq) * amp;
-    norm += amp;
-    amp *= 0.5;
-    freq *= 2;
-  }
-  return sum / norm;
 }
 
 // Биомы — как в Minecraft 1.18+. Мир считается из нескольких полей шума,
