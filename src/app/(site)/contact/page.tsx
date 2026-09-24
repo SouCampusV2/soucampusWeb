@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
 import { Button, TERTIARY_UNDERLINE } from "@/components/Button";
-import { Skeleton } from "@/components/Skeleton";
+import Image from "next/image";
 import { ArrowCircle } from "@/components/ArrowCircle";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { BuildEstimator } from "@/components/BuildEstimator";
@@ -127,9 +127,18 @@ export default function ContactPage() {
       <main className="w-full mx-auto max-w-6xl flex-1 px-6">
       {/* Chat to us directly */}
       <section className="grid items-center gap-8 py-10 sm:gap-10 sm:py-20 sm:grid-cols-2">
-        {/* TODO: replace with a real Discord conversation screenshot */}
-        <div className="relative aspect-video overflow-hidden rounded-2xl">
-          <Skeleton className="h-full w-full" />
+        {/* Pixel-art scene (24.09): SVG from a 64×36 grid, one <path> per
+            colour, a few KB. The sky is the slot's background, not part of
+            the file, so it follows the theme; the figures carry their own
+            dark outline and read on both. */}
+        <div className="relative aspect-video overflow-hidden rounded-2xl bg-blue-100 dark:bg-blue-950/60">
+          <Image
+            src="/contact/pixel-chat.svg"
+            alt="A blocky builder waving at two chat bubbles"
+            fill
+            unoptimized
+            className="object-cover"
+          />
         </div>
         <div>
           <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
@@ -184,9 +193,14 @@ export default function ContactPage() {
             </Button>
           </div>
         </div>
-        {/* TODO: replace with a real illustration/photo */}
-        <div className="relative order-first aspect-video overflow-hidden rounded-2xl sm:order-2">
-          <Skeleton className="h-full w-full" />
+        <div className="relative order-first aspect-video overflow-hidden rounded-2xl bg-blue-100 sm:order-2 dark:bg-blue-950/60">
+          <Image
+            src="/contact/pixel-answers.svg"
+            alt="An open book on a lectern under a big question mark"
+            fill
+            unoptimized
+            className="object-cover"
+          />
         </div>
       </section>
 
