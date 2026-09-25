@@ -50,12 +50,26 @@ const CELL = 7; // экранных пикселей на блок
 // слишком заметна. Не возвращать без нового довода.
 const FIRST_FADE_MS = 300;
 
-// Скорость задана «экран за столько-то секунд» (см. drift), но экраном
-// считается не меньше этой ширины (25.09). Иначе телефон в 390 px двигал
-// карту вчетверо медленнее монитора — ~2 px/с у земли: она казалась
-// стоящей, а шаги по пиксельной сетке читались как рывки. От 1440 px и
-// шире скорость прежняя.
-const SPEED_MIN_WIDTH = 1440;
+// ⚠️ ВРЕМЕННО (25.09): варианты движения для сравнения на телефоне,
+// выбираются параметром ?hero= в адресе. После выбора владельца оставить
+// один, а этот словарь убрать.
+//   a — как было до 25.09: скорость «экран за N секунд» от ширины экрана
+//       (на телефоне земля ~2 px/с), холст в разрешении экрана до 2×;
+//   b — экран считается не уже 1440 px: скорость десктопа (~7 px/с);
+//   c — не уже 800 px: вдвое быстрее, чем было (~3.6 px/с);
+//   d — как c, но холст в полном разрешении экрана (до 3×): на телефонах
+//       с плотностью 3 блоки не пересчитываются при движении из 2× в 3×.
+const MOTION_VARIANTS = {
+  a: { minWidth: 0, maxDpr: 2 },
+  b: { minWidth: 1440, maxDpr: 2 },
+  c: { minWidth: 800, maxDpr: 2 },
+  d: { minWidth: 800, maxDpr: 3 },
+} as const;
+
+function motionVariant() {
+  const key = new URLSearchParams(window.location.search).get("hero");
+  return MOTION_VARIANTS[key as keyof typeof MOTION_VARIANTS] ?? MOTION_VARIANTS.a;
+}
 
 const randomSeed = () => Math.floor(Math.random() * 99999);
 
@@ -100,6 +114,7 @@ export function HeroWorld() {
     const skyCtx = sky?.getContext("2d");
     if (!box || !land || !sky || !landCtx || !skyCtx) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const motion = motionVariant();
 
     let anims: Animation[] = [];
     let visible = true;
@@ -169,7 +184,7 @@ export function HeroWorld() {
       }
       const a = el.animate(
         [{ transform: `translate3d(${from}px,0,0)` }, { transform: `translate3d(${to}px,0,0)` }],
-        { duration: (screenMs * tile) / Math.max(box!.clientWidth, SPEED_MIN_WIDTH), iterations: Infinity, easing: "linear" },
+        { duration: (screenMs * tile) / Math.max(box!.clientWidth, motion.minWidth), iterations: Infinity, easing: "linear" },
       );
       if (!visible) a.pause();
       anims.push(a);
@@ -228,7 +243,7 @@ export function HeroWorld() {
       // Земля — в разрешении экрана (dpr до 2): это её чёткие края.
       // Облака — в CSS-пикселях: они полупрозрачные, на ретине лишняя
       // чёткость им не нужна, а холст неба самый большой (~1.8 ширины экрана).
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      const dpr = Math.min(window.devicePixelRatio || 1, motion.maxDpr);
       landData.width = cols;
       landData.height = rows;
       landData.getContext("2d")!.putImageData(new ImageData(world.land, cols, rows), 0, 0);
