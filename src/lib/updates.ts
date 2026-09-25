@@ -84,6 +84,138 @@ export type UpdatePost = {
 // getAllUpdates() по дате. Пишем новые сверху — так удобнее читать файл.
 export const UPDATES: UpdatePost[] = [
   {
+    slug: "an-faq-and-a-lighter-home-page",
+    date: "2026-09-25",
+    area: "help",
+    title: "An FAQ, and a home page that arrives faster",
+    summary:
+      "Twenty-five answers about commissions, shop maps and Minecraft in one place — and a lighter home page.",
+    cover: {
+      src: "/portfolio/ironholt.png",
+      alt: "A sprawling RPG city of stone walls, towers and red roofs",
+      pictured: { name: "Ironholt", slug: "ironholt" },
+    },
+    body: [
+      {
+        heading: "A page for the questions people ask first",
+        blocks: [
+          {
+            kind: "text",
+            text: "Most conversations in Discord start with the same handful of questions: who actually builds the maps, how a commission starts, how payment works, whether a map will run on a particular server. The answers now live on one page.",
+          },
+          {
+            kind: "list",
+            items: [
+              "How I work — from collecting the details to the layout we agree on before a single block is placed, and how you can follow the build.",
+              "Ordering and payment — where to order, how the price is worked out, the two ways to pay, revisions and refunds.",
+              "Shop maps and commissions — what you can do with a map you bought, and why a commissioned map is fully yours.",
+              "Minecraft maps in general — Java versions, what a schematic is, and how to get a map onto your own server.",
+            ],
+          },
+          {
+            kind: "text",
+            text: "Where the wiki already has a step-by-step guide, the answer is short and links to it. More questions will keep arriving — if yours is missing, ask it in Discord and it may well end up on the page.",
+          },
+        ],
+      },
+      {
+        heading: "The home page got lighter",
+        blocks: [
+          {
+            kind: "text",
+            text: "The home page was downloading code it never used — the part of the site that handles accounts, even though the studio side shows no account at all. It now loads only where it is needed, which takes about a fifth off the home page's scripts, and the first screen's text no longer waits for them to show up.",
+          },
+        ],
+      },
+    ],
+    link: { href: "/faq", label: "Read the FAQ" },
+  },
+  {
+    slug: "reviews-with-faces",
+    date: "2026-09-24",
+    area: "studio",
+    title: "Reviews with faces, and work pages worth lingering on",
+    summary:
+      "Client reviews now show who wrote them, and every portfolio page tells you what the build actually was.",
+    cover: {
+      src: "/portfolio/hollowpeak-hold.png",
+      alt: "A fortified medieval stronghold carved into a snowy mountain",
+      pictured: { name: "Hollowpeak Hold", slug: "hollowpeak-hold" },
+    },
+    body: [
+      {
+        heading: "Reviews",
+        blocks: [
+          {
+            kind: "text",
+            text: "Every review now carries the client's own avatar, and its page takes on the colour of its card. At the bottom you can move straight on to the next review instead of going back to the list.",
+          },
+        ],
+      },
+      {
+        heading: "Work pages",
+        blocks: [
+          {
+            kind: "text",
+            text: "A portfolio page now opens with a large cover and three quick facts about the build: its size, how long it took, and what it cost — or, for a personal project, what kind of build it is. The size is also given in football pitches — 200×200 blocks means little if you have never played Minecraft, a few pitches means a lot.",
+          },
+          {
+            kind: "text",
+            text: "Below the description, the neighbouring works follow as cards, and a short note points to the Contact page if you want something similar.",
+          },
+        ],
+      },
+      {
+        heading: "Back takes you back",
+        blocks: [
+          {
+            kind: "text",
+            text: "The Back link on a review or a work page used to drop you at the top of the page you came from. It now returns you to the card you clicked, and highlights it for a moment so you can see where you were.",
+          },
+        ],
+      },
+    ],
+    link: { href: "/portfolio", label: "Browse the portfolio" },
+  },
+  {
+    slug: "a-world-on-the-home-page",
+    date: "2026-09-24",
+    area: "studio",
+    title: "The home page grows its own world",
+    summary:
+      "The first screen is now a Minecraft-style world generated from a single number — a different one on every visit.",
+    cover: {
+      src: "/portfolio/amberhive-hollow.png",
+      alt: "A fantasy garden sanctuary of giant flowers and winding paths",
+      pictured: { name: "Amberhive Hollow", slug: "amberhive-hollow" },
+    },
+    body: [
+      {
+        heading: "What you are looking at",
+        blocks: [
+          {
+            kind: "text",
+            text: "The map behind the first screen is not a picture. It grows from one number, the world seed, much the way a Minecraft world does: a height field decides where the water, beaches, forests, meadows, rock and snow go, a second field adds climate, and a third one brings the clouds. Every block is one square, drawn without smoothing.",
+          },
+          {
+            kind: "text",
+            text: "Each visit starts from a new seed, so the world you see is almost certainly one nobody else has seen. The land drifts slowly one way, the clouds faster the other, and the clouds gather one by one after the world appears.",
+          },
+        ],
+      },
+      {
+        heading: "Make a new one",
+        blocks: [
+          {
+            kind: "text",
+            text: "The seed is shown in the corner. Press New world next to it and a fresh one fades in without stopping the drift.",
+          },
+        ],
+      },
+    ],
+    link: { href: "/", label: "See it on the home page" },
+  },
+  {
     slug: "a-faster-storefront",
     date: "2026-09-07",
     area: "marketplace",

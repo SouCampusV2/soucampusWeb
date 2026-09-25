@@ -34,13 +34,18 @@ export function Hero() {
       <HeroWorld />
 
       <div className="relative w-full px-4 pb-24 pt-32 md:px-12 md:pb-0">
+        {/* ⚠️ На тач-экранах размытия нет (pointer-coarse:, 25.09): под
+            панелью движется карта, и backdrop-blur пересчитывается на
+            каждом кадре по всей её площади — на телефоне это подёргивание
+            карты. Вместо размытия фон плотнее (85% вместо 60%), чтобы
+            текст читался. Тот же приём у плашки World seed (HeroWorld). */}
         {/* Проявление — CSS-анимацией (animate-hero-in в globals.css), а
             не Motion. У Motion начальный opacity: 0 лежит в серверном HTML,
             а снимает его JS после гидратации: Chrome не считает невидимый
             текст показанным, и LCP ждал весь бандл, хотя заголовок уже
             пришёл с HTML. CSS-анимация стартует с первой отрисовки. */}
         <div
-          className="animate-hero-in motion-reduce:animate-none max-w-2xl rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/60 p-7 backdrop-blur-xl sm:p-10 dark:border-zinc-50/[0.08] dark:bg-zinc-950/60"
+          className="animate-hero-in motion-reduce:animate-none max-w-2xl rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/60 p-7 backdrop-blur-xl sm:p-10 pointer-coarse:bg-[#fbfbff]/85 pointer-coarse:backdrop-blur-none dark:border-zinc-50/[0.08] dark:bg-zinc-950/60 dark:pointer-coarse:bg-zinc-950/85"
         >
           <h1 className="tracking-tight text-zinc-950 dark:text-zinc-50">
             <span

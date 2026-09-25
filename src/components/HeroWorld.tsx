@@ -43,7 +43,37 @@ import type { WorldRequest, WorldResponse } from "@/components/hero-world.worker
 
 const CELL = 7; // экранных пикселей на блок
 
+// Проявление первого мира. Было 0.7 с — на телефоне мир и так появляется
+// поздно (ждёт весь JS), и долгое проявление добавляло к этому ещё.
+// ⚠️ Готовую картинку мира в HTML пробовали 25.09 и убрали по решению
+// владельца: смена статичной карты на случайную сразу после загрузки
+// слишком заметна. Не возвращать без нового довода.
+const FIRST_FADE_MS = 300;
+
+// Земля едет как облака — решение владельца 25.09 после сравнения
+// вариантов на телефоне. Раньше она шла экран за ~205 с и рисовалась в
+// разрешении экрана (до 2×): на телефоне это ~2 px/с, и чёткую картинку
+// браузер двигал ступеньками по пикселям экрана — «рывками, будто лагает».
+// Небо, нарисованное в CSS-пикселях, при этом всегда шло плавно. Теперь
+// и земля в CSS-пикселях, и скорость у неё та же, что у облаков.
+// ⚠️ Пробовали и отвергли: скорость в пикселях от 1440 px («по пикселям
+// тоже рывки»), холст в полном разрешении экрана, реже перерисовываемое
+// небо. Разбор — docs/PERF.md, 25.09.
+const LAND_SCREEN_MS = 40000;
+const SKY_SCREEN_MS = 40000;
+
 const randomSeed = () => Math.floor(Math.random() * 99999);
+
+// Воркер — при загрузке модуля, а не в эффекте (25.09). Эффекты идут
+// после гидратации ВСЕЙ страницы, а код воркера — три запроса подряд
+// (загрузчик Turbopack, рантайм, сам генератор). Созданный здесь, он
+// качается параллельно с гидратацией. На сервере window нет — там его
+// не создаём. Забирает его первый эффект; следующие (после ухода со
+// страницы и возврата) создают свой.
+let earlyWorker: Worker | null =
+  typeof window === "undefined"
+    ? null
+    : new Worker(new URL("./hero-world.worker.ts", import.meta.url));
 
 export function HeroWorld() {
   const boxRef = useRef<HTMLDivElement>(null);
@@ -85,7 +115,8 @@ export function HeroWorld() {
     let requestId = 0;
     // Мир считает воркер (hero-world.worker.ts), а не этот эффект: иначе
     // ~100 мс генерации на телефоне блокировали бы основной поток и TBT.
-    const worker = new Worker(new URL("./hero-world.worker.ts", import.meta.url));
+    const worker = earlyWorker ?? new Worker(new URL("./hero-world.worker.ts", import.meta.url));
+    earlyWorker = null;
     // Отсчёт облаков — от показа ТЕКУЩЕГО мира: у нового мира небо снова
     // чистое и облака набегают заново, а при смене размера окна того же
     // мира отсчёт не сбрасывается и пересобранное небо догоняет фазу.
@@ -199,16 +230,14 @@ export function HeroWorld() {
       window.clearInterval(timer);
       if (world.seed !== shownSeed) start = performance.now();
       shownSeed = world.seed;
-      // Земля — в разрешении экрана (dpr до 2): это её чёткие края.
-      // Облака — в CSS-пикселях: они полупрозрачные, на ретине лишняя
-      // чёткость им не нужна, а холст неба самый большой (~1.8 ширины экрана).
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      // Оба холста — в CSS-пикселях, без умножения на плотность экрана:
+      // так браузер двигает их плавно, на доли пикселя (см. LAND_SCREEN_MS).
       landData.width = cols;
       landData.height = rows;
       landData.getContext("2d")!.putImageData(new ImageData(world.land, cols, rows), 0, 0);
       // Холсты — на ДВЕ копии мира по ширине (см. blit).
-      land.width = 2 * cols * CELL * dpr;
-      land.height = rows * CELL * dpr;
+      land.width = 2 * cols * CELL;
+      land.height = rows * CELL;
       land.style.width = `${2 * cols * CELL}px`;
       land.style.height = `${rows * CELL}px`;
       blit(landData, landCtx);
@@ -223,11 +252,8 @@ export function HeroWorld() {
       cloud = { img: world.sky, image: new ImageData(world.sky, skyCols, rows), appearAt: world.appearAt, done: world.done };
       paintSky();
       if (!reduce) timer = window.setInterval(paintSky, 100);
-      // Скорости — прежние, пересчитанные в «экран за столько-то»: земля
-      // проходила 0.4 экрана за 82 с (экран за ~205 с), облака 0.82 экрана
-      // за 33 с (экран за ~40 с; 33 с — уже на 15% медленнее, 24.09).
-      drift(land, cols * CELL, 205000, "right");
-      drift(sky, skyCols * CELL, 40000, "left");
+      drift(land, cols * CELL, LAND_SCREEN_MS, "right");
+      drift(sky, skyCols * CELL, SKY_SCREEN_MS, "left");
       rampUp();
     }
 
@@ -247,8 +273,9 @@ export function HeroWorld() {
     function show(world: WorldResponse) {
       if (!box) return;
       if (reduce || shownSeed === null) {
+        const first = shownSeed === null;
         draw(world);
-        fadeIn(700);
+        fadeIn(first ? FIRST_FADE_MS : 700);
         return;
       }
       pending = world;
@@ -317,7 +344,7 @@ export function HeroWorld() {
         <canvas ref={skyRef} className={`${layer} opacity-55`} />
       </div>
       {hydrated && (
-        <div className="absolute bottom-5 right-5 z-10 flex items-center gap-3 rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/80 py-1.5 pl-4 pr-1.5 text-sm text-zinc-950 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/80 dark:text-zinc-50">
+        <div className="absolute bottom-5 right-5 z-10 flex items-center gap-3 rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/80 py-1.5 pl-4 pr-1.5 text-sm text-zinc-950 backdrop-blur-xl pointer-coarse:bg-[#fbfbff]/90 pointer-coarse:backdrop-blur-none dark:border-zinc-50/[0.08] dark:bg-zinc-950/80 dark:text-zinc-50 dark:pointer-coarse:bg-zinc-950/90">
           <span className="tabular-nums">
             World seed <span className="font-semibold">{seed}</span>
           </span>
