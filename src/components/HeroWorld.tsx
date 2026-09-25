@@ -43,10 +43,35 @@ import type { WorldRequest, WorldResponse } from "@/components/hero-world.worker
 
 const CELL = 7; // экранных пикселей на блок
 
+// Готовая картинка мира на первый кадр (25.09). Воркер считает мир только
+// после загрузки всего JS — на телефоне это секунды синего экрана. Эта
+// картинка приходит с HTML и видна сразу; настоящий, случайный мир
+// проявляется поверх неё, и она убирается. Рисует её
+// scripts/gen-hero-placeholder.mjs тем же генератором; COLS и ROWS —
+// оттуда, пиксель картинки = блок = CELL экранных пикселей.
+const PLACEHOLDER_COLS = 210;
+const PLACEHOLDER_ROWS = 160;
+
+// Проявление первого мира. Было 0.7 с — поверх готовой картинки долгое
+// проявление читалось бы как задержка, а не как эффект.
+const FIRST_FADE_MS = 300;
+
 const randomSeed = () => Math.floor(Math.random() * 99999);
+
+// Воркер — при загрузке модуля, а не в эффекте (25.09). Эффекты идут
+// после гидратации ВСЕЙ страницы, а код воркера — три запроса подряд
+// (загрузчик Turbopack, рантайм, сам генератор). Созданный здесь, он
+// качается параллельно с гидратацией. На сервере window нет — там его
+// не создаём. Забирает его первый эффект; следующие (после ухода со
+// страницы и возврата) создают свой.
+let earlyWorker: Worker | null =
+  typeof window === "undefined"
+    ? null
+    : new Worker(new URL("./hero-world.worker.ts", import.meta.url));
 
 export function HeroWorld() {
   const boxRef = useRef<HTMLDivElement>(null);
+  const placeholderRef = useRef<HTMLDivElement>(null);
   const landRef = useRef<HTMLCanvasElement>(null);
   const skyRef = useRef<HTMLCanvasElement>(null);
   const hydrated = useHydrated();
@@ -69,6 +94,7 @@ export function HeroWorld() {
   // новый мир приходит через плавную смену (crossfade) — см. show().
   useEffect(() => {
     const box = boxRef.current;
+    const placeholder = placeholderRef.current;
     const land = landRef.current;
     const sky = skyRef.current;
     const landCtx = land?.getContext("2d");
@@ -85,7 +111,8 @@ export function HeroWorld() {
     let requestId = 0;
     // Мир считает воркер (hero-world.worker.ts), а не этот эффект: иначе
     // ~100 мс генерации на телефоне блокировали бы основной поток и TBT.
-    const worker = new Worker(new URL("./hero-world.worker.ts", import.meta.url));
+    const worker = earlyWorker ?? new Worker(new URL("./hero-world.worker.ts", import.meta.url));
+    earlyWorker = null;
     // Отсчёт облаков — от показа ТЕКУЩЕГО мира: у нового мира небо снова
     // чистое и облака набегают заново, а при смене размера окна того же
     // мира отсчёт не сбрасывается и пересобранное небо догоняет фазу.
@@ -232,10 +259,22 @@ export function HeroWorld() {
     }
 
     /** Проявление: и первого мира поверх синего фона, и каждого следующего. */
-    function fadeIn(ms: number) {
+    function fadeIn(ms: number, onDone?: () => void) {
       if (!box) return;
       box.style.opacity = "1";
-      if (!reduce) box.animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: "ease-out" });
+      if (reduce) {
+        onDone?.();
+        return;
+      }
+      const a = box.animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: "ease-out" });
+      if (onDone) a.onfinish = onDone;
+    }
+
+    // Готовая картинка нужна только до первого мира. Дальше она мешала
+    // бы: при смене мира холст гаснет, и сквозь него проступил бы не
+    // синий фон, а чужая карта.
+    function dropPlaceholder() {
+      if (placeholder) placeholder.style.display = "none";
     }
 
     /**
@@ -247,8 +286,9 @@ export function HeroWorld() {
     function show(world: WorldResponse) {
       if (!box) return;
       if (reduce || shownSeed === null) {
+        const first = shownSeed === null;
         draw(world);
-        fadeIn(700);
+        fadeIn(first ? FIRST_FADE_MS : 700, first ? dropPlaceholder : undefined);
         return;
       }
       pending = world;
@@ -312,6 +352,19 @@ export function HeroWorld() {
 
   return (
     <>
+      {/* Фон, а не <img>: повтор по X (мир бесшовный) и пиксельное
+          увеличение без сглаживания делает CSS. Картинка неподвижна,
+          поэтому pixelated здесь безопасен — размытие, из-за которого он
+          не годится для холстов (см. draw), бывает только при сдвиге. */}
+      <div
+        ref={placeholderRef}
+        className="absolute inset-0 bg-repeat-x [image-rendering:pixelated]"
+        style={{
+          backgroundImage: "url(/hero-world.png)",
+          backgroundSize: `${PLACEHOLDER_COLS * CELL}px ${PLACEHOLDER_ROWS * CELL}px`,
+        }}
+        aria-hidden="true"
+      />
       <div ref={boxRef} className="absolute inset-0 overflow-hidden opacity-0" aria-hidden="true">
         <canvas ref={landRef} className={layer} />
         <canvas ref={skyRef} className={`${layer} opacity-55`} />
