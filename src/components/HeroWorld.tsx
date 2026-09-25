@@ -63,20 +63,29 @@ const FIRST_FADE_MS = 300;
 //       облака набегают (~28 с), каждая перерисовка — заново загрузить
 //       большой холст в видеокарту прямо во время движения;
 //   f — как d, но облака сразу на месте, без набегания: небо рисуется
-//       один раз. Если f плавный, а d нет — рывки от перерисовки неба.
+//       один раз. Если f плавный, а d нет — рывки от перерисовки неба;
+//   g — земля рисуется как небо, в CSS-пикселях (холст 1×), скорость
+//       прежняя. Небо, нарисованное так, владелец видит плавным, а
+//       чёткую землю — «рывками»: похоже, её браузер двигает ступеньками
+//       по пикселям экрана;
+//   h — как g, и земля едет с той же скоростью, что облака (экран за
+//       40 с). По умолчанию, по просьбе владельца 25.09: «сделай такое же
+//       движение, как у облаков».
 const MOTION_VARIANTS = {
-  a: { minWidth: 0, maxDpr: 2, skyMs: 100 },
-  b: { minWidth: 1440, maxDpr: 2, skyMs: 100 },
-  c: { minWidth: 800, maxDpr: 2, skyMs: 100 },
-  d: { minWidth: 800, maxDpr: 3, skyMs: 100 },
-  e: { minWidth: 800, maxDpr: 3, skyMs: 400 },
+  a: { minWidth: 0, maxDpr: 2, skyMs: 100, landMs: 205000 },
+  b: { minWidth: 1440, maxDpr: 2, skyMs: 100, landMs: 205000 },
+  c: { minWidth: 800, maxDpr: 2, skyMs: 100, landMs: 205000 },
+  d: { minWidth: 800, maxDpr: 3, skyMs: 100, landMs: 205000 },
+  e: { minWidth: 800, maxDpr: 3, skyMs: 400, landMs: 205000 },
   // skyMs 0 — облака сразу целиком, как при prefers-reduced-motion.
-  f: { minWidth: 800, maxDpr: 3, skyMs: 0 },
+  f: { minWidth: 800, maxDpr: 3, skyMs: 0, landMs: 205000 },
+  g: { minWidth: 0, maxDpr: 1, skyMs: 100, landMs: 205000 },
+  h: { minWidth: 0, maxDpr: 1, skyMs: 100, landMs: 40000 },
 } as const;
 
 function motionVariant() {
   const key = new URLSearchParams(window.location.search).get("hero");
-  return MOTION_VARIANTS[key as keyof typeof MOTION_VARIANTS] ?? MOTION_VARIANTS.a;
+  return MOTION_VARIANTS[key as keyof typeof MOTION_VARIANTS] ?? MOTION_VARIANTS.h;
 }
 
 const randomSeed = () => Math.floor(Math.random() * 99999);
@@ -275,7 +284,7 @@ export function HeroWorld() {
       // Скорости — прежние, пересчитанные в «экран за столько-то»: земля
       // проходила 0.4 экрана за 82 с (экран за ~205 с), облака 0.82 экрана
       // за 33 с (экран за ~40 с; 33 с — уже на 15% медленнее, 24.09).
-      drift(land, cols * CELL, 205000, "right");
+      drift(land, cols * CELL, motion.landMs, "right");
       drift(sky, skyCols * CELL, 40000, "left");
       rampUp();
     }
