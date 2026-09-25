@@ -1,6 +1,3 @@
-"use client";
-
-import { motion } from "motion/react";
 import { Unbounded } from "next/font/google";
 import { Button } from "@/components/Button";
 import { HeroWorld } from "@/components/HeroWorld";
@@ -37,11 +34,13 @@ export function Hero() {
       <HeroWorld />
 
       <div className="relative w-full px-4 pb-24 pt-32 md:px-12 md:pb-0">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.1 }}
-          className="max-w-2xl rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/60 p-7 backdrop-blur-xl sm:p-10 dark:border-zinc-50/[0.08] dark:bg-zinc-950/60"
+        {/* Проявление — CSS-анимацией (animate-hero-in в globals.css), а
+            не Motion. У Motion начальный opacity: 0 лежит в серверном HTML,
+            а снимает его JS после гидратации: Chrome не считает невидимый
+            текст показанным, и LCP ждал весь бандл, хотя заголовок уже
+            пришёл с HTML. CSS-анимация стартует с первой отрисовки. */}
+        <div
+          className="animate-hero-in motion-reduce:animate-none max-w-2xl rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/60 p-7 backdrop-blur-xl sm:p-10 dark:border-zinc-50/[0.08] dark:bg-zinc-950/60"
         >
           <h1 className="tracking-tight text-zinc-950 dark:text-zinc-50">
             <span
@@ -75,7 +74,7 @@ export function Hero() {
               Order a map
             </Button>
           </div>
-        </motion.div>
+        </div>
       </div>
     </section>
   );

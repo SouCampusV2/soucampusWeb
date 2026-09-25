@@ -80,6 +80,18 @@ body {
   --color-blue-650: #1552f1;
   --color-blue-750: #1742cf;
   --color-blue-850: #1b3ba3;
+
+  /* Проявление панели hero — те же числа, что были у Motion (0.6 с,
+     задержка 0.1 с, подъём на 16px). `both` держит начальный кадр во
+     время задержки. Почему не Motion — комментарий в Hero.tsx. */
+  --animate-hero-in: hero-in 0.6s ease 0.1s both;
+
+  @keyframes hero-in {
+    from {
+      opacity: 0;
+      transform: translateY(16px);
+    }
+  }
 }
 
 /*
