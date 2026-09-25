@@ -50,43 +50,17 @@ const CELL = 7; // экранных пикселей на блок
 // слишком заметна. Не возвращать без нового довода.
 const FIRST_FADE_MS = 300;
 
-// ⚠️ ВРЕМЕННО (25.09): варианты движения для сравнения на телефоне,
-// выбираются параметром ?hero= в адресе. После выбора владельца оставить
-// один, а этот словарь убрать.
-//   a — как было до 25.09: скорость «экран за N секунд» от ширины экрана
-//       (на телефоне земля ~2 px/с), холст в разрешении экрана до 2×;
-//   b — экран считается не уже 1440 px: скорость десктопа (~7 px/с);
-//   c — не уже 800 px: вдвое быстрее, чем было (~3.6 px/с);
-//   d — как c, но холст в полном разрешении экрана (до 3×): на телефонах
-//       с плотностью 3 блоки не пересчитываются при движении из 2× в 3×;
-//   e — как d, но небо перерисовывается раз в 400 мс, а не в 100: пока
-//       облака набегают (~28 с), каждая перерисовка — заново загрузить
-//       большой холст в видеокарту прямо во время движения;
-//   f — как d, но облака сразу на месте, без набегания: небо рисуется
-//       один раз. Если f плавный, а d нет — рывки от перерисовки неба;
-//   g — земля рисуется как небо, в CSS-пикселях (холст 1×), скорость
-//       прежняя. Небо, нарисованное так, владелец видит плавным, а
-//       чёткую землю — «рывками»: похоже, её браузер двигает ступеньками
-//       по пикселям экрана;
-//   h — как g, и земля едет с той же скоростью, что облака (экран за
-//       40 с). По умолчанию, по просьбе владельца 25.09: «сделай такое же
-//       движение, как у облаков».
-const MOTION_VARIANTS = {
-  a: { minWidth: 0, maxDpr: 2, skyMs: 100, landMs: 205000 },
-  b: { minWidth: 1440, maxDpr: 2, skyMs: 100, landMs: 205000 },
-  c: { minWidth: 800, maxDpr: 2, skyMs: 100, landMs: 205000 },
-  d: { minWidth: 800, maxDpr: 3, skyMs: 100, landMs: 205000 },
-  e: { minWidth: 800, maxDpr: 3, skyMs: 400, landMs: 205000 },
-  // skyMs 0 — облака сразу целиком, как при prefers-reduced-motion.
-  f: { minWidth: 800, maxDpr: 3, skyMs: 0, landMs: 205000 },
-  g: { minWidth: 0, maxDpr: 1, skyMs: 100, landMs: 205000 },
-  h: { minWidth: 0, maxDpr: 1, skyMs: 100, landMs: 40000 },
-} as const;
-
-function motionVariant() {
-  const key = new URLSearchParams(window.location.search).get("hero");
-  return MOTION_VARIANTS[key as keyof typeof MOTION_VARIANTS] ?? MOTION_VARIANTS.h;
-}
+// Земля едет как облака — решение владельца 25.09 после сравнения
+// вариантов на телефоне. Раньше она шла экран за ~205 с и рисовалась в
+// разрешении экрана (до 2×): на телефоне это ~2 px/с, и чёткую картинку
+// браузер двигал ступеньками по пикселям экрана — «рывками, будто лагает».
+// Небо, нарисованное в CSS-пикселях, при этом всегда шло плавно. Теперь
+// и земля в CSS-пикселях, и скорость у неё та же, что у облаков.
+// ⚠️ Пробовали и отвергли: скорость в пикселях от 1440 px («по пикселям
+// тоже рывки»), холст в полном разрешении экрана, реже перерисовываемое
+// небо. Разбор — docs/PERF.md, 25.09.
+const LAND_SCREEN_MS = 40000;
+const SKY_SCREEN_MS = 40000;
 
 const randomSeed = () => Math.floor(Math.random() * 99999);
 
@@ -131,7 +105,6 @@ export function HeroWorld() {
     const skyCtx = sky?.getContext("2d");
     if (!box || !land || !sky || !landCtx || !skyCtx) return;
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const motion = motionVariant();
 
     let anims: Animation[] = [];
     let visible = true;
@@ -178,7 +151,7 @@ export function HeroWorld() {
     // Небо перерисовывается раз в 100 мс и только пока облака набегают.
     function paintSky() {
       if (!cloud || !skyCtx) return;
-      const elapsed = reduce || motion.skyMs === 0 ? Infinity : (performance.now() - start) / 1000;
+      const elapsed = reduce ? Infinity : (performance.now() - start) / 1000;
       paintClouds(cloud.img, cloud.appearAt, elapsed);
       skyData.getContext("2d")!.putImageData(cloud.image, 0, 0);
       blit(skyData, skyCtx);
@@ -201,7 +174,7 @@ export function HeroWorld() {
       }
       const a = el.animate(
         [{ transform: `translate3d(${from}px,0,0)` }, { transform: `translate3d(${to}px,0,0)` }],
-        { duration: (screenMs * tile) / Math.max(box!.clientWidth, motion.minWidth), iterations: Infinity, easing: "linear" },
+        { duration: (screenMs * tile) / box!.clientWidth, iterations: Infinity, easing: "linear" },
       );
       if (!visible) a.pause();
       anims.push(a);
@@ -257,16 +230,14 @@ export function HeroWorld() {
       window.clearInterval(timer);
       if (world.seed !== shownSeed) start = performance.now();
       shownSeed = world.seed;
-      // Земля — в разрешении экрана (dpr до 2): это её чёткие края.
-      // Облака — в CSS-пикселях: они полупрозрачные, на ретине лишняя
-      // чёткость им не нужна, а холст неба самый большой (~1.8 ширины экрана).
-      const dpr = Math.min(window.devicePixelRatio || 1, motion.maxDpr);
+      // Оба холста — в CSS-пикселях, без умножения на плотность экрана:
+      // так браузер двигает их плавно, на доли пикселя (см. LAND_SCREEN_MS).
       landData.width = cols;
       landData.height = rows;
       landData.getContext("2d")!.putImageData(new ImageData(world.land, cols, rows), 0, 0);
       // Холсты — на ДВЕ копии мира по ширине (см. blit).
-      land.width = 2 * cols * CELL * dpr;
-      land.height = rows * CELL * dpr;
+      land.width = 2 * cols * CELL;
+      land.height = rows * CELL;
       land.style.width = `${2 * cols * CELL}px`;
       land.style.height = `${rows * CELL}px`;
       blit(landData, landCtx);
@@ -280,12 +251,9 @@ export function HeroWorld() {
       // world.sky, а картинка видит правку.
       cloud = { img: world.sky, image: new ImageData(world.sky, skyCols, rows), appearAt: world.appearAt, done: world.done };
       paintSky();
-      if (!reduce && motion.skyMs > 0) timer = window.setInterval(paintSky, motion.skyMs);
-      // Скорости — прежние, пересчитанные в «экран за столько-то»: земля
-      // проходила 0.4 экрана за 82 с (экран за ~205 с), облака 0.82 экрана
-      // за 33 с (экран за ~40 с; 33 с — уже на 15% медленнее, 24.09).
-      drift(land, cols * CELL, motion.landMs, "right");
-      drift(sky, skyCols * CELL, 40000, "left");
+      if (!reduce) timer = window.setInterval(paintSky, 100);
+      drift(land, cols * CELL, LAND_SCREEN_MS, "right");
+      drift(sky, skyCols * CELL, SKY_SCREEN_MS, "left");
       rampUp();
     }
 
