@@ -58,12 +58,20 @@ const FIRST_FADE_MS = 300;
 //   b — экран считается не уже 1440 px: скорость десктопа (~7 px/с);
 //   c — не уже 800 px: вдвое быстрее, чем было (~3.6 px/с);
 //   d — как c, но холст в полном разрешении экрана (до 3×): на телефонах
-//       с плотностью 3 блоки не пересчитываются при движении из 2× в 3×.
+//       с плотностью 3 блоки не пересчитываются при движении из 2× в 3×;
+//   e — как d, но небо перерисовывается раз в 400 мс, а не в 100: пока
+//       облака набегают (~28 с), каждая перерисовка — заново загрузить
+//       большой холст в видеокарту прямо во время движения;
+//   f — как d, но облака сразу на месте, без набегания: небо рисуется
+//       один раз. Если f плавный, а d нет — рывки от перерисовки неба.
 const MOTION_VARIANTS = {
-  a: { minWidth: 0, maxDpr: 2 },
-  b: { minWidth: 1440, maxDpr: 2 },
-  c: { minWidth: 800, maxDpr: 2 },
-  d: { minWidth: 800, maxDpr: 3 },
+  a: { minWidth: 0, maxDpr: 2, skyMs: 100 },
+  b: { minWidth: 1440, maxDpr: 2, skyMs: 100 },
+  c: { minWidth: 800, maxDpr: 2, skyMs: 100 },
+  d: { minWidth: 800, maxDpr: 3, skyMs: 100 },
+  e: { minWidth: 800, maxDpr: 3, skyMs: 400 },
+  // skyMs 0 — облака сразу целиком, как при prefers-reduced-motion.
+  f: { minWidth: 800, maxDpr: 3, skyMs: 0 },
 } as const;
 
 function motionVariant() {
@@ -161,7 +169,7 @@ export function HeroWorld() {
     // Небо перерисовывается раз в 100 мс и только пока облака набегают.
     function paintSky() {
       if (!cloud || !skyCtx) return;
-      const elapsed = reduce ? Infinity : (performance.now() - start) / 1000;
+      const elapsed = reduce || motion.skyMs === 0 ? Infinity : (performance.now() - start) / 1000;
       paintClouds(cloud.img, cloud.appearAt, elapsed);
       skyData.getContext("2d")!.putImageData(cloud.image, 0, 0);
       blit(skyData, skyCtx);
@@ -263,7 +271,7 @@ export function HeroWorld() {
       // world.sky, а картинка видит правку.
       cloud = { img: world.sky, image: new ImageData(world.sky, skyCols, rows), appearAt: world.appearAt, done: world.done };
       paintSky();
-      if (!reduce) timer = window.setInterval(paintSky, 100);
+      if (!reduce && motion.skyMs > 0) timer = window.setInterval(paintSky, motion.skyMs);
       // Скорости — прежние, пересчитанные в «экран за столько-то»: земля
       // проходила 0.4 экрана за 82 с (экран за ~205 с), облака 0.82 экрана
       // за 33 с (экран за ~40 с; 33 с — уже на 15% медленнее, 24.09).
