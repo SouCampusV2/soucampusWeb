@@ -50,6 +50,13 @@ const CELL = 7; // экранных пикселей на блок
 // слишком заметна. Не возвращать без нового довода.
 const FIRST_FADE_MS = 300;
 
+// Скорость задана «экран за столько-то секунд» (см. drift), но экраном
+// считается не меньше этой ширины (25.09). Иначе телефон в 390 px двигал
+// карту вчетверо медленнее монитора — ~2 px/с у земли: она казалась
+// стоящей, а шаги по пиксельной сетке читались как рывки. От 1440 px и
+// шире скорость прежняя.
+const SPEED_MIN_WIDTH = 1440;
+
 const randomSeed = () => Math.floor(Math.random() * 99999);
 
 // Воркер — при загрузке модуля, а не в эффекте (25.09). Эффекты идут
@@ -162,7 +169,7 @@ export function HeroWorld() {
       }
       const a = el.animate(
         [{ transform: `translate3d(${from}px,0,0)` }, { transform: `translate3d(${to}px,0,0)` }],
-        { duration: (screenMs * tile) / box!.clientWidth, iterations: Infinity, easing: "linear" },
+        { duration: (screenMs * tile) / Math.max(box!.clientWidth, SPEED_MIN_WIDTH), iterations: Infinity, easing: "linear" },
       );
       if (!visible) a.pause();
       anims.push(a);
@@ -337,7 +344,7 @@ export function HeroWorld() {
         <canvas ref={skyRef} className={`${layer} opacity-55`} />
       </div>
       {hydrated && (
-        <div className="absolute bottom-5 right-5 z-10 flex items-center gap-3 rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/80 py-1.5 pl-4 pr-1.5 text-sm text-zinc-950 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/80 dark:text-zinc-50">
+        <div className="absolute bottom-5 right-5 z-10 flex items-center gap-3 rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/80 py-1.5 pl-4 pr-1.5 text-sm text-zinc-950 backdrop-blur-xl pointer-coarse:bg-[#fbfbff]/90 pointer-coarse:backdrop-blur-none dark:border-zinc-50/[0.08] dark:bg-zinc-950/80 dark:text-zinc-50 dark:pointer-coarse:bg-zinc-950/90">
           <span className="tabular-nums">
             World seed <span className="font-semibold">{seed}</span>
           </span>
