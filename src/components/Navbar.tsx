@@ -1,5 +1,6 @@
 "use client";
 
+import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -22,7 +23,13 @@ import { useUser } from "@/lib/useUser";
 import { CREATOR_SIGNUPS_OPEN } from "@/lib/flags";
 import { SHOP_NAV_LINKS } from "@/lib/products";
 import { creatorHref } from "@/lib/creators";
-import { NotificationsBell } from "@/components/NotificationsBell";
+
+// Колокол — отдельным чанком: он есть только в режиме магазина, а тянет
+// за собой клиент Supabase и Realtime. Статический импорт клал их в
+// бандл каждой страницы, включая лендинг (25.09).
+const NotificationsBell = dynamic(() =>
+  import("@/components/NotificationsBell").then((m) => m.NotificationsBell),
+);
 
 // Same display font as the hero headings — the navbar rhymes with them.
 const displayFont = Unbounded({
@@ -35,7 +42,10 @@ export function Navbar() {
   const pathname = usePathname();
   const [prevPathname, setPrevPathname] = useState(pathname);
   const { count } = useCart();
-  const { user, loading: userLoading } = useUser();
+  // Аккаунт навбар показывает только в режиме магазина — там и спрашиваем
+  // Supabase. На студийной стороне хук молчит, и клиент Supabase на
+  // лендинг не грузится вовсе (замер 25.09, docs/PERF.md).
+  const { user, loading: userLoading } = useUser(isMarketplaceRoute(pathname));
 
   const logout = useLogout();
 

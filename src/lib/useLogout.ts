@@ -2,7 +2,6 @@
 
 import { useRouter, usePathname } from "next/navigation";
 import { useRefresh } from "@/lib/useRefresh";
-import { createSupabaseBrowser } from "@/lib/supabase-browser";
 
 // Выход из аккаунта — один на все места, откуда выходят.
 //
@@ -34,6 +33,9 @@ export function useLogout() {
   const pathname = usePathname();
 
   return async function logout() {
+    // Клиент — по требованию, а не импортом сверху: хук живёт в навбаре на
+    // каждой странице, а выходят редко (см. useUser.ts, 25.09).
+    const { createSupabaseBrowser } = await import("@/lib/supabase-browser");
     const supabase = createSupabaseBrowser();
     await supabase.auth.signOut();
 

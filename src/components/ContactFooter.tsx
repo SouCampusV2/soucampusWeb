@@ -155,6 +155,19 @@ export function ContactFooter() {
                     </Link>
                   </li>
                 ))}
+                {/* FAQ — в футере, но НЕ в NAV_LINKS: тот список рисует и
+                    навбар студии, а там на 760px уже тесно (см. разбор
+                    01.09 в CLAUDE.md). Страница студийная — вопросы в
+                    основном про заказ, — поэтому и волна как у соседей. */}
+                <li>
+                  <Link
+                    href="/faq"
+                    className="inline-block transition-colors hover:text-zinc-950 pointer-coarse:py-1.5 dark:hover:text-zinc-50"
+                    data-page-transition="true"
+                  >
+                    FAQ
+                  </Link>
+                </li>
               </ul>
             </div>
 

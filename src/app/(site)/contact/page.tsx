@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { Unbounded } from "next/font/google";
-import { Button, TERTIARY_UNDERLINE } from "@/components/Button";
+import { Button, INLINE_LINK, TERTIARY_UNDERLINE } from "@/components/Button";
 import Image from "next/image";
 import { ArrowCircle } from "@/components/ArrowCircle";
 import { FaqAccordion } from "@/components/FaqAccordion";
@@ -213,6 +214,14 @@ export default function ContactPage() {
         </h2>
 
         <FaqAccordion items={FAQ} />
+
+        <p className="mt-8 text-sm text-zinc-600 dark:text-zinc-400">
+          More about how I work, shop maps and Minecraft versions —{" "}
+          <Link href="/faq" className={INLINE_LINK} data-page-transition="true">
+            the full FAQ
+          </Link>
+          .
+        </p>
       </section>
       </main>
     </>
