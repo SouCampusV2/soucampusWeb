@@ -43,17 +43,11 @@ import type { WorldRequest, WorldResponse } from "@/components/hero-world.worker
 
 const CELL = 7; // экранных пикселей на блок
 
-// Готовая картинка мира на первый кадр (25.09). Воркер считает мир только
-// после загрузки всего JS — на телефоне это секунды синего экрана. Эта
-// картинка приходит с HTML и видна сразу; настоящий, случайный мир
-// проявляется поверх неё, и она убирается. Рисует её
-// scripts/gen-hero-placeholder.mjs тем же генератором; COLS и ROWS —
-// оттуда, пиксель картинки = блок = CELL экранных пикселей.
-const PLACEHOLDER_COLS = 210;
-const PLACEHOLDER_ROWS = 160;
-
-// Проявление первого мира. Было 0.7 с — поверх готовой картинки долгое
-// проявление читалось бы как задержка, а не как эффект.
+// Проявление первого мира. Было 0.7 с — на телефоне мир и так появляется
+// поздно (ждёт весь JS), и долгое проявление добавляло к этому ещё.
+// ⚠️ Готовую картинку мира в HTML пробовали 25.09 и убрали по решению
+// владельца: смена статичной карты на случайную сразу после загрузки
+// слишком заметна. Не возвращать без нового довода.
 const FIRST_FADE_MS = 300;
 
 const randomSeed = () => Math.floor(Math.random() * 99999);
@@ -71,7 +65,6 @@ let earlyWorker: Worker | null =
 
 export function HeroWorld() {
   const boxRef = useRef<HTMLDivElement>(null);
-  const placeholderRef = useRef<HTMLDivElement>(null);
   const landRef = useRef<HTMLCanvasElement>(null);
   const skyRef = useRef<HTMLCanvasElement>(null);
   const hydrated = useHydrated();
@@ -94,7 +87,6 @@ export function HeroWorld() {
   // новый мир приходит через плавную смену (crossfade) — см. show().
   useEffect(() => {
     const box = boxRef.current;
-    const placeholder = placeholderRef.current;
     const land = landRef.current;
     const sky = skyRef.current;
     const landCtx = land?.getContext("2d");
@@ -259,22 +251,10 @@ export function HeroWorld() {
     }
 
     /** Проявление: и первого мира поверх синего фона, и каждого следующего. */
-    function fadeIn(ms: number, onDone?: () => void) {
+    function fadeIn(ms: number) {
       if (!box) return;
       box.style.opacity = "1";
-      if (reduce) {
-        onDone?.();
-        return;
-      }
-      const a = box.animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: "ease-out" });
-      if (onDone) a.onfinish = onDone;
-    }
-
-    // Готовая картинка нужна только до первого мира. Дальше она мешала
-    // бы: при смене мира холст гаснет, и сквозь него проступил бы не
-    // синий фон, а чужая карта.
-    function dropPlaceholder() {
-      if (placeholder) placeholder.style.display = "none";
+      if (!reduce) box.animate([{ opacity: 0 }, { opacity: 1 }], { duration: ms, easing: "ease-out" });
     }
 
     /**
@@ -288,7 +268,7 @@ export function HeroWorld() {
       if (reduce || shownSeed === null) {
         const first = shownSeed === null;
         draw(world);
-        fadeIn(first ? FIRST_FADE_MS : 700, first ? dropPlaceholder : undefined);
+        fadeIn(first ? FIRST_FADE_MS : 700);
         return;
       }
       pending = world;
@@ -352,19 +332,6 @@ export function HeroWorld() {
 
   return (
     <>
-      {/* Фон, а не <img>: повтор по X (мир бесшовный) и пиксельное
-          увеличение без сглаживания делает CSS. Картинка неподвижна,
-          поэтому pixelated здесь безопасен — размытие, из-за которого он
-          не годится для холстов (см. draw), бывает только при сдвиге. */}
-      <div
-        ref={placeholderRef}
-        className="absolute inset-0 bg-repeat-x [image-rendering:pixelated]"
-        style={{
-          backgroundImage: "url(/hero-world.png)",
-          backgroundSize: `${PLACEHOLDER_COLS * CELL}px ${PLACEHOLDER_ROWS * CELL}px`,
-        }}
-        aria-hidden="true"
-      />
       <div ref={boxRef} className="absolute inset-0 overflow-hidden opacity-0" aria-hidden="true">
         <canvas ref={landRef} className={layer} />
         <canvas ref={skyRef} className={`${layer} opacity-55`} />
