@@ -36,6 +36,7 @@ const STATIC_PATHS = new Set([
   "/portfolio",
   "/about",
   "/contact",
+  "/faq",
   "/marketplace",
   "/terms",
 ]);
