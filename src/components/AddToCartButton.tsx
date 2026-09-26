@@ -7,6 +7,7 @@ import { Button, TERTIARY_UNDERLINE } from "@/components/Button";
 import { useCart, type CartItem } from "@/lib/cart-context";
 import { readApiError } from "@/lib/api-error";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { WaiverCheckbox } from "@/components/WaiverCheckbox";
 
 // Кнопка на странице товара. Оформление заказа — только через /cart,
 // даже для одной покупки: один путь чекаута проще двух.
@@ -58,6 +59,14 @@ export function AddToCartButton({
   // следующей попытки: автоскрытие Notice тут вредно — человек читает
   // «через сколько», а не «что случилось».
   const [limitMessage, setLimitMessage] = useState<string | null>(null);
+
+  // Отказ от права на отзыв для «Buy now» (2026-09-26). Тот же, что в
+  // корзине: путь оплаты один, согласие тоже одно. Галочка появляется
+  // только после первого нажатия Buy now — до этого она мешала бы тем,
+  // кто пришёл положить карту в корзину, а согласие нужно ровно в
+  // момент оплаты.
+  const [waiver, setWaiver] = useState(false);
+  const [askWaiver, setAskWaiver] = useState(false);
 
   // Ответ проверки владения и сам «запрос в полёте». Держим в ref, а не в
   // состоянии: перерисовывать из-за них нечего (кнопка не меняется), а
@@ -161,6 +170,11 @@ export function AddToCartButton({
   // купить карту за €0.01 через инструменты разработчика.
   const buyNow = async () => {
     if (buying) return;
+    // Бесплатной карте согласие не нужно — возвращать нечего.
+    if (product.priceCents > 0 && !waiver) {
+      setAskWaiver(true);
+      return;
+    }
     setBuying(true);
     setLimitMessage(null);
 
@@ -182,7 +196,7 @@ export function AddToCartButton({
       const response = await fetch("/api/checkout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ items: [{ slug: product.slug }] }),
+        body: JSON.stringify({ items: [{ slug: product.slug }], waiver }),
       });
 
       // Покупка требует аккаунта. Сессия могла истечь между открытием
@@ -294,6 +308,12 @@ export function AddToCartButton({
           >
             {buying ? "Redirecting…" : "Buy now"}
           </Button>
+
+          {askWaiver && (
+            <div className="mt-3">
+              <WaiverCheckbox checked={waiver} onChange={setWaiver} missing={!waiver} />
+            </div>
+          )}
         </>
       )}
 

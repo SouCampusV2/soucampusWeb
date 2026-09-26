@@ -10,6 +10,7 @@ import { downloadHref, SESSION_ID_PATTERN } from "@/lib/downloads";
 import { Button, INLINE_LINK } from "@/components/Button";
 import { ClearCartOnSuccess } from "@/components/ClearCartOnSuccess";
 import { DISCORD_INVITE } from "@/lib/site";
+import { WAIVER_TEXT } from "@/lib/legal";
 
 // Страница персональная (у каждого свой session_id в адресе) — кэшировать
 // и предсобирать нечего, рендерится на каждый запрос.
@@ -180,7 +181,21 @@ export default async function SuccessPage({
           ))}
         </ul>
 
-        <p className="mt-10 text-sm text-zinc-500 dark:text-zinc-400">
+        {/* Подтверждение согласия после сделки (2026-09-26). Право ЕС
+            требует подтвердить покупателю, что он согласился на
+            немедленную выдачу и потерял право на отзыв, — повторяем здесь
+            те же слова, что были у галочки. Бесплатные заказы сюда не
+            приходят вовсе. */}
+        <p className="mt-10 text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+          At checkout you agreed: “{WAIVER_TEXT}” Faulty files are fixed or
+          refunded — see the{" "}
+          <Link href="/terms#refunds" className={`font-medium ${INLINE_LINK}`}>
+            refund policy
+          </Link>
+          .
+        </p>
+
+        <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
           Lost the link?{" "}
           <Link
             href="/contact"

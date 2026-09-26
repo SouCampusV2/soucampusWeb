@@ -25,6 +25,7 @@ import {
 } from "@/components/Button";
 import { PageGlow } from "@/components/PageGlow";
 import { CartRecommendations } from "@/components/CartRecommendations";
+import { WaiverCheckbox } from "@/components/WaiverCheckbox";
 import { readApiError } from "@/lib/api-error";
 
 // Клиентская страница целиком (нужен localStorage через useCart) — как
@@ -71,6 +72,11 @@ export default function CartPage() {
   // таймер пришлось бы чистить при размонтировании, а полоска и так
   // уходит по следующему действию или по крестику.
   const [undo, setUndo] = useState<{ items: CartItem[]; label: string } | null>(null);
+  // Отказ от права на отзыв — только когда есть что оплачивать (см.
+  // WaiverCheckbox). missing — нажали оплату без галочки.
+  const [waiver, setWaiver] = useState(false);
+  const [waiverMissing, setWaiverMissing] = useState(false);
+  const needsWaiver = Boolean(user) && totalCents > 0;
 
   function remove(item: CartItem) {
     removeItem(item.slug);
@@ -97,6 +103,10 @@ export default function CartPage() {
       router.push("/login?next=/cart");
       return;
     }
+    if (needsWaiver && !waiver) {
+      setWaiverMissing(true);
+      return;
+    }
     setLimitMessage(null);
     setState("loading");
     try {
@@ -105,7 +115,7 @@ export default function CartPage() {
         headers: { "Content-Type": "application/json" },
         // Наружу уходят только slug'и — цену сервер снова берёт из БД, не
         // отсюда (см. AddToCartButton).
-        body: JSON.stringify({ items: items.map((i) => ({ slug: i.slug })) }),
+        body: JSON.stringify({ items: items.map((i) => ({ slug: i.slug })), waiver }),
       });
       // Сессия истекла между загрузкой страницы и оплатой — на вход.
       if (res.status === 401) {
@@ -379,7 +389,22 @@ export default function CartPage() {
                   </span>
                 </div>
 
-                <Button size="lg" onClick={checkout} className="mt-6 w-full">
+                {/* Галочка — прямо над кнопкой: согласие даётся в момент
+                    оплаты, а не где-то выше на странице. */}
+                {needsWaiver && (
+                  <div className="mt-6">
+                    <WaiverCheckbox
+                      checked={waiver}
+                      onChange={(v) => {
+                        setWaiver(v);
+                        if (v) setWaiverMissing(false);
+                      }}
+                      missing={waiverMissing}
+                    />
+                  </div>
+                )}
+
+                <Button size="lg" onClick={checkout} className={`${needsWaiver ? "mt-4" : "mt-6"} w-full`}>
                   {/* Надпись честно называет то, что произойдёт: у
                       корзины из одних бесплатных карт не будет ни
                       перехода к оплате, ни самой оплаты. */}
@@ -396,11 +421,8 @@ export default function CartPage() {
 
                 {/* Ссылки на условия — у самой кнопки, а не только в футере
                     (аудит 25.09, docs/STRIPE.md → Legal). Человек должен
-                    видеть, на что соглашается, в момент согласия.
-                    ⚠️ Отказа от права на возврат здесь НЕТ намеренно: его
-                    текст зависит от политики возврата, а её выбирает
-                    владелец. Появится — встанет в Checkout Stripe
-                    (consent_collection) и сюда же. */}
+                    видеть, на что соглашается, в момент согласия. Отказ
+                    от права на отзыв — отдельной галочкой выше (26.09). */}
                 <p className="mt-3 text-center text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
                   By continuing you agree to our{" "}
                   <Link href="/terms" className="underline underline-offset-2 hover:text-zinc-950 dark:hover:text-zinc-50">
