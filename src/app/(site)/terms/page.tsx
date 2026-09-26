@@ -6,6 +6,8 @@ import { BASE_RATE, HIGH_RATE, HIGH_RATE_THRESHOLD } from "@/lib/pricing";
 import { PageGlow } from "@/components/PageGlow";
 import { ArticleBody } from "@/components/ArticleBody";
 import { getWikiArticle } from "@/lib/wiki";
+import { SUPPORT_EMAIL } from "@/lib/site";
+import { SELLER, WAIVER_TEXT } from "@/lib/legal";
 
 // Лицензия рисуется ИЗ ТОЙ ЖЕ статьи вики, а не переписана сюда своими
 // словами (решение владельца 2026-09-05: «сделай одинаково и там и там, в
@@ -49,20 +51,30 @@ const displayFont = Unbounded({
   subsets: ["latin"],
 });
 
+// Индексируется с 2026-09-26. До этого стоял noindex: живым был один
+// раздел цен. Теперь здесь условия покупки, возвраты и продавец — то, что
+// Stripe и право ЕС требуют держать публично, и прятать это от поиска
+// значило бы прятать от покупателя.
 export const metadata: Metadata = {
   title: "Terms of Service",
-  // В основном заглушка (живой только раздел #pricing) — прячем от индексации
-  // до полноценного ToS (Этап 4), чтобы неготовая страница не шла в выдачу.
-  robots: { index: false, follow: true },
+  description:
+    "Pricing, licensing, refunds for marketplace maps, and who you are buying from at SouCampus builds.",
+  // ⚠️ Свой canonical обязателен: без него страница наследует "/" из
+  // корневого layout и говорит поисковику «я копия главной». Под noindex
+  // это было безвредно, после снятия — выкинуло бы /terms из выдачи.
+  alternates: { canonical: "/terms" },
 };
 
 // «Licensing & usage rights» из списка убран 05.09: он больше не
 // «coming», он ниже на этой же странице. Обещать написать то, что уже
 // написано, — способ выглядеть менее готовым, чем ты есть.
+// «Payment & refunds» сузился до заказов 26.09: возвраты за карты
+// магазина теперь живой раздел #refunds, а условия заказных построек
+// по-прежнему согласуются в Discord.
 const SECTIONS = [
   "Scope of services",
   "Ordering & pricing",
-  "Payment & refunds",
+  "Commission payment",
   "Delivery & revisions",
   "Liability",
 ];
@@ -88,9 +100,9 @@ export default function TermsPage() {
           Terms of Service
         </h1>
         <p className="mt-4 text-zinc-600 dark:text-zinc-400">
-          Pricing and licensing below are final. The rest of the terms is
-          still being written and will be published before the shop starts
-          taking real payments — the outline is at the bottom.
+          Pricing, licensing, refunds for marketplace maps and the seller
+          details below are final. Terms for custom commissions are still
+          being written — the outline is at the bottom.
         </p>
       </section>
 
@@ -150,6 +162,89 @@ export default function TermsPage() {
         </section>
       )}
 
+      {/* Возвраты за карты магазина — решение владельца 26.09 (вариант A:
+          после оплаты возврата нет, кроме неисправного файла). Текст
+          согласия берётся из lib/legal.ts — тот же, что у галочки при
+          оплате: человек должен найти здесь ровно то, под чем
+          подписался. Обещания про деньги — только со слов владельца. */}
+      <section id="refunds" className="mx-auto max-w-3xl scroll-mt-24 py-10 sm:py-16">
+        <span className="text-sm font-semibold text-orange-500">Refunds</span>
+        <h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
+          Refunds for marketplace maps
+        </h2>
+        <div className="mt-6 space-y-4 leading-7 text-zinc-600 dark:text-zinc-400">
+          <p>
+            Maps in the marketplace are digital downloads, available the
+            moment your payment goes through. Before paying, you tick a box
+            that reads:
+          </p>
+          <blockquote className="border-l-4 border-orange-400 pl-4 text-zinc-950 dark:text-zinc-50">
+            {WAIVER_TEXT}
+          </blockquote>
+          <p>
+            EU law normally gives you 14 days to cancel an online purchase.
+            For digital content that starts right away, that right ends once
+            you agree to immediate delivery — so a purchase can&apos;t be
+            cancelled or refunded because you changed your mind.
+          </p>
+          <p>
+            <span className="font-semibold text-zinc-950 dark:text-zinc-50">
+              When you do get your money back.
+            </span>{" "}
+            If a file is broken, won&apos;t open, or isn&apos;t what the
+            listing describes, write to{" "}
+            <a
+              href={`mailto:${SUPPORT_EMAIL}`}
+              className="font-medium text-orange-500 transition-colors hover:text-orange-600"
+            >
+              {SUPPORT_EMAIL}
+            </a>
+            . We&apos;ll first try to fix it or send you a working file. If we
+            can&apos;t, you get a full refund to the card you paid with.
+          </p>
+          <p>
+            None of this limits the rights consumer law gives you when
+            digital content is faulty.
+          </p>
+          <p>
+            Custom commissions work differently: they are paid separately,
+            and their refund rules are on the{" "}
+            <Link
+              href="/contact#faq"
+              className="font-medium text-orange-500 transition-colors hover:text-orange-600"
+              data-page-transition="true"
+            >
+              Contact page
+            </Link>
+            .
+          </p>
+        </div>
+      </section>
+
+      {/* Продавец. Право ЕС: имя, географический адрес и почта в
+          легкодоступном месте. Дескриптор выписки — из решений по
+          аккаунту Stripe (docs/STRIPE.md): узнанное списание — не
+          оспоренное списание. */}
+      <section id="seller" className="mx-auto max-w-3xl scroll-mt-24 py-10 sm:py-16">
+        <span className="text-sm font-semibold text-orange-500">Seller</span>
+        <h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
+          Who you&apos;re buying from
+        </h2>
+        <dl className="mt-6 divide-y divide-zinc-200 border-y border-zinc-200 text-sm dark:divide-zinc-800 dark:border-zinc-800">
+          {[
+            ["Seller", `${SELLER.name}, an individual based in Estonia`],
+            ["Address", SELLER.address],
+            ["Email", SUPPORT_EMAIL],
+            ["Payments", "Processed by Stripe. The charge appears on your bank statement as SOUCAMPUS.ONLINE."],
+          ].map(([term, value]) => (
+            <div key={term} className="grid gap-1 py-4 sm:grid-cols-[8rem_1fr] sm:gap-4">
+              <dt className="font-semibold text-zinc-950 dark:text-zinc-50">{term}</dt>
+              <dd className="text-zinc-600 dark:text-zinc-400">{value}</dd>
+            </div>
+          ))}
+        </dl>
+      </section>
+
       <section className="mx-auto max-w-3xl py-16 sm:py-28">
         <div className="rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-900 sm:p-12">
           <FileText size={32} className="text-orange-400" weight="duotone" />
@@ -157,10 +252,9 @@ export default function TermsPage() {
             Coming soon
           </h2>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            Full terms covering orders, payment, revisions, and liability are
-            being written and will be published here before real payments are
-            switched on. Until then, order terms are agreed directly in
-            Discord for every commission.
+            Full terms for custom commissions — orders, payment, revisions
+            and liability — are being written. Until then, order terms are
+            agreed directly in Discord for every commission.
           </p>
 
           <ul className="mt-6 space-y-2 border-t border-zinc-200 pt-6 text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
