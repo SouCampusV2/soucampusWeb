@@ -122,7 +122,10 @@ conversion fee. Stripe Connect (if used later) has its own additional fees.
       должно быть, пока в Stripe нет налоговых регистраций. Включается
       одной строкой в `checkout.sessions.create`, но **только после**
       регистраций.
-- ⚠️ **Способы оплаты в коде не заданы** — Checkout берёт их из настроек
+- 🟢 **Способы оплаты заданы в коде — 26.09:** `payment_method_types:
+      ["card"]` в `/api/checkout` (Apple/Google Pay входят в card, Link —
+      нет). Настройки Dashboard больше не решают. Исходный текст:
+- ~~⚠️ **Способы оплаты в коде не заданы**~~ — Checkout берёт их из настроек
       Dashboard. Вебхук и страница успеха засчитывают заказ, только если
       сессия уже `paid` (`src/lib/orders.ts`). **Отложенные способы (SEPA
       Direct Debit и т. п.) в live не включать:** человек заплатит, заказ
