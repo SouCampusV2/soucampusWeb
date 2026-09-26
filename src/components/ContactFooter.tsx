@@ -16,7 +16,7 @@ import {
   YoutubeLogo,
 } from "@phosphor-icons/react";
 import { ThemeToggle } from "@/components/ThemeToggle";
-import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
+import { DISCORD_INVITE, NAV_LINKS, SUPPORT_EMAIL } from "@/lib/site";
 import { SHOP_NAV_LINKS } from "@/lib/products";
 import { isMarketplaceRoute } from "@/lib/marketplace-routes";
 
@@ -235,6 +235,18 @@ export function ContactFooter() {
                   >
                     Privacy Policy
                   </Link>
+                </li>
+                {/* Почта продавца — «в легкодоступном месте», как требует
+                    право ЕС для торгующих онлайн (аудит 25.09, docs/STRIPE.md
+                    → Legal). Футер есть на каждой странице — места
+                    доступнее у сайта нет. Обычный <a>: mailto не страница. */}
+                <li>
+                  <a
+                    href={`mailto:${SUPPORT_EMAIL}`}
+                    className="inline-block break-all transition-colors hover:text-zinc-950 pointer-coarse:py-1.5 dark:hover:text-zinc-50"
+                  >
+                    {SUPPORT_EMAIL}
+                  </a>
                 </li>
               </ul>
             </div>

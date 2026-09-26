@@ -394,6 +394,25 @@ export default function CartPage() {
                         : "Checkout"}
                 </Button>
 
+                {/* Ссылки на условия — у самой кнопки, а не только в футере
+                    (аудит 25.09, docs/STRIPE.md → Legal). Человек должен
+                    видеть, на что соглашается, в момент согласия.
+                    ⚠️ Отказа от права на возврат здесь НЕТ намеренно: его
+                    текст зависит от политики возврата, а её выбирает
+                    владелец. Появится — встанет в Checkout Stripe
+                    (consent_collection) и сюда же. */}
+                <p className="mt-3 text-center text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  By continuing you agree to our{" "}
+                  <Link href="/terms" className="underline underline-offset-2 hover:text-zinc-950 dark:hover:text-zinc-50">
+                    Terms of Service
+                  </Link>{" "}
+                  and{" "}
+                  <Link href="/privacy" className="underline underline-offset-2 hover:text-zinc-950 dark:hover:text-zinc-50">
+                    Privacy Policy
+                  </Link>
+                  .
+                </p>
+
                 {state === "error" && (
                   <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
                     Something went wrong — please try again.
