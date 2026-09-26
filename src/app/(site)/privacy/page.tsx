@@ -101,6 +101,12 @@ const SECTIONS: Section[] = [
         text: "Which maps you bought, when, and for how much. We need this to give you the download and to keep proper accounts.",
       },
       {
+        // С 2026-09-26: журнал скачиваний (download_events). Хэш, а не
+        // адрес, — та же функция, что у счётчика (lib/ip-hash.ts).
+        term: "Downloads",
+        text: "Each time you download a map you bought: which map, when, a hash of your IP address (never the address itself) and your browser’s name. If a payment is ever disputed with your bank, this is how we show the file was delivered.",
+      },
+      {
         term: "Things you post",
         text: "Comments and reactions on maps, and any application you send us. Comments are public and carry your username.",
       },
@@ -195,6 +201,10 @@ const SECTIONS: Section[] = [
       {
         term: "Orders",
         text: "Kept after an account is deleted, because accounting law requires records of sales to be retained. They are kept for that purpose alone.",
+      },
+      {
+        term: "Download records",
+        text: "Kept together with the order they belong to, for the same reason: they are the proof that a sale was delivered.",
       },
       {
         term: "Removed maps",

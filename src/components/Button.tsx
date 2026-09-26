@@ -185,6 +185,16 @@ type ButtonProps = {
   // блокировка на время запроса. У ссылки (href) этих понятий нет.
   type?: "button" | "submit";
   disabled?: boolean;
+  /**
+   * Обычный <a> вместо next/link — для ссылки, которая ВЕДЁТ НЕ НА
+   * СТРАНИЦУ, а на обработчик с побочным действием (/api/download пишет
+   * журнал скачиваний). next/link заранее подгружает ссылки, попавшие на
+   * экран, то есть сам делает GET — и журнал записал бы скачивание,
+   * которого не было. Клик по нему тоже идёт через роутер Next, а тот
+   * не умеет перейти по редиректу на чужой домен (Storage) без второго
+   * запроса.
+   */
+  native?: boolean;
 };
 
 export function Button({
@@ -200,12 +210,21 @@ export function Button({
   colorClassName,
   type = "button",
   disabled = false,
+  native = false,
 }: ButtonProps) {
   // primary и secondary — «таблетки» с горизонтальным паддингом; tertiary
   // это текст-ссылка, ей паддинг не нужен.
   const padding = variant === "tertiary" ? "" : paddingBySize[size];
   const color = colorClassName ?? BUTTON_COLORS[variant];
   const classes = `${base} ${color} ${padding} ${textBySize[size]} ${className}`;
+
+  if (href && native) {
+    return (
+      <a href={href} className={classes} target={target} rel={rel} onClick={onClick}>
+        {children}
+      </a>
+    );
+  }
 
   if (href) {
     return (
