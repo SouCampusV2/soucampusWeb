@@ -223,6 +223,18 @@ export async function POST(request: Request) {
 
   const session = await getStripe().checkout.sessions.create({
     mode: "payment",
+    // ТОЛЬКО мгновенные способы оплаты (2026-09-26). Заказ пишется, когда
+    // сессия уже paid (вебхук checkout.session.completed и страница
+    // успеха), а событие async_payment_succeeded мы не слушаем. Способ с
+    // отложенным подтверждением (SEPA Direct Debit и подобные) дал бы
+    // «деньги придут через три дня, а заказ не запишется никогда».
+    //
+    // Задано ЗДЕСЬ, а не галочками в Stripe Dashboard: без этой строки
+    // Checkout берёт способы из настроек аккаунта, и одна включённая там
+    // галочка молча открывала бы дыру. Apple Pay и Google Pay — это
+    // "card", они работают. Захочется iDEAL, Bancontact и подобных —
+    // сначала научить вебхук async_payment_succeeded, потом расширять.
+    payment_method_types: ["card"],
     line_items: lineItems,
     // Личность покупателя. Заказ пока пишется в orders как раньше (по
     // email), но эти поля кладём уже сейчас, чтобы связать заказ с
