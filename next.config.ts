@@ -1,6 +1,74 @@
 import type { NextConfig } from "next";
 
+// ============================================================
+// Заголовки безопасности (2026-09-26, аудит перед живыми платежами —
+// docs/STRIPE.md → General). До этого на проде стоял один
+// Strict-Transport-Security, и его ставит сам Vercel.
+//
+// Четыре заголовка ниже действуют сразу: они ничего из того, чем сайт
+// пользуется, не запрещают.
+//
+// CSP — пока ТОЛЬКО В РЕЖИМЕ ОТЧЁТА (Report-Only): браузер ничего не
+// блокирует, а нарушения пишет в консоль. Так делают первым шагом
+// всегда: у сайта инлайн-скрипт темы, картинки из Storage, Realtime по
+// WebSocket и курсы валют в калькуляторе, и одна забытая строка в
+// боевой CSP молча ломает то, что она не перечислила. Неделю-две
+// смотрим консоль на preview и проде — нарушений нет, переименовываем
+// заголовок в Content-Security-Policy.
+//
+// ⚠️ Появился новый внешний адрес (скрипт, iframe, API из браузера) —
+// допиши его сюда, иначе после включения CSP он перестанет работать.
+// ============================================================
+const CONTENT_SECURITY_POLICY = [
+  "default-src 'self'",
+  // 'unsafe-inline' — инлайн-скрипт темы в layout.tsx и данные, которые
+  // Next вшивает в страницу. Убрать его можно только через nonce, а
+  // nonce делает КАЖДУЮ страницу динамической — цена для статики
+  // несоразмерна. va.vercel-scripts.com — скрипт Vercel Analytics вне
+  // прода (на проде он отдаётся с нашего домена).
+  "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com",
+  // Инлайн-стили ставят Motion и next/font.
+  "style-src 'self' 'unsafe-inline'",
+  // Картинки карт и аватары — Supabase Storage; data: и blob: — превью
+  // в формах загрузки до отправки.
+  "img-src 'self' data: blob: https://*.supabase.co",
+  "font-src 'self' data:",
+  // Supabase по HTTP и Realtime по WebSocket; курсы валют в
+  // калькуляторе (BuildEstimator) браузер спрашивает сам.
+  "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.frankfurter.dev https://va.vercel-scripts.com",
+  "frame-src 'none'",
+  "object-src 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+  // Встраивать сайт в чужой iframe нельзя — то же, что X-Frame-Options
+  // ниже; тот работает в браузерах, не знающих frame-ancestors.
+  "frame-ancestors 'none'",
+].join("; ");
+
+const SECURITY_HEADERS = [
+  // Браузер не угадывает тип файла по содержимому: загруженный «png»,
+  // внутри которого HTML, остаётся картинкой, а не страницей.
+  { key: "X-Content-Type-Options", value: "nosniff" },
+  // Чужим сайтам — только наш домен, без пути: в пути бывают id сессии
+  // Stripe (/marketplace/success?session_id=…) и адреса личных страниц.
+  { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },
+  // Защита от кликджекинга: страницу оплаты или админку нельзя
+  // подложить под чужой прозрачный iframe.
+  { key: "X-Frame-Options", value: "DENY" },
+  // Камера, микрофон, геолокация сайту не нужны — запрещаем и себе, и
+  // любому скрипту, который окажется на странице.
+  {
+    key: "Permissions-Policy",
+    value: "camera=(), microphone=(), geolocation=(), browsing-topics=()",
+  },
+  { key: "Content-Security-Policy-Report-Only", value: CONTENT_SECURITY_POLICY },
+];
+
 const nextConfig: NextConfig = {
+  async headers() {
+    return [{ source: "/:path*", headers: SECURITY_HEADERS }];
+  },
+
   images: {
     dangerouslyAllowSVG: true,
     // Отдаём современные форматы: AVIF жмёт заметно сильнее WebP, WebP —
