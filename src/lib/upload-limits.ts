@@ -6,8 +6,12 @@
 // мир, а не то, что реально нужно покупателю.
 
 export const MAP_FILE_MAX_BYTES = 15 * 1024 * 1024; // 15 МБ на схематику/мир
-export const IMAGE_MAX_BYTES = 5 * 1024 * 1024; // 5 МБ на одну картинку
-export const IMAGES_TOTAL_MAX_BYTES = 30 * 1024 * 1024; // 30 МБ на всю галерею
+// Картинки подняты владельцем 2026-09-27: 5 → 10 МБ на одну и 30 → 100 МБ
+// на галерею — скриншоты карт в полном разрешении в прежние не влезали.
+// Потолок на бакете в Supabase не стоит (проверено на preview), так что
+// решают только эти два числа — и форма, и шлюз /api/creator/image.
+export const IMAGE_MAX_BYTES = 10 * 1024 * 1024; // 10 МБ на одну картинку
+export const IMAGES_TOTAL_MAX_BYTES = 100 * 1024 * 1024; // 100 МБ на всю галерею
 export const MAX_IMAGES = 15;
 
 export function formatBytes(bytes: number): string {

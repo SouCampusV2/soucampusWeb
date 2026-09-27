@@ -111,7 +111,7 @@ export function useImagePicker(
     if (pendingBytes + adding > IMAGES_TOTAL_MAX_BYTES) {
       // Слово «New» появляется, только когда в галерее есть старые
       // картинки. Иначе оно врёт: на загрузке новые все, и «new images
-      // must be 30 MB or less» читается как существование второго,
+      // must be 100 MB or less» читается как существование второго,
       // большего лимита на какие-то другие.
       const hasExisting = images.some((i) => i.kind === "existing");
       onError(

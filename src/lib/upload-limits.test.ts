@@ -112,7 +112,7 @@ describe("checkImageBytes", () => {
 
   it("размер сверяется по границе включительно", () => {
     expect(checkImageBytes(PNG, IMAGE_MAX_BYTES, "cover.png")).toBeNull();
-    expect(checkImageBytes(PNG, IMAGE_MAX_BYTES + 1, "cover.png")).toMatch(/5 MB or smaller/);
+    expect(checkImageBytes(PNG, IMAGE_MAX_BYTES + 1, "cover.png")).toMatch(/10 MB or smaller/);
   });
 });
 
