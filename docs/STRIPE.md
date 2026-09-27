@@ -199,7 +199,7 @@ conversion fee. Stripe Connect (if used later) has its own additional fees.
       дописать `/terms` (лицензия уже есть — wiki «Using a map you bought»;
       нужен раздел Refunds со словами владельца) и снять `noindex`.
 - 🟢 **Данные продавца — 26.09:** почта `support@` в футере на каждой
-      странице; имя, адрес (Muhu tn 10, Tallinn, Estonia — дал владелец),
+      странице; имя, адрес (с 27.09 — только «Tallinn, Estonia», улицу владелец убрал; право ЕС просит географический адрес, город без улицы — его осознанный компромисс),
       почта и дескриптор выписки — `/terms#seller`. Источник — `SELLER` в
       `src/lib/legal.ts`. Исходный текст: Имя оператора есть только на
       `/privacy` («Yevhenii Stavytskyi, an individual based in Estonia»);

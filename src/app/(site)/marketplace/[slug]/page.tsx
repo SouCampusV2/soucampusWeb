@@ -19,7 +19,7 @@ import { ReactionButton } from "@/components/ReactionButton";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductGallery } from "@/components/ProductGallery";
 import { RICH_TEXT_CLASS } from "@/lib/rich-text";
-import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
+import { ArrowCircle } from "@/components/ArrowCircle";
 import { INLINE_LINK } from "@/components/Button";
 import { StarRating } from "@/components/StarRating";
 import { ProductSpecs } from "@/components/ProductSpecs";
@@ -166,18 +166,22 @@ export default async function ProductPage({
           ещё полсотни пикселей сверху. Название, короткое описание и
           оценка стоят столбиком справа от стрелки.
           Подпись словами ушла, поэтому aria-label обязателен — иначе
-          экранный читатель скажет просто «ссылка». */}
+          экранный читатель скажет просто «ссылка».
+          ⚠️ Кружок — ArrowCircle в том же виде, что ArrowButton у рядов
+          витрины (h-11, orange primary, active:scale-90). 27.09 здесь сперва
+          стоял самодельный кружок с рамкой и сдвигом иконки — отвергнут
+          владельцем: круглая стрелка на сайте одна, hover у неё — цвет. */}
       <div className="flex items-start gap-3 sm:gap-4">
         <Link
           href="/marketplace"
           aria-label="All products"
           title="All products"
-          className="group mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-200 text-orange-500 transition-colors hover:border-orange-500 sm:mt-1 dark:border-zinc-800 dark:text-orange-400 dark:hover:border-orange-400"
+          className="shrink-0 transition-transform active:scale-90 sm:mt-0.5"
         >
-          <ArrowLeft
-            size={18}
-            weight="bold"
-            className="transition-transform group-hover:-translate-x-0.5"
+          <ArrowCircle
+            direction="left"
+            className="h-11 w-11"
+            colorClassName="bg-orange-500 hover:bg-orange-600 dark:bg-orange-400 dark:hover:bg-orange-500 text-white"
           />
         </Link>
 
