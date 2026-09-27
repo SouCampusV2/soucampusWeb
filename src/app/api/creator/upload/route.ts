@@ -6,6 +6,7 @@ import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
 import {
   HEAD_BYTES,
   MAP_FILE_EXTENSIONS,
+  MAP_FILE_TYPES_LABEL,
   MAP_FILE_MAX_BYTES,
   checkMapBytes,
   formatBytes,
@@ -176,8 +177,7 @@ async function sign(
   if (!(MAP_FILE_EXTENSIONS as readonly string[]).includes(ext)) {
     return NextResponse.json(
       {
-        error:
-          "That doesn't look like a .zip, .schem or .schematic file. Pack a world folder into a zip archive first.",
+        error: `That doesn't look like a ${MAP_FILE_TYPES_LABEL} file. Pack a world folder into a zip archive first.`,
       },
       { status: 400 }
     );

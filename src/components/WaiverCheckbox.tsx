@@ -39,7 +39,7 @@ export function WaiverCheckbox({
             href="/terms#refunds"
             className="underline underline-offset-2 hover:text-zinc-950 dark:hover:text-zinc-50"
           >
-            Refund policy
+            Terms
           </Link>
         </span>
       </label>

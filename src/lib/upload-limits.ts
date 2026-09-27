@@ -44,7 +44,15 @@ export function formatBytes(bytes: number): string {
 // ------------------------------------------------------------
 
 /** Что принимаем от креатора — для атрибута accept у поля файла. */
-export const MAP_FILE_ACCEPT = ".zip,.schem,.schematic";
+// .litematic (Litematica) добавлен 2026-09-27: внутри это gzip-сжатый
+// NBT, как у .schem, и опознаётся той же сигнатурой. Axiom .bp напрямую
+// НЕ принимаем: его сигнатура нам не известна, а пустить формат без
+// проверки байтов значит пустить что угодно, переименованное в .bp.
+// Пока — внутри .zip.
+export const MAP_FILE_ACCEPT = ".zip,.schem,.schematic,.litematic";
+
+/** Тот же перечень словами — для подписи в форме и текстов отказа. */
+export const MAP_FILE_TYPES_LABEL = ".zip, .schem, .schematic or .litematic";
 
 /**
  * Расширения файла карты, которые вообще может выдать шлюз.
@@ -54,7 +62,7 @@ export const MAP_FILE_ACCEPT = ".zip,.schem,.schematic";
  * мусора, но «чистая» строка `exe` остаётся `exe` — отсекает её вот
  * этот перечень.
  */
-export const MAP_FILE_EXTENSIONS = ["zip", "schem", "schematic"] as const;
+export const MAP_FILE_EXTENSIONS = ["zip", "schem", "schematic", "litematic"] as const;
 
 /**
  * Расширения картинки, которые может выдать шлюз (/api/creator/image).
@@ -143,7 +151,8 @@ export function checkMapBytes(
   }
 
   const name = fileName.toLowerCase();
-  const isSchematic = name.endsWith(".schem") || name.endsWith(".schematic");
+  const isSchematic =
+    name.endsWith(".schem") || name.endsWith(".schematic") || name.endsWith(".litematic");
 
   const looksZip = ZIP_SIGNATURES.some((sig) => startsWith(head, sig));
   const looksGzip = startsWith(head, GZIP_SIGNATURE);
@@ -154,7 +163,7 @@ export function checkMapBytes(
 
   return isSchematic
     ? `“${fileName}” doesn't look like a valid schematic — the file may be corrupted.`
-    : "That doesn't look like a .zip, .schem or .schematic file. Pack a world folder into a zip archive first.";
+    : `That doesn't look like a ${MAP_FILE_TYPES_LABEL} file. Pack a world folder into a zip archive first.`;
 }
 
 /** Ядро проверки картинки. null — годится; строка — причина отказа. */

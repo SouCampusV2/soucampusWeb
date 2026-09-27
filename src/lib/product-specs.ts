@@ -53,8 +53,12 @@ export const MAP_SIZES = ["Small", "Medium", "Large", "Huge"] as const;
 // их не продаём, а формат в списке — это обещание, что такое бывает.
 // Вернуть, когда такой товар появится, — словарь на то и в коде, что
 // правится без миграции.
+// Litematica и Axiom blueprint добавлены 2026-09-27 (просьба владельца).
+// "Schematic" НЕ переименован: это и есть .schem/.schematic, а новое имя
+// сняло бы отметку с уже размеченных карт (значения из базы со словарём
+// не сверяются, но чип в форме горит только у совпавших).
 export const FILE_FORMATS = [
-  "Java world", "Bedrock world", "Schematic",
+  "Java world", "Bedrock world", "Schematic", "Litematica", "Axiom blueprint",
 ] as const;
 
 /**

@@ -19,7 +19,7 @@ import { ReactionButton } from "@/components/ReactionButton";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductGallery } from "@/components/ProductGallery";
 import { RICH_TEXT_CLASS } from "@/lib/rich-text";
-import { BackLink } from "@/components/BackLink";
+import { ArrowLeft } from "@phosphor-icons/react/dist/ssr";
 import { INLINE_LINK } from "@/components/Button";
 import { StarRating } from "@/components/StarRating";
 import { ProductSpecs } from "@/components/ProductSpecs";
@@ -157,29 +157,53 @@ export default async function ProductPage({
   const salesCount = stats?.salesCount ?? 0;
 
   return (
-    <main className="w-full mx-auto max-w-[120rem] flex-1 px-6 py-16 sm:px-10 sm:py-28 lg:px-16 xl:px-24 2xl:px-[120px]">
-      <BackLink href="/marketplace">All products</BackLink>
+    // Сверху отступ меньше, чем снизу (27.09, замечание владельца):
+    // py-28 давал 112px пустоты между навбаром и названием — страница
+    // начиналась «где-то ниже». Низ оставлен прежним, там футер.
+    <main className="w-full mx-auto max-w-[120rem] flex-1 px-6 pb-16 pt-8 sm:px-10 sm:pb-28 sm:pt-12 lg:px-16 xl:px-24 2xl:px-[120px]">
+      {/* Стрелка «назад» — слева от названия, а не отдельной строкой
+          «All products» над ним (27.09, просьба владельца): строка съедала
+          ещё полсотни пикселей сверху. Название, короткое описание и
+          оценка стоят столбиком справа от стрелки.
+          Подпись словами ушла, поэтому aria-label обязателен — иначе
+          экранный читатель скажет просто «ссылка». */}
+      <div className="flex items-start gap-3 sm:gap-4">
+        <Link
+          href="/marketplace"
+          aria-label="All products"
+          title="All products"
+          className="group mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-200 text-orange-500 transition-colors hover:border-orange-500 sm:mt-1 dark:border-zinc-800 dark:text-orange-400 dark:hover:border-orange-400"
+        >
+          <ArrowLeft
+            size={18}
+            weight="bold"
+            className="transition-transform group-hover:-translate-x-0.5"
+          />
+        </Link>
 
-      <h1 className="mt-6 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl">
-        {product.title}
-      </h1>
-      {/* Строчки «by <автор>» здесь больше нет (решение владельца
-          2026-08-22) — автор переехал в правую колонку, в CreatorCard.
-          Довод: чьё это — довод в пользу покупки, а доводы стоят рядом с
-          ценой и кнопкой, а не теряются между названием и описанием. */}
-      <p className="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400">{product.summary}</p>
+        <div className="min-w-0">
+          <h1 className="text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl">
+            {product.title}
+          </h1>
+          {/* Строчки «by <автор>» здесь больше нет (решение владельца
+              2026-08-22) — автор переехал в правую колонку, в CreatorCard.
+              Довод: чьё это — довод в пользу покупки, а доводы стоят рядом с
+              ценой и кнопкой, а не теряются между названием и описанием. */}
+          <p className="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400">{product.summary}</p>
 
-      {/* Только оценка. Число покупок отсюда убрано (решение владельца
-          2026-08-22): оно никуда не делось — плитка Purchases стоит в
-          панели характеристик справа, — а под заголовком две цифры через
-          точку читались как одна мысль, разорванная надвое. */}
-      <div className="mt-4 flex items-center gap-1.5 text-sm">
-        <StarRating rating={rating} size={16} />
-        <span className="text-zinc-500 dark:text-zinc-400">
-          {ratingCount
-            ? `${rating.toFixed(1)} (${ratingCount} rating${ratingCount === 1 ? "" : "s"})`
-            : "Not yet rated"}
-        </span>
+          {/* Только оценка. Число покупок отсюда убрано (решение владельца
+              2026-08-22): оно никуда не делось — плитка Purchases стоит в
+              панели характеристик справа, — а под заголовком две цифры через
+              точку читались как одна мысль, разорванная надвое. */}
+          <div className="mt-4 flex items-center gap-1.5 text-sm">
+            <StarRating rating={rating} size={16} />
+            <span className="text-zinc-500 dark:text-zinc-400">
+              {ratingCount
+                ? `${rating.toFixed(1)} (${ratingCount} rating${ratingCount === 1 ? "" : "s"})`
+                : "Not yet rated"}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Двухколоночная разметка в духе торговых площадок (BuiltByBit и

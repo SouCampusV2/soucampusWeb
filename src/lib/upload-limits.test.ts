@@ -47,6 +47,15 @@ describe("checkMapBytes", () => {
     expect(checkMapBytes(GZIP, 4096, "house.schem")).toBeNull();
   });
 
+  it("пропускает .litematic — тот же gzip, и шлюз знает расширение", () => {
+    expect(checkMapBytes(GZIP, 4096, "castle.litematic")).toBeNull();
+    expect((MAP_FILE_EXTENSIONS as readonly string[]).includes("litematic")).toBe(true);
+  });
+
+  it("не пускает .bp напрямую — его сигнатуру мы не знаем", () => {
+    expect((MAP_FILE_EXTENSIONS as readonly string[]).includes("bp")).toBe(false);
+  });
+
   it("отклоняет переименованный файл — главный случай, ради которого всё", () => {
     // MZ — заголовок windows-исполняемого. Расширение говорит .zip, но
     // расширение говорит загружающий, а байты — сам файл.

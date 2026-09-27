@@ -28,10 +28,15 @@ export const SELLER = {
  * человек поставил галочку, а текст на сайте к тому моменту может быть
  * уже другим.
  */
+//
+// 27.09 сокращено по просьбе владельца («просто согласен с условиями»).
+// Короче, чем здесь, нельзя: ссылка на условия без этих двух смыслов в
+// самой строке — не явное согласие, и отказ от права признали бы
+// недействительным. Обе части на месте: «instant delivery» и «give up».
 export const WAIVER_TEXT =
-  "I want my download straight away, and I understand that once it’s available I lose my 14-day right to cancel this purchase.";
+  "I agree to instant delivery and give up my 14-day right to cancel.";
 
-export const WAIVER_VERSION = "2026-09-26";
+export const WAIVER_VERSION = "2026-09-27";
 
 /** Коротко — под кнопкой оплаты на стороне Stripe (custom_text.submit). */
 export const WAIVER_STRIPE_NOTE =

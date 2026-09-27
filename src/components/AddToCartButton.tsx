@@ -61,12 +61,11 @@ export function AddToCartButton({
   const [limitMessage, setLimitMessage] = useState<string | null>(null);
 
   // Отказ от права на отзыв для «Buy now» (2026-09-26). Тот же, что в
-  // корзине: путь оплаты один, согласие тоже одно. Галочка появляется
-  // только после первого нажатия Buy now — до этого она мешала бы тем,
-  // кто пришёл положить карту в корзину, а согласие нужно ровно в
-  // момент оплаты.
+  // корзине: путь оплаты один, согласие тоже одно. С 27.09 галочка видна
+  // сразу под кнопкой (просьба владельца) — короткая, в одну-две строки;
+  // красная подсказка — только после нажатия без неё.
   const [waiver, setWaiver] = useState(false);
-  const [askWaiver, setAskWaiver] = useState(false);
+  const [waiverMissing, setWaiverMissing] = useState(false);
 
   // Ответ проверки владения и сам «запрос в полёте». Держим в ref, а не в
   // состоянии: перерисовывать из-за них нечего (кнопка не меняется), а
@@ -172,7 +171,7 @@ export function AddToCartButton({
     if (buying) return;
     // Бесплатной карте согласие не нужно — возвращать нечего.
     if (product.priceCents > 0 && !waiver) {
-      setAskWaiver(true);
+      setWaiverMissing(true);
       return;
     }
     setBuying(true);
@@ -309,11 +308,16 @@ export function AddToCartButton({
             {buying ? "Redirecting…" : "Buy now"}
           </Button>
 
-          {askWaiver && (
-            <div className="mt-3">
-              <WaiverCheckbox checked={waiver} onChange={setWaiver} missing={!waiver} />
-            </div>
-          )}
+          <div className="mt-3">
+            <WaiverCheckbox
+              checked={waiver}
+              onChange={(v) => {
+                setWaiver(v);
+                if (v) setWaiverMissing(false);
+              }}
+              missing={waiverMissing}
+            />
+          </div>
         </>
       )}
 
