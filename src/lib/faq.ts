@@ -1,4 +1,4 @@
-import { BASE_RATE, HIGH_RATE, HIGH_RATE_THRESHOLD } from "@/lib/pricing";
+import { BASE_RATE } from "@/lib/pricing";
 
 // FAQ — короткие ответы на вопросы, которые задают перед заказом, и на
 // общие вопросы про карты Minecraft. Страница — /faq.
@@ -93,7 +93,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "How much does a custom map cost?",
         answer: [
-          `Price follows size: ${BASE_RATE}€ per unit of the map's side, ${HIGH_RATE}€ past ${HIGH_RATE_THRESHOLD}×${HIGH_RATE_THRESHOLD}. A 100×100 map comes to ${100 * BASE_RATE}€. Non-square maps are priced off an equivalent side, so a long thin map is not charged as a square of its longest side.`,
+          `Price follows size: ${BASE_RATE}€ per unit of the map's side, the same rate at every size. A 100×100 map comes to ${100 * BASE_RATE}€. Non-square maps are priced off an equivalent side, so a long thin map is not charged as a square of its longest side.`,
         ],
         link: { href: "/terms#pricing", label: "Full pricing breakdown" },
       },

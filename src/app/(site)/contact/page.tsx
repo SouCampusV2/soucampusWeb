@@ -8,6 +8,7 @@ import { FaqAccordion } from "@/components/FaqAccordion";
 import { BuildEstimator } from "@/components/BuildEstimator";
 import { PageGlow } from "@/components/PageGlow";
 import { DISCORD_INVITE } from "@/lib/site";
+import { BASE_RATE } from "@/lib/pricing";
 
 // Тот же дисплейный шрифт, что у Hero на главной — тут используется на
 // H1 страницы, чтобы обе "герой"-секции сайта визуально рифмовались.
@@ -27,7 +28,7 @@ const FAQ = [
   {
     question: "How much does a map cost?",
     answer:
-      "The base rate is 1.25€ per 1×1 unit. For example, a 100×100 map costs 125€ under this pricing. The exact final price depends on the size and scope of your project — feel free to share your idea in a Discord ticket and I'll calculate the cost for you.",
+      `The base rate is ${BASE_RATE}€ per 1×1 unit. For example, a 100×100 map costs ${100 * BASE_RATE}€ under this pricing. The exact final price depends on the size and scope of your project — feel free to share your idea in a Discord ticket and I'll calculate the cost for you.`,
   },
   {
     question: "How long does an order take?",

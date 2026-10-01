@@ -1,5 +1,5 @@
 import type { ArticleBlock, ArticleSection } from "@/lib/article-blocks";
-import { BASE_RATE, HIGH_RATE, HIGH_RATE_THRESHOLD } from "@/lib/pricing";
+import { BASE_RATE } from "@/lib/pricing";
 import { DISCORD_INVITE, SUPPORT_EMAIL } from "@/lib/site";
 
 // Вики — справочник для покупателей и заказчиков: как поставить
@@ -328,7 +328,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
         blocks: [
           {
             kind: "text",
-            text: `Price follows the size of the build: ${BASE_RATE}€ per unit of the map's side, stepping up to ${HIGH_RATE}€ past a ${HIGH_RATE_THRESHOLD}×${HIGH_RATE_THRESHOLD} footprint, where detail work grows faster than area does. A 100×100 map comes to ${100 * BASE_RATE}€; a ${HIGH_RATE_THRESHOLD}×${HIGH_RATE_THRESHOLD} one to ${HIGH_RATE_THRESHOLD * HIGH_RATE}€.`,
+            text: `Price follows the size of the build: ${BASE_RATE}€ per unit of the map's side, one rate at every size. A 100×100 map comes to ${100 * BASE_RATE}€; a 400×400 one to ${400 * BASE_RATE}€.`,
           },
           {
             kind: "text",

@@ -1,10 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   BASE_RATE,
-  HIGH_RATE,
-  HIGH_RATE_THRESHOLD,
   effectiveSize,
-  pricePerUnit,
   estimatePrice,
   estimateDeadlineDays,
   formatDeadline,
@@ -25,37 +22,23 @@ describe("effectiveSize", () => {
   });
 });
 
-describe("pricePerUnit", () => {
-  it("charges the base rate below the high-rate threshold", () => {
-    expect(pricePerUnit(HIGH_RATE_THRESHOLD - 1)).toBe(BASE_RATE);
-  });
-
-  it("charges the high rate exactly AT the threshold (inclusive)", () => {
-    expect(pricePerUnit(HIGH_RATE_THRESHOLD)).toBe(HIGH_RATE);
-  });
-
-  it("charges the high rate above the threshold", () => {
-    expect(pricePerUnit(HIGH_RATE_THRESHOLD + 100)).toBe(HIGH_RATE);
-  });
-});
-
 describe("estimatePrice", () => {
   // Matches the exact worked examples on /terms#pricing — if these ever
   // disagree, the site is showing two different prices for the same map.
-  it("prices a 100x100 map at 125€", () => {
-    expect(estimatePrice(100, 100)).toBe(100 * BASE_RATE);
+  it("prices a 100x100 map at 150€", () => {
+    expect(estimatePrice(100, 100)).toBe(150);
   });
 
-  it("prices a 200x200 map at 250€", () => {
-    expect(estimatePrice(200, 200)).toBe(200 * BASE_RATE);
+  it("prices a 200x200 map at 300€", () => {
+    expect(estimatePrice(200, 200)).toBe(300);
   });
 
-  it("prices a 400x400 map at the high rate (600€)", () => {
-    expect(estimatePrice(400, 400)).toBe(400 * HIGH_RATE);
+  it("keeps one flat rate for large maps — 400x400 is 600€", () => {
+    expect(estimatePrice(400, 400)).toBe(600);
   });
 
   it("prices a 1000x1000 map at 1500€", () => {
-    expect(estimatePrice(1000, 1000)).toBe(1000 * HIGH_RATE);
+    expect(estimatePrice(1000, 1000)).toBe(1500);
   });
 
   it("prices a non-square map off its effective (geometric-mean) side, not either raw side", () => {

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Unbounded } from "next/font/google";
 import { FileText } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
-import { BASE_RATE, HIGH_RATE, HIGH_RATE_THRESHOLD } from "@/lib/pricing";
+import { BASE_RATE } from "@/lib/pricing";
 import { PageGlow } from "@/components/PageGlow";
 import { ArticleBody } from "@/components/ArticleBody";
 import { getWikiArticle } from "@/lib/wiki";
@@ -33,7 +33,7 @@ const PRICING_FAQ = [
   },
   {
     q: "What about really large builds?",
-    a: `Past a ${HIGH_RATE_THRESHOLD}×${HIGH_RATE_THRESHOLD} footprint the rate steps up to ${HIGH_RATE}€ per unit — large builds take proportionally more detail work, not just more area. A ${HIGH_RATE_THRESHOLD}×${HIGH_RATE_THRESHOLD} map is ${HIGH_RATE_THRESHOLD} × ${HIGH_RATE} = ${HIGH_RATE_THRESHOLD * HIGH_RATE}€; a 1000×1000 map is 1000 × ${HIGH_RATE} = ${1000 * HIGH_RATE}€.`,
+    a: `The rate stays the same at every size — there is no surcharge per block for large maps. A 400×400 map is 400 × ${BASE_RATE} = ${400 * BASE_RATE}€; a 1000×1000 map is 1000 × ${BASE_RATE} = ${1000 * BASE_RATE}€.`,
   },
   {
     q: "My map isn't square — how does that get priced?",
