@@ -1,5 +1,5 @@
 import type { ArticleSection } from "@/lib/article-blocks";
-import { BASE_RATE, HIGH_RATE, HIGH_RATE_THRESHOLD } from "@/lib/pricing";
+import { BASE_RATE } from "@/lib/pricing";
 
 // What's new — новости сайта для посетителя: что появилось и когда.
 // Появился 2026-09-15; пункт в навбаре висел серой заглушкой с 14.08.
@@ -704,7 +704,7 @@ export const UPDATES: UpdatePost[] = [
             kind: "list",
             items: [
               `${BASE_RATE}€ per block of the map's side — a 100×100 map comes to ${100 * BASE_RATE}€.`,
-              `From ${HIGH_RATE_THRESHOLD} blocks up, the rate is ${HIGH_RATE}€.`,
+              "The rate is the same for every size — a large map is not charged extra per block.",
               "A rectangular map is priced as the square of the same area, so neither side is overcharged.",
             ],
           },

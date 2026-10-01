@@ -3,9 +3,10 @@
 // (the plain-text explanation of the same numbers) — changing a rate here
 // changes both instead of only the calculator.
 
-export const BASE_RATE = 1.25;
-export const HIGH_RATE = 1.5;
-export const HIGH_RATE_THRESHOLD = 400;
+// One flat rate per unit of the map's side (owner's decision 2026-10-02).
+// Until then there were two tiers — 1.25€ below a 400×400 footprint and
+// 1.5€ from it — and raising the base to 1.5€ made the step disappear.
+export const BASE_RATE = 1.5;
 
 // Non-square maps (e.g. 125x100) don't have one obvious "side" to price
 // off of. sqrt(width * height) is the side length of the SQUARE that has
@@ -18,16 +19,8 @@ export function effectiveSize(width: number, height: number) {
   return Math.sqrt(width * height);
 }
 
-// Rate per unit of effectiveSize. size 400 itself falls in the higher
-// tier — confirmed with the site owner, matches "after a 400x400, it's
-// 400*1.5" being read as inclusive of 400.
-export function pricePerUnit(size: number) {
-  return size >= HIGH_RATE_THRESHOLD ? HIGH_RATE : BASE_RATE;
-}
-
 export function estimatePrice(width: number, height: number) {
-  const size = effectiveSize(width, height);
-  return Math.round(size * pricePerUnit(size));
+  return Math.round(effectiveSize(width, height) * BASE_RATE);
 }
 
 // Anchored to the site owner's own examples (150 -> 1 week, 400 -> min 2
