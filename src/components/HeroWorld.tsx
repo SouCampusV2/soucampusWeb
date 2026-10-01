@@ -126,6 +126,9 @@ export function HeroWorld() {
     // пришёл ещё один, показан будет последний.
     let pending: WorldResponse | null = null;
     let fadingOut: Animation | null = null;
+    // Под какой размер построен последний запрошенный мир (см. onResize).
+    let builtWidth = 0;
+    let builtHeight = 0;
 
     // Данные мира лежат в маленьких холстах «пиксель = блок» вне страницы,
     // а на видимые переносятся увеличенными БЕЗ сглаживания. Увеличивать
@@ -204,12 +207,14 @@ export function HeroWorld() {
     /** Просит воркер посчитать мир под текущее зерно и размер первого экрана. */
     function build() {
       if (!box) return;
+      builtWidth = box.clientWidth;
       // Ширина одной копии мира — не меньше экрана (иначе при двух копиях
       // встык на экране не хватило бы картинки). Земля — 1.25 экрана,
       // небо — 2 экрана: облака едут быстрее, и короткий цикл повторял бы
       // одни и те же облака слишком часто.
       const cols = Math.ceil((box.clientWidth * 1.25) / CELL);
       const rows = Math.ceil(box.clientHeight / CELL) + 1;
+      builtHeight = rows * CELL;
       const request: WorldRequest = {
         id: ++requestId,
         seed: seedRef.current,
@@ -308,6 +313,12 @@ export function HeroWorld() {
 
     let resizeTimer = 0;
     const onResize = () => {
+      // ⚠️ На телефоне resize приходит на КАЖДОМ скролле: адресная строка
+      // прячется и выезжает, меняя высоту окна. До 02.10 каждый такой раз
+      // мир гас до синего фона и строился заново. Пересборка нужна, только
+      // если сменилась ширина или мир стал ниже окна — лишнее по высоте
+      // и так срезает overflow-hidden.
+      if (box.clientWidth === builtWidth && box.clientHeight <= builtHeight) return;
       // Пересборка мира — десятки миллисекунд; во время перетаскивания
       // края окна она шла бы на каждый пиксель.
       window.clearTimeout(resizeTimer);
