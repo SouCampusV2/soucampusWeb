@@ -28,9 +28,13 @@ const displayFont = Unbounded({
 //
 // PageGlow здесь больше нет: свечение рисовалось на фоне страницы, а
 // фоном теперь служит карта.
+//
+// ⚠️ Высота — `svh`, а не `dvh` (02.10). `dvh` следует за адресной строкой
+// телефона: она прячется и выезжает на каждом скролле, секция меняла
+// высоту, текст у нижнего края прыгал, а карта пересобиралась.
 export function Hero() {
   return (
-    <section className="relative -mt-[calc(4.5rem+2px)] flex min-h-[100dvh] items-end overflow-hidden bg-[#24488a] sm:-mt-[calc(5rem+2px)] md:items-center">
+    <section className="relative -mt-[calc(4.5rem+2px)] flex min-h-[100svh] items-end overflow-hidden bg-[#24488a] sm:-mt-[calc(5rem+2px)] md:items-center">
       <HeroWorld />
 
       <div className="relative w-full px-4 pb-24 pt-32 md:px-12 md:pb-0">
