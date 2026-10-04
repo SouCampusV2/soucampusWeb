@@ -5,11 +5,8 @@ import { Unbounded } from "next/font/google";
 import { DownloadSimple } from "@phosphor-icons/react/dist/ssr";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getCurrentUser } from "@/lib/current-user";
-import {
-  getPurchasesForUser,
-  signedDownloadUrl,
-  downloadFileName,
-} from "@/lib/orders";
+import { getPurchasesForUser } from "@/lib/orders";
+import { downloadHref } from "@/lib/downloads";
 import { readUserRatings } from "@/lib/ratings";
 import { RatingStars } from "@/components/RatingStars";
 import { PageGlow } from "@/components/PageGlow";
@@ -42,17 +39,15 @@ export default async function PurchasesPage() {
     redirect("/login?next=/purchases");
   }
 
-  // Подписанные ссылки на скачивание — живут час; обновил страницу,
-  // получил свежие (страница динамическая).
+  // Ссылка на скачивание — наш обработчик, а не подписанный адрес
+  // Storage (с 2026-09-26): он пишет журнал скачиваний и подписывает
+  // файл в момент клика. Раньше здесь подписывался каждый файл на
+  // каждый показ страницы, и факт скачивания не видел никто.
   const purchases = await getPurchasesForUser(user.id, user.email ?? "");
-  const downloads = await Promise.all(
-    purchases.map(async (p) => ({
-      ...p,
-      url: p.filePath
-        ? await signedDownloadUrl(p.filePath, downloadFileName(p.title, p.filePath))
-        : null,
-    }))
-  );
+  const downloads = purchases.map((p) => ({
+    ...p,
+    url: p.filePath ? downloadHref(p.productId) : null,
+  }));
 
   // Свои оценки — чтобы подсветить уже выставленные звёзды.
   const userRatings = await readUserRatings(supabase, user.id);
@@ -128,6 +123,7 @@ export default async function PurchasesPage() {
                     </div>
                   </div>
 
+                  {/* Обычный <a>, не next/link: см. downloadHref. */}
                   {item.url ? (
                     <a
                       href={item.url}

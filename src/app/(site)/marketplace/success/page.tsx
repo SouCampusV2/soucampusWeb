@@ -4,13 +4,13 @@ import {
   getPaidOrder,
   buildPaidOrderFromSession,
   recordPaidOrder,
-  signedDownloadUrl,
-  downloadFileName,
   type PaidOrder,
 } from "@/lib/orders";
+import { downloadHref, SESSION_ID_PATTERN } from "@/lib/downloads";
 import { Button, INLINE_LINK } from "@/components/Button";
 import { ClearCartOnSuccess } from "@/components/ClearCartOnSuccess";
 import { DISCORD_INVITE } from "@/lib/site";
+import { WAIVER_TEXT } from "@/lib/legal";
 
 // Страница персональная (у каждого свой session_id в адресе) — кэшировать
 // и предсобирать нечего, рендерится на каждый запрос.
@@ -23,9 +23,9 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// Формат id Checkout Session ("cs_test_..." / "cs_live_..."). Всё, что
-// не похоже, отбрасываем до похода в БД и Stripe.
-const SESSION_ID_PATTERN = /^cs_[a-zA-Z0-9_]{10,250}$/;
+// Формат id Checkout Session ("cs_test_..." / "cs_live_...") —
+// SESSION_ID_PATTERN из downloads.ts: тот же пропуск проверяет
+// /api/download. Всё, что не похоже, отбрасываем до похода в БД и Stripe.
 
 /**
  * Ищет оплаченный заказ. Обычно его уже записал вебхук, но покупатель
@@ -114,19 +114,15 @@ export default async function SuccessPage({
     );
   }
 
-  // Подписываем ссылки при рендере: страница динамическая, обновление
-  // страницы даёт свежие ссылки — отдельный маршрут скачивания не нужен.
-  const items = await Promise.all(
-    order.items.map(async (item) => ({
-      ...item,
-      downloadUrl: item.filePath
-        ? await signedDownloadUrl(
-            item.filePath,
-            downloadFileName(item.title, item.filePath)
-          )
-        : null,
-    }))
-  );
+  // Кнопка ведёт на /api/download с id сессии как пропуском: там
+  // пишется журнал скачиваний и подписывается свежая ссылка на файл.
+  // До 2026-09-26 ссылки подписывались здесь, при рендере, и факт
+  // скачивания не записывал никто. sessionId здесь уже проверен —
+  // иначе заказа бы не было.
+  const items = order.items.map((item) => ({
+    ...item,
+    downloadUrl: item.filePath ? downloadHref(item.productId, sessionId) : null,
+  }));
 
   return (
     <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-16 sm:py-28">
@@ -140,8 +136,8 @@ export default async function SuccessPage({
           <span className="font-medium text-zinc-950 dark:text-zinc-50">
             {order.customerEmail}
           </span>
-          . Your downloads are below — the links stay valid for about an hour,
-          and refreshing this page issues fresh ones.
+          . Your downloads are below, and they stay in My purchases
+          whenever you&apos;re signed in.
         </p>
 
         <ul className="mt-10 space-y-4">
@@ -162,7 +158,8 @@ export default async function SuccessPage({
                 </p>
               </div>
               {item.downloadUrl ? (
-                <Button href={item.downloadUrl} size="sm">
+                // native: обычный <a> — см. проп в Button.tsx.
+                <Button href={item.downloadUrl} size="sm" native>
                   Download
                 </Button>
               ) : (
@@ -184,7 +181,21 @@ export default async function SuccessPage({
           ))}
         </ul>
 
-        <p className="mt-10 text-sm text-zinc-500 dark:text-zinc-400">
+        {/* Подтверждение согласия после сделки (2026-09-26). Право ЕС
+            требует подтвердить покупателю, что он согласился на
+            немедленную выдачу и потерял право на отзыв, — повторяем здесь
+            те же слова, что были у галочки. Бесплатные заказы сюда не
+            приходят вовсе. */}
+        <p className="mt-10 text-sm leading-6 text-zinc-500 dark:text-zinc-400">
+          At checkout you agreed: “{WAIVER_TEXT}” Faulty files are fixed or
+          refunded — see the{" "}
+          <Link href="/terms#refunds" className={`font-medium ${INLINE_LINK}`}>
+            refund policy
+          </Link>
+          .
+        </p>
+
+        <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
           Lost the link?{" "}
           <Link
             href="/contact"

@@ -28,6 +28,9 @@ const SECTIONS = [
   { href: "/admin/products", label: "Products" },
   { href: "/admin/applications", label: "Creators" },
   { href: "/admin/comments", label: "Comments" },
+  // Журнал скачиваний — доказательства на случай спора о списании
+  // (2026-09-26).
+  { href: "/admin/downloads", label: "Downloads" },
   { href: "/admin/announce", label: "Announce" },
 ];
 

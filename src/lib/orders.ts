@@ -351,6 +351,8 @@ export async function signedDownloadUrl(
 }
 
 export type PaidOrderItem = {
+  /** Для кнопки Download: /api/download спрашивает карту по id. */
+  productId: string;
   title: string;
   priceCents: number;
   quantity: number;
@@ -415,7 +417,7 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
   const { data, error } = await db
     .from("orders")
     .select(
-      "customer_email, total_cents, currency, order_items(title, price_cents, quantity, products(file_path))"
+      "customer_email, total_cents, currency, order_items(product_id, title, price_cents, quantity, products(file_path))"
     )
     .eq("stripe_session_id", sessionId)
     .eq("status", "paid")
@@ -425,6 +427,7 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
   if (!data) return null;
 
   type ItemRow = {
+    product_id: string;
     title: string;
     price_cents: number;
     quantity: number;
@@ -438,6 +441,7 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
     items: ((data.order_items ?? []) as ItemRow[]).map((item) => {
       const product = unwrapOne(item.products);
       return {
+        productId: item.product_id,
         title: item.title,
         priceCents: Number(item.price_cents),
         quantity: Number(item.quantity),

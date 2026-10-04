@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import {
@@ -21,6 +21,9 @@ import { getViewCounts, VIEW_PATHS } from "@/lib/views";
 import { ViewCount } from "@/components/ViewCount";
 import { PortfolioGallery } from "@/components/PortfolioGallery";
 import { Button } from "@/components/Button";
+import { CopyLinkButton } from "@/components/CopyLinkButton";
+import { PAGE_TOP } from "@/components/page-spacing";
+import { SHARE_COLOR, shareMetadata } from "@/lib/share";
 import {
   PortfolioBackLink,
   PortfolioBackLinkFallback,
@@ -48,28 +51,31 @@ export async function generateMetadata({
   // то, что ищет заказчик.
   const description = `${project.summary} Size ${project.size}, delivered in ${project.deadline}.`;
 
-  // og:image — САМО ФОТО постройки (абсолютный URL), а не брендовая заглушка:
-  // ссылка на работу в Discord показывает реальный билд. metadataBase делает
-  // путь абсолютным, но для og картинку принято указывать полным адресом.
+  // Карточка в Discord — сами фото постройки (обложка + галерея, до
+  // четырёх), а не брендовая заглушка. Заказная работа получает свой
+  // хэштег: тег «Order» в базе для хэштега не годится.
   return {
     title: project.title,
     description,
-    alternates: { canonical: `/portfolio/${project.slug}` },
-    openGraph: {
-      type: "article",
+    ...shareMetadata({
+      kind: "portfolio",
+      path: `/portfolio/${project.slug}`,
       title: project.title,
-      description,
-      url: `/portfolio/${project.slug}`,
-      images: [{ url: project.image, alt: project.title }],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: project.title,
-      description,
-      images: [project.image],
-    },
+      text: description,
+      tags: [
+        "Minecraft",
+        "MinecraftBuilds",
+        ...(project.priceAmount !== null ? ["MinecraftCommission"] : []),
+      ],
+      images: [project.image, ...(project.gallery ?? [])],
+      imageAlt: project.title,
+    }),
   };
 }
+
+// Цвет полосы у карточки в Discord. Живёт в viewport, а не в metadata:
+// так требует Next 16 для theme-color.
+export const viewport: Viewport = { themeColor: SHARE_COLOR };
 
 export default async function ProjectPage({
   params,
@@ -97,7 +103,7 @@ export default async function ProjectPage({
   const target = { slug: project.slug, featured: project.isFeatured };
 
   return (
-    <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-16 sm:py-24">
+    <main className={`w-full mx-auto max-w-6xl flex-1 px-6 pb-16 sm:pb-24 ${PAGE_TOP}`}>
       <div className="mx-auto max-w-5xl">
         {/* ⚠️ Эта страница НЕ принимает searchParams, и это не забывчивость.
             Проп `searchParams` сам по себе делает страницу динамической:
@@ -109,14 +115,16 @@ export default async function ProjectPage({
             Теперь адрес читает клиентский PortfolioBackLink, а <Suspense>
             удерживает эту динамику внутри себя: без границы Next увёл бы
             на клиент всё дерево страницы. Разбор — в шапке компонента. */}
-        <Suspense fallback={<PortfolioBackLinkFallback {...target} />}>
-          <PortfolioBackLink {...target} />
-        </Suspense>
-
-        <header className="mt-8">
-          {/* Тег — тем же лаймовым чипом, что на карточке в каталоге:
+        <header>
+          {/* Стрелка «назад» — кружком в одном ряду с тегом (04.10,
+              просьба владельца), как на странице карты: отдельная строка
+              «← All work» над тегом удлиняла зазор под навбаром.
+              Тег — тем же лаймовым чипом, что на карточке в каталоге:
               человек только что кликнул по нему и узнаёт его здесь. */}
           <div className="flex flex-wrap items-center gap-3">
+            <Suspense fallback={<PortfolioBackLinkFallback {...target} />}>
+              <PortfolioBackLink {...target} />
+            </Suspense>
             <span className="rounded-full bg-lime-300 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-950">
               {project.tag}
             </span>
@@ -131,6 +139,9 @@ export default async function ProjectPage({
           <p className="mt-4 max-w-2xl text-lg text-zinc-600 dark:text-zinc-400">
             {project.summary}
           </p>
+          <div className="mt-6">
+            <CopyLinkButton path={`/portfolio/${project.slug}`} />
+          </div>
         </header>
 
         {/* Фото работы — клиентский блок: любой кадр открывается во весь

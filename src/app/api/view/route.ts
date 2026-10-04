@@ -1,8 +1,8 @@
-import { createHash } from "crypto";
 import { cookies, headers } from "next/headers";
 import { NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { isTrackablePath } from "@/lib/views";
+import { clientIp, hashIp } from "@/lib/ip-hash";
 import { issueVisitorId, readVisitorId } from "@/lib/visitor-cookie";
 
 // Считать просмотры при рендере страницы нельзя: страницы статические
@@ -19,7 +19,7 @@ const COOKIE_NAME = "scv_visitor";
 // исключение "своя статистика посещаемости" и не требует баннера
 // согласия. Остальные условия исключения мы и так выполняем: cookie
 // только своя, никакой слежки между сайтами, никакой передачи данных,
-// наружу отдаётся только агрегат, IP не хранится (см. hashIp ниже).
+// наружу отдаётся только агрегат, IP не хранится (см. lib/ip-hash.ts).
 // Полноценная политика конфиденциальности — вместе с Terms of Service,
 // Этап 4. Юридической консультацией это не является.
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 395;
@@ -39,16 +39,6 @@ function requireSecret() {
   const salt = process.env.VIEW_HASH_SALT;
   if (!salt) throw new Error("Не задан VIEW_HASH_SALT (см. .env.example)");
   return salt;
-}
-
-// Сам IP не сохраняем: он считается персональными данными, а для нашей
-// задачи достаточно необратимого отпечатка. Соль нужна, чтобы хэш нельзя
-// было подобрать перебором — адресов всего около четырёх миллиардов.
-//
-// Только адрес, без User-Agent: раньше он входил в хэш, и достаточно
-// было менять строку браузера, чтобы каждый раз получать чистый лимит.
-function hashIp(ip: string, secret: string) {
-  return createHash("sha256").update(`${secret}:${ip}`).digest("hex");
 }
 
 export async function POST(request: Request) {
@@ -76,12 +66,8 @@ export async function POST(request: Request) {
   const issued = known ? null : issueVisitorId(secret);
   const visitorId = known ?? issued!.id;
 
-  // За прокси (Vercel) настоящий адрес приходит заголовком.
-  const ip =
-    headerList.get("x-forwarded-for")?.split(",")[0].trim() ||
-    headerList.get("x-real-ip") ||
-    "unknown";
-  const ipHash = hashIp(ip, secret);
+  // Почему хэш, а не адрес, — в шапке lib/ip-hash.ts.
+  const ipHash = hashIp(clientIp(headerList), secret);
 
   const db = getSupabaseAdmin();
 

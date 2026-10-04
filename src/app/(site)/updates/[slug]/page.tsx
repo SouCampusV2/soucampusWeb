@@ -1,7 +1,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Unbounded } from "next/font/google";
 import { ArrowLeft, ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { PageGlow } from "@/components/PageGlow";
@@ -9,6 +9,8 @@ import { ArticleBody } from "@/components/ArticleBody";
 import { BackLink } from "@/components/BackLink";
 import { Button, INLINE_LINK } from "@/components/Button";
 import { UpdateMeta } from "@/components/UpdateMeta";
+import { CopyLinkButton } from "@/components/CopyLinkButton";
+import { SHARE_COLOR, shareMetadata } from "@/lib/share";
 import { UPDATES, getAllUpdates, getUpdate } from "@/lib/updates";
 
 const displayFont = Unbounded({
@@ -31,22 +33,29 @@ export async function generateMetadata({
   const post = getUpdate(slug);
   if (!post) return { title: "Not found" };
 
+  // Картинки карточки — обложка и кадры из тела поста, в порядке чтения.
+  const bodyImages = post.body.flatMap((section) =>
+    section.blocks.flatMap((block) => (block.kind === "image" ? [block.src] : [])),
+  );
+
   return {
     title: post.title,
     description: post.summary,
-    alternates: { canonical: `/updates/${post.slug}` },
-    openGraph: {
-      type: "article",
+    ...shareMetadata({
+      kind: "updates",
+      path: `/updates/${post.slug}`,
       title: post.title,
-      description: post.summary,
-      url: `/updates/${post.slug}`,
+      text: post.summary,
+      tags: ["Minecraft", "MinecraftBuilds", "SouCampus"],
+      images: [post.cover.src, ...bodyImages],
+      imageAlt: post.cover.alt,
       publishedTime: post.date,
-      // Относительный путь достраивает metadataBase из корневого layout:
-      // ссылка на пост в Discord покажет обложку, а не пустую рамку.
-      images: [post.cover.src],
-    },
+    }),
   };
 }
+
+// Цвет полосы у карточки в Discord — см. src/lib/share.ts.
+export const viewport: Viewport = { themeColor: SHARE_COLOR };
 
 // Страница поста устроена как статья вики, а не как деталь-страница
 // работы или карты — со свечением и дисплейным шрифтом. Правило «деталь
@@ -87,6 +96,9 @@ export default async function UpdatePage({
           <p className="mt-4 text-lg text-zinc-600 dark:text-zinc-400">
             {post.summary}
           </p>
+          <div className="mt-6">
+            <CopyLinkButton path={`/updates/${post.slug}`} />
+          </div>
 
           <figure className="mt-10">
             <div className="relative aspect-video overflow-hidden rounded-3xl">

@@ -4,6 +4,7 @@ import { getProduct } from "@/lib/products";
 import { freeOrderKey, recordPaidOrder } from "@/lib/orders";
 import { getStripe } from "@/lib/stripe";
 import { SITE_URL } from "@/lib/site";
+import { WAIVER_STRIPE_NOTE, WAIVER_VERSION } from "@/lib/legal";
 import { createSupabaseServer } from "@/lib/supabase-server";
 
 // Создание Stripe Checkout Session. Выполняется на каждый запрос —
@@ -184,10 +185,56 @@ export async function POST(request: Request) {
     return NextResponse.json({ claimed: true });
   }
 
+  // Отказ от права на отзыв (2026-09-26, lib/legal.ts). Галочку в
+  // корзине и у «Buy now» можно обойти запросом из консоли — поэтому
+  // решает сервер: платного заказа без согласия нет. Бесплатным картам
+  // оно не нужно (возвращать нечего), поэтому проверка стоит ПОСЛЕ
+  // бесплатной ветки.
+  //
+  // ⚠️ Не через consent_collection Stripe, хотя аудит 25.09 предлагал
+  // его: тот требует адрес Terms в настройках Dashboard и без него
+  // отказывает в создании Checkout ЦЕЛИКОМ. Одна незаполненная
+  // настройка в любом из двух аккаунтов (test / live) — и покупки
+  // ломаются. Своя галочка от чужих настроек не зависит.
+  const waiver =
+    typeof body === "object" && body !== null && (body as { waiver?: unknown }).waiver === true;
+  if (!waiver) {
+    return NextResponse.json(
+      {
+        error: "waiver required",
+        message: "Please tick the box about immediate delivery to continue.",
+      },
+      { status: 400 }
+    );
+  }
+
+  // Доказательство согласия — В МЕТАДАННЫХ ПЛАТЕЖА, а не только сессии:
+  // спор о списании в Stripe открывается на платёж, и метаданные сессии
+  // туда сами не переезжают. Версия — чтобы через год было видно, НА
+  // КАКОЙ текст поставлена галочка.
+  const consent = {
+    user_id: user.id,
+    withdrawal_waiver: "accepted",
+    withdrawal_waiver_version: WAIVER_VERSION,
+    withdrawal_waiver_at: new Date().toISOString(),
+  };
+
   const base = returnBase(request);
 
   const session = await getStripe().checkout.sessions.create({
     mode: "payment",
+    // ТОЛЬКО мгновенные способы оплаты (2026-09-26). Заказ пишется, когда
+    // сессия уже paid (вебхук checkout.session.completed и страница
+    // успеха), а событие async_payment_succeeded мы не слушаем. Способ с
+    // отложенным подтверждением (SEPA Direct Debit и подобные) дал бы
+    // «деньги придут через три дня, а заказ не запишется никогда».
+    //
+    // Задано ЗДЕСЬ, а не галочками в Stripe Dashboard: без этой строки
+    // Checkout берёт способы из настроек аккаунта, и одна включённая там
+    // галочка молча открывала бы дыру. Apple Pay и Google Pay — это
+    // "card", они работают. Захочется iDEAL, Bancontact и подобных —
+    // сначала научить вебхук async_payment_succeeded, потом расширять.
+    payment_method_types: ["card"],
     line_items: lineItems,
     // Личность покупателя. Заказ пока пишется в orders как раньше (по
     // email), но эти поля кладём уже сейчас, чтобы связать заказ с
@@ -196,7 +243,11 @@ export async function POST(request: Request) {
     // metadata.user_id несут id аккаунта в вебхук.
     customer_email: user.email,
     client_reference_id: user.id,
-    metadata: { user_id: user.id },
+    metadata: consent,
+    payment_intent_data: { metadata: consent },
+    // Напоминание под кнопкой оплаты на стороне Stripe — тот же смысл,
+    // что у галочки. Не зависит от настроек Dashboard.
+    custom_text: { submit: { message: WAIVER_STRIPE_NOTE } },
     // {CHECKOUT_SESSION_ID} подставляет сам Stripe при редиректе — так
     // страница успеха получает ключ к заказу, не полагаясь на cookie.
     success_url: `${base}/marketplace/success?session_id={CHECKOUT_SESSION_ID}`,

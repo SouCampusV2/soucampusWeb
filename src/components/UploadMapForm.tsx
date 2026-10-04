@@ -36,6 +36,7 @@ import {
   checkImageFile,
   checkMapFile,
   MAP_FILE_ACCEPT,
+  MAP_FILE_TYPES_LABEL,
 } from "@/lib/upload-limits";
 import { GalleryPicker, useImagePicker } from "@/components/GalleryPicker";
 import { SpecFields } from "@/components/SpecFields";
@@ -304,7 +305,7 @@ export function UploadMapForm({
       {/* Map file */}
       <div>
         <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Map file <span className="font-normal text-zinc-500 dark:text-zinc-400">— .zip, .schem or .schematic, up to 15 MB</span>
+          Map file <span className="font-normal text-zinc-500 dark:text-zinc-400">— {MAP_FILE_TYPES_LABEL}, up to 15 MB</span>
         </span>
         <button
           type="button"

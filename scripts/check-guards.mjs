@@ -900,6 +900,52 @@ async function main() {
     // Проверяется СОСТОЯНИЕ строки, а не ошибка: отказ RLS на update —
     // это ноль строк и успех, а здесь нас интересует, дошла ли запись.
     // -------------------------------------------------------
+    // -------------------------------------------------------
+    // Журнал скачиваний (20260926120000) — закрыт от браузера целиком.
+    //
+    // Ждём отказ прав 42501 и на чтение, и на запись. ⚠️ Отсутствие
+    // таблицы — тоже ошибка, и без проверки кода она читалась бы как
+    // «закрыто». Отказ по двум причинам не доказывает ни одну (21.09),
+    // поэтому непрогнанная миграция — skip, а не ok.
+    // -------------------------------------------------------
+    console.log("\nЖурнал скачиваний — закрыт от браузера");
+
+    const downloadProbe = createClient(url, anonKey, {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const tableExists = await asServer.from("download_events").select("id").limit(1);
+    if (tableExists.error) {
+      skip(
+        "download_events закрыта от браузера",
+        `таблица не читается даже служебным ключом (${tableExists.error.message}) — 20260926120000 не прогнана?`
+      );
+    } else {
+      for (const [who, client] of [
+        ["аноним", downloadProbe],
+        ["вошедший", asUser],
+      ]) {
+        const read = await client.from("download_events").select("id").limit(1);
+        check(
+          `${who} не читает download_events`,
+          read.error?.code === "42501",
+          read.error ? `ошибка ${read.error.code}, а не отказ прав` : "строки отдаются — revoke не прогнан"
+        );
+        const write = await client.from("download_events").insert({
+          title: `guard-${suffix}`,
+          customer_email: `guard-${suffix}@example.test`,
+          source: "purchases",
+          ip_hash: "guard",
+        });
+        check(
+          `${who} не пишет в download_events`,
+          write.error?.code === "42501",
+          write.error ? `ошибка ${write.error.code}, а не отказ прав` : "строка записана — журнал подделывается из браузера"
+        );
+      }
+      // Если дверь всё-таки была открыта — убрать за собой.
+      await asServer.from("download_events").delete().eq("title", `guard-${suffix}`);
+    }
+
     console.log("\nПредставления — только чтение");
 
     const asAnon = createClient(url, anonKey, {

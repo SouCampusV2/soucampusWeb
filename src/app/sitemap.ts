@@ -11,8 +11,8 @@ import { getAllUpdates } from "@/lib/updates";
 //
 // Работы и отзывы берём ИЗ БАЗЫ (getAllProjects/getAllReviews), а не списком
 // руками: добавил работу строкой в Supabase — она попадает в карту сама, без
-// правки кода. /terms сюда НЕ включаем — заглушка под noindex (см. page.tsx);
-// /privacy включаем, она настоящая.
+// правки кода. /terms и /privacy включаем: с 26.09 /terms больше не
+// заглушка под noindex — там условия покупки, возвраты и продавец.
 // /marketplace и товары появляются в карте только когда есть опубликованные товары —
 // та же логика, что у robots в shop/page.tsx: пустой каталог не индексируем.
 
@@ -33,10 +33,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/about`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
     { url: `${SITE_URL}/contact`, lastModified: now, changeFrequency: "monthly", priority: 0.7 },
     { url: `${SITE_URL}/faq`, lastModified: now, changeFrequency: "monthly", priority: 0.6 },
-    // /privacy В КАРТЕ ЕСТЬ, в отличие от /terms — тот заглушка под noindex,
-    // а политика конфиденциальности настоящая и обязана быть находимой.
-    // Плюс её забирает Google при проверке OAuth-приложения.
+    // Обе юридические страницы обязаны быть находимыми. /privacy к тому
+    // же забирает Google при проверке OAuth-приложения; /terms (с 26.09)
+    // — условия покупки, на которые ссылается галочка при оплате.
     { url: `${SITE_URL}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    { url: `${SITE_URL}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 
   const projectPages: MetadataRoute.Sitemap = projects.map((p) => ({
@@ -46,7 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.8,
   }));
 
-  // Вики — настоящий контент, в отличие от /terms: индексируем и
+  // Вики — настоящий контент: индексируем и
   // корневую страницу, и каждую статью. Список берётся из WIKI_ARTICLES,
   // а не переписывается сюда руками, — новая статья попадает в карту
   // сама, ровно как работы портфолио попадают из базы.

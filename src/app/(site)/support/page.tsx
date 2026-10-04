@@ -25,7 +25,7 @@ export const metadata: Metadata = {
 // с двумя заголовками.
 export default function SupportPage() {
   return (
-    <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-16 sm:py-28">
+    <main className="w-full mx-auto max-w-6xl flex-1 px-6 pb-16 pt-20 sm:pb-28">
       <div className="mx-auto max-w-2xl">
         <span className="text-sm font-semibold text-orange-500">Marketplace</span>
         <h1
@@ -62,8 +62,8 @@ export default function SupportPage() {
             href={`mailto:${SUPPORT_EMAIL}`}
             className="inline-flex items-center gap-2 text-sm font-semibold text-orange-500 underline decoration-2 underline-offset-4 transition-colors hover:text-orange-600 dark:text-orange-400 dark:hover:text-orange-500"
           >
-            <EnvelopeSimple size={18} weight="bold" />
             {SUPPORT_EMAIL}
+            <EnvelopeSimple size={18} weight="bold" />
           </a>
         </div>
       </div>

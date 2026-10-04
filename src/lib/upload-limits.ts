@@ -6,8 +6,12 @@
 // мир, а не то, что реально нужно покупателю.
 
 export const MAP_FILE_MAX_BYTES = 15 * 1024 * 1024; // 15 МБ на схематику/мир
-export const IMAGE_MAX_BYTES = 5 * 1024 * 1024; // 5 МБ на одну картинку
-export const IMAGES_TOTAL_MAX_BYTES = 30 * 1024 * 1024; // 30 МБ на всю галерею
+// Картинки подняты владельцем 2026-09-27: 5 → 10 МБ на одну и 30 → 100 МБ
+// на галерею — скриншоты карт в полном разрешении в прежние не влезали.
+// Потолок на бакете в Supabase не стоит (проверено на preview), так что
+// решают только эти два числа — и форма, и шлюз /api/creator/image.
+export const IMAGE_MAX_BYTES = 10 * 1024 * 1024; // 10 МБ на одну картинку
+export const IMAGES_TOTAL_MAX_BYTES = 100 * 1024 * 1024; // 100 МБ на всю галерею
 export const MAX_IMAGES = 15;
 
 export function formatBytes(bytes: number): string {
@@ -40,7 +44,15 @@ export function formatBytes(bytes: number): string {
 // ------------------------------------------------------------
 
 /** Что принимаем от креатора — для атрибута accept у поля файла. */
-export const MAP_FILE_ACCEPT = ".zip,.schem,.schematic";
+// .litematic (Litematica) добавлен 2026-09-27: внутри это gzip-сжатый
+// NBT, как у .schem, и опознаётся той же сигнатурой. Axiom .bp напрямую
+// НЕ принимаем: его сигнатура нам не известна, а пустить формат без
+// проверки байтов значит пустить что угодно, переименованное в .bp.
+// Пока — внутри .zip.
+export const MAP_FILE_ACCEPT = ".zip,.schem,.schematic,.litematic";
+
+/** Тот же перечень словами — для подписи в форме и текстов отказа. */
+export const MAP_FILE_TYPES_LABEL = ".zip, .schem, .schematic or .litematic";
 
 /**
  * Расширения файла карты, которые вообще может выдать шлюз.
@@ -50,7 +62,7 @@ export const MAP_FILE_ACCEPT = ".zip,.schem,.schematic";
  * мусора, но «чистая» строка `exe` остаётся `exe` — отсекает её вот
  * этот перечень.
  */
-export const MAP_FILE_EXTENSIONS = ["zip", "schem", "schematic"] as const;
+export const MAP_FILE_EXTENSIONS = ["zip", "schem", "schematic", "litematic"] as const;
 
 /**
  * Расширения картинки, которые может выдать шлюз (/api/creator/image).
@@ -139,7 +151,8 @@ export function checkMapBytes(
   }
 
   const name = fileName.toLowerCase();
-  const isSchematic = name.endsWith(".schem") || name.endsWith(".schematic");
+  const isSchematic =
+    name.endsWith(".schem") || name.endsWith(".schematic") || name.endsWith(".litematic");
 
   const looksZip = ZIP_SIGNATURES.some((sig) => startsWith(head, sig));
   const looksGzip = startsWith(head, GZIP_SIGNATURE);
@@ -150,7 +163,7 @@ export function checkMapBytes(
 
   return isSchematic
     ? `“${fileName}” doesn't look like a valid schematic — the file may be corrupted.`
-    : "That doesn't look like a .zip, .schem or .schematic file. Pack a world folder into a zip archive first.";
+    : `That doesn't look like a ${MAP_FILE_TYPES_LABEL} file. Pack a world folder into a zip archive first.`;
 }
 
 /** Ядро проверки картинки. null — годится; строка — причина отказа. */
