@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { BackLink } from "@/components/BackLink";
+import { BackArrow } from "@/components/BackArrow";
 
 // Ссылка «назад» на странице работы — единственное место, которому нужен
 // адресный параметр `?from=home` (2026-09-11).
@@ -64,7 +64,7 @@ type Target = { slug: string; featured: boolean };
 export function PortfolioBackLink(target: Target) {
   const from = useSearchParams().get("from");
   return from === "home" ? (
-    <BackLink href={`/#home-work-${target.slug}`}>Home</BackLink>
+    <BackArrow href={`/#home-work-${target.slug}`} label="Home" />
   ) : (
     <PortfolioBackLinkFallback {...target} />
   );
@@ -79,8 +79,9 @@ export function PortfolioBackLink(target: Target) {
  */
 export function PortfolioBackLinkFallback({ slug, featured }: Target) {
   return (
-    <BackLink href={featured ? "/portfolio" : `/portfolio#work-${slug}`}>
-      All work
-    </BackLink>
+    <BackArrow
+      href={featured ? "/portfolio" : `/portfolio#work-${slug}`}
+      label="All work"
+    />
   );
 }

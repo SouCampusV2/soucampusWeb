@@ -8,6 +8,7 @@ import { Flag } from "@/components/Flag";
 import { ReviewAvatar } from "@/components/ReviewAvatar";
 import { ACCENT_CARD, ACCENT_RING, ACCENT_TEXT } from "@/lib/review-accent";
 import type { Review } from "@/lib/reviews";
+import { PAGE_TOP } from "@/components/page-spacing";
 
 export async function generateStaticParams() {
   const reviews = await getAllReviews();
@@ -55,7 +56,7 @@ export default async function ReviewPage({
   const next = reviews.length > 1 ? reviews[(at + 1) % reviews.length] : null;
 
   return (
-    <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-16 sm:py-28">
+    <main className={`w-full mx-auto max-w-6xl flex-1 px-6 pb-16 sm:pb-28 ${PAGE_TOP}`}>
       <div className="mx-auto max-w-3xl">
         {/* Назад — к ЭТОЙ карточке в карусели на главной, а не к началу
             страницы: якорь #review-<slug> разбирает сама ClientReviews

@@ -19,7 +19,8 @@ import { ReactionButton } from "@/components/ReactionButton";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductGallery } from "@/components/ProductGallery";
 import { RICH_TEXT_CLASS } from "@/lib/rich-text";
-import { ArrowCircle } from "@/components/ArrowCircle";
+import { BackArrow } from "@/components/BackArrow";
+import { PAGE_TOP } from "@/components/page-spacing";
 import { INLINE_LINK } from "@/components/Button";
 import { StarRating } from "@/components/StarRating";
 import { ProductSpecs } from "@/components/ProductSpecs";
@@ -160,7 +161,7 @@ export default async function ProductPage({
     // Сверху отступ меньше, чем снизу (27.09, замечание владельца):
     // py-28 давал 112px пустоты между навбаром и названием — страница
     // начиналась «где-то ниже». Низ оставлен прежним, там футер.
-    <main className="w-full mx-auto max-w-[120rem] flex-1 px-6 pb-16 pt-8 sm:px-10 sm:pb-28 sm:pt-12 lg:px-16 xl:px-24 2xl:px-[120px]">
+    <main className={`w-full mx-auto max-w-[120rem] flex-1 px-6 pb-16 sm:px-10 sm:pb-28 lg:px-16 xl:px-24 2xl:px-[120px] ${PAGE_TOP}`}>
       {/* Стрелка «назад» — слева от названия, а не отдельной строкой
           «All products» над ним (27.09, просьба владельца): строка съедала
           ещё полсотни пикселей сверху. Название, короткое описание и
@@ -172,18 +173,9 @@ export default async function ProductPage({
           стоял самодельный кружок с рамкой и сдвигом иконки — отвергнут
           владельцем: круглая стрелка на сайте одна, hover у неё — цвет. */}
       <div className="flex items-start gap-3 sm:gap-4">
-        <Link
-          href="/marketplace"
-          aria-label="All products"
-          title="All products"
-          className="shrink-0 transition-transform active:scale-90 sm:mt-0.5"
-        >
-          <ArrowCircle
-            direction="left"
-            className="h-11 w-11"
-            colorClassName="bg-orange-500 hover:bg-orange-600 dark:bg-orange-400 dark:hover:bg-orange-500 text-white"
-          />
-        </Link>
+        <div className="sm:mt-0.5">
+          <BackArrow href="/marketplace" label="All products" />
+        </div>
 
         <div className="min-w-0">
           <h1 className="text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl">
