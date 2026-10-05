@@ -7,6 +7,7 @@ import { ArrowCircle } from "@/components/ArrowCircle";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { BuildEstimator } from "@/components/BuildEstimator";
 import { PageGlow } from "@/components/PageGlow";
+import { HowItWorks } from "@/components/HowItWorks";
 import { DISCORD_INVITE } from "@/lib/site";
 import { BASE_RATE } from "@/lib/pricing";
 
@@ -125,6 +126,11 @@ export default function ContactPage() {
           <BuildEstimator />
         </div>
       </section>
+
+      {/* Сразу под калькулятором: человек прикинул цену — следующий
+          вопрос «а дальше что». Полосой во всю ширину, поэтому вне <main>;
+          синяя, в цвет страницы (2026-10-05, просьба владельца). */}
+      <HowItWorks tone="blue" />
 
       <main className="w-full mx-auto max-w-6xl flex-1 px-6">
       {/* Chat to us directly */}

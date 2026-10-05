@@ -10,9 +10,18 @@ const steps = [
   { title: "Delivery", text: "Final walkthrough, revisions, remaining payment, map handover." },
 ];
 
-export function HowItWorks() {
+// Цвет секции следует акценту страницы: на главной лайм, на /contact
+// синий (2026-10-05) — там всё синее, от свечения до кнопки Discord.
+// Шаги и тексты общие: процесс заказа один, где бы о нём ни рассказывали.
+const TONES = {
+  lime: { bg: "bg-lime-300 dark:bg-lime-950", accent: "text-blue-800 dark:text-blue-400" },
+  blue: { bg: "bg-blue-300 dark:bg-blue-950", accent: "text-blue-900 dark:text-blue-300" },
+} as const;
+
+export function HowItWorks({ tone = "lime" }: { tone?: keyof typeof TONES }) {
+  const colors = TONES[tone];
   return (
-    <section className="bg-lime-300 py-16 dark:bg-lime-950 sm:py-28">
+    <section className={`${colors.bg} py-16 sm:py-28`}>
       <div className="mx-auto max-w-6xl px-6">
         <FadeIn>
           <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
@@ -27,7 +36,7 @@ export function HowItWorks() {
         <div className="mt-10 grid gap-6 sm:mt-12 sm:grid-cols-2 sm:gap-8 md:grid-cols-3 lg:grid-cols-5">
           {steps.map((step, i) => (
             <FadeIn key={step.title} y={24} delay={i * 80} className="relative">
-              <span className="text-4xl font-bold text-blue-800 dark:text-blue-400">
+              <span className={`text-4xl font-bold ${colors.accent}`}>
                 {String(i + 1).padStart(2, "0")}
               </span>
               <h3 className="mt-2 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
