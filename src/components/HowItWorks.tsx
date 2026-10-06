@@ -1,13 +1,24 @@
 "use client";
 
+import {
+  EnvelopeSimple,
+  ChatCircleText,
+  Wallet,
+  Cube,
+  Gift,
+} from "@phosphor-icons/react/dist/ssr";
 import { FadeIn } from "@/components/FadeIn";
 
+// Иконка на шаг (2026-10-06, набор выбран владельцем): письмо → разговор
+// → кошелёк → блок → подарок. Простые и однозначные, без игровых
+// метафор. `dist/ssr` — как на /about: иконкам не нужен
+// контекст Phosphor, и так они не тянут его в бандл.
 const steps = [
-  { title: "Request", text: "Reach out via the contact form or Discord and describe your idea." },
-  { title: "Discussion", text: "We work out the details, style, timeline and price." },
-  { title: "Deposit", text: "We lock in the terms and you pay a partial deposit." },
-  { title: "Building", text: "I build the map and show you progress along the way." },
-  { title: "Delivery", text: "Final walkthrough, revisions, remaining payment, map handover." },
+  { title: "Request", icon: EnvelopeSimple, text: "Reach out via the contact form or Discord and describe your idea." },
+  { title: "Discussion", icon: ChatCircleText, text: "We work out the details, style, timeline and price." },
+  { title: "Deposit", icon: Wallet, text: "We lock in the terms and you pay a partial deposit." },
+  { title: "Building", icon: Cube, text: "I build the map and show you progress along the way." },
+  { title: "Delivery", icon: Gift, text: "Final walkthrough, revisions, remaining payment, map handover." },
 ];
 
 // Цвет секции следует акценту страницы: на главной лайм, на /contact
@@ -39,8 +50,12 @@ export function HowItWorks({ tone = "lime" }: { tone?: keyof typeof TONES }) {
               <span className={`text-4xl font-bold ${colors.accent}`}>
                 {String(i + 1).padStart(2, "0")}
               </span>
-              <h3 className="mt-2 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
+              {/* Иконка справа от названия шага, цветом текста (просьба
+                  владельца 06.10). 24px: 28 рядом с заголовком в 18px
+                  оказалось крупно, владелец уменьшил. */}
+              <h3 className="mt-2 flex items-center gap-2 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
                 {step.title}
+                <step.icon size={24} aria-hidden="true" className="shrink-0" />
               </h3>
               <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{step.text}</p>
             </FadeIn>
