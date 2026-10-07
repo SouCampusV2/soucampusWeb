@@ -116,15 +116,27 @@ export default async function ProjectPage({
             удерживает эту динамику внутри себя: без границы Next увёл бы
             на клиент всё дерево страницы. Разбор — в шапке компонента. */}
         <header>
-          {/* Стрелка «назад» — кружком в одном ряду с тегом (04.10,
-              просьба владельца), как на странице карты: отдельная строка
-              «← All work» над тегом удлиняла зазор под навбаром.
+          {/* Раскладка шапки — просьба владельца 07.10: стрелка «назад»
+              слева от названия, а тег и просмотры — в ряду с Copy link,
+              именно в порядке «Copy link → тег → просмотры». Прежде (04.10)
+              стрелка и тег стояли строкой над заголовком.
               Тег — тем же лаймовым чипом, что на карточке в каталоге:
               человек только что кликнул по нему и узнаёт его здесь. */}
-          <div className="flex flex-wrap items-center gap-3">
-            <Suspense fallback={<PortfolioBackLinkFallback {...target} />}>
-              <PortfolioBackLink {...target} />
-            </Suspense>
+          <div className="flex items-center gap-4">
+            <div className="shrink-0">
+              <Suspense fallback={<PortfolioBackLinkFallback {...target} />}>
+                <PortfolioBackLink {...target} />
+              </Suspense>
+            </div>
+            <h1 className="min-w-0 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-6xl">
+              {project.title}
+            </h1>
+          </div>
+          <p className="mt-4 max-w-2xl text-lg text-zinc-600 dark:text-zinc-400">
+            {project.summary}
+          </p>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <CopyLinkButton path={`/portfolio/${project.slug}`} />
             <span className="rounded-full bg-lime-300 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-950">
               {project.tag}
             </span>
@@ -132,15 +144,6 @@ export default async function ProjectPage({
               count={viewCounts[VIEW_PATHS.project(project.slug)]}
               className="text-zinc-500 dark:text-zinc-400"
             />
-          </div>
-          <h1 className="mt-4 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-6xl">
-            {project.title}
-          </h1>
-          <p className="mt-4 max-w-2xl text-lg text-zinc-600 dark:text-zinc-400">
-            {project.summary}
-          </p>
-          <div className="mt-6">
-            <CopyLinkButton path={`/portfolio/${project.slug}`} />
           </div>
         </header>
 
