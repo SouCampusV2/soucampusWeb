@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { SITE_NAME } from "@/lib/site";
+import { SITE_NAME, SITE_URL } from "@/lib/site";
 
 // Карточка ссылки в Discord (и Telegram, X, Slack) — «пост», который
 // появляется, когда владелец кидает адрес работы в канал.
@@ -43,6 +43,29 @@ export const SHARE_KINDS = {
 
 export type ShareKind = keyof typeof SHARE_KINDS;
 
+/**
+ * Тело oEmbed: строка автора над карточкой. Одна функция на оба
+ * обработчика (/oembed/<kind> и /oembed/<kind>/<slug>), чтобы поля не
+ * разъехались. `date` — уже напечатанная дата, её дописывают только
+ * посты: у работ настоящей даты нет (created_at — день переноса в базу,
+ * у всех один), и показывать её было бы неправдой.
+ *
+ * Времени нет намеренно: подвал «X • дата время» Discord рисует только
+ * своим интеграциям, а у поста и хранится один день (решение владельца
+ * 04.10 — «пофиг на время»).
+ */
+export function oembedBody(kind: ShareKind, date?: string) {
+  const author = ["SouCampus", SHARE_KINDS[kind], date].filter(Boolean).join(" · ");
+  return {
+    version: "1.0",
+    type: "link",
+    author_name: author,
+    author_url: SITE_URL,
+    provider_name: SITE_NAME,
+    provider_url: SITE_URL,
+  };
+}
+
 /** Хэштеги одной строкой. Пробелы и знаки из тега выбрасываются. */
 export function hashtags(tags: string[]): string {
   return tags
@@ -64,6 +87,12 @@ type ShareInput = {
   images: string[];
   imageAlt: string;
   publishedTime?: string;
+  /**
+   * Свой файл oEmbed у страницы (/oembed/<kind>/<slug>) — когда в строке
+   * автора есть что-то своё, например дата поста. Без него — общий файл
+   * вида.
+   */
+  oembedSlug?: string;
 };
 
 /**
@@ -83,7 +112,11 @@ export function shareMetadata(input: ShareInput): Pick<
       canonical: input.path,
       // <link rel="alternate" type="application/json+oembed"> — по нему
       // Discord находит строку автора. Адрес абсолютный через metadataBase.
-      types: { "application/json+oembed": `/oembed/${input.kind}` },
+      types: {
+        "application/json+oembed": input.oembedSlug
+          ? `/oembed/${input.kind}/${input.oembedSlug}`
+          : `/oembed/${input.kind}`,
+      },
     },
     openGraph: {
       type: "article",

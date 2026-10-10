@@ -50,6 +50,8 @@ export async function generateMetadata({
       images: [post.cover.src, ...bodyImages],
       imageAlt: post.cover.alt,
       publishedTime: post.date,
+      // Своя строка автора — с датой поста.
+      oembedSlug: post.slug,
     }),
   };
 }

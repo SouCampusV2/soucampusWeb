@@ -3,11 +3,21 @@
 import { useEffect, useRef } from "react";
 import Image from "next/image";
 import { motion } from "motion/react";
-import { Unbounded } from "next/font/google";
+import { Pixelify_Sans, Unbounded } from "next/font/google";
 
 // Same display font as the site's other hero headings.
 const displayFont = Unbounded({
   weight: "800",
+  subsets: ["latin"],
+});
+
+// Пиксельный шрифт ТОЛЬКО для ника над головой (2026-10-09): плашка
+// изображает игровой nametag, и обычная гарнитура выдала бы, что это
+// подпись сайта. Шрифт игры не свободный — берём близкий по духу.
+// Дальше этой плашки он не идёт: третий дисплейный шрифт на страницах
+// сайта не прижился бы (docs/DESIGN.md → «Типографика»).
+const nametagFont = Pixelify_Sans({
+  weight: "500",
   subsets: ["latin"],
 });
 
@@ -230,8 +240,25 @@ export function AuthorCta() {
           whileInView={{ opacity: 1, y: 0, scale: 1 }}
           viewport={{ once: true, amount: 0.3 }}
           transition={{ duration: 1 }}
-          className="mb-2 w-64 max-w-[65vw] sm:w-80"
+          className="relative mb-2 w-64 max-w-[65vw] sm:w-80"
         >
+          {/* Ник над головой, как в игре: полупрозрачная тёмная плашка,
+              белый текст, без скругления (просьба владельца 09.10,
+              заменил подпись «SouCampus» под скином). В игре nametag
+              всегда смотрит в камеру, здесь он повёрнут вместе с
+              персонажем — тоже по просьбе: стоит «в мире», а не поверх
+              картинки. Угол — rotateY в перспективе; знак угла решает,
+              в какую сторону развёрнут. Лежит внутри обёртки скина,
+              поэтому появляется тем же движением, что и он. */}
+          <div
+            className="pointer-events-none absolute bottom-full left-1/2 mb-3 -translate-x-1/2 [perspective:600px]"
+          >
+            <span
+              className={`${nametagFont.className} block bg-black/30 px-2.5 py-0.5 text-xl leading-tight text-white [transform:rotateY(-22deg)] sm:text-2xl`}
+            >
+              SouCampus
+            </span>
+          </div>
           <Image
             src="/aboutme/soucampusModel.png"
             alt="SouCampus — my Minecraft skin"
@@ -247,25 +274,6 @@ export function AuthorCta() {
             className="h-auto w-full drop-shadow-xl"
           />
         </motion.div>
-
-        <motion.span
-          {...fadeUp}
-          transition={{ duration: 0.8 }}
-          className="mb-3 flex items-center gap-2 text-sm font-bold uppercase tracking-wide text-orange-600"
-        >
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={2}
-            className="h-4 w-4"
-            aria-hidden="true"
-          >
-            <circle cx="12" cy="8" r="4" />
-            <path d="M4 20c0-4 4-6 8-6s8 2 8 6" />
-          </svg>
-          SouCampus
-        </motion.span>
 
         <motion.h2
           {...fadeUp}

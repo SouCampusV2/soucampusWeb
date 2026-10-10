@@ -4,6 +4,7 @@ import { RecentProjects } from "@/components/RecentProjects";
 import { ClientReviews } from "@/components/ClientReviews";
 import { CountriesMarquee } from "@/components/CountriesMarquee";
 import { HowItWorks } from "@/components/HowItWorks";
+import { WhoIsSouCampus } from "@/components/WhoIsSouCampus";
 import { getAllProjects } from "@/lib/projects";
 import { getAllReviews } from "@/lib/reviews";
 import { getStats } from "@/lib/stats";
@@ -55,6 +56,7 @@ export default async function Home() {
       <JsonLd data={HOME_JSON_LD} />
       <Hero />
       <Stats stats={stats} />
+      <WhoIsSouCampus />
       <RecentProjects projects={projects} />
       <CountriesMarquee />
       <ClientReviews reviews={reviews} />

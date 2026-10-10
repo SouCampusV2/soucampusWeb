@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { hashtags, shareMetadata } from "@/lib/share";
+import { hashtags, oembedBody, shareMetadata } from "@/lib/share";
+
+describe("oembedBody", () => {
+  it("adds the date to the author line when there is one", () => {
+    expect(oembedBody("updates", "25 Sep 2026").author_name).toBe(
+      "SouCampus · What's new · 25 Sep 2026",
+    );
+  });
+
+  it("leaves the date out when there is none", () => {
+    expect(oembedBody("portfolio").author_name).toBe("SouCampus · Portfolio");
+  });
+});
 import { SITE_NAME } from "@/lib/site";
 
 const base = {

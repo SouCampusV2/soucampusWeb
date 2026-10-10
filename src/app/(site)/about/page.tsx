@@ -142,15 +142,15 @@ export default function AboutPage() {
       <AuthorCta />
 
       <main className="w-full mx-auto max-w-6xl flex-1 px-6">
-      {/* No top glow here — AuthorCta right above already bleeds one in;
-          a second `-top-32` gradient stacked directly under it read as a
-          duplicate/second light source. mt-16 puts real breathing room
-          between the two sections instead of having them sit flush.
-          Since 24.09 everything from here down is one left-aligned column
-          at max-w-3xl — the advancement panel's width — so the heading,
-          the panel, the paragraphs and the skills share one left edge. */}
-      <section className="relative mt-8 pt-20 sm:mt-16">
-        <div className="mx-auto max-w-3xl">
+      {/* С 09.10 на всю ширину страницы (max-w-6xl), а не колонкой
+          max-w-3xl, как с 24.09: рядом с остальными страницами About
+          выглядел другим сайтом (замечание владельца). Две колонки:
+          слева заголовок и рассказ — они «прилипают» при прокрутке,
+          пока справа идёт дерево достижений; справа само дерево, его
+          тексты остаются удобной для чтения ширины.
+          No top glow here — AuthorCta right above already bleeds one in. */}
+      <section className="mt-8 grid gap-10 pt-20 sm:mt-16 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-16">
+        <div className="md:sticky md:top-28 md:self-start">
           <span className="text-sm font-semibold text-lime-600">
             A Long Journey
           </span>
@@ -165,93 +165,85 @@ export default function AboutPage() {
             projects for clients. My goal is to turn clients&apos; ideas
             into vivid, detailed worlds and keep growing as a builder.
           </p>
+          <p className="mt-6 leading-7 text-zinc-600 dark:text-zinc-400">
+            And of course, a big part of my work is about people. Every client comes not
+            with an exact blueprint, but with an image, a feeling, a
+            fragment of an idea — and part of my job is to hear that,
+            rather than just execute a technical brief. I try to think
+            alongside the client, continuing their idea so the result
+            exceeds what they originally imagined. It&apos;s at the
+            intersection of someone else&apos;s vision and my own that the
+            most memorable projects are born — not because I built what was
+            asked, but because I built what was actually needed.
+          </p>
+          <p className="mt-6 leading-7 text-zinc-600 dark:text-zinc-400">
+            But the core of it hasn&apos;t changed since I was six: I still
+            love to build. Every new commission is a new map, a new style,
+            a new puzzle I want to solve beautifully.
+          </p>
         </div>
+
+        {/* Путь — дерево достижений, как экран Advancements в игре (перенесено
+            из лаборатории, вариант «Inventory», 24.09, в цвета сайта). Рамки
+            соединены линией; фон — пиксельная текстура блока (.pixel-texture
+            в globals.css). Последняя рамка, «сегодня», оранжевая: в игре так
+            выделено испытание — самое трудное достижение в дереве.
+            ⚠️ Углы здесь квадратные намеренно, в отличие от rounded-3xl по
+            всему сайту: рамки и тултипы в игре квадратные, скруглённые
+            читались бы как обычные карточки сайта. Скруглена только внешняя
+            панель — она часть страницы, а не игры. */}
+          <ol className="pixel-texture overflow-hidden rounded-3xl border border-zinc-950/[0.06] p-4 sm:p-8 dark:border-zinc-50/[0.08]">
+            {TIMELINE.map((item, i) => {
+              const last = i === TIMELINE.length - 1;
+              return (
+                <li
+                  key={item.age}
+                  className="relative grid grid-cols-[3.5rem_minmax(0,1fr)] gap-3 pb-6 last:pb-0 sm:grid-cols-[4rem_minmax(0,1fr)] sm:gap-4 sm:pb-8"
+                >
+                  {/* Линия связи: светлая с тёмной обводкой, как в игре. Идёт от
+                      низа рамки до низа пункта — к рамке следующего. */}
+                  {!last && (
+                    <span
+                      aria-hidden="true"
+                      className="absolute bottom-0 left-[calc(1.75rem-5px)] top-14 w-[10px] border-x-2 border-zinc-950 bg-zinc-50 sm:left-[calc(2rem-5px)] sm:top-16"
+                    />
+                  )}
+                  <span
+                    className={`${displayFont.className} relative z-10 grid size-14 place-items-center border-2 border-zinc-950 px-1 text-center text-[11px] leading-tight text-zinc-950 sm:size-16 sm:text-xs ${
+                      last
+                        ? "bg-orange-400 shadow-[inset_3px_3px_0_var(--color-orange-200),inset_-3px_-3px_0_var(--color-orange-700)]"
+                        : "bg-lime-400 shadow-[inset_3px_3px_0_var(--color-lime-200),inset_-3px_-3px_0_var(--color-lime-700)]"
+                    }`}
+                  >
+                    {item.age.replace("Age ", "")}
+                  </span>
+                  {/* Тултип достижения. Рамка — градиент синего вместо игрового
+                      фиолетового; border-image не дружит со скруглением, отсюда
+                      тоже квадратные углы. */}
+                  <div className="border-2 border-transparent bg-[#fbfbff] px-4 py-3 [border-image:linear-gradient(var(--color-blue-500),var(--color-blue-700))_1] sm:px-5 sm:py-4 dark:bg-zinc-950">
+                    <p className="text-sm font-semibold text-lime-600 dark:text-lime-400">
+                      {item.age}: advancement made!
+                    </p>
+                    <h3 className="mt-1 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
+                      {item.title}
+                    </h3>
+                    <p className="mt-2 leading-7 text-zinc-600 dark:text-zinc-400">{item.text}</p>
+                  </div>
+                </li>
+              );
+            })}
+          </ol>
       </section>
 
-      {/* Путь — дерево достижений, как экран Advancements в игре (перенесено
-          из лаборатории, вариант «Inventory», 24.09, в цвета сайта). Рамки
-          соединены линией; фон — пиксельная текстура блока (.pixel-texture
-          в globals.css). Последняя рамка, «сегодня», оранжевая: в игре так
-          выделено испытание — самое трудное достижение в дереве.
-          ⚠️ Углы здесь квадратные намеренно, в отличие от rounded-3xl по
-          всему сайту: рамки и тултипы в игре квадратные, скруглённые
-          читались бы как обычные карточки сайта. Скруглена только внешняя
-          панель — она часть страницы, а не игры. */}
-      <ol className="pixel-texture mx-auto mt-10 max-w-3xl overflow-hidden rounded-3xl border border-zinc-950/[0.06] p-4 sm:mt-12 sm:p-8 dark:border-zinc-50/[0.08]">
-        {TIMELINE.map((item, i) => {
-          const last = i === TIMELINE.length - 1;
-          return (
-            <li
-              key={item.age}
-              className="relative grid grid-cols-[3.5rem_minmax(0,1fr)] gap-3 pb-6 last:pb-0 sm:grid-cols-[4rem_minmax(0,1fr)] sm:gap-4 sm:pb-8"
-            >
-              {/* Линия связи: светлая с тёмной обводкой, как в игре. Идёт от
-                  низа рамки до низа пункта — к рамке следующего. */}
-              {!last && (
-                <span
-                  aria-hidden="true"
-                  className="absolute bottom-0 left-[calc(1.75rem-5px)] top-14 w-[10px] border-x-2 border-zinc-950 bg-zinc-50 sm:left-[calc(2rem-5px)] sm:top-16"
-                />
-              )}
-              <span
-                className={`${displayFont.className} relative z-10 grid size-14 place-items-center border-2 border-zinc-950 px-1 text-center text-[11px] leading-tight text-zinc-950 sm:size-16 sm:text-xs ${
-                  last
-                    ? "bg-orange-400 shadow-[inset_3px_3px_0_var(--color-orange-200),inset_-3px_-3px_0_var(--color-orange-700)]"
-                    : "bg-lime-400 shadow-[inset_3px_3px_0_var(--color-lime-200),inset_-3px_-3px_0_var(--color-lime-700)]"
-                }`}
-              >
-                {item.age.replace("Age ", "")}
-              </span>
-              {/* Тултип достижения. Рамка — градиент синего вместо игрового
-                  фиолетового; border-image не дружит со скруглением, отсюда
-                  тоже квадратные углы. */}
-              <div className="border-2 border-transparent bg-[#fbfbff] px-4 py-3 [border-image:linear-gradient(var(--color-blue-500),var(--color-blue-700))_1] sm:px-5 sm:py-4 dark:bg-zinc-950">
-                <p className="text-sm font-semibold text-lime-600 dark:text-lime-400">
-                  {item.age}: advancement made!
-                </p>
-                <h3 className="mt-1 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
-                  {item.title}
-                </h3>
-                <p className="mt-2 leading-7 text-zinc-600 dark:text-zinc-400">{item.text}</p>
-              </div>
-            </li>
-          );
-        })}
-      </ol>
-
-      {/* Straight after the advancements (moved up 24.09, owner's call):
-          the story ends at "today", and "how I work with people" is where
-          today leads, before the list of tools. */}
-      <div className="mx-auto mt-10 max-w-3xl sm:mt-12">
-        <p className="leading-7 text-zinc-600 dark:text-zinc-400">
-          And of course, a big part of my work is about people. Every client comes not
-          with an exact blueprint, but with an image, a feeling, a
-          fragment of an idea — and part of my job is to hear that,
-          rather than just execute a technical brief. I try to think
-          alongside the client, continuing their idea so the result
-          exceeds what they originally imagined. It&apos;s at the
-          intersection of someone else&apos;s vision and my own that the
-          most memorable projects are born — not because I built what was
-          asked, but because I built what was actually needed.
-        </p>
-        <p className="mt-6 leading-7 text-zinc-600 dark:text-zinc-400">
-          But the core of it hasn&apos;t changed since I was six: I still
-          love to build. Every new commission is a new map, a new style,
-          a new puzzle I want to solve beautifully.
-        </p>
-      </div>
-
-      {/* Left-aligned, unlike the centred text around it: the section's
-          width matches the advancement panel above (max-w-3xl), so their
-          left edges line up and the two read as one column. */}
-      <section className="mx-auto mt-16 max-w-3xl sm:mt-20">
+      {/* На всю ширину страницы, как и блок выше (с 09.10). */}
+      <section className="mt-16 sm:mt-20">
         <span className="text-sm font-semibold text-lime-600">Skills & toolkit</span>
         <h2
           className={`${displayFont.className} mt-3 text-3xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl`}
         >
           What I build with
         </h2>
-        <p className="mt-4 leading-7 text-zinc-600 dark:text-zinc-400">
+        <p className="mt-4 max-w-2xl leading-7 text-zinc-600 dark:text-zinc-400">
           A builder needs more than the right plugin — a wide toolkit and an eye
           for composition and space, built up over 8 years across servers and
           studios:
