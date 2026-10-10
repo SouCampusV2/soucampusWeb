@@ -14,7 +14,11 @@ export function RecentProjects({ projects }: { projects: Project[] }) {
   const recent = projects.slice(0, 3);
 
   return (
-    <section className="mx-auto max-w-6xl px-6 py-16 sm:py-28">
+    // Верх уменьшен (10.10): над секцией теперь «Who is SouCampus», и они
+    // читаются одним блоком «кто я → что я построил». 64px между ними —
+    // чуть больше, чем от заголовка до карточек (48px), чтобы граница
+    // между секциями всё же оставалась видна.
+    <section className="mx-auto max-w-6xl px-6 pb-16 pt-12 sm:pb-28 sm:pt-16">
       <HashHighlight />
       <FadeIn>
         <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
