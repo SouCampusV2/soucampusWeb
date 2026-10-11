@@ -37,6 +37,11 @@ import { BASE_RATE } from "@/lib/pricing";
 //
 // 6. Числа, которые где-то ИСПОЛНЯЮТСЯ, импортируются, а не
 //    переписываются (как ставки в статье вики про цену).
+//
+// 7. Анонс — исключение из правила 2, и только по решению владельца
+//    (первый — 11.10, «скоро настоящие карты»). Без дат, без «покупай»,
+//    и с честным «что есть сейчас». Обещание с датой — то, что читатель
+//    пойдёт проверять в этот день.
 // ============================================================
 //
 // Обложки — фото построек из public/portfolio, пока нет скриншотов самого
@@ -83,6 +88,134 @@ export type UpdatePost = {
 // Порядок объявления здесь ничего не решает: ленту сортирует
 // getAllUpdates() по дате. Пишем новые сверху — так удобнее читать файл.
 export const UPDATES: UpdatePost[] = [
+  {
+    slug: "real-maps-are-coming",
+    date: "2026-10-11",
+    area: "marketplace",
+    title: "Real maps are coming to the marketplace",
+    summary:
+      "The first maps built to be downloaded are in the works — they will start appearing on the storefront soon.",
+    cover: {
+      src: "/portfolio/pirate-rpg.jpeg",
+      alt: "A massive pirate RPG map of dozens of detailed buildings",
+      pictured: { name: "Pirate RPG Map", slug: "pirate-rpg" },
+    },
+    body: [
+      {
+        heading: "What the marketplace has been until now",
+        blocks: [
+          {
+            kind: "text",
+            text: "Since July the marketplace has been a working shop with sample maps in it: real pages, search, filters, collections and a checkout — but no files behind the listings. It let me build and test every part of the shop before putting anything real on the shelf.",
+          },
+        ],
+      },
+      {
+        heading: "What changes next",
+        blocks: [
+          {
+            kind: "text",
+            text: "I am finishing the first maps built specifically to be downloaded and used on your own world or server. They will start appearing on the storefront one by one, and the sample maps will come down as the real ones go up.",
+          },
+          {
+            kind: "list",
+            items: [
+              "Every map page lists the Minecraft versions, file formats, size and type, so you know whether it fits before you open it.",
+              "Screenshots show the map itself — no mock-ups.",
+              "The download is a ready-to-use file, and the wiki explains what is inside it and how to put it on a server.",
+            ],
+          },
+        ],
+      },
+      {
+        heading: "When",
+        blocks: [
+          {
+            kind: "text",
+            text: "Soon — but I would rather post here the day a map is actually there than promise a date. A post will say so the moment the first one can be bought and downloaded. The quickest way to hear about it is the Discord server.",
+          },
+        ],
+      },
+    ],
+    link: { href: "/wiki/whats-in-the-download", label: "What's in a download" },
+  },
+  {
+    slug: "who-is-soucampus",
+    date: "2026-10-10",
+    area: "studio",
+    title: "Meet the builder behind the maps",
+    summary:
+      "The home page now says who builds the maps, the About page opens up to full width, and the contact page shows how an order works.",
+    cover: {
+      src: "/portfolio/corsair-isle.jpg",
+      alt: "A tropical volcano island with a palm-covered pirate village and a galleon at anchor",
+      pictured: { name: "Corsair Isle", slug: "corsair-isle" },
+    },
+    body: [
+      {
+        heading: "Who is SouCampus",
+        blocks: [
+          {
+            kind: "text",
+            text: "A new section on the home page, right before the latest work, answers the first question a new visitor has: who actually builds these maps. In short — my skin, how it started, fifteen years in Minecraft, around ten regular clients and the places where new builds appear first.",
+          },
+        ],
+      },
+      {
+        heading: "About, wider",
+        blocks: [
+          {
+            kind: "text",
+            text: "The About page used to sit in a narrow column. Now the story stays beside you on the left while the tree of achievements scrolls on the right, and the skin wears a floating name tag, just like in the game.",
+          },
+        ],
+      },
+      {
+        heading: "How an order works, where you order",
+        blocks: [
+          {
+            kind: "text",
+            text: "The five steps of a commission — from the first message to the finished world — now sit on the contact page too, right under the price calculator, each with its own icon.",
+          },
+        ],
+      },
+    ],
+    link: { href: "/about", label: "Read my story" },
+  },
+  {
+    slug: "links-that-show-the-build",
+    date: "2026-10-04",
+    area: "studio",
+    title: "Links that show the build",
+    summary:
+      "Share a work or a post in Discord and it unfolds into a card with the screenshots — and every such page has a Copy link button.",
+    cover: {
+      src: "/portfolio/yuletide-isle.png",
+      alt: "A floating snow island holding a festive village of red-roofed cabins",
+      pictured: { name: "Yuletide Isle", slug: "yuletide-isle" },
+    },
+    body: [
+      {
+        heading: "A card instead of a bare address",
+        blocks: [
+          {
+            kind: "text",
+            text: "Paste the address of a work from the portfolio or of a post from this page into Discord, and it turns into a card: the title, a short description, up to four screenshots and an orange stripe down the side. The same card shows up in Telegram, X and Slack.",
+          },
+        ],
+      },
+      {
+        heading: "Copy link",
+        blocks: [
+          {
+            kind: "text",
+            text: "Every work and every post now has a Copy link button, so sending a build to a friend — or to a client who asked “what have you made before?” — takes one tap.",
+          },
+        ],
+      },
+    ],
+    link: { href: "/portfolio", label: "Browse the portfolio" },
+  },
   {
     slug: "an-faq-and-a-lighter-home-page",
     date: "2026-09-25",
