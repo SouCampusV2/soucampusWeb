@@ -201,6 +201,28 @@ export function checkImageBytes(
   return null;
 }
 
+/**
+ * Тип, с которым объект лёг в бакет. null — годится.
+ *
+ * ⚠️ Тип задаёт ЗАГРУЖАЮЩИЙ: uploadToSignedUrl берёт его из браузера, и
+ * подписанный токен его не фиксирует. Проверка байтов выше смотрит
+ * только заголовок — за честным PNG-заголовком может идти HTML, и с
+ * типом text/html прямая ссылка на бакет открылась бы как страница на
+ * нашем домене Storage. Поэтому тип сверяется отдельно, и отсутствие
+ * типа — тоже отказ: «не узнали» не должно выглядеть как «проверили».
+ * Найдено 20.10, docs/SCANNER.md § 2.
+ */
+export function checkImageContentType(
+  contentType: string | null | undefined
+): string | null {
+  const type = (contentType ?? "").split(";")[0].trim().toLowerCase();
+  return IMAGE_CONTENT_TYPES.includes(type)
+    ? null
+    : "That file was sent as something other than an image. Attach it again.";
+}
+
+const IMAGE_CONTENT_TYPES = ["image/png", "image/jpeg", "image/gif", "image/webp"];
+
 /** null — файл годится; строка — понятная человеку причина отказа. */
 export async function checkMapFile(file: File): Promise<string | null> {
   return checkMapBytes(await readHead(file), file.size, file.name);
