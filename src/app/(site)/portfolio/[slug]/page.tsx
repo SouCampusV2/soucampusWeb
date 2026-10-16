@@ -65,7 +65,9 @@ export async function generateMetadata({
       tags: [
         "Minecraft",
         "MinecraftBuilds",
-        ...(project.priceAmount !== null ? ["MinecraftCommission"] : []),
+        ...(project.priceAmount !== null || project.tag === "Order"
+          ? ["MinecraftCommission"]
+          : []),
       ],
       images: [project.image, ...(project.gallery ?? [])],
       imageAlt: project.title,
@@ -217,7 +219,8 @@ export default async function ProjectPage({
 // «200×200» ничего не говорит тому, кто не строит в Minecraft. Третья
 // плитка — цена, а у непродававшейся работы (личная, командная, пробная)
 // вместо неё тип: подпись «personal project» в графе «Price» читалась бы
-// как цена.
+// как цена. Заказ без суммы (клиент не хочет её раскрывать) — всё ещё
+// оплаченная работа: «not a paid commission» про него было бы неправдой.
 function ProjectFacts({ project }: { project: Project }) {
   const pitches = footprintInPitches(project);
 
@@ -239,7 +242,9 @@ function ProjectFacts({ project }: { project: Project }) {
     },
     project.priceAmount !== null
       ? { icon: Coins, label: "Price", value: project.price, note: "what the client paid" }
-      : { icon: Tag, label: "Made as", value: project.tag, note: "not a paid commission" },
+      : project.tag === "Order"
+        ? { icon: Coins, label: "Price", value: "Private", note: "kept between me and the client" }
+        : { icon: Tag, label: "Made as", value: project.tag, note: "not a paid commission" },
   ];
 
   return (
