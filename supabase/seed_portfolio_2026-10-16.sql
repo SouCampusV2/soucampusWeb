@@ -4,7 +4,8 @@
 -- public/portfolio/, поэтому порядок такой: деплой кода → этот файл.
 -- Прогонишь раньше — карточка появится с битой картинкой до деплоя.
 --
--- Заказ, 150×150, за неделю. Цену владелец не раскрывает: price_amount
+-- Заказ на премейд (как BlueSpawn): карту продаёт заказчик на BuiltByBit,
+-- купить её может любой. 150×150, за неделю. Цену владелец не раскрывает: price_amount
 -- пустой, а страница работы для тега «Order» без суммы пишет «Private»
 -- вместо «not a paid commission» (правка в portfolio/[slug]/page.tsx).
 -- В карусели /portfolio (is_featured = true) — ВТОРОЙ панелью (решение
@@ -21,8 +22,8 @@ insert into public.projects
    deadline_label, deadline_days, is_featured, sort_order)
 values
   ('redspire-commons', 'Redspire Commons', 'Order',
-   'A forest village square beneath a red-spired town hall, with market stalls, a golden wheat field and three coloured plinths.',
-   'A lively village hub tucked into a lush forest and sandstone cliffs: a tall timber-and-stone town hall crowned with a red spire looks over a cobbled square, a red-roofed workshop with its own forge, striped market stalls and a golden wheat field. Three coloured plinths in the middle of the square make it a natural gathering point for players. Commissioned build, made in one week.',
+   'A forest village hub beneath a red-spired town hall, built as a premade map and available for purchase.',
+   'A lively village hub tucked into a lush forest and sandstone cliffs: a tall timber-and-stone town hall crowned with a red spire looks over a cobbled square, a red-roofed workshop with its own forge, striped market stalls and a golden wheat field. Three coloured plinths in the middle of the square make it a natural gathering point for players. A premade commissioned for a seller on BuiltByBit, where any player can now buy it. Built in one week.',
    '/portfolio/redspire-commons.webp',
    'Private', NULL, '150×150', 150, 150, '1 week', 7, true,
    (select coalesce(max(sort_order), 0) + 1 from public.projects))
