@@ -130,7 +130,7 @@ export default async function ResourcesPage() {
           )}
 
           {!creator ? (
-            <CreatorStatusCard userId={user.id} application={application} />
+            <CreatorStatusCard application={application} />
           ) : products.length === 0 ? (
             // Пустое состояние — это не «пусто», а «начни»: крупный
             // призыв с объяснением, что будет дальше.
