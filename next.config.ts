@@ -24,8 +24,8 @@ const CONTENT_SECURITY_POLICY = [
   // 'unsafe-inline' — инлайн-скрипт темы в layout.tsx и данные, которые
   // Next вшивает в страницу. Убрать его можно только через nonce, а
   // nonce делает КАЖДУЮ страницу динамической — цена для статики
-  // несоразмерна. va.vercel-scripts.com — скрипт Vercel Analytics вне
-  // прода (на проде он отдаётся с нашего домена).
+  // несоразмерна. va.vercel-scripts.com — скрипты Vercel Analytics и
+  // Speed Insights вне прода (на проде они отдаются с нашего домена).
   "script-src 'self' 'unsafe-inline' https://va.vercel-scripts.com",
   // Инлайн-стили ставят Motion и next/font.
   "style-src 'self' 'unsafe-inline'",

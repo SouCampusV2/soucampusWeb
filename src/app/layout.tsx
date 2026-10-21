@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
 import { Analytics } from "@vercel/analytics/next";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { SITE_NAME, SITE_TAGLINE, SITE_URL } from "@/lib/site";
@@ -91,6 +92,12 @@ export default function RootLayout({
             корневой layout оборачивает вообще всё, включая будущую админку. */}
         <ThemeProvider>{children}</ThemeProvider>
         <Analytics />
+        {/* Web Vitals живых посетителей (LCP, CLS, INP) — то, что PageSpeed
+            меряет одним заходом из лаборатории, здесь копится по реальным
+            телефонам. Скрипт тот же, что у Analytics: на проде с нашего
+            домена (/_vercel/…), вне прода — с va.vercel-scripts.com, оба
+            уже разрешены в CSP. */}
+        <SpeedInsights />
       </body>
     </html>
   );
