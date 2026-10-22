@@ -66,9 +66,15 @@ const FORM_CATEGORIES = SHOP_CATEGORIES.filter((c) => c.slug !== "free");
  */
 export function UploadMapForm({
   reactionOptions,
+  submittedHref,
+  cancelHref,
 }: {
   /** Список реакций из базы — читает его страница, форма клиентская. */
   reactionOptions: ReactionOption[];
+  /** Куда после отправки: у админки и у автора свой экран «отправлено». */
+  submittedHref: string;
+  /** Куда ведёт Cancel — туда, откуда пришли (см. комментарий у кнопки). */
+  cancelHref: string;
 }) {
   const router = useRouter();
 
@@ -236,7 +242,7 @@ export function UploadMapForm({
         reactionOptionId,
       });
 
-      router.push("/admin/products/new/submitted");
+      router.push(submittedHref);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setPending(false);
@@ -338,13 +344,11 @@ export function UploadMapForm({
         <Button type="submit" variant="primary" disabled={pending} className="flex-1">
           {pending ? STAGE_LABEL[stage] : "Submit for review"}
         </Button>
-        {/* ⚠️ В АДМИНКУ, а не в /resources (2026-08-28). Форма
-            переехала в /admin/products/new, а Cancel остался указывать в
-            кабинет автора — и уводил не туда даже не всегда одинаково:
-            /resources у не-креатора сама перекидывает на витрину, так
-            что отмена загрузки заканчивалась на главной магазина.
-            Отмена обязана возвращать туда, откуда пришли. */}
-        <Button href="/admin/products" variant="secondary" className="flex-1">
+        {/* Отмена обязана возвращать туда, откуда пришли. 28.08 форма
+            переехала в админку, а Cancel остался указывать в кабинет
+            автора и уводил не туда. С тех пор у формы две двери, поэтому
+            адрес приходит от страницы. */}
+        <Button href={cancelHref} variant="secondary" className="flex-1">
           Cancel
         </Button>
       </div>
