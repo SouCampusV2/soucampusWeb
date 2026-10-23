@@ -95,7 +95,7 @@ export default async function ResourcesPage() {
               {/* Под паузой кнопку не показываем: она вела бы на
                   форму, с которой человека сразу разворачивает. */}
               {creator && products.length > 0 && !blockedUntil && (
-                <Button href="/admin/products/new" size="sm">
+                <Button href="/resources/new" size="sm">
                   Add a map
                 </Button>
               )}
@@ -146,7 +146,7 @@ export default async function ResourcesPage() {
                 itself. It goes live on the marketplace once it&apos;s reviewed.
               </p>
               <div className="mt-6 flex justify-center">
-                <Button href="/admin/products/new" size="md">
+                <Button href="/resources/new" size="md">
                   Add your first map
                 </Button>
               </div>
