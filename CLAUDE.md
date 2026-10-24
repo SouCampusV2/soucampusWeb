@@ -67,7 +67,7 @@ link на работах и постах) и единый отступ дета�
 | **Бизнес-план и стратегия компании** | 🟢 | `docs/BUSINESS.md` (19.08), приоритет №0 закрыт |
 | **Обучение: разбор кода строка за строкой** | 🔴 | **постоянная колея — идёт ПАРАЛЛЕЛЬНО всему, не «после»** |
 | Проверка загружаемых файлов на вредоносность | 🔴 | приоритет №1 — **план 20.10**: отдельный сервис `souc-scanner` на Java + ClamAV в Docker на VPS, код пишет владелец; `docs/SCANNER.md` |
-| Разморозка креаторства — решена 20.10, авторов пока не зовут | 🔴 | сканер → квоты → заявка через обработчик (**не** возвращать политику) → вход в форму → флаг; `docs/SCANNER.md` § 1 |
+| Разморозка креаторства — решена 20.10, авторов пока не зовут | 🟡 | 🟢 квоты, заявка через обработчик + 18+, `/resources/new` и правка у автора (13–24.10); 🔴 сканер, миграция `20261016120000` на обеих базах, флаг; `docs/SCANNER.md` § 1 |
 | Ограничения частоты — комментарии и реакции | 🟢 | ниже, 2026-08-22 |
 | Ограничения частоты — свои API-роуты | 🟢 | ниже, 2026-08-23; проверено скриптом 28.08 |
 | Ограничения частоты — вход, пароль (настройки Supabase) | 🟢 | выставлены 25.08, сверены по скриншоту прода 27.09 — `OWNER-TASKS.md` → «Закрытые»; подтверждение почты включено на обеих базах (проверено 26.09) |
@@ -827,8 +827,11 @@ Sign in). Аватар в строке ведёт на публичный про
 8. Учебный трек на Java — **с 20.10 первым идёт `souc-scanner`, а не
    `souc-ledger`**: план и шаги — [`docs/SCANNER.md`](docs/SCANNER.md).
    Шаг 0 — Temurin 21 и Docker Desktop. Код пишет владелец.
-9. 🔴 Заплатка в `FirstTry`: `confirm` картинок не сверяет `Content-Type`,
-   его задаёт загружающий (`docs/SCANNER.md` § 2).
+9. 🟢 ~~Заплатка `Content-Type` картинок~~ — сделана 24.10. 🔴 Проверить
+   на preview обычной загрузкой картинки (`docs/SCANNER.md` § 2).
+10. 🔴 Миграция `20261016120000_application_adult_confirmed` — на preview
+   и прод **до** мёржа. Потом `npm run check:guards` и глазами под
+   обычным креатором: `/resources/new`, правка карты, отказ квоты.
 
 🟢 **Порядок на 28.09 выполнен 04.10:** миграция журнала скачиваний на
 обеих базах, `dev` смёржен в `master` (`0ab02ac`).
@@ -1784,7 +1787,7 @@ RLS целиком).
 
 Компактный снимок «что сейчас есть» — не история (за ней `docs/CHANGELOG.md`).
 
-- **Стек:** Next.js 16.3.6 (App Router) + TypeScript + Tailwind v4, Supabase, Stripe, Motion (пакет `motion`, импорт `motion/react`), Tiptap, `@phosphor-icons/react`. Тесты — Vitest, 279 в 28 файлах.
+- **Стек:** Next.js 16.3.6 (App Router) + TypeScript + Tailwind v4, Supabase, Stripe, Motion (пакет `motion`, импорт `motion/react`), Tiptap, `@phosphor-icons/react`. Тесты — Vitest, 291 в 29 файлах.
 - **Страницы:** `/` (лендинг), `/portfolio` + `/portfolio/[slug]`, `/reviews/[slug]`, `/about`, `/contact`, `/terms` (с возвратами и продавцом, без `noindex`), `/privacy`, `/faq`, `/marketplace` + `/marketplace/[slug]` + `/marketplace/success`, `/cart`, `/support`, `/wiki` + `/wiki/[slug]`, `/updates` + `/updates/[slug]` (What's new), `/notifications`, `/welcome` (выбор имени после входа через Google), `/link-expired`, 404 — `app/not-found.tsx`.
   - **Аккаунт (перестроен 2026-07-30):** `/settings` (профиль + смена пароля), `/purchases` (только покупки), `/resources` (свои карты со статусами) + `/resources/[slug]/edit`. Старые `/profile` и `/profile/edit` оставлены редиректами — на них ведут письма Stripe и закладки.
   - **Вход:** `/login`, `/signup`, `/forgot-password`, `/reset-password`, `/auth/callback`.
