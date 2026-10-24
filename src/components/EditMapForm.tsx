@@ -60,10 +60,16 @@ const FORM_CATEGORIES = SHOP_CATEGORIES.filter((c) => c.slug !== "free");
 export function EditMapForm({
   product,
   reactionOptions,
+  doneHref,
 }: {
   product: EditableProduct;
   /** Список реакций из базы — читает его страница, форма клиентская. */
   reactionOptions: ReactionOption[];
+  /**
+   * Куда после сохранения и по Cancel. Дверей к форме две — каталог
+   * админки и кабинет автора, — и вернуть надо туда, откуда пришли.
+   */
+  doneHref: string;
 }) {
   const router = useRouter();
   const refresh = useRefresh();
@@ -228,7 +234,7 @@ export function EditMapForm({
       // повод пугать человека — мусор подберётся при следующем разе.
       fetch("/api/creator/cleanup-storage", { method: "POST" }).catch(() => {});
 
-      router.push("/admin/products");
+      router.push(doneHref);
       refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
@@ -385,10 +391,25 @@ export function EditMapForm({
               ? "Resubmit for review"
               : "Save changes"}
         </Button>
-        <Button href="/admin/products" variant="secondary" className="flex-1">
+        <Button href={doneHref} variant="secondary" className="flex-1">
           Cancel
         </Button>
       </div>
     </form>
+  );
+}
+
+/**
+ * Причина отказа над формой правки. Над формой, а не в ней: человек
+ * пришёл именно её исправлять, и искать её он не должен. Одна на обе
+ * двери к форме — админку и кабинет автора.
+ */
+export function RejectionNote({ product }: { product: EditableProduct }) {
+  if (product.state !== "rejected" || !product.rejectionReason) return null;
+  return (
+    <p className="mt-6 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+      <span className="font-semibold">Why it was rejected: </span>
+      {product.rejectionReason}
+    </p>
   );
 }

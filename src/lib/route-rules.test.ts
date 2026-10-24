@@ -113,6 +113,10 @@ describe("редиректы next.config.ts", () => {
       "/marketplace/dragon-shrine",
       "/cart",
       "/admin/products/new",
+      // Кабинет автора — к разморозке креаторства. До неё правка
+      // редиректилась в админку, и автор-не-админ получал 404.
+      "/resources/new",
+      "/resources/dragon-shrine/edit",
       "/@soucampus",
       "/u/soucampus",
       "/wiki",
