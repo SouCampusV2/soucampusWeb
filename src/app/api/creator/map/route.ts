@@ -12,7 +12,6 @@ import {
   type MapSubmission,
 } from "@/lib/map-submission";
 import { templateFor } from "@/lib/rejection";
-import { checkCreatorQuota, type QuotaUsage } from "@/lib/creator-quotas";
 
 // ============================================================
 // Шлюз записи, путь №2: создание и правка карты (2026-09-13).
@@ -90,11 +89,10 @@ export async function POST(request: Request) {
   // Право на карты держит is_creator, а не is_admin — так решала снятая
   // политика, и переезд формы в админку 28.08 этого не менял. Читаем
   // служебным ключом: profiles закрыта RLS, ходить туда от лица
-  // пользователя ради трёх полей незачем. is_admin нужен квотам: владельца
-  // они не касаются (creator-quotas.ts).
+  // пользователя ради двух полей незачем.
   const { data: profile } = await db
     .from("profiles")
-    .select("is_creator, is_admin, submissions_blocked_until")
+    .select("is_creator, submissions_blocked_until")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -126,12 +124,7 @@ export async function POST(request: Request) {
   }
 
   return action === "create"
-    ? create(
-        user.id,
-        map,
-        profile.submissions_blocked_until as string | null,
-        Boolean(profile.is_admin)
-      )
+    ? create(user.id, map, profile.submissions_blocked_until as string | null)
     : update(user.id, body.productId, map);
 }
 
@@ -158,27 +151,6 @@ async function sizeOfOwnFile(userId: string, path: string): Promise<number | nul
   return typeof data.size === "number" ? data.size : null;
 }
 
-/**
- * Сколько автор уже занял: карт на разборе и байт в файлах карт.
- * Одним запросом по своим строкам — карт у автора десятки, а не тысячи,
- * и считать в TypeScript дешевле, чем заводить ради этого функцию в базе.
- */
-async function readQuotaUsage(userId: string): Promise<QuotaUsage | null> {
-  const { data, error } = await getSupabaseAdmin()
-    .from("products")
-    .select("state, file_size_bytes")
-    .eq("creator_id", userId);
-  if (error) {
-    console.error("Шлюз карты: квота не посчиталась:", error.message);
-    return null;
-  }
-  const rows = (data ?? []) as { state: string; file_size_bytes: number | null }[];
-  return {
-    pendingMaps: rows.filter((r) => r.state === "pending").length,
-    storedBytes: rows.reduce((sum, r) => sum + (r.file_size_bytes ?? 0), 0),
-  };
-}
-
 // ------------------------------------------------------------
 // create — новая карта
 // ------------------------------------------------------------
@@ -186,8 +158,7 @@ async function readQuotaUsage(userId: string): Promise<QuotaUsage | null> {
 async function create(
   userId: string,
   map: MapSubmission,
-  blockedUntil: string | null,
-  isAdmin: boolean
+  blockedUntil: string | null
 ): Promise<NextResponse> {
   // Пауза после тяжёлого отказа. Раньше её держала RLS-политика вставки,
   // и вместе с политикой она бы исчезла — см. шапку файла.
@@ -214,23 +185,6 @@ async function create(
       { error: "The map file didn't arrive. Attach it again." },
       { status: 400 }
     );
-  }
-
-  // Квота — после размера файла: объём считается вместе с тем, что
-  // человек принёс сейчас. Только при создании: правка заменяет файл, и
-  // старый подбирает уборка Storage, так что места она почти не прибавляет.
-  const usage = await readQuotaUsage(userId);
-  if (!usage) {
-    // Не посчитали — не пускаем. Квота, которая молча пропускает при
-    // сбое, выглядит ровно как работающая.
-    return NextResponse.json(
-      { error: "Couldn't save the map. Try again in a moment." },
-      { status: 500 }
-    );
-  }
-  const overQuota = checkCreatorQuota(usage, size, isAdmin);
-  if (overQuota) {
-    return NextResponse.json({ error: overQuota }, { status: 409 });
   }
 
   try {

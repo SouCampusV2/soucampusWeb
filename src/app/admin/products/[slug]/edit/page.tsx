@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getAdminUser } from "@/lib/admin";
 import { getOwnProduct } from "@/lib/moderation";
-import { EditMapForm, RejectionNote } from "@/components/EditMapForm";
+import { EditMapForm } from "@/components/EditMapForm";
 import { getReactionOptions } from "@/lib/reactions";
 import { INLINE_LINK } from "@/components/Button";
 
@@ -23,11 +23,12 @@ export const dynamic = "force-dynamic";
 // приём авторов заморожен, кабинет никому не показывается, и правка в
 // нём была дверью в комнату, которой нет на плане.
 //
-// К разморозке креаторства правка вернулась и в кабинет автора —
-// /resources/[slug]/edit, та же форма. Редирект со старого адреса сюда
-// снят: он уводил автора-не-админа в 404 админки. Ссылки из уже
-// разосланных уведомлений «/resources/<карта>/edit» теперь открывают
-// кабинетную страницу и работают у любого автора, владельца тоже.
+// ⚠️ Старый адрес продолжает работать редиректом, и это не вежливость.
+// «/resources/<карта>/edit» стоит в УЖЕ РАЗОСЛАННЫХ уведомлениях об
+// отклонённых картах — там ссылка ведёт человека исправлять причину
+// отказа. Строки уведомлений в базе задним числом не переписать. Тот же
+// урок, что стоил семи дней недостижимой формы загрузки: переезд — это
+// не только новый адрес, но и все стрелки, которые в него ведут.
 //
 // ⚠️ ЧТО ПЕРЕЕЗД НЕ МЕНЯЕТ: право править висит на ВЛАДЕНИИ картой, а не
 // на админстве. Так решает база — getOwnProduct ищет строку с
@@ -66,14 +67,18 @@ export default async function AdminEditMapPage({
         Edit map
       </h1>
 
-      <RejectionNote product={product} />
+      {/* Причина отказа — на самом верху формы: человек пришёл сюда
+          именно чтобы её исправить, и искать её на другой странице он не
+          должен. */}
+      {product.state === "rejected" && product.rejectionReason && (
+        <p className="mt-6 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700 dark:bg-red-950/40 dark:text-red-300">
+          <span className="font-semibold">Why it was rejected: </span>
+          {product.rejectionReason}
+        </p>
+      )}
 
       <div className="mt-8">
-        <EditMapForm
-          product={product}
-          reactionOptions={reactionOptions}
-          doneHref="/admin/products"
-        />
+        <EditMapForm product={product} reactionOptions={reactionOptions} />
       </div>
     </div>
   );

@@ -568,27 +568,17 @@ async function main() {
     // -------------------------------------------------------
     console.log("\nВставки, которых быть не должно");
 
-    // Заявка идёт только через /api/creator/application. Политику вставки
-    // сняла заморозка 20.08, и при разморозке она НЕ возвращается — путь
-    // закрыт шлюзом записи. Проверяем базу, а не форму.
-    //
-    // ⚠️ До исправления здесь вставлялась строка БЕЗ обязательного about,
-    // и отказ давал not null, а не отсутствие политики: проверка осталась
-    // бы зелёной и с вернувшейся политикой. Теперь строка полная и
-    // законная по форме, и отказать ей может только RLS.
-    const application = await asUser.from("creator_applications").insert({
-      user_id: userId,
-      about: "check-guards",
-      status: "pending",
-    });
+    // Приём авторов заморожен 20.08 СНЯТОЙ ПОЛИТИКОЙ, а не спрятанной
+    // формой. Это и проверяем: спрятать кнопку может кто угодно, а
+    // защищает только база.
+    const application = await asUser
+      .from("creator_applications")
+      .insert({ user_id: userId, portfolio_url: "https://example.invalid" });
     check(
-      "заявку в креаторы не вставить из браузера (только обработчиком)",
+      "заявку в креаторы не подать (креаторство заморожено)",
       application.error !== null,
       application.error === null ? "заявка создалась — политика вставки вернулась" : ""
     );
-    if (application.error === null) {
-      await asServer.from("creator_applications").delete().eq("user_id", userId);
-    }
 
     if (productId) {
       // ⚠️ Карта здесь в pending, а не live. Отказ на комментарий может

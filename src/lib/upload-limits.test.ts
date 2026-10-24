@@ -6,7 +6,6 @@ import {
   HEAD_BYTES,
   checkMapBytes,
   checkImageBytes,
-  checkImageContentType,
   safeExtension,
 } from "./upload-limits";
 
@@ -153,32 +152,5 @@ describe("safeExtension", () => {
     // safeExtension про мусор в строке, а не про то, что разрешено.
     expect(safeExtension("map.exe", "zip")).toBe("exe");
     expect((MAP_FILE_EXTENSIONS as readonly string[]).includes("exe")).toBe(false);
-  });
-});
-
-describe("checkImageContentType", () => {
-  it("пускает четыре типа картинок", () => {
-    for (const type of ["image/png", "image/jpeg", "image/gif", "image/webp"]) {
-      expect(checkImageContentType(type)).toBeNull();
-    }
-  });
-
-  it("не смотрит на регистр и параметры", () => {
-    expect(checkImageContentType("Image/PNG; charset=binary")).toBeNull();
-  });
-
-  // Ради этого случая проверка и заведена: PNG-заголовок, за ним HTML,
-  // тип задан загружающим.
-  it("отказывает text/html", () => {
-    expect(checkImageContentType("text/html")).not.toBeNull();
-  });
-
-  it("отказывает svg — это картинка, внутри которой работает скрипт", () => {
-    expect(checkImageContentType("image/svg+xml")).not.toBeNull();
-  });
-
-  it("отказывает, когда типа нет вовсе", () => {
-    expect(checkImageContentType(undefined)).not.toBeNull();
-    expect(checkImageContentType("")).not.toBeNull();
   });
 });

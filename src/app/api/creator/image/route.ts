@@ -10,7 +10,6 @@ import {
   IMAGE_MAX_BYTES,
   HEAD_BYTES,
   checkImageBytes,
-  checkImageContentType,
   formatBytes,
   safeExtension,
 } from "@/lib/upload-limits";
@@ -246,9 +245,6 @@ async function confirm(
 
   const problem = checkImageBytes(head, size, fileName || path);
   if (problem) return reject(problem);
-
-  const typeProblem = checkImageContentType(info.contentType);
-  if (typeProblem) return reject(typeProblem);
 
   if (kind === "product") {
     return NextResponse.json({ ok: true, path, size });
