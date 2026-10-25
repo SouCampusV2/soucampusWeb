@@ -77,13 +77,19 @@ export default function SupportPage() {
           сайте и уже оптимизирован Next. На телефоне встаёт под текст —
           человек пришёл за помощью, кнопка должна быть на первом экране. */}
       <Image
-        src="/portfolio/pinecliff-haven.png"
-        alt="Pinecliff Haven — a pine-covered island village"
-        width={1920}
-        height={1080}
+        src="/portfolio/pirate-rpg.jpeg"
+        alt="Pirate RPG — a pirate harbour town under a ship-shaped tavern"
+        width={1680}
+        height={945}
         sizes="(min-width: 1152px) 528px, (min-width: 640px) 50vw, 100vw"
+        // 90, как у скриншотов карт (ProductGallery): при 75 по умолчанию
+        // мелкая листва и черепица мылятся. Значение обязано быть в
+        // images.qualities (next.config.ts), иначе Next его не отдаст.
+        quality={90}
         priority
-        className="aspect-[4/3] w-full rounded-3xl object-cover"
+        // Кадр целиком, 16:9, без object-cover: рамка повторяет пропорцию
+        // исходника (DESIGN.md → «Вёрстка»), иначе качество платит за раскладку.
+        className="h-auto w-full rounded-3xl"
       />
     </main>
   );
