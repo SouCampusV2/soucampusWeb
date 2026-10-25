@@ -24,6 +24,8 @@ export type Project = {
   isFeatured: boolean;
   /** Extra shots of the same build, shown in the gallery on its subpage. */
   gallery?: string[];
+  /** Где работу можно купить (премейд у заказчика на BuiltByBit). null — негде. */
+  listingUrl: string | null;
 };
 
 // Верхняя граница на размер hero-карусели. Раскрывающиеся панели читаются
@@ -51,6 +53,7 @@ type ProjectRow = {
   size_z: number | null;
   price_amount: number | null;
   is_featured: boolean;
+  listing_url: string | null;
   project_images: { url: string; position: number }[] | null;
 };
 
@@ -85,6 +88,7 @@ export function rowToProject(row: ProjectRow): Project {
     // Пустую галерею отдаём как undefined, а не как [] — компоненты уже
     // написаны под проверку `project.gallery && length > 0`.
     gallery: gallery.length > 0 ? gallery : undefined,
+    listingUrl: row.listing_url,
   };
 }
 
@@ -95,7 +99,7 @@ export function rowToProject(row: ProjectRow): Project {
 const PROJECT_FIELDS = `
   slug, title, tag, summary, description, image_url,
   price_label, size_label, deadline_label, is_featured,
-  size_x, size_z, price_amount,
+  size_x, size_z, price_amount, listing_url,
   project_images ( url, position )
 `;
 
