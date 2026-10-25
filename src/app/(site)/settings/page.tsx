@@ -38,6 +38,7 @@ export default async function SettingsPage() {
       firstName: null,
       lastName: null,
       avatarUrl: null,
+      bannerUrl: null,
       nameColor: null,
       // Строки profiles нет — значит и покупок за ней не числится:
       // выбор цвета такому аккаунту не показываем.

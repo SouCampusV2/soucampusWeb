@@ -50,6 +50,10 @@ export type Creator = {
   isClient: boolean;
   /** Цвет ника (#rrggbb) — привилегия купивших. null = обычный ник. */
   nameColor: string | null;
+  /** Широкая картинка над шапкой профиля (20261025130000). null — нет. */
+  bannerUrl: string | null;
+  /** Момент регистрации — «Joined: …». null, пока база его не отдаёт. */
+  joinedAt: string | null;
 };
 
 type CreatorRow = {
@@ -67,6 +71,9 @@ type CreatorRow = {
   /** Из 20260823130000; у старых баз колонки нет. */
   is_founder?: boolean | null;
   name_color?: string | null;
+  /** Обе — из 20261025130000. */
+  banner_url?: string | null;
+  created_at?: string | null;
 };
 
 /**
@@ -173,6 +180,8 @@ function rowToCreator(row: CreatorRow): Creator {
     isFounder: Boolean(row.is_founder),
     isClient: Boolean(row.is_client),
     nameColor: isHexColor(row.name_color) ? row.name_color : null,
+    bannerUrl: row.banner_url ?? null,
+    joinedAt: row.created_at ?? null,
   };
 }
 
@@ -186,8 +195,18 @@ export function isHexColor(value: unknown): value is string {
   return typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value);
 }
 
-const CREATOR_FIELDS =
+const CREATOR_FIELDS_NO_BANNER =
   "id, username, username_lower, avatar_url, bio, is_verified, is_creator, is_founder, name_color, is_client";
+
+const CREATOR_FIELDS = `${CREATOR_FIELDS_NO_BANNER}, banner_url, created_at`;
+
+// Баннер и дата регистрации пришли в представление позже (20261025130000).
+// Отдельная ступень, а не ещё одно имя в isMissingRole: та откатывает на
+// пять колонок и теряет роли, цвет и адрес, — а здесь не хватает только
+// двух новых, остальное у базы есть.
+function isMissingBanner(message: string): boolean {
+  return message.includes("banner_url") || message.includes("created_at");
+}
 
 // Тот же набор без is_creator — запасной путь, пока миграция
 // 20260811120000 не прогнана. PostgREST на незнакомую колонку отвечает
@@ -222,6 +241,9 @@ export async function getAllCreators(): Promise<Creator[]> {
     getSupabase().from("public_profiles").select(fields);
 
   let { data, error } = await query(CREATOR_FIELDS);
+  if (error && isMissingBanner(error.message)) {
+    ({ data, error } = await query(CREATOR_FIELDS_NO_BANNER));
+  }
   if (error && isMissingRole(error.message)) {
     ({ data, error } = await query(CREATOR_FIELDS_NO_ROLE));
   }
@@ -253,6 +275,9 @@ export async function getCreatorByHandle(handle: string): Promise<Creator | null
       .maybeSingle();
 
   let { data, error } = await query(CREATOR_FIELDS);
+  if (error && isMissingBanner(error.message)) {
+    ({ data, error } = await query(CREATOR_FIELDS_NO_BANNER));
+  }
   if (error && isMissingRole(error.message)) {
     // База без части колонок представления: ищем по самому имени.
     // ilike без подстановочных знаков — обычное сравнение, только

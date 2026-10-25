@@ -386,6 +386,25 @@ async function main() {
     );
     await asServer.from("profiles").update({ avatar_url: null }).eq("id", userId);
 
+    // Баннер (20261025130000) — та же дыра и та же пара проверок: чужой
+    // сервер не ставится, свой файл из бакета ставится.
+    await fieldHolds(
+      asUser,
+      userId,
+      "banner_url",
+      "https://tracker.example.invalid/banner.png",
+      "чужой адрес в баннер не поставить"
+    );
+    const ownBanner = `${url}/storage/v1/object/public/avatars/${userId}/banner?v=1`;
+    const bannerSaved = await asUser.from("profiles").update({ banner_url: ownBanner }).eq("id", userId);
+    const bannerStored = await asServer.from("profiles").select("banner_url").eq("id", userId).single();
+    check(
+      "свой баннер из нашего бакета сохраняется (форма не сломана)",
+      bannerSaved.error === null && bannerStored.data?.banner_url === ownBanner,
+      bannerSaved.error ? bannerSaved.error.message : `в базе ${JSON.stringify(bannerStored.data?.banner_url)}`
+    );
+    await asServer.from("profiles").update({ banner_url: null }).eq("id", userId);
+
     // -------------------------------------------------------
     // 3. Карта: из браузера её не пишет никто (шлюз записи, пути 1–4).
     //
