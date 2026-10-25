@@ -13,10 +13,10 @@ import { uploadImage } from "@/lib/upload-client";
 import { formatDayMonthYear } from "@/lib/dates";
 import { revalidateProfile } from "@/app/(site)/settings/actions";
 
-const AVATAR_MAX_BYTES = 2 * 1024 * 1024; // 2 МБ
+const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 МБ
 // Баннер шире и детальнее аватара — отсюда потолок крупнее. Настоящий
 // предел (IMAGE_MAX_BYTES) держит шлюз, здесь — удобство до загрузки.
-const BANNER_MAX_BYTES = 5 * 1024 * 1024; // 5 МБ
+const BANNER_MAX_BYTES = 10 * 1024 * 1024; // 10 МБ — ровно потолок шлюза (IMAGE_MAX_BYTES)
 
 // Столько же, сколько в guard_username_change (миграция 20260821140000).
 export function ProfileEditForm({
@@ -72,7 +72,7 @@ export function ProfileEditForm({
       return;
     }
     if (file.size > AVATAR_MAX_BYTES) {
-      setError("Avatar must be smaller than 2 MB.");
+      setError("Avatar must be 5 MB or smaller.");
       return;
     }
     setError(null);
@@ -91,7 +91,7 @@ export function ProfileEditForm({
       return;
     }
     if (file.size > BANNER_MAX_BYTES) {
-      setError("Banner must be smaller than 5 MB.");
+      setError("Banner must be 10 MB or smaller.");
       return;
     }
     setError(null);
@@ -298,38 +298,54 @@ export function ProfileEditForm({
       onSubmit={handleSubmit}
       className="mx-auto max-w-md rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-950"
     >
-      {/* Баннер — необязательный. Пропорция 4:1 та же, что на профиле:
-          превью обязано показать ровно тот кадр, который увидят
+      {/* Баннер и аватар — одной шапкой, аватар поверх нижнего края
+          баннера (просьба владельца 25.10). Пропорция 4:1 та же, что на
+          профиле: превью обязано показать тот кадр, который увидят
           посетители, иначе человек подбирает картинку вслепую.
 
-          Кнопки под ним — текстом, а не только наведением на картинку:
-          на тач-экране hover не наступает никогда (правило 26.08). */}
-      <div>
-        <p className="mb-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Banner{" "}
-          <span className="font-normal text-zinc-500 dark:text-zinc-400">
-            — optional, wide image (4:1), max 5 MB
-          </span>
-        </p>
+          Кнопки смены видны ВСЕГДА, а не по наведению: на тач-экране
+          hover не наступает никогда (правило 26.08). */}
+      <div className="relative mb-16">
         <button
           type="button"
           onClick={() => bannerInput.current?.click()}
-          className="group relative block aspect-[4/1] w-full cursor-pointer overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
+          className="relative block aspect-[4/1] w-full cursor-pointer overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
           aria-label={shownBanner ? "Change banner" : "Add banner"}
         >
           {shownBanner ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={shownBanner} alt="Banner" className="h-full w-full object-cover" />
           ) : (
-            <span className="flex h-full w-full items-center justify-center gap-2 text-sm text-zinc-400 dark:text-zinc-500">
-              <ImageSquare size={20} />
-              Add a banner
+            // Подпись в правой части: по центру внизу её закрыл бы аватар.
+            <span className="flex h-full w-full items-center justify-end gap-2 pr-4 text-xs text-zinc-400 dark:text-zinc-500">
+              <ImageSquare size={18} />
+              Add a banner · 4:1, up to 10 MB
             </span>
           )}
-          <span className="absolute inset-0 flex items-center justify-center bg-zinc-950/0 text-transparent transition-colors group-hover:bg-zinc-950/50 group-hover:text-white">
-            <Camera size={22} />
-          </span>
         </button>
+
+        {/* Угол баннера: сменить и убрать. Тёмная подложка — чтобы
+            кнопки читались поверх любой картинки, светлой и тёмной. */}
+        {shownBanner && (
+          <div className="absolute right-2 top-2 flex gap-1.5">
+            <button
+              type="button"
+              onClick={() => bannerInput.current?.click()}
+              className="inline-flex items-center gap-1 rounded-full bg-zinc-950/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-zinc-950/80"
+            >
+              <Camera size={14} aria-hidden />
+              Change
+            </button>
+            <button
+              type="button"
+              onClick={removeBanner}
+              aria-label="Remove banner"
+              className="inline-flex items-center rounded-full bg-zinc-950/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-red-600"
+            >
+              Remove
+            </button>
+          </div>
+        )}
         <input
           ref={bannerInput}
           type="file"
@@ -337,50 +353,29 @@ export function ProfileEditForm({
           onChange={pickBanner}
           className="hidden"
         />
-        {shownBanner && (
-          <div className="mt-2 flex justify-end gap-4 text-xs font-medium">
-            <button
-              type="button"
-              onClick={() => bannerInput.current?.click()}
-              className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
-            >
-              Change
-            </button>
-            <button
-              type="button"
-              onClick={removeBanner}
-              className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
-            >
-              Remove
-            </button>
-          </div>
-        )}
-      </div>
 
-      {/* Аватар + кнопка выбора файла. Квадрат со скруглением, как на
-          профиле (2026-10-25): превью повторяет то, что увидят другие. */}
-      <div className="mt-6 flex flex-col items-center">
+        {/* Аватар — квадрат со скруглением, как на профиле. Обводка
+            цветом формы отделяет его от баннера под ним. */}
         <button
           type="button"
           onClick={() => fileInput.current?.click()}
-          className="group relative h-24 w-24 cursor-pointer overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
+          className="absolute bottom-0 left-1/2 h-24 w-24 -translate-x-1/2 translate-y-1/2 cursor-pointer rounded-3xl bg-[#fbfbff] p-1 dark:bg-zinc-950"
           aria-label="Change avatar"
         >
-          {shownAvatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={shownAvatar}
-              alt="Avatar"
-              className="h-full w-full object-cover object-top"
-            />
-          ) : (
-            <UserCircle
-              size={64}
-              className="mx-auto text-zinc-300 dark:text-zinc-600"
-            />
-          )}
-          <span className="absolute inset-0 flex items-center justify-center bg-zinc-950/0 text-transparent transition-colors group-hover:bg-zinc-950/50 group-hover:text-white">
-            <Camera size={22} />
+          <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-[1.25rem] bg-zinc-100 dark:bg-zinc-900">
+            {shownAvatar ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={shownAvatar}
+                alt="Avatar"
+                className="h-full w-full object-cover object-top"
+              />
+            ) : (
+              <UserCircle size={56} className="text-zinc-300 dark:text-zinc-600" />
+            )}
+          </span>
+          <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#fbfbff] bg-zinc-950 text-white dark:border-zinc-950 dark:bg-zinc-50 dark:text-zinc-950">
+            <Camera size={15} aria-hidden />
           </span>
         </button>
         <input
@@ -390,10 +385,10 @@ export function ProfileEditForm({
           onChange={pickAvatar}
           className="hidden"
         />
-        <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
-          Click the avatar to change it (max 2 MB)
-        </p>
       </div>
+      <p className="-mt-2 mb-2 text-center text-xs text-zinc-500 dark:text-zinc-400">
+        Avatar up to 5 MB · banner up to 10 MB
+      </p>
 
       <div className="mt-6 space-y-4">
         {/* ОДНО имя, и квадратик цвета рядом с ним.

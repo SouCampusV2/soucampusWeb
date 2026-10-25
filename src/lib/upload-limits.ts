@@ -95,6 +95,12 @@ export const AVATAR_NAME = "avatar";
 export const BANNER_NAME = "banner";
 
 /**
+ * Фото работ портфолио (2026-10-25). Свой бакет, а не product-images:
+ * уборка Storage стирает оттуда всё, на что не ссылается карта.
+ */
+export const PORTFOLIO_IMAGES_BUCKET = "portfolio-images";
+
+/**
  * Сколько первых байтов нужно, чтобы опознать формат.
  *
  * Двенадцать, а не четыре: у WEBP метка формата лежит с 8-го байта. На

@@ -3,10 +3,12 @@ import { enforceRateLimit } from "@/lib/rate-limit";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { PRODUCT_IMAGES_BUCKET } from "@/lib/products";
+import { getAdminUser } from "@/lib/admin";
 import {
   AVATARS_BUCKET,
   AVATAR_NAME,
   BANNER_NAME,
+  PORTFOLIO_IMAGES_BUCKET,
   IMAGE_EXTENSIONS,
   IMAGE_MAX_BYTES,
   HEAD_BYTES,
@@ -51,6 +53,10 @@ import {
 //
 // Баннер профиля (2026-10-25) устроен ровно как аватар: тот же бакет,
 // тот же временный путь, другое имя на месте — <user_id>/banner.
+//
+// Фото портфолио (2026-10-25) — как картинки карты, но в своём бакете
+// portfolio-images и только у АДМИНА: портфолио — витрина студии, а не
+// площадка, и писать в него больше некому.
 // ============================================================
 
 export const dynamic = "force-dynamic";
@@ -58,9 +64,11 @@ export const dynamic = "force-dynamic";
 type Action = "sign" | "confirm";
 /**
  * product — картинки карты (обложка, галерея, описание);
- * avatar и banner — профиль, оба в бакете avatars.
+ * avatar и banner — профиль, оба в бакете avatars;
+ * portfolio — фото работ студии, только админ.
  */
-type Kind = "product" | "avatar" | "banner";
+type Kind = "product" | "avatar" | "banner" | "portfolio";
+const KINDS: readonly Kind[] = ["product", "avatar", "banner", "portfolio"];
 
 /** Файл профиля встаёт на постоянное имя; картинки карты — нет. */
 function isProfileImage(kind: Kind): kind is "avatar" | "banner" {
@@ -85,18 +93,26 @@ export async function POST(request: Request) {
   }
 
   const body = (await request.json().catch(() => ({}))) as Body;
-  const { action, kind } = body;
+  const { action } = body;
 
   if (
     (action !== "sign" && action !== "confirm") ||
-    (kind !== "product" && kind !== "avatar" && kind !== "banner")
+    !KINDS.includes(body.kind as Kind)
   ) {
     return NextResponse.json({ error: "bad request" }, { status: 400 });
   }
+  // Проверено строкой выше; includes тип не сужает, поэтому явно.
+  const kind = body.kind as Kind;
 
   // Право на картинки карты держит is_creator — то же, что на файл
   // карты и на строку товара. Аватар и баннер есть у любого вошедшего:
   // это его собственный профиль, и никаких прав картинка не даёт.
+  // Портфолио — только админу. 404, а не 403: посторонний не должен по
+  // разнице ответов узнать, что такой вид загрузки вообще есть.
+  if (kind === "portfolio" && !(await getAdminUser())) {
+    return NextResponse.json({ error: "not found" }, { status: 404 });
+  }
+
   if (kind === "product") {
     const { data: profile } = await getSupabaseAdmin()
       .from("profiles")
@@ -129,7 +145,9 @@ export async function POST(request: Request) {
 
 /** Куда пишет этот вид загрузки. */
 function bucketOf(kind: Kind): string {
-  return kind === "product" ? PRODUCT_IMAGES_BUCKET : AVATARS_BUCKET;
+  if (kind === "product") return PRODUCT_IMAGES_BUCKET;
+  if (kind === "portfolio") return PORTFOLIO_IMAGES_BUCKET;
+  return AVATARS_BUCKET;
 }
 
 // ------------------------------------------------------------
@@ -178,7 +196,7 @@ async function sign(
   // когда убедится, что это картинка (см. шапку файла).
   const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const path =
-    kind === "product"
+    !isProfileImage(kind)
       ? `${userId}/${stamp}.${ext}`
       : `${userId}/pending-${stamp}.${ext}`;
 
@@ -258,7 +276,7 @@ async function confirm(
   const problem = checkImageBytes(head, size, fileName || path);
   if (problem) return reject(problem);
 
-  if (kind === "product") {
+  if (!isProfileImage(kind)) {
     return NextResponse.json({ ok: true, path, size });
   }
 

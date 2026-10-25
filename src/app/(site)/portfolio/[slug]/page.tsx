@@ -143,14 +143,17 @@ export default async function ProjectPage({
                 player can buy it», и дойти до покупки можно отсюда же.
                 Геометрия — пилюля, как у Copy link рядом; стрелка
                 поворачивается на -45, потому что ссылка уводит с сайта
-                (DESIGN.md → ArrowCircle). Адрес база пускает только https. */}
+                (DESIGN.md → ArrowCircle). Адрес база пускает только https.
+                Бесплатный премейд (Redspire) — «Download», а не «Buy»:
+                обещать покупку там, где платить не нужно, — неправда,
+                которая отпугивает (listing_is_free, 2026-10-25). */}
             {project.listingUrl && (
               <a
                 href={project.listingUrl}
                 {...NEW_TAB}
                 className={`group ${BUTTON_PILL} ${BUTTON_COLORS.primary}`}
               >
-                Buy on BuiltByBit
+                {project.listingIsFree ? "Download free on BuiltByBit" : "Buy on BuiltByBit"}
                 <ArrowCircle
                   variant="bare"
                   className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-45"

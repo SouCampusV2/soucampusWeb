@@ -24,6 +24,8 @@ const row = {
   price_amount: 150,
   is_featured: true,
   listing_url: null,
+  listing_is_free: false,
+  sort_order: 1,
   project_images: null,
 };
 

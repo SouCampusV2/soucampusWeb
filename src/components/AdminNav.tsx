@@ -26,6 +26,8 @@ const SECTIONS = [
   // разговоре это тоже «продукты». Название вкладки было единственным
   // местом, где то же самое звалось иначе.
   { href: "/admin/products", label: "Products" },
+  // Работы студии — правятся здесь же, а не в Table Editor (2026-10-25).
+  { href: "/admin/portfolio", label: "Portfolio" },
   { href: "/admin/applications", label: "Creators" },
   { href: "/admin/comments", label: "Comments" },
   // Журнал скачиваний — доказательства на случай спора о списании
