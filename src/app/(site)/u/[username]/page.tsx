@@ -17,6 +17,7 @@ import { PageGlow } from "@/components/PageGlow";
 import { CreatorOwnerActions, OwnerEditLink } from "@/components/CreatorOwnerActions";
 import { LocalTime } from "@/components/LocalTime";
 import { getRecentCommentsByUser } from "@/lib/comments";
+import { getProfileStats } from "@/lib/profile-stats";
 import { DISCORD_INVITE } from "@/lib/site";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
@@ -95,6 +96,7 @@ export default async function CreatorPage({
   // наличие карт: креатор без карт всё равно креатор, и его раздел
   // «Resources» — место, где карты появятся.
   const showResources = creator.isCreator;
+  const stats = await getProfileStats(creator.id);
 
   // Активность — последние комментарии, только под картами, которые ещё
   // на витрине: ссылка на снятую карту увела бы в 404.
@@ -126,16 +128,29 @@ export default async function CreatorPage({
     <main className="relative w-full flex-1 overflow-x-clip">
       <PageGlow color="rgba(251,146,60,0.28)" />
 
-      <div className="mx-auto max-w-[120rem] px-6 py-16 sm:px-10 sm:py-24 lg:px-16 xl:px-24 2xl:px-[120px]">
+      {/* С баннером — без верхнего отступа: баннер начинается от самого
+          верха страницы (см. ниже). */}
+      <div
+        className={`mx-auto max-w-[120rem] px-6 sm:px-10 lg:px-16 xl:px-24 2xl:px-[120px] ${
+          creator.bannerUrl ? "pb-16 sm:pb-24" : "py-16 sm:py-24"
+        }`}
+      >
       {/* Шапка профиля — по образцу BuiltByBit (2026-10-25): баннер,
           под ним большой квадратный аватар и рядом «кто это». */}
       <section className="relative">
         {/* Баннер необязателен: нет — шапка просто начинается с аватара,
             без пустой серой полосы. 4:1 — та же пропорция, что в превью
             на /settings, чтобы человек видел ровно этот кадр. На
-            телефоне полоса 4:1 выходит тоньше пальца, поэтому там 3:1. */}
+            телефоне полоса 4:1 выходит тоньше пальца, поэтому там 3:1.
+
+            Вплотную к верху страницы (просьба владельца 25.10). Навбар —
+            sticky В ПОТОКЕ и занимает 4.5rem (от sm — 5rem, h-[4.5rem]
+            sm:h-20 в Navbar.tsx), поэтому баннер поднимается ровно на
+            столько же и встаёт под стеклянную пилюлю. Поменяется высота
+            навбара — поменять и здесь, иначе вернётся щель или баннер
+            уедет под край. Скругление только снизу: сверху край экрана. */}
         {creator.bannerUrl && (
-          <div className="mb-8 aspect-[3/1] w-full overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 sm:aspect-[4/1]">
+          <div className="-mt-[4.5rem] mb-8 aspect-[3/1] w-full overflow-hidden rounded-b-3xl border-x border-b border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 sm:-mt-20 sm:aspect-[4/1]">
             {/* Обычный <img> — по той же причине, что у аватара ниже. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -190,7 +205,9 @@ export default async function CreatorPage({
             )}
           </div>
 
-          <div className="min-w-0 flex-1">
+          {/* Текст слева, цифры справа — обе колонки по верху. */}
+          <div className="flex min-w-0 flex-1 flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
+          <div className="min-w-0">
             {/* Карандаш — СОСЕД заголовка, а не его часть: внутри <h1> он
                 стал бы куском имени для скринридера и поисковика. */}
             <div className="flex items-center justify-center gap-2 sm:justify-start">
@@ -261,34 +278,39 @@ export default async function CreatorPage({
             {/* «Add a map» — только самому автору. У постороннего не
                 рендерится вовсе (см. компонент). */}
             <CreatorOwnerActions creatorId={creator.id} />
+            </div>
+
+            {/* Цифры — справа от имени, верхом вровень с ним (просьба
+                владельца 25.10; у BuiltByBit они полосой ниже, здесь —
+                рядом). У КАЖДОГО, а не только у креатора: покупки,
+                комментарии и реакции есть у любого участника. Наружу —
+                только числа, без единой строки заказа (profile-stats.ts).
+                Уже lg цифры уходят под текст строкой: рядом с именем им
+                не хватает места. */}
+            <dl className="flex flex-wrap justify-center gap-x-8 gap-y-4 sm:justify-start lg:shrink-0 lg:justify-end lg:pt-2">
+              {showResources && <Stat label="Resources" value={String(mapsCount)} />}
+              {showResources && <Stat label="Sales" value={String(totalSales)} />}
+              <Stat label="Purchases" value={statValue(stats.purchases)} />
+              <Stat label="Comments" value={statValue(stats.comments)} />
+              <Stat label="Reactions" value={statValue(stats.reactions)} />
+              {ratingVotes > 0 && (
+                <Stat
+                  label="Rating"
+                  value={
+                    <span className="inline-flex items-center gap-1.5">
+                      <Star size={18} weight="fill" className="text-orange-400" aria-hidden />
+                      {avgRating.toFixed(1)}
+                      <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400">
+                        ({ratingVotes})
+                      </span>
+                    </span>
+                  }
+                />
+              )}
+            </dl>
           </div>
         </div>
 
-        {/* Цифры — полосой под шапкой, подпись над числом, как у
-            BuiltByBit. Только у креатора: у участника публичных чисел
-            нет — что и сколько он купил, касается только его. */}
-        {showResources && (
-          <dl className="mt-10 grid grid-cols-3 border-y border-zinc-200 py-5 text-center dark:border-zinc-800 sm:text-left">
-            <Stat label="Resources" value={String(mapsCount)} />
-            <Stat label="Sales" value={String(totalSales)} />
-            <Stat
-              label="Rating"
-              value={
-                ratingVotes > 0 ? (
-                  <span className="inline-flex items-center gap-1.5">
-                    <Star size={18} weight="fill" className="text-orange-400" aria-hidden />
-                    {avgRating.toFixed(1)}
-                    <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400">
-                      ({ratingVotes})
-                    </span>
-                  </span>
-                ) : (
-                  "—"
-                )
-              }
-            />
-          </dl>
-        )}
       </section>
 
       {/* Под шапкой — ОДИН раздел: ресурсы у креатора, активность у
@@ -394,7 +416,12 @@ function SectionTitle({ children }: { children: React.ReactNode }) {
   );
 }
 
-/** Подпись над числом в полосе под шапкой — «Resources / 11». */
+/** null — «не узнали»: прочерк честнее нуля. */
+function statValue(value: number | null): string {
+  return value === null ? "—" : String(value);
+}
+
+/** Подпись над числом — «Resources / 11», как у BuiltByBit. */
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>

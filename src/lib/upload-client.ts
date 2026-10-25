@@ -1,7 +1,7 @@
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { PRODUCT_FILES_BUCKET } from "@/lib/orders-shape";
 import { PRODUCT_IMAGES_BUCKET } from "@/lib/products";
-import { AVATARS_BUCKET } from "@/lib/upload-limits";
+import { AVATARS_BUCKET, PORTFOLIO_IMAGES_BUCKET } from "@/lib/upload-limits";
 
 // Браузерная половина шлюза загрузки (2026-09-11).
 //
@@ -100,7 +100,7 @@ export async function uploadMapFile(file: File): Promise<string> {
  */
 export async function uploadImage(
   file: File,
-  kind: "product" | "avatar" | "banner"
+  kind: "product" | "avatar" | "banner" | "portfolio"
 ): Promise<string> {
   const sign = await fetch("/api/creator/image", {
     method: "POST",
@@ -115,7 +115,12 @@ export async function uploadImage(
   if (!sign.ok) throw new Error(await problemFromGateway(sign));
   const { path, token } = (await sign.json()) as { path: string; token: string };
 
-  const bucket = kind === "product" ? PRODUCT_IMAGES_BUCKET : AVATARS_BUCKET;
+  const bucket =
+    kind === "product"
+      ? PRODUCT_IMAGES_BUCKET
+      : kind === "portfolio"
+        ? PORTFOLIO_IMAGES_BUCKET
+        : AVATARS_BUCKET;
   const supabase = createSupabaseBrowser();
 
   // Байты — напрямую в Storage по одноразовому токену, мимо наших
@@ -145,5 +150,8 @@ export async function uploadImage(
   const { data } = supabase.storage.from(bucket).getPublicUrl(finalPath);
   // ?v=… у аватара и баннера сбивает кэш браузера и CDN: путь
   // постоянный, и без метки после замены показался бы старый файл.
-  return kind === "product" ? data.publicUrl : `${data.publicUrl}?v=${Date.now()}`;
+  // У карты и портфолио путь каждый раз новый — метка там не нужна.
+  return kind === "avatar" || kind === "banner"
+    ? `${data.publicUrl}?v=${Date.now()}`
+    : data.publicUrl;
 }
