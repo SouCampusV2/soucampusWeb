@@ -20,7 +20,8 @@ import {
 import { getViewCounts, VIEW_PATHS } from "@/lib/views";
 import { ViewCount } from "@/components/ViewCount";
 import { PortfolioGallery } from "@/components/PortfolioGallery";
-import { Button } from "@/components/Button";
+import { Button, BUTTON_COLORS, BUTTON_PILL, NEW_TAB } from "@/components/Button";
+import { ArrowCircle } from "@/components/ArrowCircle";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { PAGE_TOP } from "@/components/page-spacing";
 import { SHARE_COLOR, shareMetadata } from "@/lib/share";
@@ -138,6 +139,25 @@ export default async function ProjectPage({
             {project.summary}
           </p>
           <div className="mt-6 flex flex-wrap items-center gap-3">
+            {/* Премейд, который продаёт заказчик: описание обещает «any
+                player can buy it», и дойти до покупки можно отсюда же.
+                Геометрия — пилюля, как у Copy link рядом; стрелка
+                поворачивается на -45, потому что ссылка уводит с сайта
+                (DESIGN.md → ArrowCircle). Адрес база пускает только https. */}
+            {project.listingUrl && (
+              <a
+                href={project.listingUrl}
+                {...NEW_TAB}
+                className={`group ${BUTTON_PILL} ${BUTTON_COLORS.primary}`}
+              >
+                Buy on BuiltByBit
+                <ArrowCircle
+                  variant="bare"
+                  className="h-4 w-4 transition-transform duration-300 group-hover:-rotate-45"
+                  colorClassName="text-zinc-950"
+                />
+              </a>
+            )}
             <CopyLinkButton path={`/portfolio/${project.slug}`} />
             <span className="rounded-full bg-lime-300 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-950">
               {project.tag}

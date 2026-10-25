@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import { Unbounded } from "next/font/google";
 import { EnvelopeSimple } from "@phosphor-icons/react/dist/ssr";
 import { ArrowCircle } from "@/components/ArrowCircle";
@@ -25,8 +26,23 @@ export const metadata: Metadata = {
 // с двумя заголовками.
 export default function SupportPage() {
   return (
-    <main className="w-full mx-auto max-w-6xl flex-1 px-6 pb-16 pt-20 sm:pb-28">
-      <div className="mx-auto max-w-2xl">
+    // Та же сетка, что у /contact: max-w-6xl и две колонки. До 25.10 текст
+    // жался в max-w-2xl посередине, и страница выглядела у́же соседних.
+    <main className="w-full mx-auto grid max-w-6xl flex-1 items-center gap-10 px-6 pb-16 pt-20 sm:grid-cols-2 sm:pb-28">
+      {/* Картинка слева на десктопе, но ПОСЛЕ текста на телефоне: человек
+          пришёл за помощью, и кнопка должна быть на первом экране.
+          Фон у рендера прозрачный, поэтому он ложится на обе темы.
+          Исходник (3840px, 3.6 МБ) — assets/portfolio-originals/HugeRender1.png. */}
+      <Image
+        src="/support-village.webp"
+        alt="A Minecraft village with a nether portal, market stalls and players"
+        width={1400}
+        height={896}
+        sizes="(min-width: 1152px) 528px, (min-width: 640px) 50vw, 100vw"
+        priority
+        className="order-last h-auto w-full sm:order-first"
+      />
+      <div>
         <span className="text-sm font-semibold text-orange-500">Marketplace</span>
         <h1
           className={`${displayFont.className} mt-3 text-4xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}

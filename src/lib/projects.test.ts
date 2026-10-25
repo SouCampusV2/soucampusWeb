@@ -23,6 +23,7 @@ const row = {
   size_z: 250,
   price_amount: 150,
   is_featured: true,
+  listing_url: null,
   project_images: null,
 };
 
