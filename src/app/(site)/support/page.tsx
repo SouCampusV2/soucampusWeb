@@ -28,20 +28,10 @@ export default function SupportPage() {
   return (
     // Та же сетка, что у /contact: max-w-6xl и две колонки. До 25.10 текст
     // жался в max-w-2xl посередине, и страница выглядела у́же соседних.
-    <main className="w-full mx-auto grid max-w-6xl flex-1 items-center gap-10 px-6 pb-16 pt-20 sm:grid-cols-2 sm:pb-28">
-      {/* Картинка слева на десктопе, но ПОСЛЕ текста на телефоне: человек
-          пришёл за помощью, и кнопка должна быть на первом экране.
-          Фон у рендера прозрачный, поэтому он ложится на обе темы.
-          Исходник (3840px, 3.6 МБ) — assets/portfolio-originals/HugeRender1.png. */}
-      <Image
-        src="/support-village.webp"
-        alt="A Minecraft village with a nether portal, market stalls and players"
-        width={1400}
-        height={896}
-        sizes="(min-width: 1152px) 528px, (min-width: 640px) 50vw, 100vw"
-        priority
-        className="order-last h-auto w-full sm:order-first"
-      />
+    // items-start, а не items-center: по центру текст сползал вниз вслед
+    // за высокой картинкой, и зазор под навбаром выходил больше pt-20
+    // (DESIGN.md → «Отступ от навбара»).
+    <main className="w-full mx-auto grid max-w-6xl flex-1 items-start gap-10 px-6 pb-16 pt-20 sm:grid-cols-2 sm:pb-28">
       <div>
         <span className="text-sm font-semibold text-orange-500">Marketplace</span>
         <h1
@@ -83,6 +73,18 @@ export default function SupportPage() {
           </a>
         </div>
       </div>
+      {/* Работа из портфолио, а не отдельный рендер: файл уже лежит на
+          сайте и уже оптимизирован Next. На телефоне встаёт под текст —
+          человек пришёл за помощью, кнопка должна быть на первом экране. */}
+      <Image
+        src="/portfolio/pinecliff-haven.png"
+        alt="Pinecliff Haven — a pine-covered island village"
+        width={1920}
+        height={1080}
+        sizes="(min-width: 1152px) 528px, (min-width: 640px) 50vw, 100vw"
+        priority
+        className="aspect-[4/3] w-full rounded-3xl object-cover"
+      />
     </main>
   );
 }
