@@ -26,6 +26,8 @@ export type Profile = {
   firstName: string | null;
   lastName: string | null;
   avatarUrl: string | null;
+  /** Баннер над шапкой профиля (20261025130000); null — нет. */
+  bannerUrl: string | null;
   /** Текст «о себе» на публичной странице /@<username>. */
   bio: string | null;
   /**
@@ -45,16 +47,31 @@ export async function readProfile(
   supabase: SupabaseClient,
   userId: string
 ): Promise<Profile | null> {
-  const { data, error } = await supabase
-    .from("profiles")
-    .select(
-      "username, username_changed_at, first_name, last_name, avatar_url, bio, name_color"
-    )
-    .eq("id", userId)
-    .maybeSingle();
+  const query = (fields: string) =>
+    supabase.from("profiles").select(fields).eq("id", userId).maybeSingle();
+
+  const BASE =
+    "username, username_changed_at, first_name, last_name, avatar_url, bio, name_color";
+
+  // banner_url — из 20261025130000. Пока база её не знает, PostgREST не
+  // отдаёт строку вовсе, и /settings падал бы целиком из-за одного поля.
+  let { data, error } = await query(`${BASE}, banner_url`);
+  if (error?.message.includes("banner_url")) {
+    ({ data, error } = await query(BASE));
+  }
 
   if (error) throw new Error(`Не удалось загрузить профиль: ${error.message}`);
   if (!data) return null;
+  const row = data as unknown as {
+    username: string;
+    username_changed_at: string | null;
+    first_name: string | null;
+    last_name: string | null;
+    avatar_url: string | null;
+    bio: string | null;
+    name_color: string | null;
+    banner_url?: string | null;
+  };
 
   // «Покупал ли» спрашиваем ту же функцию, что и публичный профиль
   // (миграция 20260820130000), а не считаем заказы здесь: два ответа на
@@ -65,13 +82,14 @@ export async function readProfile(
   });
 
   return {
-    username: data.username,
-    usernameChangedAt: data.username_changed_at ?? null,
-    firstName: data.first_name,
-    lastName: data.last_name,
-    avatarUrl: data.avatar_url,
-    bio: data.bio ?? null,
-    nameColor: data.name_color ?? null,
+    username: row.username,
+    usernameChangedAt: row.username_changed_at ?? null,
+    firstName: row.first_name,
+    lastName: row.last_name,
+    avatarUrl: row.avatar_url,
+    bannerUrl: row.banner_url ?? null,
+    bio: row.bio ?? null,
+    nameColor: row.name_color ?? null,
     isClient: Boolean(clientFlag),
   };
 }

@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useRefresh } from "@/lib/useRefresh";
 import Link from "next/link";
-import { UserCircle, Camera, Key } from "@phosphor-icons/react";
+import { UserCircle, Camera, Key, ImageSquare } from "@phosphor-icons/react";
 import { Button, BUTTON_COLORS } from "@/components/Button";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { USERNAME_COOLDOWN_DAYS, type Profile } from "@/lib/profiles";
@@ -14,6 +14,9 @@ import { formatDayMonthYear } from "@/lib/dates";
 import { revalidateProfile } from "@/app/(site)/settings/actions";
 
 const AVATAR_MAX_BYTES = 2 * 1024 * 1024; // 2 МБ
+// Баннер шире и детальнее аватара — отсюда потолок крупнее. Настоящий
+// предел (IMAGE_MAX_BYTES) держит шлюз, здесь — удобство до загрузки.
+const BANNER_MAX_BYTES = 5 * 1024 * 1024; // 5 МБ
 
 // Столько же, сколько в guard_username_change (миграция 20260821140000).
 export function ProfileEditForm({
@@ -52,6 +55,12 @@ export function ProfileEditForm({
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const fileInput = useRef<HTMLInputElement>(null);
 
+  // Баннер — та же тройка «что в базе / выбранный файл / превью».
+  const [bannerUrl, setBannerUrl] = useState(initial.bannerUrl);
+  const [bannerFile, setBannerFile] = useState<File | null>(null);
+  const [bannerPreview, setBannerPreview] = useState<string | null>(null);
+  const bannerInput = useRef<HTMLInputElement>(null);
+
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -69,6 +78,36 @@ export function ProfileEditForm({
     setError(null);
     setAvatarFile(file);
     setAvatarPreview(URL.createObjectURL(file));
+  }
+
+  function pickBanner(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    // Сброс значения: иначе тот же файл, выбранный после «Remove», не
+    // поднял бы onChange — браузер считает, что ничего не изменилось.
+    event.target.value = "";
+    if (!file) return;
+    if (!file.type.startsWith("image/")) {
+      setError("Banner must be an image.");
+      return;
+    }
+    if (file.size > BANNER_MAX_BYTES) {
+      setError("Banner must be smaller than 5 MB.");
+      return;
+    }
+    setError(null);
+    setBannerFile(file);
+    setBannerPreview(URL.createObjectURL(file));
+  }
+
+  /**
+   * Убрать баннер. Файл в бакете остаётся лежать до следующей загрузки —
+   * путь фиксированный, новый встанет на его место. Сам по себе он ни на
+   * что не ссылается: профиль показывает то, что в banner_url.
+   */
+  function removeBanner() {
+    setBannerFile(null);
+    setBannerPreview(null);
+    setBannerUrl(null);
   }
 
   async function handleSubmit(event: React.FormEvent) {
@@ -137,6 +176,20 @@ export function ProfileEditForm({
       }
     }
 
+    // Баннер — тем же шлюзом, kind: "banner" (<user_id>/banner).
+    let nextBannerUrl = bannerUrl;
+    if (bannerFile) {
+      try {
+        nextBannerUrl = await uploadImage(bannerFile, "banner");
+      } catch (err) {
+        setPending(false);
+        setError(
+          err instanceof Error ? err.message : "Couldn't upload the banner."
+        );
+        return;
+      }
+    }
+
     // Какую СТРОКУ можно менять, решает RLS «own profile update» (свою).
     // Какие ПОЛЯ — права на колонки (миграция 20260915120000): браузеру
     // выдано ровно то, что отправляет эта форма. Добавишь сюда поле —
@@ -158,6 +211,10 @@ export function ProfileEditForm({
         // бы пустой строкой и стёрло бы цвет, если тот когда-то был.
         ...(initial.isClient ? { name_color: nameColor || null } : {}),
         avatar_url: nextAvatarUrl,
+        // Право на колонку — 20261025130000. Отправляем, только если
+        // баннер правда трогали: до прогона миграции база ответила бы
+        // отказом прав на любое сохранение, даже на смену био.
+        ...(nextBannerUrl !== initial.bannerUrl ? { banner_url: nextBannerUrl } : {}),
       })
       .eq("id", userId);
 
@@ -227,23 +284,86 @@ export function ProfileEditForm({
 
     setPending(false);
     setAvatarUrl(nextAvatarUrl);
+    setBannerUrl(nextBannerUrl);
+    setBannerFile(null);
     refresh();
     router.push("/settings");
   }
 
   const shownAvatar = avatarPreview ?? avatarUrl;
+  const shownBanner = bannerPreview ?? bannerUrl;
 
   return (
     <form
       onSubmit={handleSubmit}
       className="mx-auto max-w-md rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-950"
     >
-      {/* Аватар + кнопка выбора файла */}
-      <div className="flex flex-col items-center">
+      {/* Баннер — необязательный. Пропорция 4:1 та же, что на профиле:
+          превью обязано показать ровно тот кадр, который увидят
+          посетители, иначе человек подбирает картинку вслепую.
+
+          Кнопки под ним — текстом, а не только наведением на картинку:
+          на тач-экране hover не наступает никогда (правило 26.08). */}
+      <div>
+        <p className="mb-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          Banner{" "}
+          <span className="font-normal text-zinc-500 dark:text-zinc-400">
+            — optional, wide image (4:1), max 5 MB
+          </span>
+        </p>
+        <button
+          type="button"
+          onClick={() => bannerInput.current?.click()}
+          className="group relative block aspect-[4/1] w-full cursor-pointer overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
+          aria-label={shownBanner ? "Change banner" : "Add banner"}
+        >
+          {shownBanner ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={shownBanner} alt="Banner" className="h-full w-full object-cover" />
+          ) : (
+            <span className="flex h-full w-full items-center justify-center gap-2 text-sm text-zinc-400 dark:text-zinc-500">
+              <ImageSquare size={20} />
+              Add a banner
+            </span>
+          )}
+          <span className="absolute inset-0 flex items-center justify-center bg-zinc-950/0 text-transparent transition-colors group-hover:bg-zinc-950/50 group-hover:text-white">
+            <Camera size={22} />
+          </span>
+        </button>
+        <input
+          ref={bannerInput}
+          type="file"
+          accept="image/*"
+          onChange={pickBanner}
+          className="hidden"
+        />
+        {shownBanner && (
+          <div className="mt-2 flex justify-end gap-4 text-xs font-medium">
+            <button
+              type="button"
+              onClick={() => bannerInput.current?.click()}
+              className="text-zinc-600 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
+            >
+              Change
+            </button>
+            <button
+              type="button"
+              onClick={removeBanner}
+              className="text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
+            >
+              Remove
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Аватар + кнопка выбора файла. Квадрат со скруглением, как на
+          профиле (2026-10-25): превью повторяет то, что увидят другие. */}
+      <div className="mt-6 flex flex-col items-center">
         <button
           type="button"
           onClick={() => fileInput.current?.click()}
-          className="group relative h-24 w-24 cursor-pointer overflow-hidden rounded-full border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
+          className="group relative h-24 w-24 cursor-pointer overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
           aria-label="Change avatar"
         >
           {shownAvatar ? (

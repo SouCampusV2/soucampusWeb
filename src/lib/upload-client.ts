@@ -91,7 +91,8 @@ export async function uploadMapFile(file: File): Promise<string> {
  *
  * kind решает всё остальное: "product" — обложка, галерея и картинки
  * описания карты (бакет product-images, нужен статус креатора),
- * "avatar" — аватар профиля (бакет avatars, хватает входа). Путь в
+ * "avatar" и "banner" — картинки профиля (бакет avatars, хватает
+ * входа). Путь в
  * обоих случаях строит сервер: здесь его не видно нарочно.
  *
  * Бросает Error с текстом для человека — формы ловят его тем же
@@ -99,7 +100,7 @@ export async function uploadMapFile(file: File): Promise<string> {
  */
 export async function uploadImage(
   file: File,
-  kind: "product" | "avatar"
+  kind: "product" | "avatar" | "banner"
 ): Promise<string> {
   const sign = await fetch("/api/creator/image", {
     method: "POST",
@@ -142,7 +143,7 @@ export async function uploadImage(
   const { path: finalPath } = (await confirm.json()) as { path: string };
 
   const { data } = supabase.storage.from(bucket).getPublicUrl(finalPath);
-  // ?v=… у аватара сбивает кэш браузера и CDN: путь постоянный, и без
-  // метки после замены показался бы старый файл.
-  return kind === "avatar" ? `${data.publicUrl}?v=${Date.now()}` : data.publicUrl;
+  // ?v=… у аватара и баннера сбивает кэш браузера и CDN: путь
+  // постоянный, и без метки после замены показался бы старый файл.
+  return kind === "product" ? data.publicUrl : `${data.publicUrl}?v=${Date.now()}`;
 }

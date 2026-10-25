@@ -88,6 +88,13 @@ export const AVATARS_BUCKET = "avatars";
 export const AVATAR_NAME = "avatar";
 
 /**
+ * Баннер профиля: <user_id>/banner в том же бакете avatars (2026-10-25).
+ * Тот же фиксированный путь и тот же довод, что у аватара. Бакет общий,
+ * потому что ограничение profiles_banner_url_own повторяет аватарное.
+ */
+export const BANNER_NAME = "banner";
+
+/**
  * Сколько первых байтов нужно, чтобы опознать формат.
  *
  * Двенадцать, а не четыре: у WEBP метка формата лежит с 8-го байта. На

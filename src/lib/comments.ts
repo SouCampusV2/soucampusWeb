@@ -53,6 +53,42 @@ export async function getComments(productId: string): Promise<Comment[]> {
   return rows.map((r) => rowToComment(r, authors.get(r.user_id)));
 }
 
+/**
+ * Последние живые комментарии человека — «Activity» на его профиле
+ * (2026-10-25).
+ *
+ * Читается то же представление, что и лента под картой, анонимным
+ * клиентом: всё, что здесь видно, и так открыто под каждой картой.
+ * Удалённые отсекаются в запросе — на профиле «removed» без контекста
+ * разговора ничего не значит.
+ *
+ * Карта к комментарию не подтягивается: страница профиля уже держит
+ * каталог целиком и сопоставит сама, а заодно молча отбросит
+ * комментарии под картами, которых на витрине больше нет.
+ */
+export async function getRecentCommentsByUser(
+  userId: string,
+  limit = 10
+): Promise<Comment[]> {
+  const { data, error } = await getSupabase()
+    .from(COMMENT_FEED)
+    .select(COMMENT_COLUMNS)
+    .eq("user_id", userId)
+    .is("deleted_by", null)
+    .order("created_at", { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    // Как и лента под картой — не содержание страницы: профиль обязан
+    // открыться и без неё.
+    console.warn(`Активность профиля недоступна: ${error.message}`);
+    return [];
+  }
+
+  // Автор у всех один, и страница его уже знает, — подпись не нужна.
+  return ((data ?? []) as CommentRow[]).map((r) => rowToComment(r, undefined));
+}
+
 /** Строка для админки: комментарий + к какой карте он относится. */
 export type AdminComment = Comment & {
   productSlug: string;

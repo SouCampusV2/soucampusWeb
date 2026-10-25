@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
 import { Unbounded } from "next/font/google";
 import { SealCheck, Star, UserCircle } from "@phosphor-icons/react/dist/ssr";
 import { getAllProductsWithStats } from "@/lib/products";
@@ -12,7 +14,9 @@ import {
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/Button";
 import { PageGlow } from "@/components/PageGlow";
-import { CreatorOwnerActions } from "@/components/CreatorOwnerActions";
+import { CreatorOwnerActions, OwnerEditLink } from "@/components/CreatorOwnerActions";
+import { LocalTime } from "@/components/LocalTime";
+import { getRecentCommentsByUser } from "@/lib/comments";
 import { DISCORD_INVITE } from "@/lib/site";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
@@ -86,20 +90,36 @@ export default async function CreatorPage({
 
   const role = creatorRole(creator);
 
-  // Что посмотреть, если карт у человека нет. Раньше на этом месте
+  // Что под шапкой (просьба владельца 25.10, по образцу BuiltByBit):
+  // у креатора — его ресурсы, у остальных — активность. Решает роль, а не
+  // наличие карт: креатор без карт всё равно креатор, и его раздел
+  // «Resources» — место, где карты появятся.
+  const showResources = creator.isCreator;
+
+  // Активность — последние комментарии, только под картами, которые ещё
+  // на витрине: ссылка на снятую карту увела бы в 404.
+  const productsById = new Map(all.map((p) => [p.id, p]));
+  const activity = showResources
+    ? []
+    : (await getRecentCommentsByUser(creator.id)).flatMap((comment) => {
+        const product = productsById.get(comment.productId);
+        return product ? [{ comment, product }] : [];
+      });
+
+  // Что посмотреть, если показать у человека нечего. Раньше на этом месте
   // печаталось «No maps published yet» — страница честно сообщала, что
   // показать нечего, и на том заканчивалась. С заморозкой креаторства
   // это профиль КАЖДОГО, кроме владельца, то есть тупик по умолчанию.
   //
   // Берём из уже загруженного каталога: второго запроса не нужно, all
   // прочитан выше ради карт самого профиля.
-  const recommended =
-    products.length === 0
-      ? all
-          .filter((p) => p.creatorId !== creator.id)
-          .sort((a, b) => (b.salesCount ?? 0) - (a.salesCount ?? 0))
-          .slice(0, 4)
-      : [];
+  const isEmpty = showResources ? products.length === 0 : activity.length === 0;
+  const recommended = isEmpty
+    ? all
+        .filter((p) => p.creatorId !== creator.id)
+        .sort((a, b) => (b.salesCount ?? 0) - (a.salesCount ?? 0))
+        .slice(0, 4)
+    : [];
 
   return (
     // Клип — на полноширинном <main>, max-w — на обёртке внутри (см. PageGlow).
@@ -107,20 +127,34 @@ export default async function CreatorPage({
       <PageGlow color="rgba(251,146,60,0.28)" />
 
       <div className="mx-auto max-w-[120rem] px-6 py-16 sm:px-10 sm:py-24 lg:px-16 xl:px-24 2xl:px-[120px]">
-      {/* Шапка профиля продавца */}
+      {/* Шапка профиля — по образцу BuiltByBit (2026-10-25): баннер,
+          под ним большой квадратный аватар и рядом «кто это». */}
       <section className="relative">
-        {/* sm:items-start, а НЕ items-center (просьба владельца
-            2026-08-22). По центру аватар равнялся на ВЕСЬ блок сразу —
-            имя, бейдж, био, цифры и три кнопки, — и потому оказывался
-            где-то на уровне описания. Чем длиннее био, тем ниже уезжал
-            — то есть положение лица зависело от того, сколько человек
-            написал о себе.
+        {/* Баннер необязателен: нет — шапка просто начинается с аватара,
+            без пустой серой полосы. 4:1 — та же пропорция, что в превью
+            на /settings, чтобы человек видел ровно этот кадр. На
+            телефоне полоса 4:1 выходит тоньше пальца, поэтому там 3:1. */}
+        {creator.bannerUrl && (
+          <div className="mb-8 aspect-[3/1] w-full overflow-hidden rounded-3xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 sm:aspect-[4/1]">
+            {/* Обычный <img> — по той же причине, что у аватара ниже. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={creator.bannerUrl}
+              alt=""
+              className="h-full w-full object-cover"
+            />
+          </div>
+        )}
 
-            По верху он встаёт рядом с именем и там и остаётся: аватар и
-            имя — одно утверждение «кто это», остальное под ним —
-            подробности. */}
+        {/* sm:items-start, а НЕ items-center (просьба владельца
+            2026-08-22): по центру аватар равнялся бы на весь блок и
+            уезжал вниз вместе с длиной био. По верху он встаёт рядом с
+            именем — «кто это» — и там и остаётся. */}
         <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-start sm:gap-8 sm:text-left">
-          <div className="relative flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-full border border-zinc-200 bg-[#fbfbff] dark:border-zinc-800 dark:bg-zinc-900">
+          {/* Квадрат со скруглением, а не круг (2026-10-25): крупный
+              аватар в круге теряет углы картинки, а лого и скины —
+              квадратные по природе. */}
+          <div className="relative flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-zinc-200 bg-[#fbfbff] dark:border-zinc-800 dark:bg-zinc-900 sm:h-40 sm:w-40">
             {creator.avatarUrl ? (
               // Обычный <img>, а не next/image: аватары лежат в Supabase
               // Storage, а его домен не прописан в images.remotePatterns
@@ -134,13 +168,12 @@ export default async function CreatorPage({
                 alt={creator.username}
                 // Аватар-фото кадрируем (object-cover), а лого из public/
                 // показываем целиком с полями: у знака есть собственные
-                // границы, и обрезать его под кружок нельзя. Отличаем по
-                // виду ссылки — локальный путь начинается со слэша,
-                // загруженные пользователем аватары приходят полным
-                // адресом Supabase Storage.
+                // границы, и обрезать его нельзя. Отличаем по виду ссылки
+                // — локальный путь начинается со слэша, загруженные
+                // пользователем аватары приходят полным адресом Storage.
                 className={
                   creator.avatarUrl.startsWith("/")
-                    ? "h-full w-full object-contain p-2"
+                    ? "h-full w-full object-contain p-3"
                     : "h-full w-full object-cover object-top"
                 }
               />
@@ -149,7 +182,7 @@ export default async function CreatorPage({
               // иконка вместо чужого лого: подставлять сюда бренд было бы
               // прямой ложью о том, чей это профиль.
               <UserCircle
-                size={72}
+                size={88}
                 weight="thin"
                 className="text-zinc-300 dark:text-zinc-700"
                 aria-hidden
@@ -157,63 +190,62 @@ export default async function CreatorPage({
             )}
           </div>
 
-          <div className="min-w-0">
-            <h1
-              className={`${displayFont.className} flex items-center justify-center gap-2 text-4xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:justify-start sm:text-5xl`}
-            >
-              {/* Цвет ника — привилегия купивших (миграция 20260820130000).
-                  style, а не класс: цвет свободный, и в Tailwind его не
-                  выразить. Форма значения проверена дважды — ограничением
-                  в базе и isHexColor на выходе, — потому что отсюда оно
-                  попадает прямо в разметку. */}
-              <span style={creator.nameColor ? { color: creator.nameColor } : undefined}>
-                {creator.username}
-              </span>
-              {/* Галочка — только у подтверждённых (is_verified в БД). */}
-              {creator.isVerified && (
-                <SealCheck
-                  size={28}
-                  weight="fill"
-                  className="text-orange-500 dark:text-orange-400"
-                  aria-label="Verified creator"
-                />
-              )}
-            </h1>
+          <div className="min-w-0 flex-1">
+            {/* Карандаш — СОСЕД заголовка, а не его часть: внутри <h1> он
+                стал бы куском имени для скринридера и поисковика. */}
+            <div className="flex items-center justify-center gap-2 sm:justify-start">
+              <h1
+                className={`${displayFont.className} flex min-w-0 items-center gap-2 text-4xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
+              >
+                {/* Цвет ника — привилегия купивших (миграция 20260820130000).
+                    style, а не класс: цвет свободный, и в Tailwind его не
+                    выразить. Форма значения проверена дважды — ограничением
+                    в базе и isHexColor на выходе, — потому что отсюда оно
+                    попадает прямо в разметку. */}
+                <span
+                  className="truncate"
+                  style={creator.nameColor ? { color: creator.nameColor } : undefined}
+                >
+                  {creator.username}
+                </span>
+                {/* Галочка — только у подтверждённых (is_verified в БД). */}
+                {creator.isVerified && (
+                  <SealCheck
+                    size={28}
+                    weight="fill"
+                    className="shrink-0 text-orange-500 dark:text-orange-400"
+                    aria-label="Verified creator"
+                  />
+                )}
+              </h1>
+              <OwnerEditLink creatorId={creator.id} />
+            </div>
 
-            {/* Кто это. Раньше профиль креатора и профиль обычного
-                участника выглядели одинаково, и различить их можно было
-                только по тому, есть ли карты ниже, — а у креатора без
-                карт список тоже пуст. Галочка (is_verified) отвечает на
-                другой вопрос — «это точно он», — и роль ею не заменяется. */}
-            <p className="mt-2 flex justify-center sm:justify-start">
+            {/* Кто это. Галочка (is_verified) отвечает на другой вопрос —
+                «это точно он», — и роль ею не заменяется. */}
+            <p className="mt-3 flex justify-center sm:justify-start">
               <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${role.className}`}>
                 {role.label}
               </span>
             </p>
 
-            {creator.bio && (
-              <p className="mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400">
-                {creator.bio}
+            {/* Момент, а не день-ключ, — поэтому LocalTime (пояс
+                читателя), а не formatDate. Разбор в шапке lib/dates.ts. */}
+            {creator.joinedAt && (
+              <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
+                Joined:{" "}
+                <LocalTime
+                  value={creator.joinedAt}
+                  className="font-medium text-zinc-700 dark:text-zinc-300"
+                />
               </p>
             )}
 
-            {/* Статы продавца */}
-            <div className="mt-5 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-sm sm:justify-start">
-              <Stat value={String(mapsCount)} label={mapsCount === 1 ? "map" : "maps"} />
-              <Stat
-                value={String(totalSales)}
-                label={totalSales === 1 ? "purchase" : "purchases"}
-              />
-              {ratingVotes > 0 && (
-                <span className="flex items-center gap-1.5 text-zinc-500 dark:text-zinc-400">
-                  <Star size={16} weight="fill" className="text-orange-400" aria-hidden />
-                  <span className="font-semibold text-zinc-950 dark:text-zinc-50">
-                    {avgRating.toFixed(1)}
-                  </span>
-                  ({ratingVotes})
-                </span>
-              )}
-            </div>
+            {creator.bio && (
+              <p className="mx-auto mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400 sm:mx-0">
+                {creator.bio}
+              </p>
+            )}
 
             {/* Приём заказов — только у подтверждённого профиля (решение
                 владельца: пока кастомные карты берёт только бренд).
@@ -226,59 +258,117 @@ export default async function CreatorPage({
               </div>
             )}
 
-            {/* Кнопки управления — только для самого владельца страницы.
-                У постороннего не рендерятся вовсе (см. компонент). */}
+            {/* «Add a map» — только самому автору. У постороннего не
+                рендерится вовсе (см. компонент). */}
             <CreatorOwnerActions creatorId={creator.id} />
           </div>
         </div>
-      </section>
 
-      {/* Карты продавца — секции нет вовсе, пока карт нет.
-          Раньше пустой профиль печатал заголовок «Maps by <ник>» и под
-          ним «No maps published yet»: три строки, чтобы сообщить, что
-          сообщать нечего. У обычного участника — а с заморозкой
-          креаторства это все, кроме владельца, — карт не будет никогда,
-          и постоянный пустой раздел про них выглядит поломкой профиля.
-          Владельцу кнопка добавления и так лежит выше, в шапке
-          (CreatorOwnerActions, вариант header). */}
-      {products.length > 0 && (
-      <section className="mt-14">
-        <h2
-          className={`${displayFont.className} text-2xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-3xl`}
-        >
-          Maps by {creator.username}
-        </h2>
-        {(
-          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {products.map((product) => (
-              <ProductCard
-                key={product.slug}
-                product={product}
-                creator={{
-                  name: creator.username,
-                  href: creatorHref(creator.handle),
-                  isVerified: creator.isVerified,
-                }}
-                className="h-full"
-              />
-            ))}
-          </div>
+        {/* Цифры — полосой под шапкой, подпись над числом, как у
+            BuiltByBit. Только у креатора: у участника публичных чисел
+            нет — что и сколько он купил, касается только его. */}
+        {showResources && (
+          <dl className="mt-10 grid grid-cols-3 border-y border-zinc-200 py-5 text-center dark:border-zinc-800 sm:text-left">
+            <Stat label="Resources" value={String(mapsCount)} />
+            <Stat label="Sales" value={String(totalSales)} />
+            <Stat
+              label="Rating"
+              value={
+                ratingVotes > 0 ? (
+                  <span className="inline-flex items-center gap-1.5">
+                    <Star size={18} weight="fill" className="text-orange-400" aria-hidden />
+                    {avgRating.toFixed(1)}
+                    <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400">
+                      ({ratingVotes})
+                    </span>
+                  </span>
+                ) : (
+                  "—"
+                )
+              }
+            />
+          </dl>
         )}
       </section>
+
+      {/* Под шапкой — ОДИН раздел: ресурсы у креатора, активность у
+          остальных. */}
+      {showResources ? (
+        <section className="mt-14">
+          <SectionTitle>Resources</SectionTitle>
+          {products.length > 0 ? (
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {products.map((product) => (
+                <ProductCard
+                  key={product.slug}
+                  product={product}
+                  creator={{
+                    name: creator.username,
+                    href: creatorHref(creator.handle),
+                    isVerified: creator.isVerified,
+                  }}
+                  className="h-full"
+                />
+              ))}
+            </div>
+          ) : (
+            <p className="mt-3 text-zinc-600 dark:text-zinc-400">
+              No maps published yet.
+            </p>
+          )}
+        </section>
+      ) : (
+        <section className="mt-14">
+          <SectionTitle>Activity</SectionTitle>
+          {activity.length > 0 ? (
+            <ul className="mt-6 grid gap-3 lg:grid-cols-2">
+              {activity.map(({ comment, product }) => (
+                <li key={comment.id}>
+                  <Link
+                    href={`/marketplace/${product.slug}`}
+                    className="flex gap-4 rounded-3xl border border-zinc-200 bg-[#fbfbff] p-4 transition-colors hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
+                  >
+                    <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-900">
+                      <Image
+                        src={product.image}
+                        alt=""
+                        fill
+                        sizes="96px"
+                        className="object-cover"
+                      />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                        Commented on{" "}
+                        <span className="font-medium text-zinc-950 dark:text-zinc-50">
+                          {product.title}
+                        </span>{" "}
+                        · <LocalTime value={comment.createdAt} />
+                      </p>
+                      <p className="mt-1 line-clamp-2 text-sm text-zinc-700 dark:text-zinc-300">
+                        {comment.body}
+                      </p>
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-3 text-zinc-600 dark:text-zinc-400">
+              No activity yet.
+            </p>
+          )}
+        </section>
       )}
 
-      {/* Рекомендации — вместо пустоты у того, кто ничего не выкладывает.
-          Показываются ТОЛЬКО когда своих карт нет: у автора с картами
-          рекламировать чужие посреди его витрины — недружественно к
-          нему. Порядок — по числу покупок: «что берут» честнее любой
-          выдуманной персонализации, пока о человеке ничего не известно. */}
+      {/* Рекомендации — вместо пустоты у того, у кого нечего показать.
+          Только когда своего раздела нет: у автора с картами рекламировать
+          чужие посреди его витрины — недружественно к нему. Порядок — по
+          числу покупок: «что берут» честнее любой выдуманной
+          персонализации. */}
       {recommended.length > 0 && (
         <section className="mt-14">
-          <h2
-            className={`${displayFont.className} text-2xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-3xl`}
-          >
-            Popular right now
-          </h2>
+          <SectionTitle>Popular right now</SectionTitle>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
             Maps other players are picking up.
           </p>
@@ -294,12 +384,24 @@ export default async function CreatorPage({
   );
 }
 
-/** Число + подпись в строке под био: «2 maps», «5 purchases». */
-function Stat({ value, label }: { value: string; label: string }) {
+function SectionTitle({ children }: { children: React.ReactNode }) {
   return (
-    <span className="text-zinc-500 dark:text-zinc-400">
-      <span className="font-semibold text-zinc-950 dark:text-zinc-50">{value}</span>{" "}
-      {label}
-    </span>
+    <h2
+      className={`${displayFont.className} text-2xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-3xl`}
+    >
+      {children}
+    </h2>
+  );
+}
+
+/** Подпись над числом в полосе под шапкой — «Resources / 11». */
+function Stat({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <dt className="text-sm text-zinc-500 dark:text-zinc-400">{label}</dt>
+      <dd className="mt-1 text-xl font-semibold text-zinc-950 dark:text-zinc-50">
+        {value}
+      </dd>
+    </div>
   );
 }

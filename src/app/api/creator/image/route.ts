@@ -6,6 +6,7 @@ import { PRODUCT_IMAGES_BUCKET } from "@/lib/products";
 import {
   AVATARS_BUCKET,
   AVATAR_NAME,
+  BANNER_NAME,
   IMAGE_EXTENSIONS,
   IMAGE_MAX_BYTES,
   HEAD_BYTES,
@@ -48,13 +49,24 @@ import {
 //
 // Поэтому байты сначала ложатся во временный путь и только пройдя
 // проверку переезжают на место. Отказ не трогает то, что уже есть.
+//
+// Баннер профиля (2026-10-25) устроен ровно как аватар: тот же бакет,
+// тот же временный путь, другое имя на месте — <user_id>/banner.
 // ============================================================
 
 export const dynamic = "force-dynamic";
 
 type Action = "sign" | "confirm";
-/** product — картинки карты (обложка, галерея, описание); avatar — профиль. */
-type Kind = "product" | "avatar";
+/**
+ * product — картинки карты (обложка, галерея, описание);
+ * avatar и banner — профиль, оба в бакете avatars.
+ */
+type Kind = "product" | "avatar" | "banner";
+
+/** Файл профиля встаёт на постоянное имя; картинки карты — нет. */
+function isProfileImage(kind: Kind): kind is "avatar" | "banner" {
+  return kind === "avatar" || kind === "banner";
+}
 
 type Body = {
   action?: Action;
@@ -78,14 +90,14 @@ export async function POST(request: Request) {
 
   if (
     (action !== "sign" && action !== "confirm") ||
-    (kind !== "product" && kind !== "avatar")
+    (kind !== "product" && kind !== "avatar" && kind !== "banner")
   ) {
     return NextResponse.json({ error: "bad request" }, { status: 400 });
   }
 
   // Право на картинки карты держит is_creator — то же, что на файл
-  // карты и на строку товара. Аватар есть у любого вошедшего: это его
-  // собственный профиль, и никаких прав картинка не даёт.
+  // карты и на строку товара. Аватар и баннер есть у любого вошедшего:
+  // это его собственный профиль, и никаких прав картинка не даёт.
   if (kind === "product") {
     const { data: profile } = await getSupabaseAdmin()
       .from("profiles")
@@ -163,7 +175,7 @@ async function sign(
   // прежняя (<user_id>/…): на первый сегмент смотрела снятая политика,
   // и по нему же перечисляет папки уборка Storage.
   //
-  // Аватар едет во ВРЕМЕННЫЙ путь: на место его переставит confirm,
+  // Аватар и баннер едут во ВРЕМЕННЫЙ путь: на место их переставит confirm,
   // когда убедится, что это картинка (см. шапку файла).
   const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const path =
@@ -203,7 +215,7 @@ async function confirm(
   }
   // Готовый аватар не может выдать себя за только что загруженный:
   // иначе confirm переставил бы файл сам на себя, а до того — удалил.
-  if (kind === "avatar" && !path.startsWith(`${userId}/pending-`)) {
+  if (isProfileImage(kind) && !path.startsWith(`${userId}/pending-`)) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
@@ -254,14 +266,14 @@ async function confirm(
     return NextResponse.json({ ok: true, path, size });
   }
 
-  // Аватар: проверенный файл переезжает на постоянный путь. move не
-  // перезаписывает, поэтому прежний снимаем сами — к этому моменту
-  // новый уже проверен, так что остаться вообще без аватара нечем.
-  const finalPath = `${userId}/${AVATAR_NAME}`;
+  // Аватар и баннер: проверенный файл переезжает на постоянный путь.
+  // move не перезаписывает, поэтому прежний снимаем сами — к этому
+  // моменту новый уже проверен, так что остаться вообще без картинки нечем.
+  const finalPath = `${userId}/${kind === "banner" ? BANNER_NAME : AVATAR_NAME}`;
   await storage.remove([finalPath]);
   const { error: moveError } = await storage.move(path, finalPath);
   if (moveError) {
-    console.error("Шлюз картинок: аватар не переехал:", moveError.message);
+    console.error(`Шлюз картинок: ${kind} не переехал:`, moveError.message);
     await storage.remove([path]);
     return NextResponse.json({ error: "upload unavailable" }, { status: 500 });
   }
