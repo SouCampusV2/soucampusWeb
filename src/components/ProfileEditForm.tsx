@@ -862,7 +862,7 @@ function ProfilePreview({
         {/* Вкладки — как на профиле, первая выбрана; счётчики и карты —
             скелетами. */}
         <div className="mt-6 flex gap-5 border-b border-zinc-200 text-xs font-medium dark:border-zinc-800">
-          {["Maps", "Ratings"].map((label, i) => (
+          {["Maps", "Reviews"].map((label, i) => (
             <span
               key={label}
               className={`-mb-px border-b-2 pb-2 ${

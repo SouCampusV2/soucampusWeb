@@ -8,7 +8,7 @@ import { getCurrentUser } from "@/lib/current-user";
 import { getPurchasesForUser } from "@/lib/orders";
 import { downloadHref } from "@/lib/downloads";
 import { readUserRatings } from "@/lib/ratings";
-import { RatingStars } from "@/components/RatingStars";
+import { ReviewButton } from "@/components/RatingStars";
 import { PageGlow } from "@/components/PageGlow";
 import { BUTTON_COLORS } from "@/components/Button";
 import { LocalTime } from "@/components/LocalTime";
@@ -49,7 +49,7 @@ export default async function PurchasesPage() {
     url: p.filePath ? downloadHref(p.productId) : null,
   }));
 
-  // Свои оценки — чтобы подсветить уже выставленные звёзды.
+  // Свои отзывы — чтобы окно открывалось с прежними звёздами и текстом.
   const userRatings = await readUserRatings(supabase, user.id);
 
   return (
@@ -113,12 +113,12 @@ export default async function PurchasesPage() {
                       <span className="text-xs text-zinc-300 dark:text-zinc-700">
                         ·
                       </span>
-                      <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                        Your rating
-                      </span>
-                      <RatingStars
+                      {/* Отзыв — звёзды и обязательный текст (26.10),
+                          правится в окне. */}
+                      <ReviewButton
                         productId={item.productId}
-                        initialStars={userRatings.get(item.productId) ?? 0}
+                        title={item.title}
+                        initial={userRatings.get(item.productId) ?? null}
                       />
                     </div>
                   </div>

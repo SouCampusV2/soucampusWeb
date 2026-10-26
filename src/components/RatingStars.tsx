@@ -1,15 +1,180 @@
 "use client";
 
-import { useState } from "react";
-import { Star, StarHalf } from "@phosphor-icons/react";
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { PencilSimple, Star, StarHalf, X } from "@phosphor-icons/react";
+import { Button } from "@/components/Button";
+import { StarRating } from "@/components/StarRating";
 import { rateProduct } from "@/lib/social-client";
+import {
+  checkReviewBody,
+  REVIEW_BODY_MAX,
+  REVIEW_BODY_MIN,
+} from "@/lib/map-review-shape";
 
-// Интерактивные звёзды выставления оценки (в «My purchases»). Клик —
-// upsert в product_ratings (одна оценка на пару товар+пользователь). RLS
-// на стороне БД разрешает вставку только тому, кто купил товар: если
-// каким-то образом попробовать оценить некупленное, база отклонит, и мы
-// откатим оптимистичное изменение.
+// Отзыв на купленную карту — в «My purchases» (2026-10-26).
 //
+// До 26.10 здесь были звёзды, сохранявшиеся по клику. С обязательным
+// текстом (решение владельца) клик по звезде больше ничего не
+// сохраняет: оценка без слов не принимается ни шлюзом, ни базой
+// (product_ratings_body_check). Поэтому в строке покупки — звёзды для
+// чтения и кнопка, а звёзды-кнопки и текст — в окне, с одной кнопкой
+// «Post». Тот же приём, что у ссылок в настройках.
+
+export function ReviewButton({
+  productId,
+  title,
+  initial,
+}: {
+  productId: string;
+  title: string;
+  /** Свой прежний отзыв; null — ещё не оценивал. */
+  initial: { stars: number; body: string } | null;
+}) {
+  const [open, setOpen] = useState(false);
+  // Старая оценка без текста (до 26.10) — тоже «есть», но её надо
+  // дописать: кнопка зовёт это правкой.
+  const hasReview = initial !== null && initial.stars > 0;
+
+  return (
+    <>
+      {hasReview && <StarRating rating={initial.stars} size={14} />}
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="inline-flex items-center gap-1 text-xs font-medium text-orange-600 hover:underline dark:text-orange-400"
+      >
+        {hasReview ? (
+          <>
+            <PencilSimple size={12} aria-hidden />
+            Edit review
+          </>
+        ) : (
+          "Write a review"
+        )}
+      </button>
+      {open && (
+        <ReviewDialog
+          productId={productId}
+          title={title}
+          initial={initial}
+          onClose={() => setOpen(false)}
+        />
+      )}
+    </>
+  );
+}
+
+function ReviewDialog({
+  productId,
+  title,
+  initial,
+  onClose,
+}: {
+  productId: string;
+  title: string;
+  initial: { stars: number; body: string } | null;
+  onClose: () => void;
+}) {
+  const router = useRouter();
+  const [stars, setStars] = useState(initial?.stars ?? 0);
+  const [body, setBody] = useState(initial?.body ?? "");
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      if (event.key === "Escape") onClose();
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [onClose]);
+
+  const length = body.trim().length;
+  const ready = stars > 0 && checkReviewBody(body) === null;
+
+  async function post() {
+    if (!ready) {
+      setError(stars === 0 ? "Pick how many stars." : checkReviewBody(body));
+      return;
+    }
+    setSaving(true);
+    setError(null);
+    try {
+      // Через шлюз (/api/feedback): он проверяет вход, покупку, лимит и
+      // текст. Кто пишет, отсюда не сообщается — сервер знает это из
+      // сессии.
+      await rateProduct(productId, stars, body.trim());
+      router.refresh();
+      onClose();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Couldn't save your review.");
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label={`Review ${title}`}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-zinc-950/70 p-4 backdrop-blur-sm"
+    >
+      <div className="w-full max-w-lg rounded-3xl border border-zinc-200 bg-[#fbfbff] p-5 dark:border-zinc-800 dark:bg-zinc-950 sm:p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h2 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">Your review</h2>
+            <p className="mt-1 truncate text-sm text-zinc-500 dark:text-zinc-400">{title}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-zinc-950/[0.05] dark:text-zinc-400 dark:hover:bg-zinc-50/[0.06]"
+          >
+            <X size={18} aria-hidden />
+          </button>
+        </div>
+
+        <div className="mt-5">
+          <StarPicker value={stars} onChange={setStars} disabled={saving} />
+        </div>
+
+        <label htmlFor={`review-${productId}`} className="sr-only">
+          What did you like or not?
+        </label>
+        <textarea
+          id={`review-${productId}`}
+          value={body}
+          onChange={(e) => setBody(e.target.value)}
+          rows={5}
+          maxLength={REVIEW_BODY_MAX}
+          placeholder="What did you like? How did it work on your server? Shown publicly with your name."
+          className="mt-4 w-full resize-y rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500"
+        />
+        <p className="mt-1 text-right text-xs text-zinc-500 dark:text-zinc-400">
+          {length < REVIEW_BODY_MIN ? `${REVIEW_BODY_MIN - length} more to go` : `${length}/${REVIEW_BODY_MAX}`}
+        </p>
+
+        {error && (
+          <p className="mt-3 rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
+            {error}
+          </p>
+        )}
+
+        <div className="mt-5 flex gap-3">
+          <Button type="button" variant="primary" onClick={post} disabled={saving || !ready} className="flex-1">
+            {saving ? "Posting…" : initial?.body ? "Update review" : "Post review"}
+          </Button>
+          <Button type="button" variant="secondary" onClick={onClose} className="flex-1">
+            Cancel
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // Шаг — половина звезды (миграция 20260811130000). Каждая звезда это две
 // кнопки-половинки, а не одна: определять «попал в левую или правую
 // часть» по координате курсора значило бы, что с клавиатуры и с тача
@@ -17,71 +182,47 @@ import { rateProduct } from "@/lib/social-client";
 // нажимаются пальцем и сами себя объявляют скринридеру.
 const STEPS = [1, 2, 3, 4, 5];
 
-export function RatingStars({
-  productId,
-  initialStars,
+function StarPicker({
+  value,
+  onChange,
+  disabled,
 }: {
-  productId: string;
-  initialStars: number;
+  value: number;
+  onChange: (stars: number) => void;
+  disabled: boolean;
 }) {
-  const [stars, setStars] = useState(initialStars);
   const [hover, setHover] = useState(0);
-  const [saving, setSaving] = useState(false);
-
-  async function rate(value: number) {
-    if (saving || value === stars) return;
-    const prev = stars;
-    setStars(value); // оптимистично
-    setSaving(true);
-
-    // Через шлюз (/api/feedback): он проверяет вход, покупку и лимит.
-    // Кто ставит оценку, отсюда больше не сообщается — сервер знает это
-    // из сессии. Пока это делал браузер, «чей» user_id отправить решал
-    // он же, и единственной защитой была политика RLS.
-    try {
-      await rateProduct(productId, value);
-    } catch {
-      setStars(prev); // откат, если сервер отклонил
-    }
-    setSaving(false);
-  }
-
-  const shown = hover || stars;
+  const shown = hover || value;
 
   return (
-    <div
-      className="flex items-center gap-0.5"
-      role="group"
-      aria-label="Rate this map"
-    >
-      {STEPS.map((value) => (
-        <span
-          key={value}
-          className="relative inline-flex p-0.5"
-          onMouseLeave={() => setHover(0)}
-        >
-          <StarIcon value={value} shown={shown} />
-
+    <div className="flex items-center gap-1" role="group" aria-label="Rate this map">
+      {STEPS.map((step) => (
+        <span key={step} className="relative inline-flex p-0.5" onMouseLeave={() => setHover(0)}>
+          <StarIcon value={step} shown={shown} />
           {/* Две прозрачные половинки поверх картинки. Сама звезда
               нарисована один раз под ними — иначе пришлось бы резать
               иконку пополам и следить, чтобы половины сходились. */}
-          {[value - 0.5, value].map((step) => (
+          {[step - 0.5, step].map((half) => (
             <button
-              key={step}
+              key={half}
               type="button"
-              disabled={saving}
-              onMouseEnter={() => setHover(step)}
-              onFocus={() => setHover(step)}
+              disabled={disabled}
+              onMouseEnter={() => setHover(half)}
+              onFocus={() => setHover(half)}
               onBlur={() => setHover(0)}
-              onClick={() => rate(step)}
-              aria-label={`${step} star${step === 1 ? "" : "s"}`}
+              onClick={() => onChange(half)}
+              aria-label={`${half} star${half === 1 ? "" : "s"}`}
+              aria-pressed={value === half}
               className={`absolute inset-y-0 w-1/2 cursor-pointer disabled:cursor-not-allowed ${
-                step === value ? "right-0" : "left-0"
+                half === step ? "right-0" : "left-0"
               }`}
             />
           ))}
         </span>
       ))}
+      <span className="ml-2 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+        {shown > 0 ? shown.toFixed(1) : ""}
+      </span>
     </div>
   );
 }
@@ -92,18 +233,11 @@ function StarIcon({ value, shown }: { value: number; shown: number }) {
   const half = !filled && value - 0.5 <= shown;
 
   if (half) {
-    return (
-      <StarHalf
-        size={18}
-        weight="fill"
-        className="text-orange-400"
-        aria-hidden
-      />
-    );
+    return <StarHalf size={28} weight="fill" className="text-orange-400" aria-hidden />;
   }
   return (
     <Star
-      size={18}
+      size={28}
       weight={filled ? "fill" : "regular"}
       className={filled ? "text-orange-400" : "text-zinc-300 dark:text-zinc-600"}
       aria-hidden

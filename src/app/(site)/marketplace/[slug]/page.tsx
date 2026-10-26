@@ -15,6 +15,8 @@ import { getViewCount, VIEW_PATHS } from "@/lib/views";
 import { getReactionCounts, getReactionOptions } from "@/lib/reactions";
 import { getComments } from "@/lib/comments";
 import { CommentSection } from "@/components/CommentSection";
+import { getMapReviews } from "@/lib/map-reviews";
+import { MapReviewList } from "@/components/MapReviewList";
 import { ReactionButton } from "@/components/ReactionButton";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductGallery } from "@/components/ProductGallery";
@@ -152,7 +154,10 @@ export default async function ProductPage({
 
   // Первый экран ленты — с сервера: он верен на момент сборки страницы.
   // Дальше её перечитывает сам компонент (см. CommentSection).
-  const comments = await getComments(product.id);
+  const [comments, reviews] = await Promise.all([
+    getComments(product.id),
+    getMapReviews(product.id),
+  ]);
   const rating = stats?.rating ?? 0;
   const ratingCount = stats?.ratingCount ?? 0;
   const salesCount = stats?.salesCount ?? 0;
@@ -251,6 +256,24 @@ export default async function ProductPage({
             className={`mt-4 leading-7 text-zinc-700 dark:text-zinc-300 ${RICH_TEXT_CLASS}`}
             dangerouslySetInnerHTML={{ __html: sanitizeDescription(product.description) }}
           />
+
+          {/* Отзывы — под описанием, перед комментариями (26.10): кто,
+              сколько звёзд и за что. Пишутся из «My purchases» — только
+              купившими, текст обязателен. Нет отзывов — раздела нет:
+              «пока пусто» на карте без покупок звучит как приговор. */}
+          {reviews.length > 0 && (
+            <section className="mt-10">
+              <h2 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
+                Reviews{" "}
+                <span className="font-normal text-zinc-500 dark:text-zinc-400">
+                  {reviews.length}
+                </span>
+              </h2>
+              <div className="mt-4">
+                <MapReviewList reviews={reviews} />
+              </div>
+            </section>
+          )}
 
           {/* Комментарии — в левой колонке, под описанием: это часть
               разговора о карте, а не действие над ней. Правая колонка

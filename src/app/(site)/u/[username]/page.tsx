@@ -32,6 +32,8 @@ import { DISCORD_INVITE } from "@/lib/site";
 import { ProfileLinks } from "@/components/ProfileLinks";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 import { BANNER_HEIGHT } from "@/lib/profile-media";
+import { getReviewsForProducts } from "@/lib/map-reviews";
+import { MapReviewList } from "@/components/MapReviewList";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -111,6 +113,15 @@ export default async function CreatorPage({
   const showResources = creator.isCreator;
   const stats = await getProfileStats(creator.id);
 
+  // Отзывы на карты автора — вкладка Reviews (26.10). Читаются публичным
+  // представлением, без служебного ключа: страница собирается заранее.
+  const reviews = showResources
+    ? await getReviewsForProducts(products.map((p) => p.id))
+    : [];
+  const productTitles = new Map(
+    products.map((p) => [p.id, { title: p.title, slug: p.slug }])
+  );
+
   // Активность — последние комментарии, только под картами, которые ещё
   // на витрине: ссылка на снятую карту увела бы в 404.
   const productsById = new Map(all.map((p) => [p.id, p]));
@@ -189,35 +200,20 @@ export default async function CreatorPage({
             ),
         },
         {
-          // «Ratings», а не «Reviews» (как было в лаборатории): у оценок
-          // на сайте нет текста, и вкладка «Reviews» обещала бы отзывы,
-          // которых нет.
-          id: "ratings",
-          label: "Ratings",
-          count: ratingVotes,
+          // С 26.10 у оценки обязателен текст — вкладка снова «Reviews»:
+          // кто, сколько звёзд и за какую карту. Счётчик — отзывы с
+          // текстом; старые оценки без слов входят в средний балл (чип
+          // рейтинга в шапке), но карточки у них нет.
+          id: "reviews",
+          label: "Reviews",
+          count: reviews.length,
           content:
-            rated.length > 0 ? (
-              <ul className="divide-y divide-zinc-200 rounded-3xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
-                {rated.map((product) => (
-                  <li key={product.slug}>
-                    <Link
-                      href={`/marketplace/${product.slug}`}
-                      className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-zinc-950/[0.03] dark:hover:bg-zinc-50/[0.03]"
-                    >
-                      <span className="truncate font-medium text-zinc-950 dark:text-zinc-50">
-                        {product.title}
-                      </span>
-                      <span className="inline-flex shrink-0 items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-400">
-                        <Star size={16} weight="fill" className="text-orange-400" aria-hidden />
-                        {(product.rating ?? 0).toFixed(1)}
-                        <span className="text-zinc-400">({product.ratingCount})</span>
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
+            reviews.length > 0 ? (
+              <div className="max-w-3xl">
+                <MapReviewList reviews={reviews} productTitles={productTitles} />
+              </div>
             ) : (
-              <p className="text-zinc-600 dark:text-zinc-400">No ratings yet.</p>
+              <p className="text-zinc-600 dark:text-zinc-400">No reviews yet.</p>
             ),
         },
       ]
