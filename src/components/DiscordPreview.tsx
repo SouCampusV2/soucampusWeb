@@ -12,9 +12,10 @@ import { hexColor, knownRoleName, postText, type ShowcasePost } from "@/lib/disc
 // безопасным разбором markdown: только React-элементы, без
 // dangerouslySetInnerHTML. Поддержано то, что реально бывает в постах:
 // # / ## / ### / -# строки, «- » списки, **жирный**, *курсив*, [текст](url),
-// эмодзи сервера <:name:id>, пинги ролей и @here/@everyone.
+// эмодзи сервера <:name:id>, пинги ролей и @here/@everyone, ссылки на
+// канал <#id> (27.10: имя канала превью не знает — «#channel»).
 
-const INLINE = /(\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|<a?:\w+:\d+>|<@&\d+>|@here|@everyone)/g;
+const INLINE = /(\*\*[^*]+\*\*|\*[^*]+\*|\[[^\]]+\]\([^)]+\)|<a?:\w+:\d+>|<@&\d+>|<#\d+>|@here|@everyone)/g;
 
 function inline(text: string, key: string): ReactNode[] {
   return text.split(INLINE).map((part, i) => {
@@ -33,6 +34,13 @@ function inline(text: string, key: string): ReactNode[] {
     if (emoji) {
       // eslint-disable-next-line @next/next/no-img-element -- эмодзи Discord, как есть
       return <img key={k} src={`https://cdn.discordapp.com/emojis/${emoji[3]}.${emoji[1] ? "gif" : "webp"}?size=48`} alt={`:${emoji[2]}:`} className="inline h-[1.375em] w-[1.375em] align-[-0.3em]" />;
+    }
+    if (/^<#\d+>$/.test(part)) {
+      return (
+        <span key={k} className="rounded bg-[#5865f2]/30 px-0.5 font-medium text-[#c9cdfb]">
+          #channel
+        </span>
+      );
     }
     if (/^<@&\d+>$/.test(part) || part === "@here" || part === "@everyone") {
       return (
