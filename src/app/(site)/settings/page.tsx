@@ -44,15 +44,17 @@ export default async function SettingsPage() {
       // выбор цвета такому аккаунту не показываем.
       isClient: false,
       bio: null,
+      links: [],
     };
 
-  // Ширину держит контент внутри (max-w-md) — см. комментарий в /profile.
+  // max-w-6xl — рамка страницы по DESIGN.md: с 26.10 рядом с формой стоит
+  // превью профиля. Узкой (28rem) форму держит сетка в ProfileEditForm.
   return (
     <main className="relative w-full overflow-x-clip px-6">
       <PageGlow color="rgba(249,115,22,0.28)" />
       <section className="relative pb-28 pt-20">
 
-        <div className="mx-auto max-w-md">
+        <div className="mx-auto max-w-6xl">
           <h1
             className={`${displayFont.className} text-center text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
           >

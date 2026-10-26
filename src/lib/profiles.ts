@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { parseProfileLinks, type ProfileLink } from "@/lib/profile-links";
 
 // Профиль пользователя, каким его показывает/редактирует сайт. Граница
 // БД↔домен, как rowToProduct: снаружи camelCase, в БД snake_case.
@@ -38,6 +39,8 @@ export type Profile = {
   nameColor: string | null;
   /** Купил ли что-нибудь — от этого зависит, показывать ли выбор цвета. */
   isClient: boolean;
+  /** Discord, X и прочее под именем (20261026120000); пусто — нет. */
+  links: ProfileLink[];
 };
 
 // Читает строку profiles текущего пользователя. Клиент передаётся снаружи
@@ -53,9 +56,14 @@ export async function readProfile(
   const BASE =
     "username, username_changed_at, first_name, last_name, avatar_url, bio, name_color";
 
-  // banner_url — из 20261025130000. Пока база её не знает, PostgREST не
-  // отдаёт строку вовсе, и /settings падал бы целиком из-за одного поля.
-  let { data, error } = await query(`${BASE}, banner_url`);
+  // banner_url — из 20261025130000, links — из 20261026120000. Пока база
+  // их не знает, PostgREST не отдаёт строку вовсе, и /settings падал бы
+  // целиком из-за одного поля. Ступени по одной колонке: незнакомые links
+  // не должны уносить с собой уже известный баннер.
+  let { data, error } = await query(`${BASE}, banner_url, links`);
+  if (error?.message.includes("links")) {
+    ({ data, error } = await query(`${BASE}, banner_url`));
+  }
   if (error?.message.includes("banner_url")) {
     ({ data, error } = await query(BASE));
   }
@@ -71,6 +79,7 @@ export async function readProfile(
     bio: string | null;
     name_color: string | null;
     banner_url?: string | null;
+    links?: unknown;
   };
 
   // «Покупал ли» спрашиваем ту же функцию, что и публичный профиль
@@ -91,6 +100,7 @@ export async function readProfile(
     bio: row.bio ?? null,
     nameColor: row.name_color ?? null,
     isClient: Boolean(clientFlag),
+    links: parseProfileLinks(row.links),
   };
 }
 

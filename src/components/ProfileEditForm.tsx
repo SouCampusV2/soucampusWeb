@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useRefresh } from "@/lib/useRefresh";
 import Link from "next/link";
-import { UserCircle, Camera, Key, ImageSquare } from "@phosphor-icons/react";
+import { UserCircle, Camera, Key, ImageSquare, Crop, Plus, X } from "@phosphor-icons/react";
 import { Button, BUTTON_COLORS } from "@/components/Button";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { USERNAME_COOLDOWN_DAYS, type Profile } from "@/lib/profiles";
@@ -12,11 +12,34 @@ import { NameColorPicker } from "@/components/NameColorPicker";
 import { uploadImage } from "@/lib/upload-client";
 import { formatDayMonthYear } from "@/lib/dates";
 import { revalidateProfile } from "@/app/(site)/settings/actions";
+import { ImageCropper } from "@/components/ImageCropper";
+import { ProfileLinks, PROFILE_LINK_ICONS } from "@/components/ProfileLinks";
+import { Skeleton } from "@/components/Skeleton";
+import {
+  AVATAR_OUTPUT_SIZE,
+  BANNER_ASPECT,
+  BANNER_OUTPUT_WIDTH,
+} from "@/lib/profile-media";
+import {
+  checkProfileLink,
+  PROFILE_LINK_KINDS,
+  PROFILE_LINK_META,
+  PROFILE_LINKS_MAX,
+  type ProfileLink,
+  type ProfileLinkKind,
+} from "@/lib/profile-links";
 
+// GIF уходит в шлюз как есть — обрезка через <canvas> убила бы анимацию.
+// Поэтому у него прежние потолки: настоящий предел (IMAGE_MAX_BYTES)
+// держит шлюз, здесь — удобство до загрузки.
 const AVATAR_MAX_BYTES = 5 * 1024 * 1024; // 5 МБ
-// Баннер шире и детальнее аватара — отсюда потолок крупнее. Настоящий
-// предел (IMAGE_MAX_BYTES) держит шлюз, здесь — удобство до загрузки.
 const BANNER_MAX_BYTES = 10 * 1024 * 1024; // 10 МБ — ровно потолок шлюза (IMAGE_MAX_BYTES)
+// Остальное обрезается и пережимается в браузере, и в шлюз уходит уже
+// маленький файл. Потолок исходника — только чтобы не раскодировать в
+// памяти телефона снимок на сотню мегапикселей.
+const SOURCE_MAX_BYTES = 25 * 1024 * 1024;
+
+type CropTarget = "avatar" | "banner";
 
 // Столько же, сколько в guard_username_change (миграция 20260821140000).
 export function ProfileEditForm({
@@ -61,42 +84,75 @@ export function ProfileEditForm({
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const bannerInput = useRef<HTMLInputElement>(null);
 
+  // Ссылки — строками, как их печатает человек. В вид, который примет
+  // база, их приводит checkProfileLink при сохранении: проверять на
+  // каждой букве значило бы ругаться на недопечатанный адрес.
+  const [links, setLinks] = useState<ProfileLink[]>(initial.links);
+
+  // Открытое окно обрезки: что режем и откуда картинка.
+  const [crop, setCrop] = useState<{ target: CropTarget; src: string } | null>(null);
+
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  function pickAvatar(event: React.ChangeEvent<HTMLInputElement>) {
+  /**
+   * Файл выбран — проверить и открыть обрезку. GIF обрезке не подлежит
+   * (анимация не переживёт холст), он идёт как есть.
+   */
+  function pickImage(target: CropTarget, event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith("image/")) {
-      setError("Avatar must be an image.");
-      return;
-    }
-    if (file.size > AVATAR_MAX_BYTES) {
-      setError("Avatar must be 5 MB or smaller.");
-      return;
-    }
-    setError(null);
-    setAvatarFile(file);
-    setAvatarPreview(URL.createObjectURL(file));
-  }
-
-  function pickBanner(event: React.ChangeEvent<HTMLInputElement>) {
-    const file = event.target.files?.[0];
-    // Сброс значения: иначе тот же файл, выбранный после «Remove», не
-    // поднял бы onChange — браузер считает, что ничего не изменилось.
+    // Сброс значения: иначе тот же файл, выбранный после «Remove» или
+    // «Cancel», не поднял бы onChange — браузер считает, что ничего не
+    // изменилось.
     event.target.value = "";
     if (!file) return;
+    const name = target === "avatar" ? "Avatar" : "Banner";
     if (!file.type.startsWith("image/")) {
-      setError("Banner must be an image.");
-      return;
-    }
-    if (file.size > BANNER_MAX_BYTES) {
-      setError("Banner must be 10 MB or smaller.");
+      setError(`${name} must be an image.`);
       return;
     }
     setError(null);
-    setBannerFile(file);
-    setBannerPreview(URL.createObjectURL(file));
+
+    if (file.type === "image/gif") {
+      const max = target === "avatar" ? AVATAR_MAX_BYTES : BANNER_MAX_BYTES;
+      if (file.size > max) {
+        setError(`${name} must be ${max / 1024 / 1024} MB or smaller.`);
+        return;
+      }
+      applyImage(target, file);
+      return;
+    }
+
+    if (file.size > SOURCE_MAX_BYTES) {
+      setError(`${name} must be 25 MB or smaller.`);
+      return;
+    }
+    setCrop({ target, src: URL.createObjectURL(file) });
+  }
+
+  function applyImage(target: CropTarget, file: File) {
+    const preview = URL.createObjectURL(file);
+    if (target === "avatar") {
+      setAvatarFile(file);
+      setAvatarPreview(preview);
+    } else {
+      setBannerFile(file);
+      setBannerPreview(preview);
+    }
+  }
+
+  function updateLink(index: number, url: string) {
+    setLinks((current) => current.map((link, i) => (i === index ? { ...link, url } : link)));
+  }
+
+  function addLink(kind: ProfileLinkKind) {
+    setLinks((current) =>
+      current.length >= PROFILE_LINKS_MAX ? current : [...current, { kind, url: "" }],
+    );
+  }
+
+  function removeLink(index: number) {
+    setLinks((current) => current.filter((_, i) => i !== index));
   }
 
   /**
@@ -114,6 +170,20 @@ export function ProfileEditForm({
     event.preventDefault();
     setError(null);
     setPending(true);
+
+    // Ссылки — до любой записи: отказ на третьей из пяти не должен
+    // оставлять наполовину сохранённый профиль.
+    const nextLinks: ProfileLink[] = [];
+    for (const link of links) {
+      const checked = checkProfileLink(link.kind, link.url);
+      if (!checked.ok) {
+        setPending(false);
+        setError(checked.error);
+        return;
+      }
+      nextLinks.push({ kind: link.kind, url: checked.url });
+    }
+    const linksChanged = JSON.stringify(nextLinks) !== JSON.stringify(initial.links);
 
     const supabase = createSupabaseBrowser();
 
@@ -215,6 +285,9 @@ export function ProfileEditForm({
         // баннер правда трогали: до прогона миграции база ответила бы
         // отказом прав на любое сохранение, даже на смену био.
         ...(nextBannerUrl !== initial.bannerUrl ? { banner_url: nextBannerUrl } : {}),
+        // Право на колонку — 20261026120000; отправляем по той же
+        // причине, что баннер, — только если трогали.
+        ...(linksChanged ? { links: nextLinks } : {}),
       })
       .eq("id", userId);
 
@@ -286,6 +359,7 @@ export function ProfileEditForm({
     setAvatarUrl(nextAvatarUrl);
     setBannerUrl(nextBannerUrl);
     setBannerFile(null);
+    setLinks(nextLinks);
     refresh();
     router.push("/settings");
   }
@@ -294,9 +368,13 @@ export function ProfileEditForm({
   const shownBanner = bannerPreview ?? bannerUrl;
 
   return (
+    // Форма слева, превью справа (просьба владельца 26.10). Превью только
+    // с lg: на телефоне ему рядом места нет, а под формой оно повторяло
+    // бы шапку, которая и так стоит в форме сверху.
+    <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]">
     <form
       onSubmit={handleSubmit}
-      className="mx-auto max-w-md rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-950"
+      className="w-full rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-950"
     >
       {/* Баннер и аватар — одной шапкой, аватар поверх нижнего края
           баннера (просьба владельца 25.10). Пропорция 4:1 та же, что на
@@ -319,7 +397,7 @@ export function ProfileEditForm({
             // Подпись в правой части: по центру внизу её закрыл бы аватар.
             <span className="flex h-full w-full items-center justify-end gap-2 pr-4 text-xs text-zinc-400 dark:text-zinc-500">
               <ImageSquare size={18} />
-              Add a banner · 4:1, up to 10 MB
+              Add a banner · wide, 5:1
             </span>
           )}
         </button>
@@ -328,6 +406,16 @@ export function ProfileEditForm({
             кнопки читались поверх любой картинки, светлой и тёмной. */}
         {shownBanner && (
           <div className="absolute right-2 top-2 flex gap-1.5">
+            {/* Подправить кадр, не выбирая файл заново. Режется уже
+                обрезанная картинка — значит, чуть мягче оригинала. */}
+            <button
+              type="button"
+              onClick={() => setCrop({ target: "banner", src: shownBanner })}
+              aria-label="Adjust banner"
+              className="inline-flex items-center rounded-full bg-zinc-950/60 px-2 py-1 text-white backdrop-blur-sm transition-colors hover:bg-zinc-950/80"
+            >
+              <Crop size={14} aria-hidden />
+            </button>
             <button
               type="button"
               onClick={() => bannerInput.current?.click()}
@@ -350,7 +438,7 @@ export function ProfileEditForm({
           ref={bannerInput}
           type="file"
           accept="image/*"
-          onChange={pickBanner}
+          onChange={(event) => pickImage("banner", event)}
           className="hidden"
         />
 
@@ -382,12 +470,25 @@ export function ProfileEditForm({
           ref={fileInput}
           type="file"
           accept="image/*"
-          onChange={pickAvatar}
+          onChange={(event) => pickImage("avatar", event)}
           className="hidden"
         />
       </div>
       <p className="-mt-2 mb-2 text-center text-xs text-zinc-500 dark:text-zinc-400">
-        Avatar up to 5 MB · banner up to 10 MB
+        You can crop after picking a file
+        {/* Лого из public/ ("/…") не режем: его показывают целиком. */}
+        {shownAvatar && !shownAvatar.startsWith("/") && (
+          <>
+            {" · "}
+            <button
+              type="button"
+              onClick={() => setCrop({ target: "avatar", src: shownAvatar })}
+              className="font-medium text-zinc-700 underline-offset-2 hover:underline dark:text-zinc-300"
+            >
+              Adjust avatar
+            </button>
+          </>
+        )}
       </p>
 
       <div className="mt-6 space-y-4">
@@ -540,6 +641,75 @@ export function ProfileEditForm({
           </p>
         </div>
 
+        {/* Ссылки. Вид выбирается кнопкой, а не выпадашкой: нативного
+            <select> на сайте нет (06.09), а одиннадцать иконок рядом
+            выбираются быстрее любого списка. Домен у каждого вида свой —
+            стережёт база, подсказка в поле называет его заранее. */}
+        <div>
+          <p className="mb-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Links{" "}
+            <span className="font-normal text-zinc-500 dark:text-zinc-400">
+              — up to {PROFILE_LINKS_MAX}, shown on your profile
+            </span>
+          </p>
+
+          {links.length > 0 && (
+            <ul className="mb-3 space-y-2">
+              {links.map((link, index) => {
+                const IconFor = PROFILE_LINK_ICONS[link.kind];
+                const meta = PROFILE_LINK_META[link.kind];
+                return (
+                  <li key={index} className="flex items-center gap-2">
+                    <IconFor
+                      size={20}
+                      weight="fill"
+                      className="shrink-0 text-zinc-500 dark:text-zinc-400"
+                      aria-hidden
+                    />
+                    <input
+                      type="text"
+                      inputMode="url"
+                      value={link.url}
+                      onChange={(e) => updateLink(index, e.target.value)}
+                      placeholder={meta.placeholder}
+                      aria-label={`${meta.label} link`}
+                      className="min-w-0 flex-1 rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-2.5 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => removeLink(index)}
+                      aria-label={`Remove ${meta.label} link`}
+                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-zinc-400 dark:hover:bg-red-950/40"
+                    >
+                      <X size={16} aria-hidden />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+
+          {links.length < PROFILE_LINKS_MAX && (
+            <div className="flex flex-wrap gap-1.5">
+              {PROFILE_LINK_KINDS.map((kind) => {
+                const IconFor = PROFILE_LINK_ICONS[kind];
+                return (
+                  <button
+                    key={kind}
+                    type="button"
+                    onClick={() => addLink(kind)}
+                    className="inline-flex items-center gap-1 rounded-full border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-600 transition-colors hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-50"
+                  >
+                    <Plus size={12} aria-hidden />
+                    <IconFor size={14} weight="fill" aria-hidden />
+                    {PROFILE_LINK_META[kind].label}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
       </div>
 
       {error && (
@@ -577,6 +747,137 @@ export function ProfileEditForm({
         </Link>
       </div>
     </form>
+
+    <aside className="sticky top-28 hidden lg:block">
+      <p className="mb-3 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+        Preview
+      </p>
+      <ProfilePreview
+        username={username.trim() || initial.username}
+        nameColor={initial.isClient ? nameColor : ""}
+        avatar={shownAvatar}
+        banner={shownBanner}
+        bio={bio.trim()}
+        // Только ссылки, которые пройдут проверку: недопечатанной на
+        // профиле не будет, значит и в превью её нет.
+        links={links.flatMap((link) => {
+          const checked = checkProfileLink(link.kind, link.url);
+          return checked.ok ? [{ kind: link.kind, url: checked.url }] : [];
+        })}
+      />
+    </aside>
+
+    {crop && (
+      <ImageCropper
+        src={crop.src}
+        aspect={crop.target === "avatar" ? 1 : BANNER_ASPECT}
+        outputWidth={crop.target === "avatar" ? AVATAR_OUTPUT_SIZE : BANNER_OUTPUT_WIDTH}
+        rounded={crop.target === "avatar"}
+        title={crop.target === "avatar" ? "Crop avatar" : "Crop banner"}
+        onCancel={() => setCrop(null)}
+        onApply={(file) => {
+          applyImage(crop.target, file);
+          setCrop(null);
+        }}
+      />
+    )}
+    </div>
+  );
+}
+
+/**
+ * Как профиль будет выглядеть — шапка в узкой колонке.
+ *
+ * Только то, что правится в этой форме: баннер, аватар, имя с цветом,
+ * «о себе», ссылки. Цифры, роль и карты — скелетами (решение владельца
+ * 26.10): превью показывает изменения, а не данные, и ходить за
+ * продажами ради картинки-примера незачем.
+ *
+ * Раскладка — телефонная версия профиля (аватар над именем): колонка
+ * шириной с телефон, и брейкпоинты страницы, считающие ширину ОКНА, здесь
+ * всё равно не сработали бы.
+ */
+function ProfilePreview({
+  username,
+  nameColor,
+  avatar,
+  banner,
+  bio,
+  links,
+}: {
+  username: string;
+  nameColor: string;
+  avatar: string | null;
+  banner: string | null;
+  bio: string;
+  links: ProfileLink[];
+}) {
+  return (
+    <div className="overflow-hidden rounded-3xl border border-zinc-200 bg-[#fbfbff] dark:border-zinc-800 dark:bg-zinc-950">
+      {/* Пропорция рамки обрезки — ровно тот кадр, что вырезан. На самой
+          странице высота фиксированная, и края могут чуть срезаться. */}
+      <div
+        className="w-full bg-zinc-100 dark:bg-zinc-900"
+        style={{ aspectRatio: String(BANNER_ASPECT) }}
+      >
+        {banner && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={banner} alt="" className="h-full w-full object-cover" />
+        )}
+      </div>
+
+      <div className="px-6 pb-6">
+        <div
+          className={`relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border-4 border-[#fbfbff] bg-zinc-100 dark:border-zinc-950 dark:bg-zinc-900 ${
+            banner ? "-mt-12" : "mt-6"
+          }`}
+        >
+          {avatar ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={avatar}
+              alt=""
+              className={
+                avatar.startsWith("/")
+                  ? "h-full w-full object-contain p-2"
+                  : "h-full w-full object-cover"
+              }
+            />
+          ) : (
+            <UserCircle size={56} weight="thin" className="text-zinc-300 dark:text-zinc-700" />
+          )}
+        </div>
+
+        <p
+          className="mt-4 truncate text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50"
+          style={nameColor ? { color: nameColor } : undefined}
+        >
+          {username}
+        </p>
+        <Skeleton className="mt-3 h-6 w-20 rounded-full" />
+        <Skeleton className="mt-3 h-4 w-32" />
+
+        {bio && (
+          <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">{bio}</p>
+        )}
+        <ProfileLinks links={links} className="mt-4" />
+
+        <div className="mt-6 flex gap-6">
+          {[0, 1, 2].map((i) => (
+            <div key={i}>
+              <Skeleton className="h-3 w-14" />
+              <Skeleton className="mt-2 h-5 w-8" />
+            </div>
+          ))}
+        </div>
+
+        <Skeleton className="mt-8 h-6 w-28" />
+        <div className="mt-4 grid grid-cols-2 gap-3">
+          <Skeleton className="aspect-[4/3] w-full rounded-2xl" />
+          <Skeleton className="aspect-[4/3] w-full rounded-2xl" />
+        </div>
+      </div>
+    </div>
   );
 }
 
