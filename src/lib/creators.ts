@@ -1,4 +1,5 @@
 import { getSupabase } from "@/lib/supabase";
+import { parseProfileLinks, type ProfileLink } from "@/lib/profile-links";
 
 // Публичный профиль пользователя — то, что видно на /@<username>.
 // Читается из представления public_profiles (см. миграцию
@@ -54,6 +55,8 @@ export type Creator = {
   bannerUrl: string | null;
   /** Момент регистрации — «Joined: …». null, пока база его не отдаёт. */
   joinedAt: string | null;
+  /** Ссылки под именем (20261026120000), уже перепроверенные на выходе. */
+  links: ProfileLink[];
 };
 
 type CreatorRow = {
@@ -74,6 +77,8 @@ type CreatorRow = {
   /** Обе — из 20261025130000. */
   banner_url?: string | null;
   created_at?: string | null;
+  /** Из 20261026120000. */
+  links?: unknown;
 };
 
 /**
@@ -182,6 +187,7 @@ function rowToCreator(row: CreatorRow): Creator {
     nameColor: isHexColor(row.name_color) ? row.name_color : null,
     bannerUrl: row.banner_url ?? null,
     joinedAt: row.created_at ?? null,
+    links: parseProfileLinks(row.links),
   };
 }
 
@@ -198,7 +204,16 @@ export function isHexColor(value: unknown): value is string {
 const CREATOR_FIELDS_NO_BANNER =
   "id, username, username_lower, avatar_url, bio, is_verified, is_creator, is_founder, name_color, is_client";
 
-const CREATOR_FIELDS = `${CREATOR_FIELDS_NO_BANNER}, banner_url, created_at`;
+const CREATOR_FIELDS_NO_LINKS = `${CREATOR_FIELDS_NO_BANNER}, banner_url, created_at`;
+
+const CREATOR_FIELDS = `${CREATOR_FIELDS_NO_LINKS}, links`;
+
+// Ссылки пришли в представление ещё позже (20261026120000). Своя
+// ступень — по той же причине, что у баннера: не хватает одной колонки,
+// и терять из-за неё баннер и дату незачем.
+function isMissingLinks(message: string): boolean {
+  return message.includes("links");
+}
 
 // Баннер и дата регистрации пришли в представление позже (20261025130000).
 // Отдельная ступень, а не ещё одно имя в isMissingRole: та откатывает на
@@ -241,6 +256,9 @@ export async function getAllCreators(): Promise<Creator[]> {
     getSupabase().from("public_profiles").select(fields);
 
   let { data, error } = await query(CREATOR_FIELDS);
+  if (error && isMissingLinks(error.message)) {
+    ({ data, error } = await query(CREATOR_FIELDS_NO_LINKS));
+  }
   if (error && isMissingBanner(error.message)) {
     ({ data, error } = await query(CREATOR_FIELDS_NO_BANNER));
   }
@@ -275,6 +293,9 @@ export async function getCreatorByHandle(handle: string): Promise<Creator | null
       .maybeSingle();
 
   let { data, error } = await query(CREATOR_FIELDS);
+  if (error && isMissingLinks(error.message)) {
+    ({ data, error } = await query(CREATOR_FIELDS_NO_LINKS));
+  }
   if (error && isMissingBanner(error.message)) {
     ({ data, error } = await query(CREATOR_FIELDS_NO_BANNER));
   }

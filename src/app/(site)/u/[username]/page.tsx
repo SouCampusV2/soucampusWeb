@@ -19,6 +19,8 @@ import { LocalTime } from "@/components/LocalTime";
 import { getRecentCommentsByUser } from "@/lib/comments";
 import { getProfileStats } from "@/lib/profile-stats";
 import { DISCORD_INVITE } from "@/lib/site";
+import { ProfileLinks } from "@/components/ProfileLinks";
+import { BANNER_HEIGHT } from "@/lib/profile-media";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -139,18 +141,30 @@ export default async function CreatorPage({
           под ним большой квадратный аватар и рядом «кто это». */}
       <section className="relative">
         {/* Баннер необязателен: нет — шапка просто начинается с аватара,
-            без пустой серой полосы. 4:1 — та же пропорция, что в превью
-            на /settings, чтобы человек видел ровно этот кадр. На
-            телефоне полоса 4:1 выходит тоньше пальца, поэтому там 3:1.
+            без пустой серой полосы.
+
+            На всю ширину контейнера, а не текста (просьба владельца
+            26.10): отрицательные поля ровно гасят боковые отступы обёртки
+            выше — меняешь px там, меняй -mx здесь. Ниже 120rem контейнер
+            и есть экран, поэтому баннер идёт от края до края без
+            скругления; шире — контейнер кончается раньше экрана, и нижние
+            углы скругляются.
+
+            Высота ФИКСИРОВАННАЯ (BANNER_HEIGHT), а не пропорция: шире не
+            значит выше. Кадр режется в рамке 5:1 (profile-media.ts), и на
+            узком экране у него срезаются бока, на широком — чуть верх и
+            низ.
 
             Вплотную к верху страницы (просьба владельца 25.10). Навбар —
             sticky В ПОТОКЕ и занимает 4.5rem (от sm — 5rem, h-[4.5rem]
             sm:h-20 в Navbar.tsx), поэтому баннер поднимается ровно на
             столько же и встаёт под стеклянную пилюлю. Поменяется высота
             навбара — поменять и здесь, иначе вернётся щель или баннер
-            уедет под край. Скругление только снизу: сверху край экрана. */}
+            уедет под край. */}
         {creator.bannerUrl && (
-          <div className="-mt-[4.5rem] mb-8 aspect-[3/1] w-full overflow-hidden rounded-b-3xl border-x border-b border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900 sm:-mt-20 sm:aspect-[4/1]">
+          <div
+            className={`-mx-6 -mt-[4.5rem] mb-8 overflow-hidden bg-zinc-100 dark:bg-zinc-900 sm:-mx-10 sm:-mt-20 lg:-mx-16 xl:-mx-24 2xl:-mx-[120px] min-[120rem]:rounded-b-3xl ${BANNER_HEIGHT}`}
+          >
             {/* Обычный <img> — по той же причине, что у аватара ниже. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -263,6 +277,13 @@ export default async function CreatorPage({
                 {creator.bio}
               </p>
             )}
+
+            {/* Ссылки — сразу под «о себе»: это продолжение рассказа о
+                человеке. Тот же компонент рисует превью на /settings. */}
+            <ProfileLinks
+              links={creator.links}
+              className="mt-4 justify-center sm:justify-start"
+            />
 
             {/* Приём заказов — только у подтверждённого профиля (решение
                 владельца: пока кастомные карты берёт только бренд).
