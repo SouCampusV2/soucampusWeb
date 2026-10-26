@@ -53,9 +53,11 @@ type PostRow = {
 export default async function AdminDiscordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; post?: string; from?: string; product?: string }>;
+  searchParams: Promise<{ tab?: string; post?: string; from?: string; product?: string; channel?: string }>;
 }) {
-  const { tab, post: postId, from, product: productParam } = await searchParams;
+  const { tab, post: postId, from, product: productParam, channel: channelParam } = await searchParams;
+  // ?channel=… — пункты навбара Discord → Portfolio / Premade / Free.
+  const channelFilter = isShowcaseChannel(channelParam) ? channelParam : null;
   const showcase = tab === "showcase";
   const db = getSupabaseAdmin();
   // Какие каналы готовы к публикации. В браузер уходят только да/нет —
@@ -185,7 +187,9 @@ export default async function AdminDiscordPage({
   if (postsError) console.warn(`discord_posts недоступна: ${postsError.message}`);
   const posts = ((postRows ?? []) as PostRow[]).flatMap((row) => {
     const post = normalizeShowcasePost(row.post);
-    return post ? [{ ...row, post }] : [];
+    if (!post) return [];
+    if (channelFilter && (isShowcaseChannel(row.channel) ? row.channel : "portfolio") !== channelFilter) return [];
+    return [{ ...row, post }];
   });
 
   return (
@@ -240,6 +244,15 @@ export default async function AdminDiscordPage({
           ))}
         </ul>
       </details>
+
+      {channelFilter && (
+        <p className="mt-6 text-sm text-zinc-500 dark:text-zinc-400">
+          Showing {SHOWCASE_CHANNELS[channelFilter].label} only.{" "}
+          <Link href="/admin/discord?tab=showcase" className="underline">
+            All channels
+          </Link>
+        </p>
+      )}
 
       {posts.length === 0 ? (
         <p className="mt-8 text-sm text-zinc-500 dark:text-zinc-400">No posts yet.</p>
