@@ -164,11 +164,11 @@ const SECTIONS: Section[] = [
   },
   // Discord-бот BoCampus (26.10). Текст — из пакета бота
   // (content/discord-terms-and-privacy.md), сверен с его кодом на 27.10.
-  // ⚠️ Два места черновика ждут владельца и намеренно НЕ написаны:
-  //   • где стоит сервер бота («[in the EU — Hostinger, Lithuania? check]»)
-  //     — сказано только, что сервер наш;
-  //   • сколько хранятся записи заказов («[period: …]»).
-  // Почта поддержки — из site.ts, её выдумывать не пришлось.
+  // Сервер бота — VPS Hostinger во Франкфурте (ответ владельца 26.10,
+  // сверено с docs/SCANNER.md). ⚠️ Срока хранения записей заказов нет:
+  // владелец его не назвал («[period: …]» в черновике) — стоит общая
+  // формулировка без числа. Назовёт — дописать в «Where it is kept».
+  // Почта поддержки — из site.ts.
   {
     id: "discord",
     title: "Our Discord bot",
@@ -187,7 +187,7 @@ const SECTIONS: Section[] = [
       },
       {
         term: "Where it is kept",
-        text: "The bot runs on our own server. Its database keeps order records for as long as we need them for the order and our accounting; database backups are kept for 14 days.",
+        text: "The bot runs on our own server, rented from Hostinger in Frankfurt, Germany. Its database keeps order records for as long as we need them for the order and our accounting; database backups are kept for 14 days.",
       },
       {
         term: "Ticket channels",
@@ -222,7 +222,7 @@ const SECTIONS: Section[] = [
       { term: "Stripe", text: "Payments." },
       {
         term: "Hostinger",
-        text: "Outgoing email, such as confirmation and password-reset messages.",
+        text: "Outgoing email, such as confirmation and password-reset messages, and the server our Discord bot runs on.",
       },
       { term: "Google", text: "Only if you choose to sign in with it." },
     ],

@@ -15,11 +15,9 @@ import { DISCORD_INVITE } from "@/lib/site";
 // транскрипт, согласие на сайт. Бот ссылается сюда из панели тикетов
 // (/setup links terms:…/terms/discord).
 //
-// ⚠️ ДВА МЕСТА ИЗ ЧЕРНОВИКА НАМЕРЕННО ПРОПУЩЕНЫ — их решает владелец, и
-// выдумывать их нельзя (это обещания про деньги):
-//   • § 4 «[Payment methods: …]» — какими способами принимается оплата;
-//   • § 4 «[Revisions: how many rounds of changes are included …]».
-// Ответит владелец — дописать строками в § 4 (PAYMENT_AND_WORK ниже).
+// Два места черновика («[Payment methods]», «[Revisions]») решал
+// владелец — ответил 26.10, они в § 4. Это обещания про деньги: менять
+// их только с его слов.
 //
 // Ставка в § 2 — из pricing.ts, а не числом в тексте: справка,
 // разошедшаяся с калькулятором и ботом, хуже отсутствующей (тот же довод,
@@ -84,13 +82,24 @@ const SECTIONS: Section[] = [
   {
     id: "payment",
     title: "Payment and work",
-    // ⚠️ Способы оплаты и число правок — ждут владельца (шапка файла).
+    // Способы оплаты и правки — ответ владельца 26.10: PayPal или Wise по
+    // инвойсу, который выставляет он сам; правки по ходу — сколько нужно в
+    // разумных пределах, после сдачи — 1–2 круга.
     points: [
+      <>
+        You pay by <strong>PayPal</strong> or <strong>Wise</strong>, against
+        an invoice we send you.
+      </>,
       <>
         Payment is confirmed <strong>manually</strong> by a SouCampus
         manager. Work starts after the payment is confirmed.
       </>,
       "Deadlines are agreed per order. A manager may extend a deadline; you will be told in your ticket.",
+      <>
+        While we build, you can ask for changes as often as you need, within
+        reason. After delivery, <strong>1–2 rounds of changes</strong> are
+        included.
+      </>,
     ],
   },
   {
