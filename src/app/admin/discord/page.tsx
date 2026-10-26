@@ -18,7 +18,7 @@ import {
   draftFromProject,
   isShowcaseChannel,
   normalizeShowcasePost,
-  PORTFOLIO_ROLE,
+  CHANNEL_ROLES,
   SHOWCASE_CHANNELS,
   type ShowcaseChannel,
   type ShowcasePost,
@@ -118,6 +118,9 @@ export default async function AdminDiscordPage({
         post: {
           ...draftFromProduct(productForPost(product), SITE_URL),
           ...(await getDiscordBotIdentity(channelWebhook(channel) ?? channelWebhook("portfolio"))),
+          // Роль своего канала — по умолчанию, как @Portfolio у работ.
+          mention: "role",
+          roleId: CHANNEL_ROLES[channel].id,
         },
       };
     } else {
@@ -133,7 +136,7 @@ export default async function AdminDiscordPage({
           ...draftFromProject(projectForPost(project), SITE_URL),
           ...(await getDiscordBotIdentity(channelWebhook("portfolio"))),
           mention: "role",
-          roleId: PORTFOLIO_ROLE.id,
+          roleId: CHANNEL_ROLES.portfolio.id,
         },
       };
     }

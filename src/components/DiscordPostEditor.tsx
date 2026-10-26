@@ -11,7 +11,8 @@ import {
   CHANNEL_KEYS,
   checkPost,
   MAX_IMAGES,
-  PORTFOLIO_ROLE,
+  CHANNEL_ROLES,
+  knownRoleName,
   SHOWCASE_CHANNELS,
   type ShowcaseChannel,
   type ShowcasePost,
@@ -92,22 +93,37 @@ export function DiscordPostEditor({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<Action | null>(null);
 
-  const portfolioPing = post.mention === "role" && post.roleId === PORTFOLIO_ROLE.id;
+  // Пингуется ли одна из ролей каналов (у них свои пилюли).
+  const knownPing = post.mention === "role" && knownRoleName(post.roleId) !== null;
+  const otherRole = post.mention === "role" && !knownPing;
 
   /**
-   * Выбор пинга. «Other role» — последний вписанный ID (не Portfolio:
-   * у неё своя пилюля), если он есть.
+   * Выбор пинга. «Other role» — последний вписанный ID, если он есть и
+   * это НЕ роль канала.
+   *
+   * ⚠️ До 27.10 здесь была ошибка: если в браузере лежал ID Portfolio
+   * (вписанный руками до появления её пилюли), «Other role» подставлял
+   * его, загоралась пилюля @Portfolio, и кнопка выглядела не нажимающейся.
    */
   function chooseMention(mention: ShowcasePost["mention"]) {
-    let roleId = mention === "role" && post.roleId === PORTFOLIO_ROLE.id ? null : post.roleId;
+    let roleId = mention === "role" && !knownRoleName(post.roleId) ? post.roleId : null;
     if (mention === "role" && !roleId) {
       try {
-        roleId = window.localStorage.getItem(ROLE_KEY);
+        const saved = window.localStorage.getItem(ROLE_KEY);
+        roleId = saved && !knownRoleName(saved) ? saved : null;
       } catch {
         // Хранилище закрыто (приватное окно) — поле просто пустое.
       }
     }
     setPost((current) => ({ ...current, mention, roleId }));
+  }
+
+  /** Смена канала: пинг роли старого канала переезжает на роль нового. */
+  function chooseChannel(next: ShowcaseChannel) {
+    setChannel(next);
+    if (post.mention === "role" && post.roleId === CHANNEL_ROLES[channel].id) {
+      setPost((current) => ({ ...current, roleId: CHANNEL_ROLES[next].id }));
+    }
   }
 
   const problem = checkPost(post);
@@ -200,7 +216,7 @@ export function DiscordPostEditor({
               <button
                 key={key}
                 type="button"
-                onClick={() => setChannel(key)}
+                onClick={() => chooseChannel(key)}
                 disabled={published && key !== channel}
                 aria-pressed={key === channel}
                 className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-40 ${
@@ -394,27 +410,26 @@ export function DiscordPostEditor({
         <div>
           <p className={LABEL}>Ping</p>
           <div className="flex flex-wrap gap-2">
-            {/* @Portfolio — роль витрины по умолчанию (владелец, 26.10),
-                отдельной пилюлей: её выбирают почти всегда. «Other role» —
-                любая другая по ID. */}
+            {/* Роли трёх каналов — отдельными пилюлями: их выбирают почти
+                всегда (владелец, 26–27.10). «Other role» — любая другая по ID. */}
             {(
               [
                 { key: "none", label: "Nobody", on: post.mention === "none", pick: () => chooseMention("none") },
-                {
-                  key: "portfolio",
-                  label: `@${PORTFOLIO_ROLE.name}`,
-                  on: portfolioPing,
-                  pick: () => setPost((c) => ({ ...c, mention: "role", roleId: PORTFOLIO_ROLE.id })),
-                },
+                ...CHANNEL_KEYS.map((key) => ({
+                  key: `role-${key}`,
+                  label: `@${CHANNEL_ROLES[key].name}`,
+                  on: post.mention === "role" && post.roleId === CHANNEL_ROLES[key].id,
+                  pick: () => setPost((c) => ({ ...c, mention: "role" as const, roleId: CHANNEL_ROLES[key].id })),
+                })),
                 { key: "here", label: "@here", on: post.mention === "here", pick: () => chooseMention("here") },
                 { key: "everyone", label: "@everyone", on: post.mention === "everyone", pick: () => chooseMention("everyone") },
                 {
                   key: "role",
                   label: "Other role",
-                  on: post.mention === "role" && !portfolioPing,
+                  on: otherRole,
                   pick: () => chooseMention("role"),
                 },
-              ] as const
+              ]
             ).map((option) => (
               <button
                 key={option.key}
@@ -428,7 +443,7 @@ export function DiscordPostEditor({
               </button>
             ))}
           </div>
-          {post.mention === "role" && !portfolioPing && (
+          {otherRole && (
             <div className="mt-3">
               <TextField
                 id="roleId"

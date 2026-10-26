@@ -394,3 +394,19 @@ export function normalizeShowcasePost(value: unknown): ShowcasePost | null {
  * <@&id>.
  */
 export const PORTFOLIO_ROLE = { id: "1564243306794197052", name: "Portfolio" } as const;
+
+/**
+ * Роли каналов витрины (владелец, 27.10): пост по умолчанию пингует роль
+ * своего канала. Тот же принцип, что у PORTFOLIO_ROLE: ID из Discord, имя
+ * — только для превью и кнопок.
+ */
+export const CHANNEL_ROLES: Record<ShowcaseChannel, { id: string; name: string }> = {
+  portfolio: PORTFOLIO_ROLE,
+  premade: { id: "1564358644169056286", name: "Premade builds" },
+  free: { id: "1564358633142222858", name: "Free builds" },
+};
+
+/** Имя известной роли по ID; null — роль не из списка. */
+export function knownRoleName(roleId: string | null): string | null {
+  return Object.values(CHANNEL_ROLES).find((r) => r.id === roleId)?.name ?? null;
+}

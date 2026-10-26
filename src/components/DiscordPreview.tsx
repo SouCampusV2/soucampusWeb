@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { hexColor, PORTFOLIO_ROLE, postText, type ShowcasePost } from "@/lib/discord-showcase";
+import { hexColor, knownRoleName, postText, type ShowcasePost } from "@/lib/discord-showcase";
 
 // Превью поста «как в Discord» для /admin/discord — стиль «сообщение»
 // (заголовок, текст, список ссылок, большие картинки, реакции).
@@ -39,7 +39,7 @@ function inline(text: string, key: string): ReactNode[] {
         <span key={k} className="rounded bg-[#5865f2]/30 px-0.5 font-medium text-[#c9cdfb]">
           {/* Discord покажет имя роли сам; превью знает только свою
               (дописано на сайте 26.10), остальные — «@role». */}
-          {part.startsWith("<") ? (part === `<@&${PORTFOLIO_ROLE.id}>` ? `@${PORTFOLIO_ROLE.name}` : "@role") : part}
+          {part.startsWith("<") ? `@${knownRoleName(part.slice(3, -1)) ?? "role"}` : part}
         </span>
       );
     }
