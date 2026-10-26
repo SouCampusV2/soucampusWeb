@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { revalidatePath } from "next/cache";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { hasPurchased } from "@/lib/purchases";
+import { checkReviewBody, isValidStars } from "@/lib/map-review-shape";
 
 // ============================================================
 // Шлюз записи, путь №12: оценка звёздами и реакция (2026-09-21).
@@ -32,13 +34,12 @@ import { hasPurchased } from "@/lib/purchases";
 
 export const dynamic = "force-dynamic";
 
-const MIN_STARS = 1;
-const MAX_STARS = 5;
-
 type Body = {
   action?: "rate" | "react";
   productId?: string;
   stars?: number;
+  /** Текст отзыва — обязателен с 26.10 (20261026130000). */
+  body?: string;
   /** true — поставить реакцию, false — снять. */
   on?: boolean;
 };
@@ -70,9 +71,21 @@ async function rate(
   productId: string,
   payload: Body
 ): Promise<NextResponse> {
-  const stars = typeof payload.stars === "number" ? payload.stars : NaN;
-  if (!Number.isInteger(stars) || stars < MIN_STARS || stars > MAX_STARS) {
+  // Половинки звезды — законны (20260811130000); до 26.10 здесь
+  // пускались только целые, и 4.5 из интерфейса молча откатывалась.
+  const stars = payload.stars;
+  if (!isValidStars(stars)) {
     return NextResponse.json({ error: "bad request" }, { status: 400 });
+  }
+
+  // Текст обязателен (решение владельца 26.10): оценка без слов не
+  // объясняет ни автору, ни следующему покупателю, за что она. Настоящий
+  // запрет — product_ratings_body_check в базе; здесь — внятный текст
+  // отказа до похода в базу.
+  const body = typeof payload.body === "string" ? payload.body.trim() : "";
+  const bodyProblem = checkReviewBody(body);
+  if (bodyProblem) {
+    return NextResponse.json({ error: bodyProblem }, { status: 400 });
   }
 
   if (!(await hasPurchased(productId, userId, email))) {
@@ -92,6 +105,7 @@ async function rate(
       product_id: productId,
       user_id: userId,
       stars,
+      body,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "product_id,user_id" }
@@ -100,12 +114,37 @@ async function rate(
   if (error) {
     console.error("Шлюз оценок: не записалась:", error.message);
     return NextResponse.json(
-      { error: "Couldn't save your rating. Try again in a moment." },
+      { error: "Couldn't save your review. Try again in a moment." },
       { status: 500 }
     );
   }
 
+  await revalidateReviewPages(productId);
   return NextResponse.json({ ok: true });
+}
+
+/**
+ * Отзыв виден под картой и на профиле её автора — обе страницы собраны
+ * заранее (revalidate = 60), и без сброса новый отзыв появлялся бы через
+ * минуту. revalidatePath принимает НАСТОЯЩИЙ маршрут профиля — /u/<имя>,
+ * а не /@<имя> (rewrite; разбор в CLAUDE.md, 21.08).
+ */
+async function revalidateReviewPages(productId: string): Promise<void> {
+  const db = getSupabaseAdmin();
+  const { data: product } = await db
+    .from("products")
+    .select("slug, creator_id")
+    .eq("id", productId)
+    .maybeSingle();
+  if (!product) return;
+  revalidatePath(`/marketplace/${product.slug}`);
+
+  const { data: creator } = await db
+    .from("public_profiles")
+    .select("username_lower")
+    .eq("id", product.creator_id)
+    .maybeSingle();
+  if (creator?.username_lower) revalidatePath(`/u/${creator.username_lower}`);
 }
 
 async function react(

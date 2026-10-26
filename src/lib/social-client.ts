@@ -30,9 +30,12 @@ export async function deleteComment(commentId: string): Promise<void> {
   return post("/api/comments", { action: "delete", commentId });
 }
 
-/** Поставить оценку звёздами (1–5). Может только купивший. */
-export async function rateProduct(productId: string, stars: number): Promise<void> {
-  return post("/api/feedback", { action: "rate", productId, stars });
+/**
+ * Оставить отзыв: звёзды (0.5–5, шаг половина) и обязательный текст.
+ * Может только купивший. Повторный — заменяет прежний.
+ */
+export async function rateProduct(productId: string, stars: number, body: string): Promise<void> {
+  return post("/api/feedback", { action: "rate", productId, stars, body });
 }
 
 /** Поставить или снять реакцию. */
