@@ -4,7 +4,8 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useRefresh } from "@/lib/useRefresh";
 import Link from "next/link";
-import { UserCircle, Camera, Key, ImageSquare, Crop, Plus, X } from "@phosphor-icons/react";
+import { UserCircle, Camera, Key, ImageSquare, Crop, Plus, X, Trash } from "@phosphor-icons/react";
+import { Unbounded } from "next/font/google";
 import { Button, BUTTON_COLORS } from "@/components/Button";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { USERNAME_COOLDOWN_DAYS, type Profile } from "@/lib/profiles";
@@ -40,6 +41,10 @@ const BANNER_MAX_BYTES = 10 * 1024 * 1024; // 10 МБ — ровно потол�
 const SOURCE_MAX_BYTES = 25 * 1024 * 1024;
 
 type CropTarget = "avatar" | "banner";
+
+// Тот же шрифт имени, что на /@<username>: превью без него врало бы о
+// главном — как выглядит имя.
+const previewFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
 // Столько же, сколько в guard_username_change (миграция 20260821140000).
 export function ProfileEditForm({
@@ -368,130 +373,20 @@ export function ProfileEditForm({
   const shownBanner = bannerPreview ?? bannerUrl;
 
   return (
-    // Форма слева, превью справа (просьба владельца 26.10). Превью только
-    // с lg: на телефоне ему рядом места нет, а под формой оно повторяло
-    // бы шапку, которая и так стоит в форме сверху.
-    <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,28rem)_minmax(0,1fr)]">
+    // Форма слева, превью справа (просьба владельца 26.10). Колонки 5:7
+    // внутри рамки страницы max-w-6xl (DESIGN.md): полям формы хватает
+    // ~29rem, а превью нужна ширина, чтобы шапка легла так же, как на
+    // профиле, — в ряд, а не столбиком.
+    //
+    // Фото правятся ПРЯМО В ПРЕВЬЮ (вечер 26.10): видишь баннер — на нём
+    // и кнопки. Поэтому на телефоне превью стоит НАД формой (order-first),
+    // а не прячется: без него фото было бы не поменять.
+    <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]">
     <form
       onSubmit={handleSubmit}
-      className="w-full rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-950"
+      className="w-full rounded-3xl border border-zinc-200 bg-[#fbfbff] p-6 dark:border-zinc-800 dark:bg-zinc-950 sm:p-8"
     >
-      {/* Баннер и аватар — одной шапкой, аватар поверх нижнего края
-          баннера (просьба владельца 25.10). Пропорция 4:1 та же, что на
-          профиле: превью обязано показать тот кадр, который увидят
-          посетители, иначе человек подбирает картинку вслепую.
-
-          Кнопки смены видны ВСЕГДА, а не по наведению: на тач-экране
-          hover не наступает никогда (правило 26.08). */}
-      <div className="relative mb-16">
-        <button
-          type="button"
-          onClick={() => bannerInput.current?.click()}
-          className="relative block aspect-[4/1] w-full cursor-pointer overflow-hidden rounded-2xl border border-zinc-200 bg-zinc-100 dark:border-zinc-800 dark:bg-zinc-900"
-          aria-label={shownBanner ? "Change banner" : "Add banner"}
-        >
-          {shownBanner ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={shownBanner} alt="Banner" className="h-full w-full object-cover" />
-          ) : (
-            // Подпись в правой части: по центру внизу её закрыл бы аватар.
-            <span className="flex h-full w-full items-center justify-end gap-2 pr-4 text-xs text-zinc-400 dark:text-zinc-500">
-              <ImageSquare size={18} />
-              Add a banner · wide, 5:1
-            </span>
-          )}
-        </button>
-
-        {/* Угол баннера: сменить и убрать. Тёмная подложка — чтобы
-            кнопки читались поверх любой картинки, светлой и тёмной. */}
-        {shownBanner && (
-          <div className="absolute right-2 top-2 flex gap-1.5">
-            {/* Подправить кадр, не выбирая файл заново. Режется уже
-                обрезанная картинка — значит, чуть мягче оригинала. */}
-            <button
-              type="button"
-              onClick={() => setCrop({ target: "banner", src: shownBanner })}
-              aria-label="Adjust banner"
-              className="inline-flex items-center rounded-full bg-zinc-950/60 px-2 py-1 text-white backdrop-blur-sm transition-colors hover:bg-zinc-950/80"
-            >
-              <Crop size={14} aria-hidden />
-            </button>
-            <button
-              type="button"
-              onClick={() => bannerInput.current?.click()}
-              className="inline-flex items-center gap-1 rounded-full bg-zinc-950/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-zinc-950/80"
-            >
-              <Camera size={14} aria-hidden />
-              Change
-            </button>
-            <button
-              type="button"
-              onClick={removeBanner}
-              aria-label="Remove banner"
-              className="inline-flex items-center rounded-full bg-zinc-950/60 px-2.5 py-1 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-red-600"
-            >
-              Remove
-            </button>
-          </div>
-        )}
-        <input
-          ref={bannerInput}
-          type="file"
-          accept="image/*"
-          onChange={(event) => pickImage("banner", event)}
-          className="hidden"
-        />
-
-        {/* Аватар — квадрат со скруглением, как на профиле. Обводка
-            цветом формы отделяет его от баннера под ним. */}
-        <button
-          type="button"
-          onClick={() => fileInput.current?.click()}
-          className="absolute bottom-0 left-1/2 h-24 w-24 -translate-x-1/2 translate-y-1/2 cursor-pointer rounded-3xl bg-[#fbfbff] p-1 dark:bg-zinc-950"
-          aria-label="Change avatar"
-        >
-          <span className="flex h-full w-full items-center justify-center overflow-hidden rounded-[1.25rem] bg-zinc-100 dark:bg-zinc-900">
-            {shownAvatar ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={shownAvatar}
-                alt="Avatar"
-                className="h-full w-full object-cover object-top"
-              />
-            ) : (
-              <UserCircle size={56} className="text-zinc-300 dark:text-zinc-600" />
-            )}
-          </span>
-          <span className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#fbfbff] bg-zinc-950 text-white dark:border-zinc-950 dark:bg-zinc-50 dark:text-zinc-950">
-            <Camera size={15} aria-hidden />
-          </span>
-        </button>
-        <input
-          ref={fileInput}
-          type="file"
-          accept="image/*"
-          onChange={(event) => pickImage("avatar", event)}
-          className="hidden"
-        />
-      </div>
-      <p className="-mt-2 mb-2 text-center text-xs text-zinc-500 dark:text-zinc-400">
-        You can crop after picking a file
-        {/* Лого из public/ ("/…") не режем: его показывают целиком. */}
-        {shownAvatar && !shownAvatar.startsWith("/") && (
-          <>
-            {" · "}
-            <button
-              type="button"
-              onClick={() => setCrop({ target: "avatar", src: shownAvatar })}
-              className="font-medium text-zinc-700 underline-offset-2 hover:underline dark:text-zinc-300"
-            >
-              Adjust avatar
-            </button>
-          </>
-        )}
-      </p>
-
-      <div className="mt-6 space-y-4">
+      <div className="space-y-4">
         {/* ОДНО имя, и квадратик цвета рядом с ним.
             До вечера 21.08 здесь было два поля — «Display name» и
             «Profile address», — и это была ошибка: человеку незачем
@@ -748,9 +643,9 @@ export function ProfileEditForm({
       </div>
     </form>
 
-    <aside className="sticky top-28 hidden lg:block">
+    <aside className="order-first lg:sticky lg:top-28 lg:order-none">
       <p className="mb-3 text-sm font-medium text-zinc-500 dark:text-zinc-400">
-        Preview
+        Preview · edit photos here
       </p>
       <ProfilePreview
         username={username.trim() || initial.username}
@@ -764,6 +659,28 @@ export function ProfileEditForm({
           const checked = checkProfileLink(link.kind, link.url);
           return checked.ok ? [{ kind: link.kind, url: checked.url }] : [];
         })}
+        onPickBanner={() => bannerInput.current?.click()}
+        onAdjustBanner={() => shownBanner && setCrop({ target: "banner", src: shownBanner })}
+        onRemoveBanner={removeBanner}
+        onPickAvatar={() => fileInput.current?.click()}
+        onAdjustAvatar={() => shownAvatar && setCrop({ target: "avatar", src: shownAvatar })}
+      />
+      <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+        Pick a file and crop it before saving. GIFs are kept as they are.
+      </p>
+      <input
+        ref={bannerInput}
+        type="file"
+        accept="image/*"
+        onChange={(event) => pickImage("banner", event)}
+        className="hidden"
+      />
+      <input
+        ref={fileInput}
+        type="file"
+        accept="image/*"
+        onChange={(event) => pickImage("avatar", event)}
+        className="hidden"
       />
     </aside>
 
@@ -785,17 +702,29 @@ export function ProfileEditForm({
   );
 }
 
+// Кнопки поверх картинки — тёмная полупрозрачная подложка, чтобы читались
+// на любом кадре, светлом и тёмном. Видны ВСЕГДА, а не по наведению: на
+// тач-экране hover не наступает никогда (правило 26.08).
+const ON_IMAGE =
+  "inline-flex h-8 items-center gap-1.5 rounded-full bg-zinc-950/60 px-3 text-xs font-medium text-white backdrop-blur-sm transition-colors hover:bg-zinc-950/80";
+
 /**
- * Как профиль будет выглядеть — шапка в узкой колонке.
+ * Как профиль будет выглядеть — и место, где правятся фото.
  *
- * Только то, что правится в этой форме: баннер, аватар, имя с цветом,
- * «о себе», ссылки. Цифры, роль и карты — скелетами (решение владельца
- * 26.10): превью показывает изменения, а не данные, и ходить за
- * продажами ради картинки-примера незачем.
+ * Раскладка повторяет шапку /@<username> (вариант 8): аватар врезан в
+ * баннер, рядом имя и строка «роль · Joined», справа ссылки, ниже «о
+ * себе» и вкладки. Ряд или столбик решает ширина САМОЙ карточки
+ * (@container), а не окна: превью уже страницы, и брейкпоинты окна здесь
+ * соврали бы.
  *
- * Раскладка — телефонная версия профиля (аватар над именем): колонка
- * шириной с телефон, и брейкпоинты страницы, считающие ширину ОКНА, здесь
- * всё равно не сработали бы.
+ * Живое — то, что правится в форме: баннер, аватар, имя с цветом, «о
+ * себе», ссылки. Роль, дата и карты — скелетами (решение владельца 26.10:
+ * превью показывает изменения, а не данные).
+ *
+ * Два состояния — с баннером и без. Без баннера его место не держится
+ * пустой полосой: профиль без баннера начинается сразу с аватара, и
+ * превью обязано показать ровно это. Кнопка «Add banner» тогда — пилюля
+ * в углу карточки, не занимающая места в раскладке.
  */
 function ProfilePreview({
   username,
@@ -804,6 +733,11 @@ function ProfilePreview({
   banner,
   bio,
   links,
+  onPickBanner,
+  onAdjustBanner,
+  onRemoveBanner,
+  onPickAvatar,
+  onAdjustAvatar,
 }: {
   username: string;
   nameColor: string;
@@ -811,70 +745,152 @@ function ProfilePreview({
   banner: string | null;
   bio: string;
   links: ProfileLink[];
+  onPickBanner: () => void;
+  onAdjustBanner: () => void;
+  onRemoveBanner: () => void;
+  onPickAvatar: () => void;
+  onAdjustAvatar: () => void;
 }) {
-  return (
-    <div className="overflow-hidden rounded-3xl border border-zinc-200 bg-[#fbfbff] dark:border-zinc-800 dark:bg-zinc-950">
-      {/* Пропорция рамки обрезки — ровно тот кадр, что вырезан. На самой
-          странице высота фиксированная, и края могут чуть срезаться. */}
-      <div
-        className="w-full bg-zinc-100 dark:bg-zinc-900"
-        style={{ aspectRatio: String(BANNER_ASPECT) }}
-      >
-        {banner && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={banner} alt="" className="h-full w-full object-cover" />
-        )}
-      </div>
+  // Лого из public/ ("/…") не режем: его показывают целиком.
+  const avatarCroppable = avatar !== null && !avatar.startsWith("/");
 
-      <div className="px-6 pb-6">
+  return (
+    <div className="@container relative overflow-hidden rounded-3xl border border-zinc-200 bg-[#fbfbff] dark:border-zinc-800 dark:bg-zinc-950">
+      {banner ? (
+        // Пропорция рамки обрезки — ровно тот кадр, что вырезан. На самой
+        // странице высота фиксированная, и края могут чуть срезаться.
         <div
-          className={`relative flex h-24 w-24 items-center justify-center overflow-hidden rounded-3xl border-4 border-[#fbfbff] bg-zinc-100 dark:border-zinc-950 dark:bg-zinc-900 ${
-            banner ? "-mt-12" : "mt-6"
+          className="relative w-full bg-zinc-100 dark:bg-zinc-900"
+          style={{ aspectRatio: String(BANNER_ASPECT) }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={banner} alt="" className="h-full w-full object-cover" />
+          <div className="absolute right-3 top-3 flex gap-1.5">
+            <button type="button" onClick={onAdjustBanner} className={ON_IMAGE}>
+              <Crop size={14} aria-hidden />
+              Adjust
+            </button>
+            <button type="button" onClick={onPickBanner} className={ON_IMAGE}>
+              <Camera size={14} aria-hidden />
+              Change
+            </button>
+            <button
+              type="button"
+              onClick={onRemoveBanner}
+              aria-label="Remove banner"
+              className={`${ON_IMAGE} hover:bg-red-600`}
+            >
+              <Trash size={14} aria-hidden />
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          type="button"
+          onClick={onPickBanner}
+          className="absolute right-3 top-3 z-10 inline-flex h-8 items-center gap-1.5 rounded-full border border-dashed border-zinc-300 px-3 text-xs font-medium text-zinc-600 transition-colors hover:border-orange-500 hover:text-orange-600 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-orange-400 dark:hover:text-orange-400"
+        >
+          <ImageSquare size={14} aria-hidden />
+          Add banner
+        </button>
+      )}
+
+      <div className="px-5 pb-6 @lg:px-6">
+        <div
+          className={`flex flex-col items-start gap-4 @lg:flex-row @lg:items-end @lg:gap-5 ${
+            banner ? "" : "pt-6"
           }`}
         >
-          {avatar ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={avatar}
-              alt=""
-              className={
-                avatar.startsWith("/")
-                  ? "h-full w-full object-contain p-2"
-                  : "h-full w-full object-cover"
-              }
-            />
-          ) : (
-            <UserCircle size={56} weight="thin" className="text-zinc-300 dark:text-zinc-700" />
-          )}
-        </div>
+          {/* Аватар врезан в баннер на половину высоты — как на профиле.
+              Клик по нему — выбрать файл; камера в углу говорит об этом
+              без наведения. */}
+          <div className={`relative shrink-0 ${banner ? "-mt-10 @lg:-mt-12" : ""}`}>
+            <button
+              type="button"
+              onClick={onPickAvatar}
+              aria-label="Change avatar"
+              className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-3xl border-4 border-[#fbfbff] bg-zinc-100 dark:border-zinc-950 dark:bg-zinc-900 @lg:h-24 @lg:w-24"
+            >
+              {avatar ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={avatar}
+                  alt=""
+                  className={
+                    avatar.startsWith("/")
+                      ? "h-full w-full object-contain p-2"
+                      : "h-full w-full object-cover"
+                  }
+                />
+              ) : (
+                <UserCircle size={52} weight="thin" className="text-zinc-300 dark:text-zinc-700" />
+              )}
+            </button>
+            <button
+              type="button"
+              onClick={onPickAvatar}
+              aria-label="Change avatar"
+              className="absolute -bottom-1 -right-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#fbfbff] bg-zinc-950 text-white dark:border-zinc-950 dark:bg-zinc-50 dark:text-zinc-950"
+            >
+              <Camera size={15} aria-hidden />
+            </button>
+            {avatarCroppable && (
+              <button
+                type="button"
+                onClick={onAdjustAvatar}
+                aria-label="Adjust avatar"
+                className="absolute -bottom-1 -left-1 flex h-8 w-8 items-center justify-center rounded-full border-2 border-[#fbfbff] bg-zinc-950 text-white dark:border-zinc-950 dark:bg-zinc-50 dark:text-zinc-950"
+              >
+                <Crop size={15} aria-hidden />
+              </button>
+            )}
+          </div>
 
-        <p
-          className="mt-4 truncate text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50"
-          style={nameColor ? { color: nameColor } : undefined}
-        >
-          {username}
-        </p>
-        <Skeleton className="mt-3 h-6 w-20 rounded-full" />
-        <Skeleton className="mt-3 h-4 w-32" />
+          <div className="min-w-0 flex-1">
+            <p
+              className={`${previewFont.className} truncate text-2xl tracking-tight text-zinc-950 dark:text-zinc-50 @lg:text-3xl`}
+              style={nameColor ? { color: nameColor } : undefined}
+            >
+              {username}
+            </p>
+            <div className="mt-2 flex items-center gap-2">
+              <Skeleton className="h-6 w-16 rounded-full" />
+              <Skeleton className="h-4 w-24" />
+            </div>
+          </div>
+
+          <ProfileLinks links={links} />
+        </div>
 
         {bio && (
-          <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">{bio}</p>
+          <p className="mt-4 whitespace-pre-line text-sm text-zinc-600 dark:text-zinc-400">
+            {bio}
+          </p>
         )}
-        <ProfileLinks links={links} className="mt-4" />
 
-        <div className="mt-6 flex gap-6">
-          {[0, 1, 2].map((i) => (
-            <div key={i}>
-              <Skeleton className="h-3 w-14" />
-              <Skeleton className="mt-2 h-5 w-8" />
-            </div>
+        {/* Вкладки — как на профиле, первая выбрана; счётчики и карты —
+            скелетами. */}
+        <div className="mt-6 flex gap-5 border-b border-zinc-200 text-xs font-medium dark:border-zinc-800">
+          {["Maps", "Ratings", "About"].map((label, i) => (
+            <span
+              key={label}
+              className={`-mb-px border-b-2 pb-2 ${
+                i === 0
+                  ? "border-orange-500 text-zinc-950 dark:border-orange-400 dark:text-zinc-50"
+                  : "border-transparent text-zinc-400"
+              }`}
+            >
+              {label}
+            </span>
           ))}
         </div>
-
-        <Skeleton className="mt-8 h-6 w-28" />
-        <div className="mt-4 grid grid-cols-2 gap-3">
-          <Skeleton className="aspect-[4/3] w-full rounded-2xl" />
-          <Skeleton className="aspect-[4/3] w-full rounded-2xl" />
+        <div className="mt-4 grid grid-cols-2 gap-3 @lg:grid-cols-3">
+          {[0, 1, 2].map((i) => (
+            <Skeleton
+              key={i}
+              className={`aspect-[4/3] w-full rounded-2xl ${i === 2 ? "hidden @lg:block" : ""}`}
+            />
+          ))}
         </div>
       </div>
     </div>

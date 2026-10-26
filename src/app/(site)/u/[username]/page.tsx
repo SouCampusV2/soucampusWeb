@@ -19,7 +19,8 @@ import { LocalTime } from "@/components/LocalTime";
 import { getRecentCommentsByUser } from "@/lib/comments";
 import { getProfileStats } from "@/lib/profile-stats";
 import { DISCORD_INVITE } from "@/lib/site";
-import { ProfileLinks } from "@/components/ProfileLinks";
+import { ProfileLinks, ProfileLinkList } from "@/components/ProfileLinks";
+import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 import { BANNER_HEIGHT } from "@/lib/profile-media";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
@@ -125,6 +126,127 @@ export default async function CreatorPage({
         .slice(0, 4)
     : [];
 
+  // Вкладки под шапкой — вариант 8 лаборатории (выбор владельца 26.10).
+  // Цифры стали заголовками разделов: «Maps 2», «Ratings 5». Остальные
+  // числа (покупки, комментарии, реакции) — во вкладке About, а не
+  // шестью равными столбиками в шапке, которые владелец забраковал 25.10.
+  const about = (
+    <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)]">
+      <dl className="grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-4">
+        {showResources && <Stat label="Sales" value={String(totalSales)} />}
+        <Stat label="Purchases" value={statValue(stats.purchases)} />
+        <Stat label="Comments" value={statValue(stats.comments)} />
+        <Stat label="Reactions" value={statValue(stats.reactions)} />
+      </dl>
+      {creator.links.length > 0 && (
+        <div>
+          <p className="mb-2 px-3 text-sm text-zinc-500 dark:text-zinc-400">Links</p>
+          <ProfileLinkList links={creator.links} />
+        </div>
+      )}
+    </div>
+  );
+
+  const tabs: ProfileTab[] = showResources
+    ? [
+        {
+          id: "maps",
+          label: "Maps",
+          count: mapsCount,
+          content:
+            products.length > 0 ? (
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {products.map((product) => (
+                  <ProductCard
+                    key={product.slug}
+                    product={product}
+                    creator={{
+                      name: creator.username,
+                      href: creatorHref(creator.handle),
+                      isVerified: creator.isVerified,
+                    }}
+                    className="h-full"
+                  />
+                ))}
+              </div>
+            ) : (
+              <p className="text-zinc-600 dark:text-zinc-400">No maps published yet.</p>
+            ),
+        },
+        {
+          // «Ratings», а не «Reviews» (как было в лаборатории): у оценок
+          // на сайте нет текста, и вкладка «Reviews» обещала бы отзывы,
+          // которых нет.
+          id: "ratings",
+          label: "Ratings",
+          count: ratingVotes,
+          content:
+            rated.length > 0 ? (
+              <ul className="divide-y divide-zinc-200 rounded-3xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+                {rated.map((product) => (
+                  <li key={product.slug}>
+                    <Link
+                      href={`/marketplace/${product.slug}`}
+                      className="flex items-center justify-between gap-4 p-4 transition-colors hover:bg-zinc-950/[0.03] dark:hover:bg-zinc-50/[0.03]"
+                    >
+                      <span className="truncate font-medium text-zinc-950 dark:text-zinc-50">
+                        {product.title}
+                      </span>
+                      <span className="inline-flex shrink-0 items-center gap-1.5 text-sm text-zinc-600 dark:text-zinc-400">
+                        <Star size={16} weight="fill" className="text-orange-400" aria-hidden />
+                        {(product.rating ?? 0).toFixed(1)}
+                        <span className="text-zinc-400">({product.ratingCount})</span>
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-zinc-600 dark:text-zinc-400">No ratings yet.</p>
+            ),
+        },
+        { id: "about", label: "About", content: about },
+      ]
+    : [
+        {
+          id: "activity",
+          label: "Activity",
+          count: activity.length,
+          content:
+            activity.length > 0 ? (
+              <ul className="grid gap-3 lg:grid-cols-2">
+                {activity.map(({ comment, product }) => (
+                  <li key={comment.id}>
+                    <Link
+                      href={`/marketplace/${product.slug}`}
+                      className="flex gap-4 rounded-3xl border border-zinc-200 bg-[#fbfbff] p-4 transition-colors hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
+                    >
+                      <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-900">
+                        <Image src={product.image} alt="" fill sizes="96px" className="object-cover" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                          Commented on{" "}
+                          <span className="font-medium text-zinc-950 dark:text-zinc-50">
+                            {product.title}
+                          </span>{" "}
+                          · <LocalTime value={comment.createdAt} />
+                        </p>
+                        <p className="mt-1 line-clamp-2 text-sm text-zinc-700 dark:text-zinc-300">
+                          {comment.body}
+                        </p>
+                      </div>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="text-zinc-600 dark:text-zinc-400">No activity yet.</p>
+            ),
+        },
+        { id: "about", label: "About", content: about },
+      ];
+
   return (
     // Клип — на полноширинном <main>, max-w — на обёртке внутри (см. PageGlow).
     <main className="relative w-full flex-1 overflow-x-clip">
@@ -137,8 +259,9 @@ export default async function CreatorPage({
           creator.bannerUrl ? "pb-16 sm:pb-24" : "py-16 sm:py-24"
         }`}
       >
-      {/* Шапка профиля — по образцу BuiltByBit (2026-10-25): баннер,
-          под ним большой квадратный аватар и рядом «кто это». */}
+      {/* Шапка — вариант 8 лаборатории (выбор владельца 26.10): тихая
+          строка «аватар · имя · роль, дата, рейтинг · ссылки и кнопка»,
+          цифры — во вкладках ниже. */}
       <section className="relative">
         {/* Баннер необязателен: нет — шапка просто начинается с аватара,
             без пустой серой полосы.
@@ -151,9 +274,9 @@ export default async function CreatorPage({
             углы скругляются.
 
             Высота ФИКСИРОВАННАЯ (BANNER_HEIGHT), а не пропорция: шире не
-            значит выше. Кадр режется в рамке 5:1 (profile-media.ts), и на
-            узком экране у него срезаются бока, на широком — чуть верх и
-            низ.
+            значит выше. Кадр режется в рамке BANNER_ASPECT
+            (profile-media.ts), и на узком экране у него срезаются бока,
+            на широком — чуть верх и низ.
 
             Вплотную к верху страницы (просьба владельца 25.10). Навбар —
             sticky В ПОТОКЕ и занимает 4.5rem (от sm — 5rem, h-[4.5rem]
@@ -163,7 +286,7 @@ export default async function CreatorPage({
             уедет под край. */}
         {creator.bannerUrl && (
           <div
-            className={`-mx-6 -mt-[4.5rem] mb-8 overflow-hidden bg-zinc-100 dark:bg-zinc-900 sm:-mx-10 sm:-mt-20 lg:-mx-16 xl:-mx-24 2xl:-mx-[120px] min-[120rem]:rounded-b-3xl ${BANNER_HEIGHT}`}
+            className={`-mx-6 -mt-[4.5rem] overflow-hidden bg-zinc-100 dark:bg-zinc-900 sm:-mx-10 sm:-mt-20 lg:-mx-16 xl:-mx-24 2xl:-mx-[120px] min-[120rem]:rounded-b-3xl ${BANNER_HEIGHT}`}
           >
             {/* Обычный <img> — по той же причине, что у аватара ниже. */}
             {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -175,22 +298,28 @@ export default async function CreatorPage({
           </div>
         )}
 
-        {/* sm:items-start, а НЕ items-center (просьба владельца
-            2026-08-22): по центру аватар равнялся бы на весь блок и
-            уезжал вниз вместе с длиной био. По верху он встаёт рядом с
-            именем — «кто это» — и там и остаётся. */}
-        <div className="flex flex-col items-center gap-6 text-center sm:flex-row sm:items-start sm:gap-8 sm:text-left">
+        {/* sm:items-end: имя и кнопки встают по нижнему краю аватара,
+            а его верх заходит на баннер. */}
+        <div className="flex flex-col items-start gap-5 sm:flex-row sm:items-end sm:gap-6">
           {/* Квадрат со скруглением, а не круг (2026-10-25): крупный
               аватар в круге теряет углы картинки, а лого и скины —
-              квадратные по природе. */}
-          <div className="relative flex h-32 w-32 shrink-0 items-center justify-center overflow-hidden rounded-3xl border border-zinc-200 bg-[#fbfbff] dark:border-zinc-800 dark:bg-zinc-900 sm:h-40 sm:w-40">
+              квадратные по природе.
+
+              С баннером аватар врезается в него на половину своей высоты
+              (просьба владельца 26.10, как в превью). Обводка цветом
+              страницы (--background) отделяет его от картинки под ним и
+              сама меняется с темой. */}
+          <div
+            className={`relative flex h-28 w-28 shrink-0 items-center justify-center overflow-hidden rounded-3xl border-4 border-[var(--background)] bg-zinc-100 dark:bg-zinc-900 sm:h-36 sm:w-36 ${
+              creator.bannerUrl ? "-mt-14 sm:-mt-[4.5rem]" : ""
+            }`}
+          >
             {creator.avatarUrl ? (
               // Обычный <img>, а не next/image: аватары лежат в Supabase
               // Storage, а его домен не прописан в images.remotePatterns
               // (next.config.ts) — next/image на таком URL падает в
-              // рантайме. Тот же приём уже используется на /profile и в
-              // навбаре; менять решение — значит настраивать домены,
-              // отдельная задача.
+              // рантайме. Тот же приём уже используется в навбаре; менять
+              // решение — значит настраивать домены, отдельная задача.
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={creator.avatarUrl}
@@ -203,7 +332,7 @@ export default async function CreatorPage({
                 className={
                   creator.avatarUrl.startsWith("/")
                     ? "h-full w-full object-contain p-3"
-                    : "h-full w-full object-cover object-top"
+                    : "h-full w-full object-cover"
                 }
               />
             ) : (
@@ -211,7 +340,7 @@ export default async function CreatorPage({
               // иконка вместо чужого лого: подставлять сюда бренд было бы
               // прямой ложью о том, чей это профиль.
               <UserCircle
-                size={88}
+                size={80}
                 weight="thin"
                 className="text-zinc-300 dark:text-zinc-700"
                 aria-hidden
@@ -219,12 +348,10 @@ export default async function CreatorPage({
             )}
           </div>
 
-          {/* Текст слева, цифры справа — обе колонки по верху. */}
-          <div className="flex min-w-0 flex-1 flex-col gap-6 lg:flex-row lg:items-start lg:justify-between lg:gap-10">
-          <div className="min-w-0">
+          <div className="min-w-0 flex-1 sm:pb-1">
             {/* Карандаш — СОСЕД заголовка, а не его часть: внутри <h1> он
                 стал бы куском имени для скринридера и поисковика. */}
-            <div className="flex items-center justify-center gap-2 sm:justify-start">
+            <div className="flex items-center gap-2">
               <h1
                 className={`${displayFont.className} flex min-w-0 items-center gap-2 text-4xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
               >
@@ -252,157 +379,57 @@ export default async function CreatorPage({
               <OwnerEditLink creatorId={creator.id} />
             </div>
 
-            {/* Кто это. Галочка (is_verified) отвечает на другой вопрос —
-                «это точно он», — и роль ею не заменяется. */}
-            <p className="mt-3 flex justify-center sm:justify-start">
+            {/* Кто это, с какого времени и как его оценивают — одной тихой
+                строкой. Галочка (is_verified) отвечает на другой вопрос —
+                «это точно он», — и роль ею не заменяется. Дата — момент, а
+                не день-ключ, поэтому LocalTime (разбор в lib/dates.ts). */}
+            <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-zinc-500 dark:text-zinc-400">
               <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${role.className}`}>
                 {role.label}
               </span>
-            </p>
-
-            {/* Момент, а не день-ключ, — поэтому LocalTime (пояс
-                читателя), а не formatDate. Разбор в шапке lib/dates.ts. */}
-            {creator.joinedAt && (
-              <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
-                Joined:{" "}
-                <LocalTime
-                  value={creator.joinedAt}
-                  className="font-medium text-zinc-700 dark:text-zinc-300"
-                />
-              </p>
-            )}
-
-            {creator.bio && (
-              <p className="mx-auto mt-3 max-w-2xl text-zinc-600 dark:text-zinc-400 sm:mx-0">
-                {creator.bio}
-              </p>
-            )}
-
-            {/* Ссылки — сразу под «о себе»: это продолжение рассказа о
-                человеке. Тот же компонент рисует превью на /settings. */}
-            <ProfileLinks
-              links={creator.links}
-              className="mt-4 justify-center sm:justify-start"
-            />
-
-            {/* Приём заказов — только у подтверждённого профиля (решение
-                владельца: пока кастомные карты берёт только бренд).
-                Управляется тем же флагом is_verified, что и галочка. */}
-            {creator.isVerified && (
-              <div className="mt-6 flex justify-center sm:justify-start">
-                <Button href={DISCORD_INVITE} target="_blank" rel="noopener noreferrer" size="md">
-                  Order a custom build
-                </Button>
-              </div>
-            )}
-
-            {/* «Add a map» — только самому автору. У постороннего не
-                рендерится вовсе (см. компонент). */}
-            <CreatorOwnerActions creatorId={creator.id} />
-            </div>
-
-            {/* Цифры — справа от имени, верхом вровень с ним (просьба
-                владельца 25.10; у BuiltByBit они полосой ниже, здесь —
-                рядом). У КАЖДОГО, а не только у креатора: покупки,
-                комментарии и реакции есть у любого участника. Наружу —
-                только числа, без единой строки заказа (profile-stats.ts).
-                Уже lg цифры уходят под текст строкой: рядом с именем им
-                не хватает места. */}
-            <dl className="flex flex-wrap justify-center gap-x-8 gap-y-4 sm:justify-start lg:shrink-0 lg:justify-end lg:pt-2">
-              {showResources && <Stat label="Resources" value={String(mapsCount)} />}
-              {showResources && <Stat label="Sales" value={String(totalSales)} />}
-              <Stat label="Purchases" value={statValue(stats.purchases)} />
-              <Stat label="Comments" value={statValue(stats.comments)} />
-              <Stat label="Reactions" value={statValue(stats.reactions)} />
-              {ratingVotes > 0 && (
-                <Stat
-                  label="Rating"
-                  value={
-                    <span className="inline-flex items-center gap-1.5">
-                      <Star size={18} weight="fill" className="text-orange-400" aria-hidden />
-                      {avgRating.toFixed(1)}
-                      <span className="text-sm font-normal text-zinc-500 dark:text-zinc-400">
-                        ({ratingVotes})
-                      </span>
-                    </span>
-                  }
-                />
+              {creator.joinedAt && (
+                <span>
+                  Joined <LocalTime value={creator.joinedAt} />
+                </span>
               )}
-            </dl>
+              {ratingVotes > 0 && (
+                <span className="inline-flex items-center gap-1">
+                  <Star size={14} weight="fill" className="text-orange-400" aria-hidden />
+                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
+                    {avgRating.toFixed(1)}
+                  </span>
+                  ({ratingVotes})
+                </span>
+              )}
+            </p>
+          </div>
+
+          {/* Справа — ссылки иконками и главное действие. Приём заказов —
+              только у подтверждённого профиля (решение владельца: пока
+              кастомные карты берёт только бренд), тот же флаг, что у
+              галочки. */}
+          <div className="flex flex-wrap items-center gap-3 sm:pb-1">
+            <ProfileLinks links={creator.links} />
+            {creator.isVerified && (
+              <Button href={DISCORD_INVITE} target="_blank" rel="noopener noreferrer" size="md">
+                Order a custom build
+              </Button>
+            )}
           </div>
         </div>
 
+        {creator.bio && (
+          <p className="mt-6 max-w-2xl whitespace-pre-line text-zinc-600 dark:text-zinc-400">
+            {creator.bio}
+          </p>
+        )}
+
+        {/* «Add a map» — только самому автору. У постороннего не
+            рендерится вовсе (см. компонент). */}
+        <CreatorOwnerActions creatorId={creator.id} />
       </section>
 
-      {/* Под шапкой — ОДИН раздел: ресурсы у креатора, активность у
-          остальных. */}
-      {showResources ? (
-        <section className="mt-14">
-          <SectionTitle>Resources</SectionTitle>
-          {products.length > 0 ? (
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {products.map((product) => (
-                <ProductCard
-                  key={product.slug}
-                  product={product}
-                  creator={{
-                    name: creator.username,
-                    href: creatorHref(creator.handle),
-                    isVerified: creator.isVerified,
-                  }}
-                  className="h-full"
-                />
-              ))}
-            </div>
-          ) : (
-            <p className="mt-3 text-zinc-600 dark:text-zinc-400">
-              No maps published yet.
-            </p>
-          )}
-        </section>
-      ) : (
-        <section className="mt-14">
-          <SectionTitle>Activity</SectionTitle>
-          {activity.length > 0 ? (
-            <ul className="mt-6 grid gap-3 lg:grid-cols-2">
-              {activity.map(({ comment, product }) => (
-                <li key={comment.id}>
-                  <Link
-                    href={`/marketplace/${product.slug}`}
-                    className="flex gap-4 rounded-3xl border border-zinc-200 bg-[#fbfbff] p-4 transition-colors hover:border-zinc-300 dark:border-zinc-800 dark:bg-zinc-950 dark:hover:border-zinc-700"
-                  >
-                    <div className="relative h-16 w-24 shrink-0 overflow-hidden rounded-2xl bg-zinc-100 dark:bg-zinc-900">
-                      <Image
-                        src={product.image}
-                        alt=""
-                        fill
-                        sizes="96px"
-                        className="object-cover"
-                      />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                        Commented on{" "}
-                        <span className="font-medium text-zinc-950 dark:text-zinc-50">
-                          {product.title}
-                        </span>{" "}
-                        · <LocalTime value={comment.createdAt} />
-                      </p>
-                      <p className="mt-1 line-clamp-2 text-sm text-zinc-700 dark:text-zinc-300">
-                        {comment.body}
-                      </p>
-                    </div>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="mt-3 text-zinc-600 dark:text-zinc-400">
-              No activity yet.
-            </p>
-          )}
-        </section>
-      )}
+      <ProfileTabs tabs={tabs} />
 
       {/* Рекомендации — вместо пустоты у того, у кого нечего показать.
           Только когда своего раздела нет: у автора с картами рекламировать
@@ -442,7 +469,7 @@ function statValue(value: number | null): string {
   return value === null ? "—" : String(value);
 }
 
-/** Подпись над числом — «Resources / 11», как у BuiltByBit. */
+/** Подпись над числом — во вкладке About. */
 function Stat({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div>
