@@ -2,6 +2,13 @@ import { NextResponse } from "next/server";
 import { getAdminUser } from "@/lib/admin";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { notify, notifyEveryone } from "@/lib/notifications";
+import { SITE_URL } from "@/lib/site";
+import { getDiscordBotIdentity } from "@/lib/discord-identity";
+import {
+  announcementPayload,
+  sendDiscordAnnouncement,
+  type AnnouncePing,
+} from "@/lib/discord-announce";
 
 // Уведомление, написанное руками: всем аккаунтам (распродажа, смена
 // правил) или одному человеку (ответ на заявку, предупреждение).
@@ -10,6 +17,10 @@ import { notify, notifyEveryone } from "@/lib/notifications";
 // оно и единственное, у которого нет автоматики: рассылка «всем» — вещь
 // необратимая (отозвать прочитанное нельзя), и запускать её должен
 // осознанный клик владельца, а не срабатывание какого-нибудь триггера.
+//
+// С 26.10 объявление «всем» может уйти и в канал объявлений Discord
+// (DISCORD_ANNOUNCE_WEBHOOK_URL) — или только туда. Личное сообщение
+// одному человеку в Discord не уходит никогда: канал видят все.
 export const dynamic = "force-dynamic";
 
 const MAX_TITLE = 160;
@@ -37,11 +48,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "bad body" }, { status: 400 });
   }
 
-  const { title, text, href, userId } = body as {
+  const { title, text, href, userId, target, ping } = body as {
     title?: unknown;
     text?: unknown;
     href?: unknown;
     userId?: unknown;
+    /** "both" | "site" | "discord"; без поля — только сайт, как раньше. */
+    target?: unknown;
+    ping?: unknown;
   };
 
   if (typeof title !== "string" || title.trim().length === 0) {
@@ -66,6 +80,39 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, sent: 1 });
   }
 
-  const sent = await notifyEveryone(notification);
-  return NextResponse.json({ ok: true, sent });
+  const toSite = target !== "discord";
+  const toDiscord = target === "discord" || target === "both";
+  const webhook = process.env.DISCORD_ANNOUNCE_WEBHOOK_URL;
+  if (toDiscord && !webhook) {
+    return NextResponse.json(
+      { error: "DISCORD_ANNOUNCE_WEBHOOK_URL is not set — nothing was sent." },
+      { status: 500 }
+    );
+  }
+
+  // Сначала Discord: если канал откажет, сайт ещё ничего не разослал, и
+  // человек получит честное «не ушло никуда», а не «ушло наполовину».
+  if (toDiscord && webhook) {
+    const pingValue: AnnouncePing = ping === "everyone" || ping === "here" ? ping : "none";
+    // Подпись — имя и иконка бота (у вебхука витрины есть приложение; у
+    // вебхука объявлений, созданного руками, его может не быть).
+    const identity = await getDiscordBotIdentity(
+      process.env.DISCORD_SHOWCASE_WEBHOOK_URL ?? webhook
+    );
+    const problem = await sendDiscordAnnouncement(
+      webhook,
+      announcementPayload(
+        { title: notification.title, text: notification.body, href: notification.href, ping: pingValue },
+        SITE_URL,
+        identity
+      )
+    );
+    if (problem) {
+      console.error("Объявление в Discord не ушло:", problem);
+      return NextResponse.json({ error: `Discord refused it: ${problem}` }, { status: 502 });
+    }
+  }
+
+  const sent = toSite ? await notifyEveryone(notification) : 0;
+  return NextResponse.json({ ok: true, sent, discord: toDiscord });
 }

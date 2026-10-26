@@ -286,3 +286,11 @@ export function normalizeShowcasePost(value: unknown): ShowcasePost | null {
     avatarUrl: null,
   };
 }
+
+/**
+ * Роль, которую пингуют посты витрины по умолчанию (владелец, 26.10).
+ * ID — из Discord (правый клик по роли → Copy Role ID). Имя нужно только
+ * превью: Discord сам покажет «@Portfolio», а превью без него видит лишь
+ * <@&id>.
+ */
+export const PORTFOLIO_ROLE = { id: "1564243306794197052", name: "Portfolio" } as const;

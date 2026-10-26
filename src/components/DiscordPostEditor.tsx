@@ -7,7 +7,7 @@ import { Button, DANGER_COLORS, TOGGLE_PILL_COLORS } from "@/components/Button";
 import { TextField } from "@/components/MapFormParts";
 import DiscordPreview from "@/components/DiscordPreview";
 import { problemFromGateway } from "@/lib/upload-client";
-import { checkPost, MAX_IMAGES, type ShowcasePost } from "@/lib/discord-showcase";
+import { checkPost, MAX_IMAGES, PORTFOLIO_ROLE, type ShowcasePost } from "@/lib/discord-showcase";
 
 // Редактор поста витрины в Discord (/admin/discord → Showcase).
 //
@@ -72,9 +72,14 @@ export function DiscordPostEditor({
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<Action | null>(null);
 
-  /** Выбор пинга. У роли без ID — подставить последний, если он есть. */
+  const portfolioPing = post.mention === "role" && post.roleId === PORTFOLIO_ROLE.id;
+
+  /**
+   * Выбор пинга. «Other role» — последний вписанный ID (не Portfolio:
+   * у неё своя пилюля), если он есть.
+   */
   function chooseMention(mention: ShowcasePost["mention"]) {
-    let roleId = post.roleId;
+    let roleId = mention === "role" && post.roleId === PORTFOLIO_ROLE.id ? null : post.roleId;
     if (mention === "role" && !roleId) {
       try {
         roleId = window.localStorage.getItem(ROLE_KEY);
@@ -344,20 +349,41 @@ export function DiscordPostEditor({
         <div>
           <p className={LABEL}>Ping</p>
           <div className="flex flex-wrap gap-2">
-            {(["none", "here", "everyone", "role"] as const).map((mention) => (
+            {/* @Portfolio — роль витрины по умолчанию (владелец, 26.10),
+                отдельной пилюлей: её выбирают почти всегда. «Other role» —
+                любая другая по ID. */}
+            {(
+              [
+                { key: "none", label: "Nobody", on: post.mention === "none", pick: () => chooseMention("none") },
+                {
+                  key: "portfolio",
+                  label: `@${PORTFOLIO_ROLE.name}`,
+                  on: portfolioPing,
+                  pick: () => setPost((c) => ({ ...c, mention: "role", roleId: PORTFOLIO_ROLE.id })),
+                },
+                { key: "here", label: "@here", on: post.mention === "here", pick: () => chooseMention("here") },
+                { key: "everyone", label: "@everyone", on: post.mention === "everyone", pick: () => chooseMention("everyone") },
+                {
+                  key: "role",
+                  label: "Other role",
+                  on: post.mention === "role" && !portfolioPing,
+                  pick: () => chooseMention("role"),
+                },
+              ] as const
+            ).map((option) => (
               <button
-                key={mention}
+                key={option.key}
                 type="button"
-                onClick={() => chooseMention(mention)}
+                onClick={option.pick}
                 className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-                  post.mention === mention ? TOGGLE_PILL_COLORS.on : TOGGLE_PILL_COLORS.off
+                  option.on ? TOGGLE_PILL_COLORS.on : TOGGLE_PILL_COLORS.off
                 }`}
               >
-                {mention === "none" ? "Nobody" : mention === "role" ? "A role" : `@${mention}`}
+                {option.label}
               </button>
             ))}
           </div>
-          {post.mention === "role" && (
+          {post.mention === "role" && !portfolioPing && (
             <div className="mt-3">
               <TextField
                 id="roleId"

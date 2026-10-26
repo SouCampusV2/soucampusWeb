@@ -14,10 +14,14 @@ export default async function AdminAnnouncePage() {
         Send a notification
       </h1>
       <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-        To everyone — sales, policy changes, big news — or to one person.
-        Everything else on the site notifies people by itself.
+        To everyone — sales, policy changes, big news — on the site, in the
+        Discord announcements channel, or both. Or to one person on the site.
+        Everything else notifies people by itself.
       </p>
-      <AnnounceForm recipients={recipients} />
+      <AnnounceForm
+        recipients={recipients}
+        discordReady={Boolean(process.env.DISCORD_ANNOUNCE_WEBHOOK_URL)}
+      />
     </div>
   );
 }
