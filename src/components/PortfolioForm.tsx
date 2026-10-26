@@ -13,6 +13,7 @@ import {
   type ProjectInput,
 } from "@/lib/portfolio-input";
 import type { Project } from "@/lib/projects";
+import type { PortfolioPrefill } from "@/lib/discord-inbox";
 
 // Форма работы портфолио — одна на добавление и правку (2026-10-25).
 //
@@ -36,11 +37,20 @@ function toNumber(value: string): number | null {
 export function PortfolioForm({
   project,
   tags,
+  prefill,
+  inboxKey,
 }: {
   /** Правка — работа как есть; добавление — undefined. */
   project?: Project;
   /** Теги, которые уже встречаются, — подсказкой под полем. */
   tags: string[];
+  /**
+   * Заготовка из черновика Discord-бота (/admin/discord → «Open as new
+   * work», 27.10): факты и фото. Тексты пишет владелец.
+   */
+  prefill?: PortfolioPrefill;
+  /** Строка очереди, которую отметить опубликованной после сохранения. */
+  inboxKey?: string;
 }) {
   const router = useRouter();
   const editing = project !== undefined;
@@ -50,15 +60,19 @@ export function PortfolioForm({
   // Пока адрес не трогали руками, он идёт за названием. У сохранённой
   // работы — нет: смена адреса ломает уже разосланные ссылки.
   const [slugTouched, setSlugTouched] = useState(editing);
-  const [tag, setTag] = useState(project?.tag ?? "Order");
+  const [tag, setTag] = useState(project?.tag ?? prefill?.tag ?? "Order");
   const [summary, setSummary] = useState(project?.summary ?? "");
   const [description, setDescription] = useState(project?.description ?? "");
-  const [priceLabel, setPriceLabel] = useState(project?.price ?? "");
-  const [priceAmount, setPriceAmount] = useState(project?.priceAmount?.toString() ?? "");
-  const [sizeLabel, setSizeLabel] = useState(project?.size ?? "");
-  const [sizeX, setSizeX] = useState(project?.sizeX?.toString() ?? "");
-  const [sizeZ, setSizeZ] = useState(project?.sizeZ?.toString() ?? "");
-  const [deadlineLabel, setDeadlineLabel] = useState(project?.deadline ?? "");
+  const [priceLabel, setPriceLabel] = useState(project?.price ?? prefill?.priceLabel ?? "");
+  const [priceAmount, setPriceAmount] = useState(
+    (project?.priceAmount ?? prefill?.priceAmount)?.toString() ?? ""
+  );
+  const [sizeLabel, setSizeLabel] = useState(project?.size ?? prefill?.sizeLabel ?? "");
+  const [sizeX, setSizeX] = useState((project?.sizeX ?? prefill?.sizeX)?.toString() ?? "");
+  const [sizeZ, setSizeZ] = useState((project?.sizeZ ?? prefill?.sizeZ)?.toString() ?? "");
+  const [deadlineLabel, setDeadlineLabel] = useState(
+    project?.deadline ?? prefill?.deadlineLabel ?? ""
+  );
   const [isFeatured, setIsFeatured] = useState(project?.isFeatured ?? false);
   const [sortOrder, setSortOrder] = useState(project?.sortOrder?.toString() ?? "");
   const [listingUrl, setListingUrl] = useState(project?.listingUrl ?? "");
@@ -74,7 +88,9 @@ export function PortfolioForm({
       ? [project.image, ...(project.gallery ?? [])].map(
           (url): GalleryImage => ({ kind: "existing", url })
         )
-      : [],
+      : // Фото из Discord уже лежат в нашем бакете (их скопировал вход
+        // бота) — для галереи это «сохранённые», а не новые файлы.
+        (prefill?.images ?? []).map((url): GalleryImage => ({ kind: "existing", url })),
     setError
   );
   const { images, coverIndex } = gallery;
@@ -145,6 +161,18 @@ export function PortfolioForm({
         ),
       });
       if (!response.ok) throw new Error(await problemFromGateway(response));
+
+      // Работа из очереди Discord: отметить строку решённой. Отдельным
+      // запросом, а не частью сохранения работы: у очереди свой
+      // обработчик. Не вышло — работа всё равно сохранена, а строку
+      // видно в Inbox, её можно отклонить руками.
+      if (inboxKey) {
+        await fetch("/api/admin/discord", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "mark_published", key: inboxKey }),
+        }).catch(() => undefined);
+      }
 
       router.push("/admin/portfolio");
       router.refresh();
