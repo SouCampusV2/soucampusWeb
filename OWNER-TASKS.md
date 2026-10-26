@@ -265,6 +265,12 @@ Stripe сообщает о завершении с `unpaid`, а о поступ�
       текст короче 10 символов не пускает) → отзыв под картой и во
       вкладке Reviews профиля.
 
+### 9b. Объявления в Discord — один вебхук ⬅ новое, 26.10
+
+- [ ] Канал объявлений → Edit Channel → Integrations → Webhooks → New
+      Webhook → Copy Webhook URL → Vercel (Production):
+      `DISCORD_ANNOUNCE_WEBHOOK_URL` → Redeploy.
+
 ### 9a. Discord: реакции, ссылки панели, четыре вопроса ⬅ новое, 26.10
 
 - [ ] `/setup showcase_reactions emojis:…` — реакции, которые бот ставит
