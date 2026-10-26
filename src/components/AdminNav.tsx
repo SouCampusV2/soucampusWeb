@@ -34,6 +34,9 @@ const SECTIONS = [
   // (2026-09-26).
   { href: "/admin/downloads", label: "Downloads" },
   { href: "/admin/announce", label: "Announce" },
+  // Связка с ботом BoCampus: что прислал бот и посты в канал витрины
+  // (2026-10-27).
+  { href: "/admin/discord", label: "Discord" },
 ];
 
 const LINK =

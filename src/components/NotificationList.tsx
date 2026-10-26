@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   CurrencyEur,
   Megaphone,
+  DiscordLogo,
   UserPlus,
   X,
   Check,
@@ -363,4 +364,6 @@ const ICONS: Record<
   map_sold: [CurrencyEur, "text-lime-600 dark:text-lime-400"],
   purchase: [ShoppingBag, "text-orange-500"],
   announcement: [Megaphone, "text-orange-500"],
+  // Пришло от Discord-бота — ждёт решения в /admin/discord (27.10).
+  discord_inbox: [DiscordLogo, "text-blue-500"],
 };

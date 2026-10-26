@@ -201,6 +201,14 @@ export const RATE_LIMITS = {
    * Пять в час — это уже много.
    */
   "admin-announce": { limit: 5, windowSeconds: QUARTER_HOUR, failClosed: true },
+
+  /**
+   * Вход от Discord-бота (/api/discord/bridge, 2026-10-27). Отправитель
+   * один (бот), события редкие — десятки в час уже значат, что ключ
+   * утёк или бот зациклился. Считается ПОСЛЕ подписи: посторонний до
+   * счёта не доходит.
+   */
+  "discord-bridge": { limit: 60, windowSeconds: HOUR },
 } as const satisfies Record<string, RateLimitRule>;
 
 export type RateLimitBucket = keyof typeof RATE_LIMITS;

@@ -62,6 +62,13 @@ export default async function AdminPortfolioPage() {
               >
                 Edit
               </Link>
+              {/* Черновик поста в канал витрины из этой работы (27.10). */}
+              <Link
+                href={`/admin/discord?tab=showcase&from=${encodeURIComponent(project.slug)}`}
+                className={`hidden sm:inline ${INLINE_LINK}`}
+              >
+                Post to Discord
+              </Link>
             </div>
           </li>
         ))}

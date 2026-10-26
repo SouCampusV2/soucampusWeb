@@ -22,7 +22,9 @@ export type NotificationKind =
   | "map_deleted"
   | "map_sold"
   | "purchase"
-  | "announcement";
+  | "announcement"
+  // Черновик работы или отзыв от Discord-бота (20261027120000).
+  | "discord_inbox";
 
 export type Notification = {
   id: string;
