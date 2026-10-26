@@ -17,10 +17,8 @@ import { LocalTime } from "@/components/LocalTime";
 // показать» принимается по данным и в браузер уезжать не должно — иначе у
 // подавшего заявку на миг мелькала бы пустая форма подачи.
 export function CreatorStatusCard({
-  userId,
   application,
 }: {
-  userId: string;
   application: CreatorApplication | null;
 }) {
   if (application?.status === "pending") {
@@ -73,7 +71,7 @@ export function CreatorStatusCard({
       {/* Форма выровнена по левому краю внутри центрированной карточки:
           подписи полей читаются слева направо, по центру их не собрать. */}
       <div className="mx-auto mt-6 max-w-md text-left">
-        <CreatorApplicationForm userId={userId} />
+        <CreatorApplicationForm />
 
         <p className="mt-4 text-xs text-zinc-500 dark:text-zinc-400">
           Selling here means agreeing to the{" "}

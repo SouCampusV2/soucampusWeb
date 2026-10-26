@@ -4,26 +4,23 @@ import { useState } from "react";
 import { useRefresh } from "@/lib/useRefresh";
 import { Button } from "@/components/Button";
 import { TextField } from "@/components/MapFormParts";
-import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { checkPortfolioUrl, checkDiscord } from "@/lib/contact-links";
 
 // Заявка на статус креатора.
 //
-// Пишется НАПРЯМУЮ из браузера, а не через route handler, — и это тот
-// редкий случай, когда так правильно. Человек создаёт свою собственную
-// строку, и политика "submit own application" уже ограничивает и автора
-// (user_id = auth.uid()), и статус (только pending). Служебный ключ здесь
-// не нужен: ему нечего обходить.
-//
-// Сравни с публикацией карты: там нужен route handler, потому что ставить
-// публикация не разрешена ни одной политикой и не должна быть.
+// Отправляется в /api/creator/application, а не прямо в базу. Раньше
+// здесь стояла вставка из браузера под политикой "submit own
+// application"; политику сняла заморозка 20.08, и при разморозке она не
+// возвращается — почему, разобрано в шапке обработчика. Проверки ниже —
+// удобство (ошибка у поля до отправки), решает обработчик.
 const MAX_ABOUT = 2000;
 
-export function CreatorApplicationForm({ userId }: { userId: string }) {
+export function CreatorApplicationForm() {
   const refresh = useRefresh();
   const [about, setAbout] = useState("");
   const [portfolio, setPortfolio] = useState("");
   const [discord, setDiscord] = useState("");
+  const [adult, setAdult] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [portfolioError, setPortfolioError] = useState<string | null>(null);
@@ -45,34 +42,34 @@ export function CreatorApplicationForm({ userId }: { userId: string }) {
     setPending(true);
     setError(null);
 
-    const supabase = createSupabaseBrowser();
-    const { error: insertError } = await supabase
-      .from("creator_applications")
-      .insert({
-        user_id: userId,
+    const response = await fetch("/api/creator/application", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         about: about.trim().slice(0, MAX_ABOUT),
-        // Нормализованные значения, а не то, что набрано: у ссылки
-        // дописана схема, у ника срезана @ и приведён регистр.
-        portfolio_url: link.value || null,
-        discord: contact.value || null,
-      });
+        portfolio,
+        discord,
+        adult,
+      }),
+    }).catch(() => null);
 
     setPending(false);
 
-    if (insertError) {
-      // Частичный уникальный индекс не даёт завести вторую ОТКРЫТУЮ
-      // заявку. Это не поломка, а именно то поведение, которое нужно, —
-      // объясняем человеку по-человечески вместо кода ошибки.
-      // 23514 — check_violation: ту же проверку ссылок база держит у
-      // себя (миграция 20260811140000), потому что вставка идёт из
-      // браузера и форму можно обойти. Сюда мы попадаем, только если
-      // проверки разошлись, — говорим прямо, что не понравилось.
+    if (!response?.ok) {
+      const data = (await response?.json().catch(() => null)) as {
+        error?: string;
+        message?: string;
+        portfolioError?: string | null;
+        discordError?: string | null;
+      } | null;
+      // Ошибки ссылок — под своими полями, как и при проверке до
+      // отправки. message — текст отказа лимита частоты (rate-limit.ts).
+      if (data?.portfolioError) setPortfolioError(data.portfolioError);
+      if (data?.discordError) setDiscordError(data.discordError);
       setError(
-        insertError.code === "23505"
-          ? "You already have an application waiting. We'll get back to you on it."
-          : insertError.code === "23514"
-            ? "Check the portfolio link and the Discord name — one of them isn't in a form we can use."
-            : "Could not send the application. Try again in a moment."
+        data?.message ??
+          data?.error ??
+          "Could not send the application. Try again in a moment."
       );
       return;
     }
@@ -142,11 +139,28 @@ export function CreatorApplicationForm({ userId }: { userId: string }) {
         )}
       </div>
 
+      {/* Только 18+ (решение владельца, docs/SCANNER.md § 1). Дату
+          подтверждения пишет сервер, галочка без неё ничего не стоит. */}
+      <label className="flex cursor-pointer items-start gap-2.5 text-sm text-zinc-700 dark:text-zinc-300">
+        <input
+          type="checkbox"
+          checked={adult}
+          onChange={(e) => setAdult(e.target.checked)}
+          required
+          className="mt-0.5 h-4 w-4 shrink-0 cursor-pointer accent-orange-500 pointer-coarse:h-5 pointer-coarse:w-5"
+        />
+        <span>I&apos;m 18 or older.</span>
+      </label>
+
       {error && (
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
       )}
 
-      <Button type="submit" size="md" disabled={pending || !about.trim()}>
+      <Button
+        type="submit"
+        size="md"
+        disabled={pending || !about.trim() || !adult}
+      >
         {pending ? "Sending…" : "Send application"}
       </Button>
     </form>
