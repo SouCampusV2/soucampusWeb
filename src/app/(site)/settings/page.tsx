@@ -48,7 +48,7 @@ export default async function SettingsPage() {
     };
 
   // max-w-6xl — рамка страницы по DESIGN.md: с 26.10 рядом с формой стоит
-  // превью профиля. Узкой (28rem) форму держит сетка в ProfileEditForm.
+  // превью профиля. Колонки (5:7) держит сетка в ProfileEditForm.
   return (
     <main className="relative w-full overflow-x-clip px-6">
       <PageGlow color="rgba(249,115,22,0.28)" />
