@@ -25,9 +25,18 @@ export function ProfileTabs({ tabs }: { tabs: ProfileTab[] }) {
 
   return (
     <div className="mt-10">
+      {/* Серая линия — отдельная полоска ПОД вкладками, а не border-b
+          строки с -mb-px у вкладки (так было до 26.10). overflow-x-auto
+          делает и вертикаль прокручиваемой, и вылезающий на 1px край
+          подчёркивания рисовал справа полосу прокрутки со стрелками.
+          Теперь подчёркивание лежит поверх линии, не выходя за строку.
+          Полоса прокрутки скрыта и по горизонтали: не влезшие вкладки
+          листаются пальцем или колёсиком, полоса им не нужна. */}
+      <div className="relative">
+        <div className="absolute inset-x-0 bottom-0 h-px bg-zinc-200 dark:bg-zinc-800" aria-hidden />
       <div
         role="tablist"
-        className="flex gap-6 overflow-x-auto border-b border-zinc-200 dark:border-zinc-800 sm:gap-8"
+        className="relative flex gap-6 overflow-x-auto [scrollbar-width:none] sm:gap-8 [&::-webkit-scrollbar]:hidden"
       >
         {tabs.map((tab) => {
           const selected = tab.id === active;
@@ -40,7 +49,7 @@ export function ProfileTabs({ tabs }: { tabs: ProfileTab[] }) {
               aria-selected={selected}
               aria-controls={`panel-${tab.id}`}
               onClick={() => setActive(tab.id)}
-              className={`-mb-px shrink-0 border-b-2 pb-3 text-sm font-medium transition-colors ${
+              className={`shrink-0 border-b-2 pb-3 text-sm font-medium transition-colors ${
                 selected
                   ? "border-orange-500 text-zinc-950 dark:border-orange-400 dark:text-zinc-50"
                   : "border-transparent text-zinc-500 hover:text-zinc-950 dark:text-zinc-400 dark:hover:text-zinc-50"
@@ -55,6 +64,7 @@ export function ProfileTabs({ tabs }: { tabs: ProfileTab[] }) {
             </button>
           );
         })}
+      </div>
       </div>
 
       {tabs.map((tab) => (
