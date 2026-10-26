@@ -1,21 +1,40 @@
 import { describe, it, expect } from "vitest";
-import { announcementContent, announcementPayload, sendDiscordAnnouncement } from "./discord-announce";
+import { ANNOUNCE_COLOR, announcementPayload, sendDiscordAnnouncement } from "./discord-announce";
 import { FALLBACK_IDENTITY, getDiscordBotIdentity, parseWebhookUrl } from "./discord-identity";
 
 const SITE = "https://soucampus.online";
 
 describe("объявление в Discord", () => {
-  it("заголовок крупно, путь — полной ссылкой, пинг в конце", () => {
-    expect(
-      announcementContent({ title: "Summer sale", text: "30% off all maps.", href: "/marketplace", ping: "everyone" }, SITE)
-    ).toBe("## Summer sale\n30% off all maps.\nhttps://soucampus.online/marketplace\n@everyone");
+  it("эмбед с оранжевой плашкой, путь — полной ссылкой, пинг снаружи эмбеда", () => {
+    const payload = announcementPayload(
+      { title: "Summer sale", text: "30% off all maps.", href: "/marketplace", ping: "everyone" },
+      SITE,
+      FALLBACK_IDENTITY
+    );
+    expect(payload.content).toBe("@everyone");
+    expect(payload.allowed_mentions).toEqual({ parse: ["everyone"] });
+    expect(payload.embeds).toEqual([
+      {
+        title: "Summer sale",
+        description: "30% off all maps.",
+        url: "https://soucampus.online/marketplace",
+        color: ANNOUNCE_COLOR,
+      },
+    ]);
+    expect(ANNOUNCE_COLOR).toBe(0xf97316);
   });
 
-  it("без пинга никого не будит", () => {
+  it("без пинга никого не будит и не шлёт пустых полей", () => {
     const payload = announcementPayload({ title: "Hi", text: null, href: null, ping: "none" }, SITE, FALLBACK_IDENTITY);
     expect(payload.allowed_mentions).toEqual({ parse: [] });
-    expect(payload.content).toBe("## Hi");
+    expect(payload.content).toBeUndefined();
+    expect(payload.embeds).toEqual([{ title: "Hi", color: ANNOUNCE_COLOR }]);
     expect(payload.username).toBe("BoCampus");
+  });
+
+  it("длинный заголовок режется по пределу Discord", () => {
+    const payload = announcementPayload({ title: "x".repeat(300), text: null, href: null, ping: "none" }, SITE, FALLBACK_IDENTITY);
+    expect(payload.embeds[0].title).toHaveLength(256);
   });
 
   it("отказ Discord возвращается текстом", async () => {

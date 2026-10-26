@@ -3,7 +3,7 @@ import { getAdminUser } from "@/lib/admin";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { notify, notifyEveryone } from "@/lib/notifications";
 import { SITE_URL } from "@/lib/site";
-import { getDiscordBotIdentity } from "@/lib/discord-identity";
+import { FALLBACK_IDENTITY, getDiscordBotIdentity } from "@/lib/discord-identity";
 import {
   announcementPayload,
   sendDiscordAnnouncement,
@@ -94,11 +94,14 @@ export async function POST(request: Request) {
   // человек получит честное «не ушло никуда», а не «ушло наполовину».
   if (toDiscord && webhook) {
     const pingValue: AnnouncePing = ping === "everyone" || ping === "here" ? ping : "none";
-    // Подпись — имя и иконка бота (у вебхука витрины есть приложение; у
-    // вебхука объявлений, созданного руками, его может не быть).
-    const identity = await getDiscordBotIdentity(
-      process.env.DISCORD_SHOWCASE_WEBHOOK_URL ?? webhook
-    );
+    // Подпись — имя и иконка бота. С 27.10 вебхук объявлений выдаёт бот
+    // (/setup announcements_channel), и приложение есть у него самого;
+    // вебхук, созданный руками, приложения не знает — тогда спрашиваем
+    // вебхук витрины.
+    let identity = await getDiscordBotIdentity(webhook);
+    if (identity === FALLBACK_IDENTITY && process.env.DISCORD_SHOWCASE_WEBHOOK_URL) {
+      identity = await getDiscordBotIdentity(process.env.DISCORD_SHOWCASE_WEBHOOK_URL);
+    }
     const problem = await sendDiscordAnnouncement(
       webhook,
       announcementPayload(

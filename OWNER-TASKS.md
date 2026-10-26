@@ -267,9 +267,14 @@ Stripe сообщает о завершении с `unpaid`, а о поступ�
 
 ### 9b. Объявления в Discord — один вебхук ⬅ новое, 26.10
 
-- [ ] Канал объявлений → Edit Channel → Integrations → Webhooks → New
-      Webhook → Copy Webhook URL → Vercel (Production):
-      `DISCORD_ANNOUNCE_WEBHOOK_URL` → Redeploy.
+- [ ] В Discord: `/setup announcements_channel #канал` → ссылка из ответа
+      (видна только тебе) → Vercel (Preview и Production):
+      `DISCORD_ANNOUNCE_WEBHOOK_URL` → Redeploy. С 27.10 вебхук выдаёт бот:
+      тогда объявления подписаны его именем и иконкой сами. Вебхук,
+      созданный руками в настройках канала, тоже работает — подпись
+      возьмётся с вебхука витрины.
+- [ ] Проверить: одно объявление «Discord only» — в канале эмбед с
+      оранжевой плашкой слева, пинг (если выбран) над ним.
 
 ### 9a. Discord: реакции, ссылки панели, четыре вопроса ⬅ новое, 26.10
 
