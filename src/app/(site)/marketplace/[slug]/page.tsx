@@ -28,6 +28,7 @@ import { StarRating } from "@/components/StarRating";
 import { ProductSpecs } from "@/components/ProductSpecs";
 import { CreatorCard } from "@/components/CreatorCard";
 import { SimilarMaps } from "@/components/SimilarMaps";
+import { FreeMapReview } from "@/components/RatingStars";
 
 // Одна карта — один поход в базу за рендер.
 //
@@ -260,8 +261,10 @@ export default async function ProductPage({
           {/* Отзывы — под описанием, перед комментариями (26.10): кто,
               сколько звёзд и за что. Пишутся из «My purchases» — только
               купившими, текст обязателен. Нет отзывов — раздела нет:
-              «пока пусто» на карте без покупок звучит как приговор. */}
-          {reviews.length > 0 && (
+              «пока пусто» на карте без покупок звучит как приговор.
+              Исключение — бесплатная карта (27.10): отзыв на ней пишет
+              любой вошедший прямо здесь, и раздел — это приглашение. */}
+          {(reviews.length > 0 || product.priceCents === 0) && (
             <section className="mt-10">
               <h2 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
                 Reviews{" "}
@@ -269,9 +272,16 @@ export default async function ProductPage({
                   {reviews.length}
                 </span>
               </h2>
-              <div className="mt-4">
-                <MapReviewList reviews={reviews} />
-              </div>
+              {product.priceCents === 0 && (
+                <div className="mt-3">
+                  <FreeMapReview productId={product.id} slug={product.slug} title={product.title} />
+                </div>
+              )}
+              {reviews.length > 0 && (
+                <div className="mt-4">
+                  <MapReviewList reviews={reviews} />
+                </div>
+              )}
             </section>
           )}
 

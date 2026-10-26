@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { PencilSimple, Star, StarHalf, X } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { StarRating } from "@/components/StarRating";
 import { rateProduct } from "@/lib/social-client";
+import { useUser } from "@/lib/useUser";
 import {
   checkReviewBody,
   REVIEW_BODY_MAX,
@@ -62,6 +64,42 @@ export function ReviewButton({
         />
       )}
     </>
+  );
+}
+
+/**
+ * Отзыв прямо на странице БЕСПЛАТНОЙ карты (27.10): писать может любой
+ * вошедший, покупка не нужна (шлюз /api/feedback это и проверяет).
+ * Страница собрана заранее и не знает, кто смотрит, поэтому вход
+ * выясняет браузер; пока неизвестно — ничего, чтобы не мигать «Sign in».
+ * Прежний свой отзыв здесь не подгружается: новый его заменит (одна
+ * оценка на пару карта–человек).
+ */
+export function FreeMapReview({
+  productId,
+  slug,
+  title,
+}: {
+  productId: string;
+  slug: string;
+  title: string;
+}) {
+  const { user, loading } = useUser();
+  if (loading) return null;
+  if (!user) {
+    return (
+      <Link
+        href={`/login?next=${encodeURIComponent(`/marketplace/${slug}`)}`}
+        className="text-sm font-medium text-orange-600 hover:underline dark:text-orange-400"
+      >
+        Sign in to write a review
+      </Link>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-2">
+      <ReviewButton productId={productId} title={title} initial={null} />
+    </span>
   );
 }
 

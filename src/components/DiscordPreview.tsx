@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { PORTFOLIO_ROLE, postText, type ShowcasePost } from "@/lib/discord-showcase";
+import { hexColor, PORTFOLIO_ROLE, postText, type ShowcasePost } from "@/lib/discord-showcase";
 
 // Превью поста «как в Discord» для /admin/discord — стиль «сообщение»
 // (заголовок, текст, список ссылок, большие картинки, реакции).
@@ -74,9 +74,12 @@ export default function DiscordPreview({
   post,
   webhookName = "SouCampus Showcase",
   reactions = [],
+  accentColor,
 }: {
   post: ShowcasePost;
   webhookName?: string;
+  /** Цвет плашки контейнера (канал); нет — блоки без рамки. */
+  accentColor?: number;
   /** Реакции, которые поставит бот (/setup showcase_reactions) — только для вида. */
   reactions?: string[];
 }) {
@@ -97,6 +100,12 @@ export default function DiscordPreview({
             <span className="rounded bg-[#5865f2] px-1 text-[10px] font-semibold uppercase text-white">App</span>
             <span className="text-xs text-[#949ba4]">Today</span>
           </div>
+          <div
+            // Контейнер Components V2: тёмная подложка и цветная полоса
+            // слева. Цвет — данные канала, поэтому style, а не класс.
+            className={accentColor === undefined ? "space-y-1" : "max-w-[600px] space-y-1 rounded-lg border-l-4 bg-[#2b2d31] p-3"}
+            style={accentColor === undefined ? undefined : { borderLeftColor: hexColor(accentColor) }}
+          >
           <Markdown text={main} />
           {links && (
             <div className="pt-2">
@@ -120,6 +129,7 @@ export default function DiscordPreview({
               ))}
             </div>
           )}
+          </div>
           {reactions.length > 0 && (
             <div className="flex flex-wrap gap-1 pt-1">
               {reactions.map((r, i) => (

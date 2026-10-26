@@ -3,22 +3,35 @@ import { getAdminUser } from "@/lib/admin";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import {
+  channelWebhook,
   checkPost,
+  isShowcaseChannel,
+  SHOWCASE_CHANNELS,
   deletePost,
   isShowcasePostShape,
   normalizeShowcasePost,
   publishPost,
   updatePost,
+  type ShowcaseChannel,
   type ShowcasePost,
 } from "@/lib/discord-showcase";
 
 // Посты витрины в Discord из админки (2026-10-27): сохранить черновик,
 // опубликовать, поправить опубликованный, убрать из Discord, удалить.
-// Вебхук — DISCORD_SHOWCASE_WEBHOOK_URL (выдаёт бот: /setup showcase_channel).
+// Вебхук — свой у каждого канала (SHOWCASE_CHANNELS; выдаёт бот:
+// /setup site_channel). Канал пост помнит в discord_posts.channel: Update и
+// Remove идут туда, куда пост ушёл (27.10).
 export const dynamic = "force-dynamic";
 
 type Body =
-  | { action: "save"; id?: string; projectSlug: string | null; post: ShowcasePost }
+  | {
+      action: "save";
+      id?: string;
+      projectSlug: string | null;
+      productSlug?: string | null;
+      channel?: string;
+      post: ShowcasePost;
+    }
   | { action: "publish"; id: string }
   | { action: "update"; id: string }
   | { action: "unpublish"; id: string }
@@ -38,10 +51,25 @@ export async function POST(request: Request) {
   if (body.action === "save") {
     // Черновик сохраняется и с ошибками (недописанный пост — нормальный
     // черновик); проверка — при публикации. Форму строки проверяем всегда.
-    if (!isShowcasePostShape(body.post)) {
+    const channel = body.channel ?? "portfolio";
+    if (!isShowcasePostShape(body.post) || !isShowcaseChannel(channel)) {
       return NextResponse.json({ error: "bad request" }, { status: 400 });
     }
-    const row = { project_slug: body.projectSlug, post: body.post, updated_at: new Date().toISOString() };
+    // Опубликованный пост в другой канал не переезжает: его сообщение
+    // знает только вебхук старого канала. Сначала Remove, потом Publish.
+    if (body.id) {
+      const { data: current } = await db.from("discord_posts").select("status, channel").eq("id", body.id).maybeSingle();
+      if (current?.status === "published" && current.channel !== channel) {
+        return NextResponse.json({ error: "Remove it from Discord before moving it to another channel." }, { status: 409 });
+      }
+    }
+    const row = {
+      project_slug: body.projectSlug,
+      product_slug: body.productSlug ?? null,
+      channel,
+      post: body.post,
+      updated_at: new Date().toISOString(),
+    };
     const result = body.id
       ? await db.from("discord_posts").update(row).eq("id", body.id).select("id").single()
       : await db.from("discord_posts").insert({ ...row, created_by: admin.id }).select("id").single();
@@ -67,10 +95,12 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  const webhook = process.env.DISCORD_SHOWCASE_WEBHOOK_URL;
+  const channel: ShowcaseChannel = isShowcaseChannel(row.channel) ? row.channel : "portfolio";
+  const { envVar, setupKind, color } = SHOWCASE_CHANNELS[channel];
+  const webhook = channelWebhook(channel);
   if (!webhook) {
     return NextResponse.json(
-      { error: "DISCORD_SHOWCASE_WEBHOOK_URL is not set. Get it in Discord with /setup showcase_channel." },
+      { error: `${envVar} is not set. Get it in Discord with /setup site_channel kind:${setupKind}.` },
       { status: 500 }
     );
   }
@@ -86,7 +116,7 @@ export async function POST(request: Request) {
 
   if (body.action === "publish") {
     if (row.status === "published") return NextResponse.json({ error: "Already published — use Update." }, { status: 409 });
-    const sent = await publishPost(webhook, post);
+    const sent = await publishPost(webhook, post, fetch, color);
     if (!sent.ok) return NextResponse.json({ error: sent.error }, { status: 502 });
     await db
       .from("discord_posts")
@@ -97,7 +127,7 @@ export async function POST(request: Request) {
 
   if (body.action === "update") {
     if (row.status !== "published") return NextResponse.json({ error: "Not published yet." }, { status: 409 });
-    const sent = await updatePost(webhook, row.message_id, post);
+    const sent = await updatePost(webhook, row.message_id, post, fetch, color);
     if (!sent.ok) return NextResponse.json({ error: sent.error }, { status: 502 });
     await db.from("discord_posts").update({ updated_at: new Date().toISOString() }).eq("id", row.id);
     return NextResponse.json({ ok: true });

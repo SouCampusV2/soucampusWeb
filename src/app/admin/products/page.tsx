@@ -184,6 +184,17 @@ function CatalogRowItem({
                 Open in the marketplace
               </Link>
             )}
+            {/* Черновик поста в Discord (27.10): платная — в Premade
+                builds, бесплатная — в Free builds; канал решает редактор
+                по цене. Только у живых: черновик ведёт на страницу карты. */}
+            {product.state === "live" && product.creatorActive && (
+              <Link
+                href={`/admin/discord?tab=showcase&product=${encodeURIComponent(product.slug)}`}
+                className={`hidden sm:inline ${INLINE_LINK}`}
+              >
+                Post to Discord
+              </Link>
+            )}
           </span>
 
           {product.suspensionReason && (
