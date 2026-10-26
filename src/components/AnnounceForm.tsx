@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { Megaphone } from "@phosphor-icons/react";
-import { Button } from "@/components/Button";
+import { Button, TOGGLE_PILL_COLORS } from "@/components/Button";
 import { SelectField } from "@/components/SelectField";
 import { TextField } from "@/components/MapFormParts";
 import type { Recipient } from "@/lib/notifications";
@@ -14,13 +14,33 @@ import { readApiError } from "@/lib/api-error";
 // отмены. Уведомление, разложенное по сотне ящиков, обратно не собрать —
 // цена лишнего клика несопоставима с ценой опечатки в тексте, который
 // увидят все.
-export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
+type Target = "both" | "site" | "discord";
+type Ping = "none" | "here" | "everyone";
+
+const TARGETS: { value: Target; label: string }[] = [
+  { value: "both", label: "Site + Discord" },
+  { value: "site", label: "Site only" },
+  { value: "discord", label: "Discord only" },
+];
+
+export function AnnounceForm({
+  recipients,
+  discordReady,
+}: {
+  recipients: Recipient[];
+  /** Задан ли вебхук канала объявлений (DISCORD_ANNOUNCE_WEBHOOK_URL). */
+  discordReady: boolean;
+}) {
   // "" — всем. Отдельного признака не заводим: пустая строка и есть
   // «адресат не выбран», а обработчик на сервере решает по ней же.
   const [userId, setUserId] = useState("");
   const [title, setTitle] = useState("");
   const [text, setText] = useState("");
   const [href, setHref] = useState("");
+  // Куда: с 26.10 объявление «всем» может уйти и в Discord. Без вебхука —
+  // только сайт, выбор не показывается вовсе.
+  const [target, setTarget] = useState<Target>(discordReady ? "both" : "site");
+  const [ping, setPing] = useState<Ping>("none");
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -33,7 +53,7 @@ export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
       const res = await fetch("/api/admin/announce", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ title, text, href, userId }),
+        body: JSON.stringify({ title, text, href, userId, target: effectiveTarget, ping }),
       });
       if (!res.ok) {
         // Разбор общий (lib/api-error), решение — местное: здесь важно,
@@ -58,10 +78,16 @@ export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
       // здесь же — переспрашивать нечего.
       const sent = data?.sent ?? 0;
       const recipient = recipients.find((r) => r.id === userId);
+      const where =
+        effectiveTarget === "discord"
+          ? "Posted in the Discord announcements channel."
+          : `Sent to ${sent} ${sent === 1 ? "account" : "accounts"} — everyone registered${
+              effectiveTarget === "both" ? ", and posted in Discord" : ""
+            }. There's no way to take it back.`;
       setResult(
         userId
           ? `Sent to ${recipient?.username ?? "the account"}. It's in their notifications now — they'll see the bell marked next time they open the site.`
-          : `Sent to ${sent} ${sent === 1 ? "account" : "accounts"} — everyone registered. It's in their notifications now; there's no way to take it back.`,
+          : where,
       );
       setTitle("");
       setText("");
@@ -73,6 +99,8 @@ export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
   }
 
   const toEveryone = userId === "";
+  // Личное сообщение — только на сайт: канал Discord видят все.
+  const effectiveTarget: Target = toEveryone && discordReady ? target : "site";
 
   return (
     <div className="mt-6 space-y-4">
@@ -92,6 +120,50 @@ export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
           })),
         ]}
       />
+
+      {/* Куда — только у рассылки всем и только при заданном вебхуке. */}
+      {toEveryone && discordReady && (
+        <div>
+          <p className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">Where</p>
+          <div className="flex flex-wrap gap-2">
+            {TARGETS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setTarget(option.value)}
+                className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                  target === option.value ? TOGGLE_PILL_COLORS.on : TOGGLE_PILL_COLORS.off
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+          {target !== "site" && (
+            <div className="mt-3 flex flex-wrap items-center gap-2">
+              <span className="text-sm text-zinc-500 dark:text-zinc-400">Ping in Discord:</span>
+              {(["none", "here", "everyone"] as const).map((value) => (
+                <button
+                  key={value}
+                  type="button"
+                  onClick={() => setPing(value)}
+                  className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                    ping === value ? TOGGLE_PILL_COLORS.on : TOGGLE_PILL_COLORS.off
+                  }`}
+                >
+                  {value === "none" ? "Nobody" : `@${value}`}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+      {toEveryone && !discordReady && (
+        <p className="text-xs text-zinc-500 dark:text-zinc-400">
+          To also post in Discord, set <code>DISCORD_ANNOUNCE_WEBHOOK_URL</code> on Vercel
+          (channel settings → Integrations → Webhooks → copy URL).
+        </p>
+      )}
 
       <TextField
         id="announce-title"
@@ -142,7 +214,15 @@ export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
             else void send();
           }}
         >
-          {busy ? "Sending…" : toEveryone ? "Send to everyone" : "Send"}
+          {busy
+            ? "Sending…"
+            : !toEveryone
+              ? "Send"
+              : effectiveTarget === "discord"
+                ? "Post in Discord"
+                : effectiveTarget === "both"
+                  ? "Send everywhere"
+                  : "Send to everyone"}
           <Megaphone
             size={18}
             weight="bold"
@@ -152,7 +232,11 @@ export function AnnounceForm({ recipients }: { recipients: Recipient[] }) {
       ) : (
         <div className="rounded-2xl border border-orange-500/40 bg-orange-50 p-4 dark:bg-orange-950/30">
           <p className="text-sm text-zinc-700 dark:text-zinc-300">
-            This goes to every account and can&apos;t be taken back.
+            {effectiveTarget === "discord"
+              ? "This goes to the Discord announcements channel."
+              : effectiveTarget === "both"
+                ? "This goes to every account and to Discord, and can't be taken back."
+                : "This goes to every account and can't be taken back."}
           </p>
           <div className="mt-3 flex gap-2">
             <Button size="sm" disabled={busy} onClick={send}>

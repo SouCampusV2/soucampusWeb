@@ -12,16 +12,14 @@ import {
   absoluteUrl,
   draftFromProject,
   normalizeShowcasePost,
+  PORTFOLIO_ROLE,
   type ShowcasePost,
 } from "@/lib/discord-showcase";
+import { getDiscordBotIdentity } from "@/lib/discord-identity";
 
-// Автор поста по умолчанию (README пакета бота): имя студии и логотип
-// сайта. Логотип — из public/, адрес абсолютный: Discord сам не
-// догадается, откуда относительный путь.
-const DEFAULT_AUTHOR = {
-  username: "SouCampus",
-  avatarUrl: `${SITE_URL}/logoSouCampus.png`,
-};
+// Новый пост по умолчанию пингует роль Portfolio (владелец, 26.10), а
+// подписан именем и иконкой бота — их отдаёт Discord по вебхуку
+// (discord-identity.ts). Подпись можно сменить в форме.
 
 // Связка с Discord-ботом BoCampus (2026-10-27). Две вкладки:
 //
@@ -88,7 +86,12 @@ export default async function AdminDiscordPage({
         id: null,
         projectSlug: project.slug,
         status: "draft",
-        post: { ...draftFromProject(projectForPost(project), SITE_URL), ...DEFAULT_AUTHOR },
+        post: {
+          ...draftFromProject(projectForPost(project), SITE_URL),
+          ...(await getDiscordBotIdentity(process.env.DISCORD_SHOWCASE_WEBHOOK_URL)),
+          mention: "role",
+          roleId: PORTFOLIO_ROLE.id,
+        },
       };
     }
     const project = projects.find((p) => p.slug === editor.projectSlug);
