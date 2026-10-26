@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useRefresh } from "@/lib/useRefresh";
 import Link from "next/link";
-import { UserCircle, Camera, Key, ImageSquare, Crop, Plus, X, Trash } from "@phosphor-icons/react";
+import { UserCircle, Camera, Key, ImageSquare, Crop, Plus, Trash, PencilSimple } from "@phosphor-icons/react";
 import { Unbounded } from "next/font/google";
 import { Button, BUTTON_COLORS } from "@/components/Button";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
@@ -21,14 +21,8 @@ import {
   BANNER_ASPECT,
   BANNER_OUTPUT_WIDTH,
 } from "@/lib/profile-media";
-import {
-  checkProfileLink,
-  PROFILE_LINK_KINDS,
-  PROFILE_LINK_META,
-  PROFILE_LINKS_MAX,
-  type ProfileLink,
-  type ProfileLinkKind,
-} from "@/lib/profile-links";
+import { checkProfileLink, profileLinkLabel, type ProfileLink } from "@/lib/profile-links";
+import { ProfileLinksDialog } from "@/components/ProfileLinksDialog";
 
 // GIF уходит в шлюз как есть — обрезка через <canvas> убила бы анимацию.
 // Поэтому у него прежние потолки: настоящий предел (IMAGE_MAX_BYTES)
@@ -89,10 +83,11 @@ export function ProfileEditForm({
   const [bannerPreview, setBannerPreview] = useState<string | null>(null);
   const bannerInput = useRef<HTMLInputElement>(null);
 
-  // Ссылки — строками, как их печатает человек. В вид, который примет
-  // база, их приводит checkProfileLink при сохранении: проверять на
-  // каждой букве значило бы ругаться на недопечатанный адрес.
+  // Ссылки — уже проверенные: правятся в окне (ProfileLinksDialog), и в
+  // форму оно отдаёт только годный список. Проверка при сохранении
+  // остаётся вторым рубежом.
   const [links, setLinks] = useState<ProfileLink[]>(initial.links);
+  const [linksOpen, setLinksOpen] = useState(false);
 
   // Открытое окно обрезки: что режем и откуда картинка.
   const [crop, setCrop] = useState<{ target: CropTarget; src: string } | null>(null);
@@ -146,19 +141,6 @@ export function ProfileEditForm({
     }
   }
 
-  function updateLink(index: number, url: string) {
-    setLinks((current) => current.map((link, i) => (i === index ? { ...link, url } : link)));
-  }
-
-  function addLink(kind: ProfileLinkKind) {
-    setLinks((current) =>
-      current.length >= PROFILE_LINKS_MAX ? current : [...current, { kind, url: "" }],
-    );
-  }
-
-  function removeLink(index: number) {
-    setLinks((current) => current.filter((_, i) => i !== index));
-  }
 
   /**
    * Убрать баннер. Файл в бакете остаётся лежать до следующей загрузки —
@@ -363,6 +345,7 @@ export function ProfileEditForm({
     setPending(false);
     setAvatarUrl(nextAvatarUrl);
     setBannerUrl(nextBannerUrl);
+    setAvatarFile(null);
     setBannerFile(null);
     setLinks(nextLinks);
     refresh();
@@ -371,6 +354,21 @@ export function ProfileEditForm({
 
   const shownAvatar = avatarPreview ?? avatarUrl;
   const shownBanner = bannerPreview ?? bannerUrl;
+
+  // Есть ли что сохранять. Сравнение с тем, как поле уйдёт в базу (после
+  // trim), а не с сырым вводом: пробел в конце «о себе» сохранять нечего.
+  // После сохранения refresh() приносит новый initial — и кнопка гаснет
+  // сама.
+  const dirty =
+    username.trim() !== initial.username ||
+    firstName.trim() !== (initial.firstName ?? "") ||
+    lastName.trim() !== (initial.lastName ?? "") ||
+    bio.trim() !== (initial.bio ?? "") ||
+    (initial.isClient && (nameColor || null) !== initial.nameColor) ||
+    avatarFile !== null ||
+    bannerFile !== null ||
+    bannerUrl !== initial.bannerUrl ||
+    JSON.stringify(links) !== JSON.stringify(initial.links);
 
   return (
     // Форма слева, превью справа (просьба владельца 26.10). Колонки 5:7
@@ -536,73 +534,49 @@ export function ProfileEditForm({
           </p>
         </div>
 
-        {/* Ссылки. Вид выбирается кнопкой, а не выпадашкой: нативного
-            <select> на сайте нет (06.09), а одиннадцать иконок рядом
-            выбираются быстрее любого списка. Домен у каждого вида свой —
-            стережёт база, подсказка в поле называет его заранее. */}
+        {/* Ссылки — строкой иконок и кнопкой; правятся в окне
+            (ProfileLinksDialog, вечер 26.10): восемь полей ввода прямо в
+            форме растягивали её вдвое ради того, что меняют раз в
+            полгода. */}
         <div>
           <p className="mb-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Links{" "}
             <span className="font-normal text-zinc-500 dark:text-zinc-400">
-              — up to {PROFILE_LINKS_MAX}, shown on your profile
+              — Discord, X, YouTube and more
             </span>
           </p>
-
-          {links.length > 0 && (
-            <ul className="mb-3 space-y-2">
-              {links.map((link, index) => {
-                const IconFor = PROFILE_LINK_ICONS[link.kind];
-                const meta = PROFILE_LINK_META[link.kind];
-                return (
-                  <li key={index} className="flex items-center gap-2">
-                    <IconFor
-                      size={20}
-                      weight="fill"
-                      className="shrink-0 text-zinc-500 dark:text-zinc-400"
-                      aria-hidden
-                    />
-                    <input
-                      type="text"
-                      inputMode="url"
-                      value={link.url}
-                      onChange={(e) => updateLink(index, e.target.value)}
-                      placeholder={meta.placeholder}
-                      aria-label={`${meta.label} link`}
-                      className="min-w-0 flex-1 rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-2.5 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => removeLink(index)}
-                      aria-label={`Remove ${meta.label} link`}
-                      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-red-50 hover:text-red-600 dark:text-zinc-400 dark:hover:bg-red-950/40"
-                    >
-                      <X size={16} aria-hidden />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-
-          {links.length < PROFILE_LINKS_MAX && (
-            <div className="flex flex-wrap gap-1.5">
-              {PROFILE_LINK_KINDS.map((kind) => {
-                const IconFor = PROFILE_LINK_ICONS[kind];
-                return (
-                  <button
-                    key={kind}
-                    type="button"
-                    onClick={() => addLink(kind)}
-                    className="inline-flex items-center gap-1 rounded-full border border-zinc-200 px-2.5 py-1 text-xs font-medium text-zinc-600 transition-colors hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-800 dark:text-zinc-400 dark:hover:border-zinc-700 dark:hover:text-zinc-50"
-                  >
-                    <Plus size={12} aria-hidden />
-                    <IconFor size={14} weight="fill" aria-hidden />
-                    {PROFILE_LINK_META[kind].label}
-                  </button>
-                );
-              })}
-            </div>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            {links.map((link, index) => {
+              const IconFor = PROFILE_LINK_ICONS[link.kind];
+              return (
+                <span
+                  key={`${link.kind}-${index}`}
+                  title={profileLinkLabel(link)}
+                  className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-zinc-200 text-zinc-600 dark:border-zinc-800 dark:text-zinc-400"
+                >
+                  <IconFor size={18} weight="fill" aria-hidden />
+                  <span className="sr-only">{profileLinkLabel(link)}</span>
+                </span>
+              );
+            })}
+            <button
+              type="button"
+              onClick={() => setLinksOpen(true)}
+              className="inline-flex h-10 items-center gap-1.5 rounded-full border border-zinc-200 px-4 text-sm font-medium text-zinc-700 transition-colors hover:border-zinc-300 hover:text-zinc-950 dark:border-zinc-800 dark:text-zinc-300 dark:hover:border-zinc-700 dark:hover:text-zinc-50"
+            >
+              {links.length > 0 ? (
+                <>
+                  <PencilSimple size={14} aria-hidden />
+                  Edit links
+                </>
+              ) : (
+                <>
+                  <Plus size={14} aria-hidden />
+                  Add links
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
       </div>
@@ -614,7 +588,10 @@ export function ProfileEditForm({
       )}
 
       <div className="mt-6 flex gap-3">
-        <Button type="submit" variant="primary" disabled={pending} className="flex-1">
+        {/* Неактивна, пока сохранять нечего (просьба владельца 26.10):
+            активная кнопка на нетронутой форме обещает, что что-то
+            изменилось. */}
+        <Button type="submit" variant="primary" disabled={pending || !dirty} className="flex-1">
           {pending ? "Saving…" : "Save changes"}
         </Button>
         <Button href="/purchases" variant="secondary" className="flex-1">
@@ -683,6 +660,17 @@ export function ProfileEditForm({
         className="hidden"
       />
     </aside>
+
+    {linksOpen && (
+      <ProfileLinksDialog
+        value={links}
+        onDone={(next) => {
+          setLinks(next);
+          setLinksOpen(false);
+        }}
+        onCancel={() => setLinksOpen(false)}
+      />
+    )}
 
     {crop && (
       <ImageCropper
