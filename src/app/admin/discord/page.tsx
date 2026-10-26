@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllProjects, type Project } from "@/lib/projects";
+import { getProduct, type Product } from "@/lib/products";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { SITE_URL } from "@/lib/site";
 import { LocalTime } from "@/components/LocalTime";
@@ -10,9 +11,16 @@ import { DiscordPostEditor } from "@/components/DiscordPostEditor";
 import { rowToInboxItem, type InboxRow } from "@/lib/discord-inbox";
 import {
   absoluteUrl,
+  CHANNEL_KEYS,
+  channelForProduct,
+  channelWebhook,
+  draftFromProduct,
   draftFromProject,
+  isShowcaseChannel,
   normalizeShowcasePost,
   PORTFOLIO_ROLE,
+  SHOWCASE_CHANNELS,
+  type ShowcaseChannel,
   type ShowcasePost,
 } from "@/lib/discord-showcase";
 import { getDiscordBotIdentity } from "@/lib/discord-identity";
@@ -34,6 +42,8 @@ export const dynamic = "force-dynamic";
 type PostRow = {
   id: string;
   project_slug: string | null;
+  product_slug: string | null;
+  channel: string;
   post: unknown;
   status: "draft" | "published";
   published_at: string | null;
@@ -43,12 +53,16 @@ type PostRow = {
 export default async function AdminDiscordPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; post?: string; from?: string }>;
+  searchParams: Promise<{ tab?: string; post?: string; from?: string; product?: string }>;
 }) {
-  const { tab, post: postId, from } = await searchParams;
+  const { tab, post: postId, from, product: productParam } = await searchParams;
   const showcase = tab === "showcase";
   const db = getSupabaseAdmin();
-  const webhookConfigured = Boolean(process.env.DISCORD_SHOWCASE_WEBHOOK_URL);
+  // Какие каналы готовы к публикации. В браузер уходят только да/нет —
+  // ссылка вебхука сама по себе право писать в канал.
+  const webhooks = Object.fromEntries(
+    CHANNEL_KEYS.map((key) => [key, Boolean(channelWebhook(key))])
+  ) as Record<ShowcaseChannel, boolean>;
 
   // Счётчик на вкладке Inbox — виден и со второй вкладки.
   const { data: inboxRows, error: inboxError } = await db
@@ -59,48 +73,76 @@ export default async function AdminDiscordPage({
   if (inboxError) console.warn(`discord_inbox недоступна: ${inboxError.message}`);
   const inbox = ((inboxRows ?? []) as InboxRow[]).map(rowToInboxItem);
 
-  // Редактор поста: ?post=<id> — сохранённый, ?from=<slug> — новый из работы.
-  if (showcase && (postId || from)) {
+  // Редактор поста: ?post=<id> — сохранённый, ?from=<slug> — новый из
+  // работы (Portfolio), ?product=<slug> — новый из карты (Premade / Free).
+  if (showcase && (postId || from || productParam)) {
     const projects = await getAllProjects();
     let editor: {
       id: string | null;
       projectSlug: string | null;
+      productSlug: string | null;
+      channel: ShowcaseChannel;
       status: "draft" | "published";
       post: ShowcasePost;
     };
     if (postId) {
       const { data } = await db
         .from("discord_posts")
-        .select("id, project_slug, post, status, published_at, updated_at")
+        .select("id, project_slug, product_slug, channel, post, status, published_at, updated_at")
         .eq("id", postId)
         .maybeSingle();
       const row = data as PostRow | null;
       // Через перевод: пост первого редактора (эмбед) тоже открывается.
       const post = row ? normalizeShowcasePost(row.post) : null;
       if (!row || !post) notFound();
-      editor = { id: row.id, projectSlug: row.project_slug, status: row.status, post };
+      editor = {
+        id: row.id,
+        projectSlug: row.project_slug,
+        productSlug: row.product_slug,
+        channel: isShowcaseChannel(row.channel) ? row.channel : "portfolio",
+        status: row.status,
+        post,
+      };
+    } else if (productParam) {
+      const product = await getProduct(productParam);
+      if (!product) notFound();
+      const channel = channelForProduct(product);
+      editor = {
+        id: null,
+        projectSlug: null,
+        productSlug: product.slug,
+        channel,
+        status: "draft",
+        post: {
+          ...draftFromProduct(productForPost(product), SITE_URL),
+          ...(await getDiscordBotIdentity(channelWebhook(channel) ?? channelWebhook("portfolio"))),
+        },
+      };
     } else {
       const project = projects.find((p) => p.slug === from);
       if (!project) notFound();
       editor = {
         id: null,
         projectSlug: project.slug,
+        productSlug: null,
+        channel: "portfolio",
         status: "draft",
         post: {
           ...draftFromProject(projectForPost(project), SITE_URL),
-          ...(await getDiscordBotIdentity(process.env.DISCORD_SHOWCASE_WEBHOOK_URL)),
+          ...(await getDiscordBotIdentity(channelWebhook("portfolio"))),
           mention: "role",
           roleId: PORTFOLIO_ROLE.id,
         },
       };
     }
     const project = projects.find((p) => p.slug === editor.projectSlug);
-    const imageChoices = project
-      ? [project.image, ...(project.gallery ?? [])].flatMap((url) => {
-          const absolute = absoluteUrl(url, SITE_URL);
-          return absolute ? [absolute] : [];
-        })
-      : [];
+    const product = editor.productSlug ? await getProduct(editor.productSlug) : null;
+    const imageChoices = (
+      project ? [project.image, ...(project.gallery ?? [])] : product?.images ?? []
+    ).flatMap((url) => {
+      const absolute = absoluteUrl(url, SITE_URL);
+      return absolute ? [absolute] : [];
+    });
 
     return (
       <Shell showcase inboxCount={inbox.length}>
@@ -110,13 +152,15 @@ export default async function AdminDiscordPage({
         <div className="mt-6">
           <DiscordPostEditor
             // key — новый пост и сохранённый не делят состояние формы.
-            key={editor.id ?? `new-${editor.projectSlug}`}
+            key={editor.id ?? `new-${editor.projectSlug ?? editor.productSlug}`}
             id={editor.id}
             projectSlug={editor.projectSlug}
+            productSlug={editor.productSlug}
+            initialChannel={editor.channel}
             status={editor.status}
             initialPost={editor.post}
             imageChoices={imageChoices}
-            webhookConfigured={webhookConfigured}
+            webhooks={webhooks}
           />
         </div>
       </Shell>
@@ -135,7 +179,7 @@ export default async function AdminDiscordPage({
     getAllProjects(),
     db
       .from("discord_posts")
-      .select("id, project_slug, post, status, published_at, updated_at")
+      .select("id, project_slug, product_slug, channel, post, status, published_at, updated_at")
       .order("updated_at", { ascending: false }),
   ]);
   if (postsError) console.warn(`discord_posts недоступна: ${postsError.message}`);
@@ -146,14 +190,23 @@ export default async function AdminDiscordPage({
 
   return (
     <Shell showcase inboxCount={inbox.length}>
-      {!webhookConfigured && (
-        <p className="mt-6 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900 dark:bg-orange-950/30 dark:text-orange-200">
-          Publishing is off until the channel link is set. In Discord run{" "}
-          <code className="font-mono">/setup showcase_channel #channel</code> — the bot replies
-          with a link only you can see. Put it into{" "}
-          <code className="font-mono">DISCORD_SHOWCASE_WEBHOOK_URL</code> on Vercel. Drafts work
-          without it.
-        </p>
+      {CHANNEL_KEYS.some((key) => !webhooks[key]) && (
+        <div className="mt-6 rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900 dark:bg-orange-950/30 dark:text-orange-200">
+          <p>
+            Some channels can&apos;t be posted to yet. In Discord run{" "}
+            <code className="font-mono">/setup site_channel</code> (the bot replies with a link
+            only you can see) and put the link on Vercel. Drafts work without it.
+          </p>
+          <ul className="mt-2 list-disc pl-5">
+            {CHANNEL_KEYS.filter((key) => !webhooks[key]).map((key) => (
+              <li key={key}>
+                {SHOWCASE_CHANNELS[key].label}:{" "}
+                <code className="font-mono">kind:{SHOWCASE_CHANNELS[key].setupKind}</code> →{" "}
+                <code className="font-mono">{SHOWCASE_CHANNELS[key].envVar}</code>
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {/* Новый пост — из работы портфолио. Список, а не выпадашка:
@@ -163,6 +216,13 @@ export default async function AdminDiscordPage({
         <summary className={`m-4 w-fit list-none ${BUTTON_PILL} ${BUTTON_COLORS.primary}`}>
           New post from a work
         </summary>
+        <p className="px-4 pb-2 text-xs text-zinc-500 dark:text-zinc-400">
+          Goes to Portfolio. A post about a map starts from its row in{" "}
+          <Link href="/admin/products" className="underline">
+            Catalog
+          </Link>{" "}
+          → Post to Discord.
+        </p>
         <ul className="grid gap-2 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => (
             <li key={project.slug}>
@@ -198,6 +258,8 @@ export default async function AdminDiscordPage({
                       {post.title || "Untitled"}
                     </p>
                     <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                      {SHOWCASE_CHANNELS[isShowcaseChannel(row.channel) ? row.channel : "portfolio"].label}
+                      {" · "}
                       {row.status === "published" && row.published_at ? (
                         <>Published <LocalTime value={row.published_at} /></>
                       ) : (
@@ -238,6 +300,19 @@ function projectForPost(project: Project) {
   };
 }
 
+function productForPost(product: Product) {
+  return {
+    slug: product.slug,
+    title: product.title,
+    summary: product.summary,
+    images: product.images,
+    price: product.price,
+    priceCents: product.priceCents,
+    mapSize: product.specs.mapSize,
+    mcVersions: product.specs.mcVersions,
+  };
+}
+
 function Shell({
   showcase,
   inboxCount,
@@ -258,7 +333,7 @@ function Shell({
       </h1>
       <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
         {showcase
-          ? "Posts about your works in the showcase channel."
+          ? "Posts about your works and maps in the Portfolio, Premade and Free channels."
           : "Builds and reviews clients agreed to share through the bot."}
       </p>
       <nav className="mt-6 flex gap-2">

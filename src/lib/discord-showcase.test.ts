@@ -1,5 +1,17 @@
 import { describe, expect, it } from "vitest";
-import { checkPost, deletePost, draftFromProject, postText, publishPost, toWebhookPayload, updatePost } from "@/lib/discord-showcase";
+import {
+  channelForProduct,
+  checkPost,
+  deletePost,
+  draftFromProduct,
+  draftFromProject,
+  hexColor,
+  postText,
+  publishPost,
+  SHOWCASE_CHANNELS,
+  toWebhookPayload,
+  updatePost,
+} from "@/lib/discord-showcase";
 
 const project = {
   slug: "corsair-isle",
@@ -90,6 +102,54 @@ describe("вебхук", () => {
       `PATCH ${hook}/messages/999?wait=true&with_components=true`,
       `DELETE ${hook}/messages/999`,
     ]);
+  });
+});
+
+describe("каналы и плашка (27.10)", () => {
+  const post = draftFromProject(project, SITE);
+
+  it("с цветом всё уходит в контейнер с плашкой", () => {
+    const payload = toWebhookPayload(post, SHOWCASE_CHANNELS.premade.color) as {
+      components: { type: number; accent_color?: number; components?: { type: number }[] }[];
+    };
+    expect(payload.components).toHaveLength(1);
+    expect(payload.components[0].type).toBe(17);
+    expect(payload.components[0].accent_color).toBe(0x84cc16);
+    expect(payload.components[0].components?.map((c) => c.type)).toEqual([10, 10, 12]);
+  });
+
+  it("цвета каналов — как у закреплённых постов", () => {
+    expect(hexColor(SHOWCASE_CHANNELS.portfolio.color)).toBe("#f97316");
+    expect(hexColor(SHOWCASE_CHANNELS.premade.color)).toBe("#84cc16");
+    expect(hexColor(SHOWCASE_CHANNELS.free.color)).toBe("#3b82f6");
+  });
+
+  const map = {
+    slug: "sky-hub",
+    title: "Sky Hub",
+    summary: "A floating hub.",
+    images: ["/x.webp", "https://cdn.example.com/a.webp"],
+    price: "€15",
+    priceCents: 1500,
+    mapSize: "Medium",
+    mcVersions: ["1.20", "1.21"],
+  };
+
+  it("платная карта — Premade, цена и ссылка «Get this map»", () => {
+    expect(channelForProduct(map)).toBe("premade");
+    const draft = draftFromProduct(map, SITE);
+    expect(draft.body).toBe("A floating hub.\n-# €15 · Medium · Minecraft 1.20, 1.21");
+    expect(draft.links[0]).toEqual({ label: "Get this map", url: `${SITE}/marketplace/sky-hub`, tagline: "" });
+    expect(draft.imageUrls).toEqual([`${SITE}/x.webp`, "https://cdn.example.com/a.webp"]);
+    expect(checkPost(draft)).toBeNull();
+  });
+
+  it("бесплатная — Free и «Download it free»", () => {
+    const free = { ...map, priceCents: 0, price: "Free", mapSize: null, mcVersions: [] };
+    expect(channelForProduct(free)).toBe("free");
+    const draft = draftFromProduct(free, SITE);
+    expect(draft.body).toBe("A floating hub.\n-# Free");
+    expect(draft.links[0].label).toBe("Download it free");
   });
 });
 

@@ -21,6 +21,8 @@ import { checkReviewBody, isValidStars } from "@/lib/map-review-shape";
 //   оценка   — только купивший (политика «insert own rating if bought»
 //              звала has_purchased). Оценка — суждение о карте, и его
 //              вес держится ровно на том, что ставит его игравший.
+//              Исключение с 27.10 — бесплатная карта: её оценивает
+//              любой вошедший (isFreeLiveMap).
 //   реакция  — любой вошедший. Реакция значит «понравилось, как
 //              выглядит», и происходит ДО покупки; требовать покупку
 //              значило бы убрать её со страницы для всех, кто ещё
@@ -88,7 +90,11 @@ async function rate(
     return NextResponse.json({ error: bodyProblem }, { status: 400 });
   }
 
-  if (!(await hasPurchased(productId, userId, email))) {
+  // Бесплатную карту оценивает любой вошедший, без «покупки» (решение
+  // владельца 27.10): скачать её может каждый, и требовать сперва
+  // скачать значило бы заставлять жать кнопку ради права написать отзыв.
+  // Платные — как раньше, только купившие.
+  if (!(await isFreeLiveMap(productId)) && !(await hasPurchased(productId, userId, email))) {
     return NextResponse.json(
       { error: "Only buyers can rate a map." },
       { status: 403 }
@@ -121,6 +127,21 @@ async function rate(
 
   await revalidateReviewPages(productId);
   return NextResponse.json({ ok: true });
+}
+
+/**
+ * Карта бесплатна И на витрине. Условие видимости — то же, что в политике
+ * `public read live`: отзыв на снятую карту не нужен никому.
+ */
+async function isFreeLiveMap(productId: string): Promise<boolean> {
+  const { data } = await getSupabaseAdmin()
+    .from("products")
+    .select("price_cents")
+    .eq("id", productId)
+    .eq("state", "live")
+    .eq("creator_active", true)
+    .maybeSingle();
+  return data?.price_cents === 0;
 }
 
 /**

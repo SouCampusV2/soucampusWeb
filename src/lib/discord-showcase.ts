@@ -45,6 +45,39 @@ export type ProjectForPost = {
 
 export const MAX_IMAGES = 4;
 
+// ------------------------------------------------------------
+// Каналы (2026-10-27, вечер). Владелец постит в три канала витрины, у
+// каждого свой вебхук — его выдаёт бот: /setup site_channel kind:<…>.
+// Вебхук, созданный ботом, подписывает пост как бот (discord-identity.ts),
+// а реакции под постом бот ставит сам. Цвет плашки — как у закреплённых
+// постов в этих каналах.
+// ------------------------------------------------------------
+
+export type ShowcaseChannel = "portfolio" | "premade" | "free";
+
+export const SHOWCASE_CHANNELS: Record<
+  ShowcaseChannel,
+  { label: string; envVar: string; setupKind: string; color: number }
+> = {
+  portfolio: { label: "Portfolio", envVar: "DISCORD_SHOWCASE_WEBHOOK_URL", setupKind: "Portfolio", color: 0xf97316 },
+  premade: { label: "Premade builds", envVar: "DISCORD_PREMADE_WEBHOOK_URL", setupKind: "Premade builds", color: 0x84cc16 },
+  free: { label: "Free builds", envVar: "DISCORD_FREE_WEBHOOK_URL", setupKind: "Free builds", color: 0x3b82f6 },
+};
+
+export const CHANNEL_KEYS = Object.keys(SHOWCASE_CHANNELS) as ShowcaseChannel[];
+
+export function isShowcaseChannel(value: unknown): value is ShowcaseChannel {
+  return typeof value === "string" && value in SHOWCASE_CHANNELS;
+}
+
+/** Вебхук канала — только на сервере (ссылка = право писать в канал). */
+export function channelWebhook(channel: ShowcaseChannel): string | undefined {
+  return process.env[SHOWCASE_CHANNELS[channel].envVar] || undefined;
+}
+
+/** Цвет числом Discord → #rrggbb для превью. */
+export const hexColor = (color: number) => `#${color.toString(16).padStart(6, "0")}`;
+
 /** Относительный путь → абсолютный: Discord сам не догадается. */
 export function absoluteUrl(url: string | null, siteUrl: string): string | null {
   if (!url) return null;
@@ -64,6 +97,55 @@ export function draftFromProject(p: ProjectForPost, siteUrl: string): ShowcasePo
     body: facts ? `${p.summary}\n-# ${facts}` : p.summary,
     links,
     imageUrls: [p.image, ...(p.gallery ?? [])]
+      .map((u) => absoluteUrl(u, siteUrl))
+      .filter((u): u is string => Boolean(u))
+      .slice(0, MAX_IMAGES),
+    mention: "none",
+    roleId: null,
+    buttons: [],
+    username: null,
+    avatarUrl: null,
+  };
+}
+
+/** Карта маркетплейса — то, что нужно черновику поста из неё. */
+export type ProductForPost = {
+  slug: string;
+  title: string;
+  summary: string;
+  /** Обложка первой, дальше галерея (Product.images). */
+  images: string[];
+  price: string;
+  priceCents: number;
+  mapSize: string | null;
+  mcVersions: string[];
+};
+
+/** Бесплатная карта — в Free builds, платная — в Premade builds. */
+export const channelForProduct = (p: { priceCents: number }): ShowcaseChannel =>
+  p.priceCents === 0 ? "free" : "premade";
+
+/** Черновик из карты маркетплейса: цена или «Free», размер, версии, ссылка на страницу. */
+export function draftFromProduct(p: ProductForPost, siteUrl: string): ShowcasePost {
+  const site = siteUrl.replace(/\/$/, "");
+  const free = p.priceCents === 0;
+  const facts = [
+    free ? "Free" : p.price,
+    p.mapSize,
+    p.mcVersions.length ? `Minecraft ${p.mcVersions.join(", ")}` : "",
+  ]
+    .filter(Boolean)
+    .join(" · ");
+  return {
+    title: p.title,
+    titleDash: true,
+    body: facts ? `${p.summary}
+-# ${facts}` : p.summary,
+    links: [
+      { label: free ? "Download it free" : "Get this map", url: `${site}/marketplace/${p.slug}`, tagline: "" },
+      { label: "Order your own build", url: `${site}/contact`, tagline: "Let's create something together!" },
+    ],
+    imageUrls: p.images
       .map((u) => absoluteUrl(u, siteUrl))
       .filter((u): u is string => Boolean(u))
       .slice(0, MAX_IMAGES),
@@ -139,15 +221,22 @@ export function checkPost(post: ShowcasePost): string | null {
   return null;
 }
 
-/** Тело запроса вебхука (Components V2). Пингует только то, что выбрано явно. */
-export function toWebhookPayload(post: ShowcasePost) {
+/**
+ * Тело запроса вебхука (Components V2). Пингует только то, что выбрано явно.
+ *
+ * accentColor (27.10) — всё содержимое уходит в контейнер (type 17) с
+ * цветной плашкой слева, как у закреплённых постов в каналах. Без цвета —
+ * как раньше, блоки без рамки.
+ */
+export function toWebhookPayload(post: ShowcasePost, accentColor?: number) {
   const { main, links } = postText(post);
-  const components: unknown[] = [{ type: 10, content: main }];
-  if (links) components.push({ type: 10, content: links });
-  components.push({ type: 12, items: post.imageUrls.map((url) => ({ media: { url } })) });
+  const blocks: unknown[] = [{ type: 10, content: main }];
+  if (links) blocks.push({ type: 10, content: links });
+  blocks.push({ type: 12, items: post.imageUrls.map((url) => ({ media: { url } })) });
   if (post.buttons.length) {
-    components.push({ type: 1, components: post.buttons.map((b) => ({ type: 2, style: 5, label: b.label, url: b.url })) });
+    blocks.push({ type: 1, components: post.buttons.map((b) => ({ type: 2, style: 5, label: b.label, url: b.url })) });
   }
+  const components = accentColor === undefined ? blocks : [{ type: 17, accent_color: accentColor, components: blocks }];
   const allowed_mentions =
     post.mention === "role" && post.roleId
       ? { parse: [], roles: [post.roleId] }
@@ -174,8 +263,13 @@ async function call(url: string, method: "POST" | "PATCH" | "DELETE", body: unkn
 const withQuery = (url: string) => `${url}${url.includes("?") ? "&" : "?"}wait=true&with_components=true`;
 
 /** Опубликовать. wait=true — Discord возвращает сообщение, его id нужен для правки и удаления. */
-export async function publishPost(webhookUrl: string, post: ShowcasePost, fetchFn: typeof fetch = fetch): Promise<WebhookResult> {
-  const res = await call(withQuery(webhookUrl), "POST", toWebhookPayload(post), fetchFn);
+export async function publishPost(
+  webhookUrl: string,
+  post: ShowcasePost,
+  fetchFn: typeof fetch = fetch,
+  accentColor?: number
+): Promise<WebhookResult> {
+  const res = await call(withQuery(webhookUrl), "POST", toWebhookPayload(post, accentColor), fetchFn);
   if (!res.ok) return { ok: false, error: `Discord answered ${res.status}: ${(await res.text()).slice(0, 300)}` };
   const message = (await res.json()) as { id?: string };
   return message.id ? { ok: true, messageId: message.id } : { ok: false, error: "Discord did not return the message id." };
@@ -185,10 +279,16 @@ export async function publishPost(webhookUrl: string, post: ShowcasePost, fetchF
  * Поправить опубликованный пост на месте. Имя и аватар автора у вебхука
  * после публикации не меняются — Discord их при правке игнорирует.
  */
-export async function updatePost(webhookUrl: string, messageId: string, post: ShowcasePost, fetchFn: typeof fetch = fetch): Promise<WebhookResult> {
+export async function updatePost(
+  webhookUrl: string,
+  messageId: string,
+  post: ShowcasePost,
+  fetchFn: typeof fetch = fetch,
+  accentColor?: number
+): Promise<WebhookResult> {
   // Имя и аватар отбрасываются намеренно — Discord их при правке не принимает.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { username: _u, avatar_url: _a, ...payload } = toWebhookPayload(post) as Record<string, unknown>;
+  const { username: _u, avatar_url: _a, ...payload } = toWebhookPayload(post, accentColor) as Record<string, unknown>;
   const res = await call(withQuery(`${webhookUrl}/messages/${messageId}`), "PATCH", payload, fetchFn);
   if (!res.ok) return { ok: false, error: `Discord answered ${res.status}: ${(await res.text()).slice(0, 300)}` };
   return { ok: true, messageId };

@@ -265,6 +265,20 @@ Stripe сообщает о завершении с `unpaid`, а о поступ�
       текст короче 10 символов не пускает) → отзыв под картой и во
       вкладке Reviews профиля.
 
+### 9c. Три канала витрины ⬅ новое, 27.10
+
+- [ ] Миграция `20261027140000_discord_post_channel` — preview, потом прод
+      (только добавляет: до деплоя).
+- [ ] `/setup site_channel kind:Premade builds channel:#…` →
+      `DISCORD_PREMADE_WEBHOOK_URL`; `kind:Free builds` →
+      `DISCORD_FREE_WEBHOOK_URL` (Preview и Production). Если они уже
+      лежат только в Production — добавить и в Preview, иначе на preview
+      кнопки неактивны.
+- [ ] Проверить на preview: пост из карты в `/admin/products` → Post to
+      Discord → Publish → плашка нужного цвета → Update → Remove.
+- [ ] Бесплатная карта, вошедшим НЕ скачивавшим аккаунтом: на её странице
+      «Write a review» → отзыв появился под картой.
+
 ### 9b. Объявления в Discord — один вебхук ⬅ новое, 26.10
 
 - [ ] В Discord: `/setup announcements_channel #канал` → ссылка из ответа

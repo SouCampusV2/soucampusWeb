@@ -7,7 +7,15 @@ import { Button, DANGER_COLORS, TOGGLE_PILL_COLORS } from "@/components/Button";
 import { TextField } from "@/components/MapFormParts";
 import DiscordPreview from "@/components/DiscordPreview";
 import { problemFromGateway } from "@/lib/upload-client";
-import { checkPost, MAX_IMAGES, PORTFOLIO_ROLE, type ShowcasePost } from "@/lib/discord-showcase";
+import {
+  CHANNEL_KEYS,
+  checkPost,
+  MAX_IMAGES,
+  PORTFOLIO_ROLE,
+  SHOWCASE_CHANNELS,
+  type ShowcaseChannel,
+  type ShowcasePost,
+} from "@/lib/discord-showcase";
 
 // Редактор поста витрины в Discord (/admin/discord → Showcase).
 //
@@ -20,6 +28,10 @@ import { checkPost, MAX_IMAGES, PORTFOLIO_ROLE, type ShowcasePost } from "@/lib/
 //
 // Слева форма, справа DiscordPreview — тот же объект ShowcasePost, что
 // уйдёт в вебхук, поэтому превью не может разойтись с результатом.
+//
+// Канал (27.10): Portfolio, Premade builds или Free builds — у каждого
+// свой вебхук и свой цвет плашки. Опубликованный пост канал не меняет:
+// его сообщение видит только вебхук того канала.
 //
 // ⚠️ Publish и Update СНАЧАЛА сохраняют. Обработчик шлёт в Discord то,
 // что лежит в базе, а не то, что на экране.
@@ -50,22 +62,30 @@ function move<T>(list: T[], index: number, delta: -1 | 1): T[] {
 export function DiscordPostEditor({
   id: initialId,
   projectSlug,
+  productSlug,
+  initialChannel,
   status,
   initialPost,
   imageChoices,
-  webhookConfigured,
+  webhooks,
 }: {
   /** null — пост ещё не сохранён ни разу. */
   id: string | null;
   projectSlug: string | null;
+  productSlug: string | null;
+  initialChannel: ShowcaseChannel;
   status: "draft" | "published";
   initialPost: ShowcasePost;
   /** Обложка и галерея работы — выбор картинок одним нажатием. */
   imageChoices: string[];
-  webhookConfigured: boolean;
+  /** Задан ли вебхук у канала — сама ссылка в браузер не попадает. */
+  webhooks: Record<ShowcaseChannel, boolean>;
 }) {
   const router = useRouter();
   const [id, setId] = useState(initialId);
+  const [channel, setChannel] = useState(initialChannel);
+  const webhookConfigured = webhooks[channel];
+  const channelInfo = SHOWCASE_CHANNELS[channel];
   const [post, setPost] = useState(initialPost);
   const [customImage, setCustomImage] = useState("");
   const [reactions, setReactions] = useState("");
@@ -136,7 +156,7 @@ export function DiscordPostEditor({
   }
 
   async function save(): Promise<string | null> {
-    const result = await call({ action: "save", id: id ?? undefined, projectSlug, post });
+    const result = await call({ action: "save", id: id ?? undefined, projectSlug, productSlug, channel, post });
     if (!result?.id) return null;
     if (!id) {
       setId(result.id);
@@ -173,6 +193,31 @@ export function DiscordPostEditor({
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <div className="space-y-6 rounded-3xl border border-zinc-200 bg-[#fbfbff] p-6 dark:border-zinc-800 dark:bg-zinc-950 sm:p-8">
+        <div>
+          <p className={LABEL}>Channel</p>
+          <div className="flex flex-wrap gap-2">
+            {CHANNEL_KEYS.map((key) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => setChannel(key)}
+                disabled={published && key !== channel}
+                aria-pressed={key === channel}
+                className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors disabled:opacity-40 ${
+                  key === channel ? TOGGLE_PILL_COLORS.on : TOGGLE_PILL_COLORS.off
+                }`}
+              >
+                {SHOWCASE_CHANNELS[key].label}
+              </button>
+            ))}
+          </div>
+          {published && (
+            <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+              To move it to another channel, remove it from Discord first.
+            </p>
+          )}
+        </div>
+
         {/* Автор. После публикации Discord имя и аватар не меняет —
             правка шлёт только содержимое. */}
         <div className="grid gap-4 sm:grid-cols-2">
@@ -438,9 +483,10 @@ export function DiscordPostEditor({
         )}
         {!webhookConfigured && (
           <p className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:border-orange-900 dark:bg-orange-950/30 dark:text-orange-200">
-            Publishing is off: the channel link isn&apos;t set. In Discord run{" "}
-            <code className="font-mono">/setup showcase_channel</code>, then put the link into{" "}
-            <code className="font-mono">DISCORD_SHOWCASE_WEBHOOK_URL</code> on Vercel.
+            Publishing to {channelInfo.label} is off: the channel link isn&apos;t set. In Discord
+            run <code className="font-mono">/setup site_channel kind:{channelInfo.setupKind}</code>,
+            then put the link into <code className="font-mono">{channelInfo.envVar}</code> on
+            Vercel.
           </p>
         )}
 
@@ -495,7 +541,7 @@ export function DiscordPostEditor({
         <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
           Preview {published ? "· published" : "· draft"}
         </p>
-        <DiscordPreview post={post} reactions={reactionList} />
+        <DiscordPreview post={post} reactions={reactionList} accentColor={channelInfo.color} />
         {/* Реакции ставит бот (/setup showcase_reactions), вебхук этого не
             умеет. Поле — только чтобы увидеть пост с ними. */}
         <input
