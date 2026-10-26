@@ -11,9 +11,17 @@ import { rowToInboxItem, type InboxRow } from "@/lib/discord-inbox";
 import {
   absoluteUrl,
   draftFromProject,
-  isShowcasePostShape,
+  normalizeShowcasePost,
   type ShowcasePost,
 } from "@/lib/discord-showcase";
+
+// Автор поста по умолчанию (README пакета бота): имя студии и логотип
+// сайта. Логотип — из public/, адрес абсолютный: Discord сам не
+// догадается, откуда относительный путь.
+const DEFAULT_AUTHOR = {
+  username: "SouCampus",
+  avatarUrl: `${SITE_URL}/logoSouCampus.png`,
+};
 
 // Связка с Discord-ботом BoCampus (2026-10-27). Две вкладки:
 //
@@ -69,8 +77,10 @@ export default async function AdminDiscordPage({
         .eq("id", postId)
         .maybeSingle();
       const row = data as PostRow | null;
-      if (!row || !isShowcasePostShape(row.post)) notFound();
-      editor = { id: row.id, projectSlug: row.project_slug, status: row.status, post: row.post };
+      // Через перевод: пост первого редактора (эмбед) тоже открывается.
+      const post = row ? normalizeShowcasePost(row.post) : null;
+      if (!row || !post) notFound();
+      editor = { id: row.id, projectSlug: row.project_slug, status: row.status, post };
     } else {
       const project = projects.find((p) => p.slug === from);
       if (!project) notFound();
@@ -78,7 +88,7 @@ export default async function AdminDiscordPage({
         id: null,
         projectSlug: project.slug,
         status: "draft",
-        post: draftFromProject(projectForPost(project), SITE_URL),
+        post: { ...draftFromProject(projectForPost(project), SITE_URL), ...DEFAULT_AUTHOR },
       };
     }
     const project = projects.find((p) => p.slug === editor.projectSlug);
@@ -126,7 +136,10 @@ export default async function AdminDiscordPage({
       .order("updated_at", { ascending: false }),
   ]);
   if (postsError) console.warn(`discord_posts недоступна: ${postsError.message}`);
-  const posts = ((postRows ?? []) as PostRow[]).filter((row) => isShowcasePostShape(row.post));
+  const posts = ((postRows ?? []) as PostRow[]).flatMap((row) => {
+    const post = normalizeShowcasePost(row.post);
+    return post ? [{ ...row, post }] : [];
+  });
 
   return (
     <Shell showcase inboxCount={inbox.length}>
@@ -170,7 +183,7 @@ export default async function AdminDiscordPage({
       ) : (
         <ul className="mt-8 divide-y divide-zinc-200 rounded-3xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
           {posts.map((row) => {
-            const post = row.post as ShowcasePost;
+            const post: ShowcasePost = row.post;
             return (
               <li key={row.id}>
                 <Link
@@ -212,10 +225,9 @@ function projectForPost(project: Project) {
   return {
     slug: project.slug,
     title: project.title,
-    tag: project.tag,
     summary: project.summary,
     image: project.image,
-    priceLabel: project.price,
+    gallery: project.gallery,
     sizeLabel: project.size,
     deadlineLabel: project.deadline,
     listingUrl: project.listingUrl,

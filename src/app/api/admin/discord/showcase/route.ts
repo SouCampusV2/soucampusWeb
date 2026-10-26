@@ -6,6 +6,7 @@ import {
   checkPost,
   deletePost,
   isShowcasePostShape,
+  normalizeShowcasePost,
   publishPost,
   updatePost,
   type ShowcasePost,
@@ -73,7 +74,10 @@ export async function POST(request: Request) {
       { status: 500 }
     );
   }
-  const post = row.post as ShowcasePost;
+  // Через перевод: пост первого редактора (эмбед, до вечера 26.10) тоже
+  // должен публиковаться, обновляться и убираться из канала.
+  const post = normalizeShowcasePost(row.post);
+  if (!post) return NextResponse.json({ error: "This post can't be read." }, { status: 400 });
 
   if (body.action === "publish" || body.action === "update") {
     const problem = checkPost(post);

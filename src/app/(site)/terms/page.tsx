@@ -256,6 +256,20 @@ export default function TermsPage() {
             and liability — are being written. Until then, order terms are
             agreed directly in Discord for every commission.
           </p>
+          {/* Как устроен сам заказ через тикет — уже написано (26.10):
+              отдельная страница, на неё ссылается и панель бота. */}
+          <p className="mt-3 text-zinc-600 dark:text-zinc-400">
+            How ordering through our Discord tickets works — quotes,
+            payment, delivery, closing — is on{" "}
+            <Link
+              href="/terms/discord"
+              className="font-medium text-orange-500 transition-colors hover:text-orange-600"
+              data-page-transition="true"
+            >
+              Ordering through Discord
+            </Link>
+            .
+          </p>
 
           <ul className="mt-6 space-y-2 border-t border-zinc-200 pt-6 text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
             {SECTIONS.map((section) => (
