@@ -20,6 +20,8 @@ So the order is reversed. Sell my own maps first, get real visitors, real search
 
 Everything built from here is built so that switch can be flipped.
 
+**Update, 2026-10-27: the switch is flipped.** Creator applications are open again, before the malware scanner is ready — nobody but the owner is signing up yet, and the scanner is next on the list. Until it lands, every map from another author waits in the moderation queue for a human approve; the database, not the UI, keeps it off the storefront until then.
+
 ## Stack
 
 **In use right now:**
@@ -47,7 +49,7 @@ Everything built from here is built so that switch can be flipped.
 - 🔴 Docker, once there's an actual reason for it
 - 🔴 `souc-ledger` — a separate Java / Spring Boot service that keeps the marketplace's money in a double-entry ledger (author balances, the platform's cut, payouts, refunds as their own entries, idempotent Stripe webhooks). A learning project first: the orders stay in Supabase, the ledger is a second consumer of the same Stripe events. Plan in `docs/IDEAS.md`
 
-**Built, then deliberately switched off** (see "What the shop is right now"): creator applications and approvals, self-serve uploads by anyone but the owner, status revocation. The code stays; the door is shut in the database, not in the UI.
+**Built, switched off on 2026-08-20, switched back on on 2026-10-27** (see "What the shop is right now"): creator applications and approvals, self-serve uploads, status revocation. Malware scanning is still the open item.
 
 ## Getting started
 

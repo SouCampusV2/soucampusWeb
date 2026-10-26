@@ -265,10 +265,23 @@ Stripe сообщает о завершении с `unpaid`, а о поступ�
       текст короче 10 символов не пускает) → отзыв под картой и во
       вкладке Reviews профиля.
 
+### 9d. Тексты для Discord ⬅ новое, 27.10
+
+- [ ] Опубликовать анонс «What's new, what's next» —
+      `botds/docs/announcements/2026-10-27-whats-new.md` (через Discohook:
+      ~2000 символов, `/admin/announce` режет до 1000).
+- [ ] Закреплённый пост #portfolio — 5% вместо 10% и строка про 15% за
+      друзей: PATCH с VPS (`botds/scripts/edit-channel-posts.sh`), текст
+      уже в `botds/docs/channel-posts.json`.
+- [ ] Сообщение заказчикам «заказы через Discord, возможно, другие
+      билдеры» — текст в переписке 27.10, вставить свою invite-ссылку.
+- [ ] Пост Redspire — канал тикетов `<#1232357370630508675>`, а не
+      `<:#ticket-creation>`.
+
 ### 9c. Три канала витрины ⬅ новое, 27.10
 
-- [ ] Миграция `20261027140000_discord_post_channel` — preview, потом прод
-      (только добавляет: до деплоя).
+- [x] 🟢 Миграция `20261027140000_discord_post_channel` — прогнана на обеих
+      базах 27.10 (владелец).
 - [ ] `/setup site_channel kind:Premade builds channel:#…` →
       `DISCORD_PREMADE_WEBHOOK_URL`; `kind:Free builds` →
       `DISCORD_FREE_WEBHOOK_URL` (Preview и Production). Если они уже
