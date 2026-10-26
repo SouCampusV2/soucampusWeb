@@ -2,29 +2,50 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Plus, X } from "@phosphor-icons/react";
+import { ArrowDown, ArrowUp, Plus, X } from "@phosphor-icons/react";
 import { Button, DANGER_COLORS, TOGGLE_PILL_COLORS } from "@/components/Button";
 import { TextField } from "@/components/MapFormParts";
 import DiscordPreview from "@/components/DiscordPreview";
 import { problemFromGateway } from "@/lib/upload-client";
-import { checkPost, type ShowcasePost } from "@/lib/discord-showcase";
+import { checkPost, MAX_IMAGES, type ShowcasePost } from "@/lib/discord-showcase";
 
-// Редактор поста витрины в Discord (/admin/discord → Showcase, 27.10).
+// Редактор поста витрины в Discord (/admin/discord → Showcase).
+//
+// С вечера 26.10 пост — «сообщение», как у студий-примеров владельца
+// (Coastline): крупный заголовок с чертой, текст с эмодзи и пингом роли,
+// ссылки списком «- [текст](url) - **подпись**», до четырёх больших
+// картинок, своё имя и аватар автора. Формат и всё, что уходит в
+// Discord, — в lib/discord-showcase.ts (из пакета бота, проверен на
+// живом Discord). Здесь только форма.
 //
 // Слева форма, справа DiscordPreview — тот же объект ShowcasePost, что
 // уйдёт в вебхук, поэтому превью не может разойтись с результатом.
 //
 // ⚠️ Publish и Update СНАЧАЛА сохраняют. Обработчик шлёт в Discord то,
-// что лежит в базе, а не то, что на экране: без сохранения правки,
-// сделанные после последнего Save, в Discord бы не попали, и превью
-// соврало бы.
+// что лежит в базе, а не то, что на экране.
 
 const INPUT =
   "w-full rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500";
 const LABEL = "mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300";
+const HINT = "font-normal text-zinc-500 dark:text-zinc-400";
 const MAX_BUTTONS = 5;
+const MAX_LINKS = 10;
+
+// Последний ID роли для пинга — в браузере владельца: роль одна и та же
+// от поста к посту, вписывать её каждый раз незачем. Это удобство, а не
+// данные: нет хранилища — поле просто пустое.
+const ROLE_KEY = "discord-showcase-role-id";
 
 type Action = "save" | "publish" | "update" | "unpublish" | "delete";
+
+/** Поменять местами элемент с соседом — для стрелок «выше/ниже». */
+function move<T>(list: T[], index: number, delta: -1 | 1): T[] {
+  const target = index + delta;
+  if (target < 0 || target >= list.length) return list;
+  const next = [...list];
+  [next[index], next[target]] = [next[target], next[index]];
+  return next;
+}
 
 export function DiscordPostEditor({
   id: initialId,
@@ -39,21 +60,61 @@ export function DiscordPostEditor({
   projectSlug: string | null;
   status: "draft" | "published";
   initialPost: ShowcasePost;
-  /** Обложка и галерея работы — выбор картинки одним нажатием. */
+  /** Обложка и галерея работы — выбор картинок одним нажатием. */
   imageChoices: string[];
   webhookConfigured: boolean;
 }) {
   const router = useRouter();
   const [id, setId] = useState(initialId);
   const [post, setPost] = useState(initialPost);
+  const [customImage, setCustomImage] = useState("");
+  const [reactions, setReactions] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<Action | null>(null);
+
+  /** Выбор пинга. У роли без ID — подставить последний, если он есть. */
+  function chooseMention(mention: ShowcasePost["mention"]) {
+    let roleId = post.roleId;
+    if (mention === "role" && !roleId) {
+      try {
+        roleId = window.localStorage.getItem(ROLE_KEY);
+      } catch {
+        // Хранилище закрыто (приватное окно) — поле просто пустое.
+      }
+    }
+    setPost((current) => ({ ...current, mention, roleId }));
+  }
 
   const problem = checkPost(post);
   const published = status === "published";
 
   function set<K extends keyof ShowcasePost>(key: K, value: ShowcasePost[K]) {
     setPost((current) => ({ ...current, [key]: value }));
+  }
+
+  function setRoleId(value: string) {
+    const roleId = value.trim() || null;
+    set("roleId", roleId);
+    try {
+      if (roleId) window.localStorage.setItem(ROLE_KEY, roleId);
+    } catch {
+      // см. выше
+    }
+  }
+
+  function toggleImage(url: string) {
+    if (post.imageUrls.includes(url)) {
+      set("imageUrls", post.imageUrls.filter((u) => u !== url));
+    } else if (post.imageUrls.length < MAX_IMAGES) {
+      set("imageUrls", [...post.imageUrls, url]);
+    }
+  }
+
+  function addCustomImage() {
+    const url = customImage.trim();
+    if (!url || post.imageUrls.includes(url) || post.imageUrls.length >= MAX_IMAGES) return;
+    set("imageUrls", [...post.imageUrls, url]);
+    setCustomImage("");
   }
 
   async function call(body: Record<string, unknown>): Promise<{ id?: string } | null> {
@@ -102,22 +163,54 @@ export function DiscordPostEditor({
     setPending(null);
   }
 
+  const reactionList = reactions.split(/\s+/).filter(Boolean);
+
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
       <div className="space-y-6 rounded-3xl border border-zinc-200 bg-[#fbfbff] p-6 dark:border-zinc-800 dark:bg-zinc-950 sm:p-8">
-        <TextField id="author" label="Top line" value={post.authorName} onChange={(v) => set("authorName", v)} />
-        <TextField id="title" label="Title" value={post.title} onChange={(v) => set("title", v)} required />
-        <TextField
-          id="url"
-          label="Title link"
-          hint="— usually the work page"
-          value={post.url ?? ""}
-          onChange={(v) => set("url", v.trim() || null)}
-        />
+        {/* Автор. После публикации Discord имя и аватар не меняет —
+            правка шлёт только содержимое. */}
+        <div className="grid gap-4 sm:grid-cols-2">
+          <TextField
+            id="username"
+            label="Posted as"
+            hint="— not “Discord”"
+            value={post.username ?? ""}
+            onChange={(v) => set("username", v.trim() ? v : null)}
+          />
+          <TextField
+            id="avatar"
+            label="Avatar link"
+            value={post.avatarUrl ?? ""}
+            onChange={(v) => set("avatarUrl", v.trim() || null)}
+          />
+        </div>
+        {published && (
+          <p className="-mt-3 text-xs text-zinc-500 dark:text-zinc-400">
+            Discord keeps the name and avatar a post was published with — Update
+            changes everything else.
+          </p>
+        )}
+
+        <div>
+          <TextField id="title" label="Title" value={post.title} onChange={(v) => set("title", v)} required />
+          <label className="mt-2 flex items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
+            <input
+              type="checkbox"
+              checked={post.titleDash}
+              onChange={(e) => set("titleDash", e.target.checked)}
+              className="h-4 w-4 accent-orange-500"
+            />
+            Dash after the title (“Title ——”)
+          </label>
+        </div>
+
         <div>
           <label htmlFor="body" className={LABEL}>
             Text{" "}
-            <span className="font-normal text-zinc-500 dark:text-zinc-400">— Discord markdown works</span>
+            <span className={HINT}>
+              — server emoji as <code>&lt;:name:id&gt;</code>, small line starts with <code>-# </code>
+            </span>
           </label>
           <textarea
             id="body"
@@ -128,112 +221,161 @@ export function DiscordPostEditor({
           />
         </div>
 
-        {/* Картинка: одна из кадров работы или своя ссылка. */}
+        {/* Ссылки списком: «- [текст](адрес) - **подпись**». */}
         <div>
-          <p className={LABEL}>Image</p>
-          {imageChoices.length > 0 && (
-            <div className="mb-3 flex flex-wrap gap-2">
-              {imageChoices.map((url) => (
-                <button
-                  key={url}
-                  type="button"
-                  onClick={() => set("imageUrl", url)}
-                  aria-label="Use this image"
-                  className={`h-14 w-20 overflow-hidden rounded-xl border-2 transition-colors ${
-                    post.imageUrl === url
-                      ? "border-orange-500"
-                      : "border-transparent hover:border-zinc-300 dark:hover:border-zinc-700"
-                  }`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={url} alt="" className="h-full w-full object-cover" />
-                </button>
-              ))}
-              <button
-                type="button"
-                onClick={() => set("imageUrl", null)}
-                className={`h-14 rounded-xl border-2 px-3 text-xs font-medium text-zinc-500 transition-colors ${
-                  post.imageUrl === null ? "border-orange-500" : "border-zinc-200 dark:border-zinc-800"
-                }`}
-              >
-                No image
-              </button>
-            </div>
-          )}
-          <input
-            value={post.imageUrl ?? ""}
-            onChange={(e) => set("imageUrl", e.target.value.trim() || null)}
-            placeholder="https://…"
-            aria-label="Image link"
-            className={INPUT}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="color" className={LABEL}>Stripe colour</label>
-          <div className="flex items-center gap-3">
-            <input
-              type="color"
-              value={/^#[0-9a-fA-F]{6}$/.test(post.color) ? post.color : "#f97316"}
-              onChange={(e) => set("color", e.target.value)}
-              aria-label="Pick a colour"
-              className="h-11 w-14 cursor-pointer rounded-xl border border-zinc-950/[0.08] bg-transparent dark:border-zinc-50/[0.08]"
-            />
-            <input id="color" value={post.color} onChange={(e) => set("color", e.target.value)} className={INPUT} />
-          </div>
-        </div>
-
-        {/* Поля — «Size / Built in / Price». inline — в ряд по три. */}
-        <div>
-          <p className={LABEL}>Fields</p>
-          <ul className="space-y-2">
-            {post.fields.map((field, index) => (
-              <li key={index} className="flex flex-wrap items-center gap-2">
-                <input
-                  value={field.name}
-                  onChange={(e) =>
-                    set("fields", post.fields.map((f, i) => (i === index ? { ...f, name: e.target.value } : f)))
-                  }
-                  placeholder="Name"
-                  aria-label="Field name"
-                  className={`${INPUT} min-w-0 flex-1 basis-28`}
-                />
-                <input
-                  value={field.value}
-                  onChange={(e) =>
-                    set("fields", post.fields.map((f, i) => (i === index ? { ...f, value: e.target.value } : f)))
-                  }
-                  placeholder="Value"
-                  aria-label="Field value"
-                  className={`${INPUT} min-w-0 flex-1 basis-28`}
-                />
-                <label className="flex items-center gap-1.5 text-xs text-zinc-600 dark:text-zinc-400">
+          <p className={LABEL}>
+            Links <span className={HINT}>— a list under the text; the bold note is optional</span>
+          </p>
+          <ul className="space-y-3">
+            {post.links.map((link, index) => (
+              <li key={index} className="rounded-2xl border border-zinc-200 p-3 dark:border-zinc-800">
+                <div className="flex gap-2">
                   <input
-                    type="checkbox"
-                    checked={field.inline}
+                    value={link.label}
                     onChange={(e) =>
-                      set("fields", post.fields.map((f, i) => (i === index ? { ...f, inline: e.target.checked } : f)))
+                      set("links", post.links.map((l, i) => (i === index ? { ...l, label: e.target.value } : l)))
                     }
-                    className="h-4 w-4 accent-orange-500"
+                    placeholder="Text"
+                    aria-label="Link text"
+                    className={`${INPUT} min-w-0 flex-1`}
                   />
-                  Inline
-                </label>
-                <RemoveButton
-                  label="Remove field"
-                  onClick={() => set("fields", post.fields.filter((_, i) => i !== index))}
+                  <RowControls
+                    onUp={() => set("links", move(post.links, index, -1))}
+                    onDown={() => set("links", move(post.links, index, 1))}
+                    onRemove={() => set("links", post.links.filter((_, i) => i !== index))}
+                    label="link"
+                  />
+                </div>
+                <input
+                  value={link.url}
+                  onChange={(e) =>
+                    set("links", post.links.map((l, i) => (i === index ? { ...l, url: e.target.value } : l)))
+                  }
+                  placeholder="https://…"
+                  aria-label="Link address"
+                  className={`${INPUT} mt-2`}
+                />
+                <input
+                  value={link.tagline}
+                  onChange={(e) =>
+                    set("links", post.links.map((l, i) => (i === index ? { ...l, tagline: e.target.value } : l)))
+                  }
+                  placeholder="Bold note, e.g. Let's create something together!"
+                  aria-label="Bold note"
+                  className={`${INPUT} mt-2`}
                 />
               </li>
             ))}
           </ul>
-          <AddButton onClick={() => set("fields", [...post.fields, { name: "", value: "", inline: true }])}>
-            Add field
-          </AddButton>
+          {post.links.length < MAX_LINKS && (
+            <AddButton onClick={() => set("links", [...post.links, { label: "", url: "", tagline: "" }])}>
+              Add link
+            </AddButton>
+          )}
         </div>
 
-        {/* Кнопки-ссылки под постом. Действий там нет и не будет. */}
+        {/* Картинки: до четырёх, по порядку. Из работы — нажатием, своя —
+            ссылкой. */}
         <div>
-          <p className={LABEL}>Buttons <span className="font-normal text-zinc-500 dark:text-zinc-400">— up to {MAX_BUTTONS}</span></p>
-          <ul className="space-y-2">
+          <p className={LABEL}>
+            Pictures <span className={HINT}>— up to {MAX_IMAGES}, in this order</span>
+          </p>
+          {post.imageUrls.length > 0 && (
+            <ul className="mb-3 space-y-2">
+              {post.imageUrls.map((url, index) => (
+                <li key={url} className="flex items-center gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={url} alt="" className="h-12 w-20 shrink-0 rounded-lg object-cover" />
+                  <span className="min-w-0 flex-1 truncate text-xs text-zinc-500 dark:text-zinc-400">{url}</span>
+                  <RowControls
+                    onUp={() => set("imageUrls", move(post.imageUrls, index, -1))}
+                    onDown={() => set("imageUrls", move(post.imageUrls, index, 1))}
+                    onRemove={() => set("imageUrls", post.imageUrls.filter((u) => u !== url))}
+                    label="picture"
+                  />
+                </li>
+              ))}
+            </ul>
+          )}
+          {imageChoices.length > 0 && (
+            <div className="mb-3 flex flex-wrap gap-2">
+              {imageChoices.map((url) => {
+                const chosen = post.imageUrls.includes(url);
+                return (
+                  <button
+                    key={url}
+                    type="button"
+                    onClick={() => toggleImage(url)}
+                    aria-pressed={chosen}
+                    aria-label={chosen ? "Remove this picture" : "Add this picture"}
+                    disabled={!chosen && post.imageUrls.length >= MAX_IMAGES}
+                    className={`h-14 w-20 overflow-hidden rounded-xl border-2 transition-colors disabled:opacity-40 ${
+                      chosen ? "border-orange-500" : "border-transparent hover:border-zinc-300 dark:hover:border-zinc-700"
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={url} alt="" className="h-full w-full object-cover" />
+                  </button>
+                );
+              })}
+            </div>
+          )}
+          <div className="flex gap-2">
+            <input
+              value={customImage}
+              onChange={(e) => setCustomImage(e.target.value)}
+              placeholder="https://… your own picture"
+              aria-label="Picture link"
+              className={`${INPUT} min-w-0 flex-1`}
+            />
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={addCustomImage}
+              disabled={!customImage.trim() || post.imageUrls.length >= MAX_IMAGES}
+            >
+              Add
+            </Button>
+          </div>
+        </div>
+
+        {/* Пинг — по умолчанию никого. @everyone будит весь сервер, и
+            случайно его быть не должно. */}
+        <div>
+          <p className={LABEL}>Ping</p>
+          <div className="flex flex-wrap gap-2">
+            {(["none", "here", "everyone", "role"] as const).map((mention) => (
+              <button
+                key={mention}
+                type="button"
+                onClick={() => chooseMention(mention)}
+                className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+                  post.mention === mention ? TOGGLE_PILL_COLORS.on : TOGGLE_PILL_COLORS.off
+                }`}
+              >
+                {mention === "none" ? "Nobody" : mention === "role" ? "A role" : `@${mention}`}
+              </button>
+            ))}
+          </div>
+          {post.mention === "role" && (
+            <div className="mt-3">
+              <TextField
+                id="roleId"
+                label="Role ID"
+                hint="— in Discord: Server Settings → Roles → right-click the role → Copy Role ID (needs Developer Mode)"
+                value={post.roleId ?? ""}
+                onChange={setRoleId}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Кнопки-ссылки под постом — по желанию, поэтому свёрнуты. */}
+        <details className="group" open={post.buttons.length > 0}>
+          <summary className="cursor-pointer text-sm font-medium text-zinc-700 dark:text-zinc-300">
+            Buttons under the post <span className={HINT}>— optional, up to {MAX_BUTTONS}</span>
+          </summary>
+          <ul className="mt-3 space-y-2">
             {post.buttons.map((button, index) => (
               <li key={index} className="flex flex-wrap items-center gap-2">
                 <input
@@ -254,39 +396,14 @@ export function DiscordPostEditor({
                   aria-label="Button link"
                   className={`${INPUT} min-w-0 flex-[2] basis-40`}
                 />
-                <RemoveButton
-                  label="Remove button"
-                  onClick={() => set("buttons", post.buttons.filter((_, i) => i !== index))}
-                />
+                <RemoveButton label="Remove button" onClick={() => set("buttons", post.buttons.filter((_, i) => i !== index))} />
               </li>
             ))}
           </ul>
           {post.buttons.length < MAX_BUTTONS && (
-            <AddButton onClick={() => set("buttons", [...post.buttons, { label: "", url: "" }])}>
-              Add button
-            </AddButton>
+            <AddButton onClick={() => set("buttons", [...post.buttons, { label: "", url: "" }])}>Add button</AddButton>
           )}
-        </div>
-
-        {/* Упоминание — по умолчанию никого. @everyone будит весь сервер,
-            и случайно его быть не должно. */}
-        <div>
-          <p className={LABEL}>Ping</p>
-          <div className="flex flex-wrap gap-2">
-            {(["none", "here", "everyone"] as const).map((mention) => (
-              <button
-                key={mention}
-                type="button"
-                onClick={() => set("mention", mention)}
-                className={`rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
-                  post.mention === mention ? TOGGLE_PILL_COLORS.on : TOGGLE_PILL_COLORS.off
-                }`}
-              >
-                {mention === "none" ? "Nobody" : `@${mention}`}
-              </button>
-            ))}
-          </div>
-        </div>
+        </details>
 
         {(problem || error) && (
           <p className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-600 dark:bg-red-950/40 dark:text-red-400">
@@ -348,12 +465,47 @@ export function DiscordPostEditor({
       </div>
 
       {/* Превью — липкое: при длинной форме оно остаётся на виду. */}
-      <div className="lg:sticky lg:top-8">
-        <p className="mb-3 text-sm font-medium text-zinc-500 dark:text-zinc-400">
+      <div className="space-y-3 lg:sticky lg:top-8">
+        <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
           Preview {published ? "· published" : "· draft"}
         </p>
-        <DiscordPreview post={post} />
+        <DiscordPreview post={post} reactions={reactionList} />
+        {/* Реакции ставит бот (/setup showcase_reactions), вебхук этого не
+            умеет. Поле — только чтобы увидеть пост с ними. */}
+        <input
+          value={reactions}
+          onChange={(e) => setReactions(e.target.value)}
+          placeholder="Preview reactions: 🔥 ❤️ <:name:id>"
+          aria-label="Preview reactions"
+          className={INPUT}
+        />
       </div>
+    </div>
+  );
+}
+
+function RowControls({
+  onUp,
+  onDown,
+  onRemove,
+  label,
+}: {
+  onUp: () => void;
+  onDown: () => void;
+  onRemove: () => void;
+  label: string;
+}) {
+  const ICON =
+    "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-zinc-500 transition-colors hover:bg-zinc-950/[0.05] dark:text-zinc-400 dark:hover:bg-zinc-50/[0.06]";
+  return (
+    <div className="flex shrink-0">
+      <button type="button" onClick={onUp} aria-label={`Move ${label} up`} className={ICON}>
+        <ArrowUp size={16} aria-hidden />
+      </button>
+      <button type="button" onClick={onDown} aria-label={`Move ${label} down`} className={ICON}>
+        <ArrowDown size={16} aria-hidden />
+      </button>
+      <RemoveButton label={`Remove ${label}`} onClick={onRemove} />
     </div>
   );
 }

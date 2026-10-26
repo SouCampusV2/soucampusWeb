@@ -49,7 +49,7 @@ const CONTROLLER = {
   detail: "an individual based in Estonia",
 };
 
-const LAST_UPDATED = "24 September 2026";
+const LAST_UPDATED = "26 October 2026";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -160,6 +160,51 @@ const SECTIONS: Section[] = [
     paragraphs: [
       "Payments are handled by Stripe. Your card number never reaches this site — you type it on Stripe's own checkout page, and Stripe tells us only whether the payment succeeded and which items it covered.",
       "That means we cannot lose your card details, because we do not hold them. What Stripe does with them is governed by Stripe's own privacy policy.",
+    ],
+  },
+  // Discord-бот BoCampus (26.10). Текст — из пакета бота
+  // (content/discord-terms-and-privacy.md), сверен с его кодом на 27.10.
+  // ⚠️ Два места черновика ждут владельца и намеренно НЕ написаны:
+  //   • где стоит сервер бота («[in the EU — Hostinger, Lithuania? check]»)
+  //     — сказано только, что сервер наш;
+  //   • сколько хранятся записи заказов («[period: …]»).
+  // Почта поддержки — из site.ts, её выдумывать не пришлось.
+  {
+    id: "discord",
+    title: "Our Discord bot",
+    paragraphs: [
+      "When you use tickets on our Discord server, our bot (BoCampus) processes the data below. We use it to run your order — show it to builders, keep the conversation, confirm payment and delivery, and resolve disputes.",
+    ],
+    bullets: [
+      { term: "Who you are on Discord", text: "Your Discord user ID and display name." },
+      {
+        term: "What you send in tickets",
+        text: "Your order form answers, quotes you receive, messages and files in your ticket channel, and your review.",
+      },
+      {
+        term: "Order history",
+        text: "The stages of your order (submitted, accepted, paid, delivered, closed) and their dates.",
+      },
+      {
+        term: "Where it is kept",
+        text: "The bot runs on our own server. Its database keeps order records for as long as we need them for the order and our accounting; database backups are kept for 14 days.",
+      },
+      {
+        term: "Ticket channels",
+        text: "Deleted 48 hours after a ticket closes, unless a manager keeps them. Before deletion, a transcript of the conversation is sent to you and to a staff-only channel on our Discord server.",
+      },
+      {
+        term: "Discord itself",
+        text: "Stores messages under its own privacy policy, at discord.com/privacy.",
+      },
+      {
+        term: "On our website",
+        text: "Your build and review appear only if you said yes in your ticket, and builds are shown without your name. Reviews are signed with your Discord display name.",
+      },
+      {
+        term: "Your rights",
+        text: `To get a copy of your data or ask us to delete it, open a Support ticket or write to ${SUPPORT_EMAIL}. We will remove what we are not required to keep.`,
+      },
     ],
   },
   {

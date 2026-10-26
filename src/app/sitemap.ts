@@ -38,6 +38,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     // — условия покупки, на которые ссылается галочка при оплате.
     { url: `${SITE_URL}/privacy`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
     { url: `${SITE_URL}/terms`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
+    // Условия заказа через Discord-бота (26.10) — на них ссылается панель
+    // тикетов в Discord.
+    { url: `${SITE_URL}/terms/discord`, lastModified: now, changeFrequency: "yearly", priority: 0.3 },
   ];
 
   const projectPages: MetadataRoute.Sitemap = projects.map((p) => ({

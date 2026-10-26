@@ -2,44 +2,50 @@
 //
 // Владелец собирает пост в /admin/discord: черновик → превью «как в
 // Discord» → «Publish». Сайт отправляет его сам, в вебхук канала витрины
-// (DISCORD_SHOWCASE_WEBHOOK_URL). Вебхук выдаёт бот: /setup
-// showcase_channel. Бот при этом ничего не делает и сайт не опрашивает.
+// (DISCORD_SHOWCASE_WEBHOOK_URL; выдаёт бот: /setup showcase_channel).
+// Реакции под постом ставит бот (/setup showcase_reactions) — вебхук этого
+// не умеет.
+//
+// Стиль — «сообщение», как у студий-примеров владельца (Coastline): крупный
+// заголовок с чертой, текст с эмодзи и пингом роли, список ссылок
+// «- [текст](url) - **подпись**», большие картинки без рамки. Технически это
+// сообщение Components V2: блоки текста + галерея картинок (+ кнопки по
+// желанию). Картинки галереей, а не вложением: не надо качать и загружать
+// файлы, хватает https-ссылки.
 //
 // Почему вебхук, а не токен бота: ссылка вебхука умеет только писать,
-// править и удалять СВОИ сообщения в ОДНОМ канале. Токен бота умеет всё
-// на сервере — его на Vercel не кладём.
-//
-// Вебхук создан ботом (принадлежит приложению) — поэтому под постом можно
-// повесить кнопки-ссылки. Кнопки-действия нельзя и не нужно.
+// править и удалять СВОИ сообщения в ОДНОМ канале.
 
-/** Пост витрины — то, что лежит в discord_posts и рисуется в превью. */
+/** Пост витрины — то, что лежит в discord_posts.post и рисуется в превью. */
 export type ShowcasePost = {
   title: string;
-  url: string | null; // заголовок-ссылка, обычно страница работы
-  body: string; // текст под заголовком, Discord-markdown
-  imageUrl: string | null; // большая картинка, абсолютный https
-  color: string; // "#f97316"
-  fields: { name: string; value: string; inline: boolean }[];
-  buttons: { label: string; url: string }[];
-  mention: "none" | "here" | "everyone";
-  authorName: string; // строка над заголовком: "SouCampus portfolio · Order"
+  titleDash: boolean; // « ——» после заголовка, как в примере
+  body: string; // Discord-markdown; эмодзи сервера — <:name:id>
+  links: { label: string; url: string; tagline: string }[]; // "- [label](url) - **tagline**"
+  imageUrls: string[]; // 1–4 большие картинки
+  mention: "none" | "here" | "everyone" | "role";
+  roleId: string | null; // для mention = "role" (ID роли из Discord, напр. @Showcase)
+  buttons: { label: string; url: string }[]; // кнопки-ссылки под постом, по желанию
+  username: string | null; // от чьего имени (по умолчанию — имя вебхука)
+  avatarUrl: string | null; // аватар автора поста
 };
 
 /** Работа портфолио в том виде, в каком её отдаёт getProject. */
 export type ProjectForPost = {
   slug: string;
   title: string;
-  tag: string;
   summary: string;
   image: string; // может быть относительным: /portfolio/x.webp
-  priceLabel: string;
+  gallery?: string[];
   sizeLabel: string;
   deadlineLabel: string;
   listingUrl: string | null;
   listingIsFree: boolean;
 };
 
-/** Относительный путь картинки → абсолютный: Discord сам не догадается. */
+export const MAX_IMAGES = 4;
+
+/** Относительный путь → абсолютный: Discord сам не догадается. */
 export function absoluteUrl(url: string | null, siteUrl: string): string | null {
   if (!url) return null;
   return /^https?:\/\//.test(url) ? url : `${siteUrl.replace(/\/$/, "")}/${url.replace(/^\//, "")}`;
@@ -47,28 +53,28 @@ export function absoluteUrl(url: string | null, siteUrl: string): string | null 
 
 /** Черновик из работы — стартовая точка, владелец правит всё в форме. */
 export function draftFromProject(p: ProjectForPost, siteUrl: string): ShowcasePost {
-  const page = `${siteUrl.replace(/\/$/, "")}/portfolio/${p.slug}`;
-  const buttons = [{ label: "View on website", url: page }];
-  if (p.listingUrl) buttons.push({ label: p.listingIsFree ? "Download free" : "Get this map", url: p.listingUrl });
+  const site = siteUrl.replace(/\/$/, "");
+  const facts = [p.sizeLabel && `${p.sizeLabel}`, p.deadlineLabel && `built in ${p.deadlineLabel}`].filter(Boolean).join(" · ");
+  const links = [{ label: "See it on our website", url: `${site}/portfolio/${p.slug}`, tagline: "" }];
+  if (p.listingUrl) links.push({ label: p.listingIsFree ? "Download it free" : "Get this map", url: p.listingUrl, tagline: "" });
+  links.push({ label: "Order your own build", url: `${site}/contact`, tagline: "Let's create something together!" });
   return {
     title: p.title,
-    url: page,
-    body: p.summary,
-    imageUrl: absoluteUrl(p.image, siteUrl),
-    color: "#f97316",
-    fields: [
-      { name: "Size", value: p.sizeLabel, inline: true },
-      { name: "Built in", value: p.deadlineLabel, inline: true },
-      { name: "Price", value: p.priceLabel, inline: true },
-    ].filter((f) => f.value),
-    buttons,
+    titleDash: true,
+    body: facts ? `${p.summary}\n-# ${facts}` : p.summary,
+    links,
+    imageUrls: [p.image, ...(p.gallery ?? [])]
+      .map((u) => absoluteUrl(u, siteUrl))
+      .filter((u): u is string => Boolean(u))
+      .slice(0, MAX_IMAGES),
     mention: "none",
-    authorName: `SouCampus portfolio · ${p.tag}`,
+    roleId: null,
+    buttons: [],
+    username: null,
+    avatarUrl: null,
   };
 }
 
-// Пределы Discord (https://discord.com/developers/docs/resources/message#embed-object-embed-limits).
-const LIMITS = { title: 256, body: 4096, fields: 25, fieldName: 256, fieldValue: 1024, total: 6000, buttons: 5, label: 80, author: 256 };
 const isHttps = (u: string) => {
   try {
     return new URL(u).protocol === "https:";
@@ -77,95 +83,87 @@ const isHttps = (u: string) => {
   }
 };
 
-/**
- * Похоже ли присланное на ShowcasePost по ФОРМЕ — типы полей, а не
- * пределы Discord. Черновик сохраняется и недописанным (пустой заголовок
- * — нормальный черновик), но строка, у которой fields не массив, уронила
- * бы и превью, и форму при следующем открытии. Дописано при переносе на
- * сайт 26.10.
- */
-export function isShowcasePostShape(value: unknown): value is ShowcasePost {
-  if (!value || typeof value !== "object") return false;
-  const p = value as Record<string, unknown>;
-  const text = (v: unknown) => typeof v === "string" && v.length <= 8000;
-  const textOrNull = (v: unknown) => v === null || text(v);
-  return (
-    text(p.title) &&
-    textOrNull(p.url) &&
-    text(p.body) &&
-    textOrNull(p.imageUrl) &&
-    text(p.color) &&
-    text(p.authorName) &&
-    ["none", "here", "everyone"].includes(p.mention as string) &&
-    Array.isArray(p.fields) &&
-    p.fields.length <= 50 &&
-    p.fields.every(
-      (f) => f && typeof f === "object" && text(f.name) && text(f.value) && typeof f.inline === "boolean"
-    ) &&
-    Array.isArray(p.buttons) &&
-    p.buttons.length <= 10 &&
-    p.buttons.every((b) => b && typeof b === "object" && text(b.label) && text(b.url))
-  );
+/** Текст ссылки не должен ломать markdown: [ ] убираем, ) и пробелы в адресе кодируем. */
+const linkLabel = (s: string) => s.replace(/[[\]]/g, "").trim();
+const linkUrl = (u: string) => u.replace(/\)/g, "%29").replace(/ /g, "%20");
+
+/** Строка пинга в конце текста. */
+export function mentionText(post: ShowcasePost): string {
+  if (post.mention === "role" && post.roleId) return `<@&${post.roleId}>`;
+  if (post.mention === "here" || post.mention === "everyone") return `@${post.mention}`;
+  return "";
 }
+
+/** Блоки текста поста, в том виде, в каком их увидит Discord (и нарисует превью). */
+export function postText(post: ShowcasePost): { main: string; links: string } {
+  const title = `# ${post.title.trim()}${post.titleDash ? " ——" : ""}`;
+  const mention = mentionText(post);
+  const body = [post.body.trim(), mention].filter(Boolean).join(" ");
+  const links = post.links
+    .map((l) => `- [${linkLabel(l.label)}](${linkUrl(l.url)})${l.tagline.trim() ? ` - **${l.tagline.trim()}**` : ""}`)
+    .join("\n");
+  return { main: [title, body].filter(Boolean).join("\n"), links };
+}
+
+// Пределы Discord для Components V2: весь текст сообщения ≤ 4000 символов,
+// в галерее ≤ 10 картинок (мы берём ≤ 4), кнопок в ряду ≤ 5.
+const LIMITS = { text: 4000, title: 200, links: 10, label: 80, buttons: 5, username: 80 };
 
 /** null — пост можно отправлять; строка — что не так (показывается в форме). */
 export function checkPost(post: ShowcasePost): string | null {
   if (!post.title.trim()) return "The post needs a title.";
   if (post.title.length > LIMITS.title) return `Title: at most ${LIMITS.title} characters.`;
-  if (post.body.length > LIMITS.body) return `Text: at most ${LIMITS.body} characters.`;
-  if (post.authorName.length > LIMITS.author) return `Top line: at most ${LIMITS.author} characters.`;
-  if (!/^#[0-9a-fA-F]{6}$/.test(post.color)) return "Colour must look like #f97316.";
-  if (post.url && !isHttps(post.url)) return "Title link must be an https address.";
-  if (post.imageUrl && !isHttps(post.imageUrl)) return "Image must be an https address.";
-  if (post.fields.length > LIMITS.fields) return `At most ${LIMITS.fields} fields.`;
-  for (const f of post.fields) {
-    if (!f.name.trim() || !f.value.trim()) return "Every field needs a name and a value.";
-    if (f.name.length > LIMITS.fieldName || f.value.length > LIMITS.fieldValue) return "A field is too long.";
+  if (post.links.length > LIMITS.links) return `At most ${LIMITS.links} links.`;
+  for (const l of post.links) {
+    if (!linkLabel(l.label)) return "Every link needs a text.";
+    if (!isHttps(l.url)) return "Links must be https addresses.";
   }
+  if (!post.imageUrls.length) return "Add at least one picture.";
+  if (post.imageUrls.length > MAX_IMAGES) return `At most ${MAX_IMAGES} pictures.`;
+  if (!post.imageUrls.every(isHttps)) return "Pictures must be https addresses.";
   if (post.buttons.length > LIMITS.buttons) return `At most ${LIMITS.buttons} buttons.`;
   for (const b of post.buttons) {
     if (!b.label.trim() || b.label.length > LIMITS.label) return `Button labels: 1–${LIMITS.label} characters.`;
     if (!isHttps(b.url)) return "Buttons must link to https addresses.";
   }
-  const total =
-    post.title.length + post.body.length + post.authorName.length +
-    post.fields.reduce((n, f) => n + f.name.length + f.value.length, 0);
-  if (total > LIMITS.total) return `The whole post is over Discord's ${LIMITS.total}-character limit.`;
-  if (!["none", "here", "everyone"].includes(post.mention)) return "Bad mention setting.";
+  if (!["none", "here", "everyone", "role"].includes(post.mention)) return "Bad mention setting.";
+  if (post.mention === "role" && !/^\d{17,20}$/.test(post.roleId ?? "")) {
+    return "Role ping needs the role ID (Discord: right-click the role → Copy Role ID).";
+  }
+  if (post.username && (post.username.length > LIMITS.username || /discord/i.test(post.username))) {
+    return "Author name: up to 80 characters and without the word “Discord” (Discord refuses it).";
+  }
+  if (post.avatarUrl && !isHttps(post.avatarUrl)) return "Avatar must be an https address.";
+  const { main, links } = postText(post);
+  if (main.length + links.length > LIMITS.text) return `The post is over Discord's ${LIMITS.text}-character limit.`;
   return null;
 }
 
-/** Тело запроса вебхука. Упоминания выключены, если владелец их не выбрал явно. */
+/** Тело запроса вебхука (Components V2). Пингует только то, что выбрано явно. */
 export function toWebhookPayload(post: ShowcasePost) {
-  const mention = post.mention === "none" ? "" : `@${post.mention}`;
+  const { main, links } = postText(post);
+  const components: unknown[] = [{ type: 10, content: main }];
+  if (links) components.push({ type: 10, content: links });
+  components.push({ type: 12, items: post.imageUrls.map((url) => ({ media: { url } })) });
+  if (post.buttons.length) {
+    components.push({ type: 1, components: post.buttons.map((b) => ({ type: 2, style: 5, label: b.label, url: b.url })) });
+  }
+  const allowed_mentions =
+    post.mention === "role" && post.roleId
+      ? { parse: [], roles: [post.roleId] }
+      : { parse: post.mention === "here" || post.mention === "everyone" ? ["everyone"] : [] };
   return {
-    content: mention,
-    allowed_mentions: { parse: post.mention === "none" ? [] : ["everyone"] },
-    embeds: [
-      {
-        title: post.title,
-        url: post.url ?? undefined,
-        description: post.body || undefined,
-        color: parseInt(post.color.slice(1), 16),
-        author: post.authorName ? { name: post.authorName } : undefined,
-        image: post.imageUrl ? { url: post.imageUrl } : undefined,
-        fields: post.fields,
-      },
-    ],
-    components: post.buttons.length
-      ? [{ type: 1, components: post.buttons.map((b) => ({ type: 2, style: 5, label: b.label, url: b.url })) }]
-      : [],
+    flags: 1 << 15, // IS_COMPONENTS_V2
+    components,
+    allowed_mentions,
+    ...(post.username ? { username: post.username } : {}),
+    ...(post.avatarUrl ? { avatar_url: post.avatarUrl } : {}),
   };
 }
 
 type WebhookResult = { ok: true; messageId: string } | { ok: false; error: string };
 
-async function call(
-  url: string,
-  method: "POST" | "PATCH" | "DELETE",
-  body: unknown,
-  fetchFn: typeof fetch
-): Promise<Response> {
+async function call(url: string, method: "POST" | "PATCH" | "DELETE", body: unknown, fetchFn: typeof fetch) {
   return fetchFn(url, {
     method,
     headers: body ? { "content-type": "application/json" } : undefined,
@@ -178,15 +176,21 @@ const withQuery = (url: string) => `${url}${url.includes("?") ? "&" : "?"}wait=t
 /** Опубликовать. wait=true — Discord возвращает сообщение, его id нужен для правки и удаления. */
 export async function publishPost(webhookUrl: string, post: ShowcasePost, fetchFn: typeof fetch = fetch): Promise<WebhookResult> {
   const res = await call(withQuery(webhookUrl), "POST", toWebhookPayload(post), fetchFn);
-  if (!res.ok) return { ok: false, error: `Discord answered ${res.status}: ${(await res.text()).slice(0, 200)}` };
+  if (!res.ok) return { ok: false, error: `Discord answered ${res.status}: ${(await res.text()).slice(0, 300)}` };
   const message = (await res.json()) as { id?: string };
   return message.id ? { ok: true, messageId: message.id } : { ok: false, error: "Discord did not return the message id." };
 }
 
-/** Поправить уже опубликованный пост на месте (опечатка, новая цена). */
+/**
+ * Поправить опубликованный пост на месте. Имя и аватар автора у вебхука
+ * после публикации не меняются — Discord их при правке игнорирует.
+ */
 export async function updatePost(webhookUrl: string, messageId: string, post: ShowcasePost, fetchFn: typeof fetch = fetch): Promise<WebhookResult> {
-  const res = await call(withQuery(`${webhookUrl}/messages/${messageId}`), "PATCH", toWebhookPayload(post), fetchFn);
-  if (!res.ok) return { ok: false, error: `Discord answered ${res.status}: ${(await res.text()).slice(0, 200)}` };
+  // Имя и аватар отбрасываются намеренно — Discord их при правке не принимает.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { username: _u, avatar_url: _a, ...payload } = toWebhookPayload(post) as Record<string, unknown>;
+  const res = await call(withQuery(`${webhookUrl}/messages/${messageId}`), "PATCH", payload, fetchFn);
+  if (!res.ok) return { ok: false, error: `Discord answered ${res.status}: ${(await res.text()).slice(0, 300)}` };
   return { ok: true, messageId };
 }
 
@@ -195,4 +199,90 @@ export async function deletePost(webhookUrl: string, messageId: string, fetchFn:
   const res = await call(`${webhookUrl}/messages/${messageId}`, "DELETE", null, fetchFn);
   if (!res.ok && res.status !== 404) return { ok: false, error: `Discord answered ${res.status}` };
   return { ok: true, messageId };
+}
+
+// ------------------------------------------------------------
+// Дописано при переносе на сайт (26.10).
+// ------------------------------------------------------------
+
+const text = (v: unknown, max = 8000) => typeof v === "string" && v.length <= max;
+const textOrNull = (v: unknown) => v === null || text(v);
+
+/**
+ * Похоже ли присланное на ShowcasePost по ФОРМЕ — типы полей, а не
+ * пределы Discord. Черновик сохраняется и недописанным (пустой заголовок
+ * — нормальный черновик), но строка, у которой links не массив, уронила
+ * бы и превью, и форму при следующем открытии.
+ */
+export function isShowcasePostShape(value: unknown): value is ShowcasePost {
+  if (!value || typeof value !== "object") return false;
+  const p = value as Record<string, unknown>;
+  return (
+    text(p.title) &&
+    typeof p.titleDash === "boolean" &&
+    text(p.body) &&
+    Array.isArray(p.links) &&
+    p.links.length <= 20 &&
+    p.links.every((l) => l && typeof l === "object" && text(l.label) && text(l.url) && text(l.tagline)) &&
+    Array.isArray(p.imageUrls) &&
+    p.imageUrls.length <= 10 &&
+    p.imageUrls.every((u) => text(u)) &&
+    ["none", "here", "everyone", "role"].includes(p.mention as string) &&
+    textOrNull(p.roleId) &&
+    Array.isArray(p.buttons) &&
+    p.buttons.length <= 10 &&
+    p.buttons.every((b) => b && typeof b === "object" && text(b.label) && text(b.url)) &&
+    textOrNull(p.username) &&
+    textOrNull(p.avatarUrl)
+  );
+}
+
+/**
+ * Пост из базы → ShowcasePost, включая строки СТАРОГО формата.
+ *
+ * С 26.10 до вечера 26.10 на проде жил первый редактор — эмбед в рамке
+ * (title, url, body, imageUrl, color, fields, buttons, mention). Сохранённые
+ * им черновики и опубликованные посты в discord_posts остались, и без
+ * перевода они исчезли бы из админки — а опубликованный стало бы нечем
+ * поправить или убрать из канала. Перевод — лучшее приближение: ссылка
+ * заголовка становится первой ссылкой списка, поля — мелкой строкой.
+ *
+ * null — строка не похожа ни на один формат.
+ */
+export function normalizeShowcasePost(value: unknown): ShowcasePost | null {
+  if (isShowcasePostShape(value)) return value;
+  if (!value || typeof value !== "object") return null;
+  const old = value as Record<string, unknown>;
+  if (!text(old.title) || !text(old.body ?? "")) return null;
+
+  const fields = Array.isArray(old.fields)
+    ? (old.fields as { name?: unknown; value?: unknown }[])
+        .filter((f) => text(f?.name) && text(f?.value))
+        .map((f) => `${f.name}: ${f.value}`)
+    : [];
+  const body = [String(old.body ?? "").trim(), fields.length ? `-# ${fields.join(" · ")}` : ""]
+    .filter(Boolean)
+    .join("\n");
+  const mention = ["here", "everyone"].includes(old.mention as string)
+    ? (old.mention as "here" | "everyone")
+    : "none";
+
+  return {
+    title: old.title as string,
+    titleDash: true,
+    body,
+    links: typeof old.url === "string" && old.url
+      ? [{ label: "See it on our website", url: old.url, tagline: "" }]
+      : [],
+    imageUrls: typeof old.imageUrl === "string" && old.imageUrl ? [old.imageUrl] : [],
+    mention,
+    roleId: null,
+    buttons: Array.isArray(old.buttons)
+      ? (old.buttons as { label?: unknown; url?: unknown }[])
+          .filter((b) => text(b?.label) && text(b?.url))
+          .map((b) => ({ label: b.label as string, url: b.url as string }))
+      : [],
+    username: null,
+    avatarUrl: null,
+  };
 }
