@@ -296,6 +296,16 @@ authenticated`: пишет `/api/download`, читает `/admin/downloads`, о�
 `src/lib/profile-links.ts`, дописывать оба места. Отдаётся наружу через
 `public_profiles`.
 
+### `product_ratings.body` и `public_reviews` — отзывы (2026-10-26)
+
+Миграция `20261026130000_rating_reviews`. У оценки появился текст;
+ограничение `product_ratings_body_check` (10–1000 символов) стоит
+`not valid` — старые оценки без слов остались и входят в средний балл,
+новые и правки обязаны быть с текстом. Наружу — представление
+`public_reviews` (только с текстом, `security_invoker = false`,
+`revoke all` → `grant select`): страницы карт и профилей читают его
+анонимно, без служебного ключа. Пишет `/api/feedback` (`action: rate`).
+
 ### `discord_inbox` — что прислал Discord-бот (2026-10-27)
 
 Миграция `20261027120000_discord_inbox`. Ключ — `portfolio:<ticketId>` /
