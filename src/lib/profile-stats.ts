@@ -24,7 +24,22 @@ export type ProfileStats = {
  * страница покажет прочерк, а не соврёт нулём.
  */
 export async function getProfileStats(userId: string): Promise<ProfileStats> {
-  const db = getSupabaseAdmin();
+  // Без служебного ключа — «не узнали», а не падение. Ключа нет в CI, а
+  // страница профиля собирается заранее (generateStaticParams): 25–26.10
+  // исключение отсюда роняло сборку в CI четыре прогона подряд, пока
+  // локально, с .env.local, всё было зелёным. Тот же приём, что у
+  // счётчиков просмотров (views.ts).
+  let db: ReturnType<typeof getSupabaseAdmin>;
+  try {
+    db = getSupabaseAdmin();
+  } catch (err) {
+    console.warn(
+      `Статистика профиля недоступна, страница соберётся с прочерками: ${
+        err instanceof Error ? err.message : String(err)
+      }`
+    );
+    return { purchases: null, comments: null, reactions: null };
+  }
 
   const [orders, comments, reactions] = await Promise.all([
     // Разные карты, а не строки: одна карта, купленная гостем и потом
