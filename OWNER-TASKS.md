@@ -246,6 +246,100 @@ Stripe сообщает о завершении с `unpaid`, а о поступ�
       `src/lib/updates.ts` он пишется **в день** живых платежей, не раньше.
 - [ ] Обновить статус в `CLAUDE.md` (Stripe live — 🟢) и снять пункт 6.
 
+### 8. Ссылки в профиле — одна миграция ⬅ новое, 26.10
+
+Код в `dev`. Без миграции сайт работает (ссылки просто не сохраняются —
+форма шлёт их, только если их трогали, и тогда получит отказ).
+
+- [ ] `supabase/migrations/20261026120000_profile_links.sql` — на preview,
+      потом на прод **до** мёржа. Файл только добавляет.
+- [ ] Глазами на preview: `/settings` — обрезка аватара и баннера,
+      «Adjust», ссылки (Discord на чужой домен должен получить отказ),
+      превью справа; `/@<имя>` — баннер во всю ширину, чипы ссылок.
+
+### 8a. Отзывы с текстом — одна миграция ⬅ новое, 26.10
+
+- [ ] `supabase/migrations/20261026130000_rating_reviews.sql` — **до**
+      выкатки кода на прод (без неё отзыв не сохранится). Только добавляет.
+- [ ] Глазами: «My purchases» → Write a review (звёзды с половинкой,
+      текст короче 10 символов не пускает) → отзыв под картой и во
+      вкладке Reviews профиля.
+
+### 9c. Три канала витрины ⬅ новое, 27.10
+
+- [ ] Миграция `20261027140000_discord_post_channel` — preview, потом прод
+      (только добавляет: до деплоя).
+- [ ] `/setup site_channel kind:Premade builds channel:#…` →
+      `DISCORD_PREMADE_WEBHOOK_URL`; `kind:Free builds` →
+      `DISCORD_FREE_WEBHOOK_URL` (Preview и Production). Если они уже
+      лежат только в Production — добавить и в Preview, иначе на preview
+      кнопки неактивны.
+- [ ] Проверить на preview: пост из карты в `/admin/products` → Post to
+      Discord → Publish → плашка нужного цвета → Update → Remove.
+- [ ] Бесплатная карта, вошедшим НЕ скачивавшим аккаунтом: на её странице
+      «Write a review» → отзыв появился под картой.
+
+### 9b. Объявления в Discord — один вебхук ⬅ новое, 26.10
+
+- [ ] В Discord: `/setup announcements_channel #канал` → ссылка из ответа
+      (видна только тебе) → Vercel (Preview и Production):
+      `DISCORD_ANNOUNCE_WEBHOOK_URL` → Redeploy. С 27.10 вебхук выдаёт бот:
+      тогда объявления подписаны его именем и иконкой сами. Вебхук,
+      созданный руками в настройках канала, тоже работает — подпись
+      возьмётся с вебхука витрины.
+- [ ] Проверить: одно объявление «Discord only» — в канале эмбед с
+      оранжевой плашкой слева, пинг (если выбран) над ним.
+
+### 9a. Discord: реакции, ссылки панели, четыре вопроса ⬅ новое, 26.10
+
+- [ ] `/setup showcase_reactions emojis:…` — реакции, которые бот ставит
+      под постами витрины.
+- [ ] `/setup links terms:https://soucampus.online/terms/discord
+      privacy:https://soucampus.online/privacy#discord`, затем
+      `/setup panel` — панель тикетов со ссылками на условия.
+- [x] 🟢 Вопросы 1–3 отвечены 26.10 и вписаны: PayPal или Wise по
+      инвойсу; правки по ходу в разумных пределах + 1–2 круга после сдачи;
+      сервер бота — VPS Hostinger, Франкфурт (тот же, где будет сканер).
+- [ ] **4. Сколько хранятся записи заказов в базе бота?** Пока на
+      `/privacy#discord` — «пока нужно для заказа и бухгалтерии», без
+      числа. Решишь — впишу.
+
+### 9. Discord-бот BoCampus ↔ сайт ⬅ новое, 26.10
+
+Код в `dev` (`/api/discord/bridge`, `/admin/discord`). Порядок обязателен:
+секреты и миграции раньше мёржа.
+
+- [ ] **a) Секрет моста:**
+      `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+- [ ] **b) В Discord:** `/setup showcase_channel #канал` → ссылка из ответа
+      (видна только тебе). Для проверки на preview — тестовый канал, потом
+      боевой: ссылка у каждого канала своя.
+- [ ] **c) Vercel → Environment Variables (Preview и Production):**
+      `DISCORD_BRIDGE_SECRET` = секрет из (a),
+      `DISCORD_SHOWCASE_WEBHOOK_URL` = ссылка из (b).
+- [ ] **d) Обе миграции на preview** — `20261027120000_discord_inbox`,
+      `20261027130000_discord_posts`. Проверка:
+  - часть А, из папки бота:
+    `SITE_BRIDGE_URL=<preview>/api/discord/bridge SITE_BRIDGE_SECRET=<секрет> node scripts/bridge-ping.js`
+    → 200 и строка `review:pingtest01` в `/admin/discord` (потом Dismiss);
+    без подписи `curl -i -X POST <preview>/api/discord/bridge -d '{}'` → 404;
+  - часть Б: «New post from a work» → Publish → пост в канале → правка →
+    Update → Remove.
+  Потом обе миграции на прод.
+- [x] **e) 🟢 Код на проде с 26.10** (`9756c73`, cherry-pick 4 коммитов: профиль,
+      мост, починка CI и заплатка `Content-Type` от 13.10, уехавшая с
+      прода с откатом 24.10). Владелец решил проверять сразу на проде, без
+      preview: шаги (c) и (d) — сразу для Production, миграции — на прод.
+      Исходный текст пункта: **На прод — cherry-pick'ом коммитов моста, НЕ мёржем `dev`.**
+      ⚠️ На `dev` лежит разморозка креаторства, откатанная с прода 24.10
+      (`25cc254`) до начала сканера. Мёрж `dev` вытащил бы её на прод
+      вместе с ботом. Если разморозку решено выпустить — тогда мёрж, но
+      сначала `git revert 25cc254` на `master` (см. CLAUDE.md).
+- [ ] **f) VPS бота**, `/home/deploy/bocampus/.env`:
+      `SITE_BRIDGE_URL=https://soucampus.online/api/discord/bridge`,
+      `SITE_BRIDGE_SECRET=<секрет>`, затем `docker compose up -d`.
+      Накопленное в очереди бота уйдёт само при следующем обходе.
+
 ## 🟢 Закрытые
 
 - **2026-10-04 — миграция `20260926120000_download_events` на обеих базах,

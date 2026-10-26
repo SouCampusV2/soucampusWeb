@@ -82,6 +82,13 @@ create table public.project_images (
 create index project_images_project_id_idx on public.project_images (project_id, position);
 ```
 
+**Добавлено позже:** `listing_url` (https-ссылка на магазин, где премейд
+продаёт заказчик, 25.10) и `listing_is_free` (там он бесплатный — кнопка
+«Download free», а не «Buy», `20261025140000`). С 25.10 работы пишет
+`/api/admin/portfolio` служебным ключом — политик на запись у `projects` и
+`project_images` нет по-прежнему, правит только админка
+(`/admin/portfolio`).
+
 ## 2. Разные layout'ы карточки/детальной страницы — решение
 
 **Не вводить `layout`/`template`-колонку сейчас.** Все 16 текущих проектов рендерятся сегодня одинаково — нет ни одного, который _хочет_ другой layout. Колонка-переключатель с одним фактическим значением на все строки — классический признак преждевременной абстракции.
@@ -244,6 +251,11 @@ export async function getProject(slug: string) {
 | `avatars`        | да        | аватары                                    | чтение всем; записи из браузера нет с 21.09 — `/api/creator/image` |
 | `product-images` | да        | обложки, галереи, картинки внутри описаний | чтение всем; записи из браузера нет с 21.09 — `/api/creator/image` |
 | `product-files`  | **нет**   | файлы карт                                 | ⚠️ **записи из браузера нет вовсе** (с 2026-09-11); чтение — подписанной ссылкой с сервера |
+| `portfolio-images` | да      | фото работ портфолио (с 25.10)             | чтение всем; политик на запись нет вовсе — пишет `/api/creator/image` (`kind: "portfolio"`, только админ). ⚠️ Свой бакет, потому что уборка стирает из `product-images` всё, на что не ссылается карта |
+
+Баннер профиля (25.10) лежит в `avatars` как `<id>/banner` — рядом с
+аватаром, тем же двухшаговым путём шлюза; ограничение
+`profiles_banner_url_own` повторяет аватарное.
 
 DELETE-политик нет ни у одного и не должно быть: иначе креатор смог бы удалить чужой файл. Уборка неиспользуемых объектов идёт служебным ключом через `/api/creator/cleanup-storage`.
 
@@ -272,6 +284,53 @@ DELETE-политик нет ни у одного и не должно быть:
 authenticated`: пишет `/api/download`, читает `/admin/downloads`, оба
 служебным ключом. Зачем — спор о списании (chargeback): у цифрового товара
 доказательство получения — факт скачивания.
+
+### `profiles.links` — ссылки в профиле (2026-10-26)
+
+Миграция `20261026120000_profile_links`. `jsonb not null default '[]'`,
+список `{kind, url}` до 8 штук. Пишет браузер (право на колонку, как у
+остальных полей профиля), поэтому правило — в базе: ограничение
+`profiles_links_valid` → функция `profile_links_valid`: только https, без
+логина и порта, **домен по виду** (Discord → `discord.gg`/`discord.com` и
+т.д.; `website` — любой). Копия правил для интерфейса —
+`src/lib/profile-links.ts`, дописывать оба места. Отдаётся наружу через
+`public_profiles`.
+
+### `product_ratings.body` и `public_reviews` — отзывы (2026-10-26)
+
+Миграция `20261026130000_rating_reviews`. У оценки появился текст;
+ограничение `product_ratings_body_check` (10–1000 символов) стоит
+`not valid` — старые оценки без слов остались и входят в средний балл,
+новые и правки обязаны быть с текстом. Наружу — представление
+`public_reviews` (только с текстом, `security_invoker = false`,
+`revoke all` → `grant select`): страницы карт и профилей читают его
+анонимно, без служебного ключа. Пишет `/api/feedback` (`action: rate`).
+
+### `discord_inbox` — что прислал Discord-бот (2026-10-27)
+
+Миграция `20261027120000_discord_inbox`. Ключ — `portfolio:<ticketId>` /
+`review:<ticketId>` (идемпотентность: повтор бота — no-op), `kind`
+(`portfolio_draft` / `review`), `payload` jsonb — факты от бота,
+`image_urls` — фото, уже скопированные в `portfolio-images/discord/…`,
+`status` (`pending` / `published` / `dismissed`), `decided_at`,
+`decided_by`. RLS без политик + `revoke all`: пишет `/api/discord/bridge`
+и `/api/admin/discord`, читает `/admin/discord` — все служебным ключом.
+Той же миграцией в `notifications.kind` добавлен `discord_inbox`.
+
+### `discord_posts` — посты в канал витрины (2026-10-27)
+
+Миграция `20261027130000_discord_posts`. `post` jsonb — весь пост
+(`ShowcasePost`): форма, превью и вебхук читают одно и то же. `status`
+(`draft` / `published`), `message_id` (обязателен у опубликованного —
+иначе править и удалять некуда), `project_slug` (не внешний ключ: пост
+переживает переименование работы). RLS без политик: пишет только
+`/api/admin/discord/showcase`.
+
+С 27.10 (`20261027140000_discord_post_channel`): `channel` —
+`portfolio` / `premade` / `free` (по умолчанию `portfolio`, старые строки
+— посты портфолио); Update и Remove идут в вебхук ТОГО канала, куда пост
+ушёл, поэтому опубликованный пост канал не меняет. `product_slug` — пост о
+карте маркетплейса (тоже не внешний ключ).
 
 ## 5.3. Схема `ops` — служебное, наружу не отдаётся (2026-08-22)
 

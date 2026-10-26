@@ -5,8 +5,14 @@ import { getRecipients } from "@/lib/notifications";
 // самого обработчика /api/admin/announce своя проверка.
 export const dynamic = "force-dynamic";
 
-export default async function AdminAnnouncePage() {
-  const recipients = await getRecipients();
+export default async function AdminAnnouncePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ to?: string }>;
+}) {
+  const [recipients, { to }] = await Promise.all([getRecipients(), searchParams]);
+  // Навбар ведёт сюда двумя пунктами: «на сайте» и «в Discord».
+  const initialTarget = to === "site" || to === "discord" ? to : undefined;
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 sm:px-6 sm:py-12">
@@ -21,6 +27,7 @@ export default async function AdminAnnouncePage() {
       <AnnounceForm
         recipients={recipients}
         discordReady={Boolean(process.env.DISCORD_ANNOUNCE_WEBHOOK_URL)}
+        initialTarget={initialTarget}
       />
     </div>
   );

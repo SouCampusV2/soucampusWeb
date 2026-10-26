@@ -26,10 +26,13 @@ const TARGETS: { value: Target; label: string }[] = [
 export function AnnounceForm({
   recipients,
   discordReady,
+  initialTarget,
 }: {
   recipients: Recipient[];
   /** Задан ли вебхук канала объявлений (DISCORD_ANNOUNCE_WEBHOOK_URL). */
   discordReady: boolean;
+  /** Куда по умолчанию — из адреса (?to=site / ?to=discord, навбар). */
+  initialTarget?: Target;
 }) {
   // "" — всем. Отдельного признака не заводим: пустая строка и есть
   // «адресат не выбран», а обработчик на сервере решает по ней же.
@@ -39,7 +42,7 @@ export function AnnounceForm({
   const [href, setHref] = useState("");
   // Куда: с 26.10 объявление «всем» может уйти и в Discord. Без вебхука —
   // только сайт, выбор не показывается вовсе.
-  const [target, setTarget] = useState<Target>(discordReady ? "both" : "site");
+  const [target, setTarget] = useState<Target>(discordReady ? initialTarget ?? "both" : "site");
   const [ping, setPing] = useState<Ping>("none");
   const [confirming, setConfirming] = useState(false);
   const [busy, setBusy] = useState(false);
