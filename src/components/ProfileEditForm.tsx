@@ -841,9 +841,12 @@ function ProfilePreview({
             >
               {username}
             </p>
-            <div className="mt-2 flex items-center gap-2">
+            {/* Роль и чипы с цифрами — как на профиле, скелетами. */}
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               <Skeleton className="h-6 w-16 rounded-full" />
-              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-7 w-20 rounded-full" />
+              <Skeleton className="h-7 w-20 rounded-full" />
+              <Skeleton className="h-7 w-24 rounded-full" />
             </div>
           </div>
 
@@ -859,7 +862,7 @@ function ProfilePreview({
         {/* Вкладки — как на профиле, первая выбрана; счётчики и карты —
             скелетами. */}
         <div className="mt-6 flex gap-5 border-b border-zinc-200 text-xs font-medium dark:border-zinc-800">
-          {["Maps", "Ratings", "About"].map((label, i) => (
+          {["Maps", "Ratings"].map((label, i) => (
             <span
               key={label}
               className={`-mb-px border-b-2 pb-2 ${

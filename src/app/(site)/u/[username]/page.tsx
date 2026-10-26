@@ -3,7 +3,17 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import { Unbounded } from "next/font/google";
-import { SealCheck, Star, UserCircle } from "@phosphor-icons/react/dist/ssr";
+import {
+  CalendarBlank,
+  ChatCircle,
+  Heart,
+  Package,
+  SealCheck,
+  ShoppingBag,
+  Star,
+  UserCircle,
+} from "@phosphor-icons/react/dist/ssr";
+import type { Icon } from "@phosphor-icons/react";
 import { getAllProductsWithStats } from "@/lib/products";
 import {
   getAllCreators,
@@ -19,7 +29,7 @@ import { LocalTime } from "@/components/LocalTime";
 import { getRecentCommentsByUser } from "@/lib/comments";
 import { getProfileStats } from "@/lib/profile-stats";
 import { DISCORD_INVITE } from "@/lib/site";
-import { ProfileLinks, ProfileLinkList } from "@/components/ProfileLinks";
+import { ProfileLinks } from "@/components/ProfileLinks";
 import { ProfileTabs, type ProfileTab } from "@/components/ProfileTabs";
 import { BANNER_HEIGHT } from "@/lib/profile-media";
 
@@ -126,27 +136,32 @@ export default async function CreatorPage({
         .slice(0, 4)
     : [];
 
-  // Вкладки под шапкой — вариант 8 лаборатории (выбор владельца 26.10).
-  // Цифры стали заголовками разделов: «Maps 2», «Ratings 5». Остальные
-  // числа (покупки, комментарии, реакции) — во вкладке About, а не
-  // шестью равными столбиками в шапке, которые владелец забраковал 25.10.
-  const about = (
-    <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,20rem)]">
-      <dl className="grid grid-cols-2 gap-x-8 gap-y-6 sm:grid-cols-4">
-        {showResources && <Stat label="Sales" value={String(totalSales)} />}
-        <Stat label="Purchases" value={statValue(stats.purchases)} />
-        <Stat label="Comments" value={statValue(stats.comments)} />
-        <Stat label="Reactions" value={statValue(stats.reactions)} />
-      </dl>
-      {creator.links.length > 0 && (
-        <div>
-          <p className="mb-2 px-3 text-sm text-zinc-500 dark:text-zinc-400">Links</p>
-          <ProfileLinkList links={creator.links} />
-        </div>
-      )}
-    </div>
-  );
+  // Цифры — чипами под именем, сразу на виду (вариант 9 лаборатории,
+  // смешан с 8-м по просьбе владельца 26.10: вкладка About прятала
+  // статистику за кликом). Чипы — только тех чисел, что говорят о роли:
+  // у креатора карты, продажи, рейтинг; у остальных покупки, комментарии,
+  // реакции. Шесть одинаковых цифр подряд владелец забраковал 25.10.
+  const chips: { icon: Icon; value: string; label: string }[] = showResources
+    ? [
+        { icon: Package, value: String(mapsCount), label: plural(mapsCount, "map", "maps") },
+        { icon: ShoppingBag, value: String(totalSales), label: plural(totalSales, "sale", "sales") },
+        ...(ratingVotes > 0
+          ? [
+              {
+                icon: Star,
+                value: avgRating.toFixed(1),
+                label: `rating · ${ratingVotes} ${plural(ratingVotes, "vote", "votes")}`,
+              },
+            ]
+          : []),
+      ]
+    : [
+        { icon: ShoppingBag, value: statValue(stats.purchases), label: plural(stats.purchases, "purchase", "purchases") },
+        { icon: ChatCircle, value: statValue(stats.comments), label: plural(stats.comments, "comment", "comments") },
+        { icon: Heart, value: statValue(stats.reactions), label: plural(stats.reactions, "reaction", "reactions") },
+      ];
 
+  // Вкладки под шапкой — вариант 8: раздел со счётчиком («Maps 2»).
   const tabs: ProfileTab[] = showResources
     ? [
         {
@@ -205,7 +220,6 @@ export default async function CreatorPage({
               <p className="text-zinc-600 dark:text-zinc-400">No ratings yet.</p>
             ),
         },
-        { id: "about", label: "About", content: about },
       ]
     : [
         {
@@ -244,7 +258,6 @@ export default async function CreatorPage({
               <p className="text-zinc-600 dark:text-zinc-400">No activity yet.</p>
             ),
         },
-        { id: "about", label: "About", content: about },
       ];
 
   return (
@@ -379,29 +392,37 @@ export default async function CreatorPage({
               <OwnerEditLink creatorId={creator.id} />
             </div>
 
-            {/* Кто это, с какого времени и как его оценивают — одной тихой
-                строкой. Галочка (is_verified) отвечает на другой вопрос —
-                «это точно он», — и роль ею не заменяется. Дата — момент, а
-                не день-ключ, поэтому LocalTime (разбор в lib/dates.ts). */}
-            <p className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-zinc-500 dark:text-zinc-400">
+            {/* Кто это и чем отметился — одним рядом фактов (вариант 9):
+                роль, чипы с цифрами той же формы, что бейдж роли, и дата.
+                Галочка (is_verified) отвечает на другой вопрос — «это точно
+                он», — и роль ею не заменяется. Дата — момент, а не
+                день-ключ, поэтому LocalTime (разбор в lib/dates.ts). */}
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${role.className}`}>
                 {role.label}
               </span>
+              {chips.map((chip) => (
+                <span
+                  key={chip.label}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-zinc-200 px-3 py-1 text-sm text-zinc-600 dark:border-zinc-800 dark:text-zinc-400"
+                >
+                  <chip.icon
+                    size={15}
+                    weight={chip.icon === Star ? "fill" : "bold"}
+                    className={chip.icon === Star ? "text-orange-400" : "text-zinc-400"}
+                    aria-hidden
+                  />
+                  <b className="font-semibold text-zinc-950 dark:text-zinc-50">{chip.value}</b>
+                  {chip.label}
+                </span>
+              ))}
               {creator.joinedAt && (
-                <span>
+                <span className="inline-flex items-center gap-1.5 px-1 text-sm text-zinc-500 dark:text-zinc-400">
+                  <CalendarBlank size={15} aria-hidden />
                   Joined <LocalTime value={creator.joinedAt} />
                 </span>
               )}
-              {ratingVotes > 0 && (
-                <span className="inline-flex items-center gap-1">
-                  <Star size={14} weight="fill" className="text-orange-400" aria-hidden />
-                  <span className="font-medium text-zinc-700 dark:text-zinc-300">
-                    {avgRating.toFixed(1)}
-                  </span>
-                  ({ratingVotes})
-                </span>
-              )}
-            </p>
+            </div>
           </div>
 
           {/* Справа — ссылки иконками и главное действие. Приём заказов —
@@ -469,14 +490,7 @@ function statValue(value: number | null): string {
   return value === null ? "—" : String(value);
 }
 
-/** Подпись над числом — во вкладке About. */
-function Stat({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div>
-      <dt className="text-sm text-zinc-500 dark:text-zinc-400">{label}</dt>
-      <dd className="mt-1 text-xl font-semibold text-zinc-950 dark:text-zinc-50">
-        {value}
-      </dd>
-    </div>
-  );
+/** «1 map» / «2 maps»; у неизвестного числа (null) — множественное. */
+function plural(value: number | null, one: string, many: string): string {
+  return value === 1 ? one : many;
 }
