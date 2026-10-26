@@ -285,6 +285,37 @@ authenticated`: пишет `/api/download`, читает `/admin/downloads`, о�
 служебным ключом. Зачем — спор о списании (chargeback): у цифрового товара
 доказательство получения — факт скачивания.
 
+### `profiles.links` — ссылки в профиле (2026-10-26)
+
+Миграция `20261026120000_profile_links`. `jsonb not null default '[]'`,
+список `{kind, url}` до 8 штук. Пишет браузер (право на колонку, как у
+остальных полей профиля), поэтому правило — в базе: ограничение
+`profiles_links_valid` → функция `profile_links_valid`: только https, без
+логина и порта, **домен по виду** (Discord → `discord.gg`/`discord.com` и
+т.д.; `website` — любой). Копия правил для интерфейса —
+`src/lib/profile-links.ts`, дописывать оба места. Отдаётся наружу через
+`public_profiles`.
+
+### `discord_inbox` — что прислал Discord-бот (2026-10-27)
+
+Миграция `20261027120000_discord_inbox`. Ключ — `portfolio:<ticketId>` /
+`review:<ticketId>` (идемпотентность: повтор бота — no-op), `kind`
+(`portfolio_draft` / `review`), `payload` jsonb — факты от бота,
+`image_urls` — фото, уже скопированные в `portfolio-images/discord/…`,
+`status` (`pending` / `published` / `dismissed`), `decided_at`,
+`decided_by`. RLS без политик + `revoke all`: пишет `/api/discord/bridge`
+и `/api/admin/discord`, читает `/admin/discord` — все служебным ключом.
+Той же миграцией в `notifications.kind` добавлен `discord_inbox`.
+
+### `discord_posts` — посты в канал витрины (2026-10-27)
+
+Миграция `20261027130000_discord_posts`. `post` jsonb — весь пост
+(`ShowcasePost`): форма, превью и вебхук читают одно и то же. `status`
+(`draft` / `published`), `message_id` (обязателен у опубликованного —
+иначе править и удалять некуда), `project_slug` (не внешний ключ: пост
+переживает переименование работы). RLS без политик: пишет только
+`/api/admin/discord/showcase`.
+
 ## 5.3. Схема `ops` — служебное, наружу не отдаётся (2026-08-22)
 
 Отдельная схема, а не таблица в `public`. Причина: PostgREST отдаёт наружу

@@ -246,6 +246,49 @@ Stripe сообщает о завершении с `unpaid`, а о поступ�
       `src/lib/updates.ts` он пишется **в день** живых платежей, не раньше.
 - [ ] Обновить статус в `CLAUDE.md` (Stripe live — 🟢) и снять пункт 6.
 
+### 8. Ссылки в профиле — одна миграция ⬅ новое, 26.10
+
+Код в `dev`. Без миграции сайт работает (ссылки просто не сохраняются —
+форма шлёт их, только если их трогали, и тогда получит отказ).
+
+- [ ] `supabase/migrations/20261026120000_profile_links.sql` — на preview,
+      потом на прод **до** мёржа. Файл только добавляет.
+- [ ] Глазами на preview: `/settings` — обрезка аватара и баннера,
+      «Adjust», ссылки (Discord на чужой домен должен получить отказ),
+      превью справа; `/@<имя>` — баннер во всю ширину, чипы ссылок.
+
+### 9. Discord-бот BoCampus ↔ сайт ⬅ новое, 26.10
+
+Код в `dev` (`/api/discord/bridge`, `/admin/discord`). Порядок обязателен:
+секреты и миграции раньше мёржа.
+
+- [ ] **a) Секрет моста:**
+      `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"`
+- [ ] **b) В Discord:** `/setup showcase_channel #канал` → ссылка из ответа
+      (видна только тебе). Для проверки на preview — тестовый канал, потом
+      боевой: ссылка у каждого канала своя.
+- [ ] **c) Vercel → Environment Variables (Preview и Production):**
+      `DISCORD_BRIDGE_SECRET` = секрет из (a),
+      `DISCORD_SHOWCASE_WEBHOOK_URL` = ссылка из (b).
+- [ ] **d) Обе миграции на preview** — `20261027120000_discord_inbox`,
+      `20261027130000_discord_posts`. Проверка:
+  - часть А, из папки бота:
+    `SITE_BRIDGE_URL=<preview>/api/discord/bridge SITE_BRIDGE_SECRET=<секрет> node scripts/bridge-ping.js`
+    → 200 и строка `review:pingtest01` в `/admin/discord` (потом Dismiss);
+    без подписи `curl -i -X POST <preview>/api/discord/bridge -d '{}'` → 404;
+  - часть Б: «New post from a work» → Publish → пост в канале → правка →
+    Update → Remove.
+  Потом обе миграции на прод.
+- [ ] **e) На прод — cherry-pick'ом коммитов моста, НЕ мёржем `dev`.**
+      ⚠️ На `dev` лежит разморозка креаторства, откатанная с прода 24.10
+      (`25cc254`) до начала сканера. Мёрж `dev` вытащил бы её на прод
+      вместе с ботом. Если разморозку решено выпустить — тогда мёрж, но
+      сначала `git revert 25cc254` на `master` (см. CLAUDE.md).
+- [ ] **f) VPS бота**, `/home/deploy/bocampus/.env`:
+      `SITE_BRIDGE_URL=https://soucampus.online/api/discord/bridge`,
+      `SITE_BRIDGE_SECRET=<секрет>`, затем `docker compose up -d`.
+      Накопленное в очереди бота уйдёт само при следующем обходе.
+
 ## 🟢 Закрытые
 
 - **2026-10-04 — миграция `20260926120000_download_events` на обеих базах,
