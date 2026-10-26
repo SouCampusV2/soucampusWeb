@@ -3,8 +3,12 @@
 // /admin/announce раскладывал объявление только по колоколам сайта.
 // Теперь оно может уйти и в канал объявлений Discord — вебхуком
 // DISCORD_ANNOUNCE_WEBHOOK_URL. Вебхук годится любой, хоть созданный
-// руками в настройках канала: здесь обычный текст, без компонентов,
-// которые требуют вебхука от приложения.
+// руками в настройках канала: эмбед, в отличие от компонентов витрины,
+// вебхука от приложения не требует.
+//
+// С 27.10 объявление — эмбед с оранжевой плашкой сайта слева, а не
+// голый текст. Пинг остаётся в content: внутри эмбеда @everyone не
+// срабатывает.
 //
 // Чистые функции + один fetch: формат сообщения проверяется тестом без
 // сети.
@@ -21,17 +25,21 @@ export type DiscordAnnouncement = {
   ping: AnnouncePing;
 };
 
-/** Предел Discord на content обычного сообщения. */
-const CONTENT_MAX = 2000;
+/** Пределы Discord на эмбед. */
+const TITLE_MAX = 256;
+const DESCRIPTION_MAX = 4096;
 
-/** Текст сообщения: крупный заголовок, текст, ссылка, пинг в конце. */
-export function announcementContent(a: DiscordAnnouncement, siteUrl: string): string {
-  const site = siteUrl.replace(/\/$/, "");
-  const link = a.href ? (a.href.startsWith("/") ? `${site}${a.href}` : a.href) : null;
-  const ping = a.ping === "none" ? "" : `@${a.ping}`;
-  const parts = [`## ${a.title.trim()}`, a.text?.trim() ?? "", link ?? "", ping].filter(Boolean);
-  const content = parts.join("\n");
-  return content.length > CONTENT_MAX ? `${content.slice(0, CONTENT_MAX - 1)}…` : content;
+/** Оранжевый сайта (#F97316) — плашка слева у эмбеда. */
+export const ANNOUNCE_COLOR = 0xf97316;
+
+function clip(text: string, max: number): string {
+  return text.length > max ? `${text.slice(0, max - 1)}…` : text;
+}
+
+/** Путь на сайте → полная ссылка; внешняя ссылка — как есть. */
+function fullLink(href: string | null, siteUrl: string): string | null {
+  if (!href) return null;
+  return href.startsWith("/") ? `${siteUrl.replace(/\/$/, "")}${href}` : href;
 }
 
 /** Тело запроса вебхука. Пингует только то, что выбрано явно. */
@@ -40,8 +48,18 @@ export function announcementPayload(
   siteUrl: string,
   identity: DiscordIdentity
 ) {
+  const url = fullLink(a.href, siteUrl);
+  const text = a.text?.trim();
   return {
-    content: announcementContent(a, siteUrl),
+    content: a.ping === "none" ? undefined : `@${a.ping}`,
+    embeds: [
+      {
+        title: clip(a.title.trim(), TITLE_MAX),
+        ...(text ? { description: clip(text, DESCRIPTION_MAX) } : {}),
+        ...(url ? { url } : {}),
+        color: ANNOUNCE_COLOR,
+      },
+    ],
     allowed_mentions: { parse: a.ping === "none" ? [] : ["everyone"] },
     username: identity.username,
     ...(identity.avatarUrl ? { avatar_url: identity.avatarUrl } : {}),
