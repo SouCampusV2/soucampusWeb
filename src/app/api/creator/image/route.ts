@@ -4,10 +4,13 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { PRODUCT_IMAGES_BUCKET } from "@/lib/products";
 import { getAdminUser } from "@/lib/admin";
+import { cleanImage } from "@/lib/image-clean";
+import { scanWithService } from "@/lib/scanner-client";
 import {
   AVATARS_BUCKET,
   AVATAR_NAME,
   BANNER_NAME,
+  PENDING_PREFIX,
   PORTFOLIO_IMAGES_BUCKET,
   IMAGE_EXTENSIONS,
   IMAGE_MAX_BYTES,
@@ -58,6 +61,14 @@ import {
 // Фото портфолио (2026-10-25) — как картинки карты, но в своём бакете
 // portfolio-images и только у АДМИНА: портфолио — витрина студии, а не
 // площадка, и писать в него больше некому.
+//
+// ------------------------------------------------------------
+// ⚠️ С 2026-11-01 временный путь у ВСЕХ картинок
+// ------------------------------------------------------------
+// Раньше confirm мог просто не случиться: загрузил картинку и сразу вписал
+// адрес в карту. Теперь на постоянное место файл кладёт только confirm, и
+// кладёт не исходные байты, а собранные заново (lib/image-clean.ts). Ссылку
+// на pending- не примут ни шлюз карты, ни описание, ни база (для профиля).
 // ============================================================
 
 export const dynamic = "force-dynamic";
@@ -193,13 +204,10 @@ async function sign(
   // прежняя (<user_id>/…): на первый сегмент смотрела снятая политика,
   // и по нему же перечисляет папки уборка Storage.
   //
-  // Аватар и баннер едут во ВРЕМЕННЫЙ путь: на место их переставит confirm,
-  // когда убедится, что это картинка (см. шапку файла).
+  // Все картинки едут во ВРЕМЕННЫЙ путь: на постоянный их кладёт confirm,
+  // уже перекодированными (см. шапку файла).
   const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-  const path =
-    !isProfileImage(kind)
-      ? `${userId}/${stamp}.${ext}`
-      : `${userId}/pending-${stamp}.${ext}`;
+  const path = `${userId}/${PENDING_PREFIX}${stamp}.${ext}`;
 
   const { data, error } = await getSupabaseAdmin()
     .storage.from(bucketOf(kind))
@@ -228,12 +236,9 @@ async function confirm(
 
   // Путь приходит от клиента. Без этой строки человек просил бы
   // проверить (а при отказе — УДАЛИТЬ) чужой объект, зная только ключ.
-  if (!path.startsWith(`${userId}/`) || path.includes("..")) {
-    return NextResponse.json({ error: "not found" }, { status: 404 });
-  }
-  // Готовый аватар не может выдать себя за только что загруженный:
-  // иначе confirm переставил бы файл сам на себя, а до того — удалил.
-  if (isProfileImage(kind) && !path.startsWith(`${userId}/pending-`)) {
+  // Только pending-: готовая картинка не может выдать себя за только что
+  // загруженную, иначе отказ удалил бы то, что уже показано на сайте.
+  if (!path.startsWith(`${userId}/${PENDING_PREFIX}`) || path.includes("..")) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
@@ -280,23 +285,59 @@ async function confirm(
   const typeProblem = checkImageContentType(info.contentType);
   if (typeProblem) return reject(typeProblem);
 
-  if (!isProfileImage(kind)) {
-    return NextResponse.json({ ok: true, path, size });
-  }
-
-  // Аватар и баннер: проверенный файл переезжает на постоянный путь.
-  // move не перезаписывает, поэтому прежний снимаем сами — к этому
-  // моменту новый уже проверен, так что остаться вообще без картинки нечем.
-  const finalPath = `${userId}/${kind === "banner" ? BANNER_NAME : AVATAR_NAME}`;
-  await storage.remove([finalPath]);
-  const { error: moveError } = await storage.move(path, finalPath);
-  if (moveError) {
-    console.error(`Шлюз картинок: ${kind} не переехал:`, moveError.message);
-    await storage.remove([path]);
+  // Антивирус: отдельный сервис (lib/scanner-client.ts). Пересборка ниже всё
+  // равно уничтожит вложенное, но заражённый файл незачем принимать вовсе.
+  const { data: signed } = await storage.createSignedUrl(path, 180);
+  if (!signed?.signedUrl) {
     return NextResponse.json({ error: "upload unavailable" }, { status: 500 });
   }
+  const scan = await scanWithService(signed.signedUrl, "image", path);
+  if (scan.verdict === "rejected" || scan.verdict === "infected") {
+    if (scan.verdict === "infected") console.warn("Шлюз картинок: антивирус нашёл файл у", userId);
+    return reject(scan.reason);
+  }
+  if (scan.verdict === "error") {
+    return NextResponse.json({ error: scan.reason }, { status: 503 });
+  }
 
-  return NextResponse.json({ ok: true, path: finalPath, size });
+  // Собрать заново: хвосты и метаданные не переживут этот шаг. Не скачалось
+  // или упало — отказ, а не пропуск: под pending- на файл сослаться нельзя.
+  const { data: blob, error: downloadError } = await storage.download(path);
+  if (downloadError || !blob) {
+    console.error("Шлюз картинок: файл не скачался для проверки:", downloadError?.message);
+    return NextResponse.json({ error: "upload unavailable" }, { status: 500 });
+  }
+  const clean = await cleanImage(new Uint8Array(await blob.arrayBuffer()));
+  if (typeof clean === "string") return reject(clean);
+  // Палитра и анимация могут вырасти при пересборке, а потолок бакета общий.
+  if (clean.bytes.length > IMAGE_MAX_BYTES) {
+    return reject(
+      `Each image must be ${formatBytes(IMAGE_MAX_BYTES)} or smaller. Make this one a little smaller and try again.`
+    );
+  }
+
+  // У аватара и баннера имя постоянное, запись поверх старого файла: отказов
+  // дальше быть не может, так что остаться без картинки нечем. Остальным —
+  // новое имя с настоящим расширением.
+  const finalPath = isProfileImage(kind)
+    ? `${userId}/${kind === "banner" ? BANNER_NAME : AVATAR_NAME}`
+    : `${userId}/${path.slice(`${userId}/${PENDING_PREFIX}`.length).replace(/\.[^.]+$/, "")}.${clean.ext}`;
+
+  const { error: writeError } = await storage.upload(finalPath, clean.bytes, {
+    contentType: clean.contentType,
+    upsert: true,
+  });
+  if (writeError) {
+    console.error(`Шлюз картинок: ${kind} не записался:`, writeError.message);
+    return NextResponse.json({ error: "upload unavailable" }, { status: 500 });
+  }
+  const { error: removeError } = await storage.remove([path]);
+  if (removeError) {
+    // Не роняем ответ: картинка уже на месте, а сироту подберёт уборка Storage.
+    console.error("Шлюз картинок: временный файл не удалился:", removeError.message);
+  }
+
+  return NextResponse.json({ ok: true, path: finalPath, size: clean.bytes.length });
 }
 
 /**

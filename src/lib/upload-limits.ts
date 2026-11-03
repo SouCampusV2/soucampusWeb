@@ -101,6 +101,21 @@ export const BANNER_NAME = "banner";
 export const PORTFOLIO_IMAGES_BUCKET = "portfolio-images";
 
 /**
+ * Начало имени объекта, который ещё не проверен (2026-11-01).
+ *
+ * Токен загрузки выдаётся только на такой путь, а на постоянное место файл
+ * переносит confirm, проверив его. Ссылаться на pending-объект запрещено
+ * везде, иначе шаг confirm можно просто не вызывать: загрузить файл и сразу
+ * вписать его в карту или в профиль.
+ */
+export const PENDING_PREFIX = "pending-";
+
+/** Лежит ли объект по этому пути или адресу в ожидании проверки. */
+export function isPendingObject(pathOrUrl: string): boolean {
+  return pathOrUrl.split("?")[0].includes(`/${PENDING_PREFIX}`);
+}
+
+/**
  * Сколько первых байтов нужно, чтобы опознать формат.
  *
  * Двенадцать, а не четыре: у WEBP метка формата лежит с 8-го байта. На

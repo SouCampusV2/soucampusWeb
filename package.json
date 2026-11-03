@@ -11,6 +11,7 @@
     "check:views": "node scripts/check-views.mjs",
     "check:limits": "node scripts/check-rate-limits.mjs",
     "check:guards": "node scripts/check-guards.mjs",
+    "check:uploads": "node scripts/check-uploads.mjs",
     "check:responsive": "node scripts/check-responsive.mjs",
     "clear:storage": "node scripts/clear-product-storage.mjs"
   },
@@ -31,6 +32,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "sanitize-html": "^2.17.6",
+    "sharp": "0.35.4",
     "stripe": "^22.3.2"
   },
   "devDependencies": {

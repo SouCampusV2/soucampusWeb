@@ -4,6 +4,11 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
 import { PRODUCT_IMAGES_BUCKET } from "@/lib/products";
+import {
+  AVATARS_BUCKET,
+  PENDING_PREFIX,
+  PORTFOLIO_IMAGES_BUCKET,
+} from "@/lib/upload-limits";
 
 // Уборка мусора в своей папке Storage.
 //
@@ -124,6 +129,24 @@ export async function POST() {
   if (staleFiles.length) {
     await db.storage.from(PRODUCT_FILES_BUCKET).remove(staleFiles);
     removed.push(...staleFiles);
+  }
+
+  // --- Непроверенные загрузки в двух других бакетах ---
+  // Аватар и фото портфолио ни на что выше не сверяются: брошенный pending-
+  // там иначе лежал бы вечно, а бакеты публичные.
+  for (const bucket of [AVATARS_BUCKET, PORTFOLIO_IMAGES_BUCKET]) {
+    const { data: files } = await db.storage.from(bucket).list(user.id, { limit: 1000 });
+    const stale = (files ?? [])
+      .filter(
+        (file) =>
+          file.name.startsWith(PENDING_PREFIX) &&
+          now - new Date(file.created_at ?? 0).getTime() > GRACE_PERIOD_MS
+      )
+      .map((file) => `${user.id}/${file.name}`);
+    if (stale.length) {
+      await db.storage.from(bucket).remove(stale);
+      removed.push(...stale);
+    }
   }
 
   return NextResponse.json({ ok: true, removed: removed.length, paths: removed });

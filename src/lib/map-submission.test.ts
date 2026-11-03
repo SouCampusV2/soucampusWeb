@@ -100,6 +100,16 @@ describe("checkMapSubmission", () => {
   });
 });
 
+describe("непроверенная загрузка", () => {
+  const PENDING = `${SUPABASE}/storage/v1/object/public/product-images/u1/pending-1-a.jpg`;
+
+  it("обложкой и в галерею не годится: иначе confirm можно не вызывать", () => {
+    expect(isOwnImageUrl(PENDING, SUPABASE)).toBe(false);
+    expect(checkMapSubmission(submission({ coverUrl: PENDING }), SUPABASE)).not.toBeNull();
+    expect(checkMapSubmission(submission({ galleryUrls: [PENDING] }), SUPABASE)).not.toBeNull();
+  });
+});
+
 describe("isOwnImageUrl", () => {
   it("пускает наш бакет и свой статический файл", () => {
     expect(isOwnImageUrl(OWN_IMAGE, SUPABASE)).toBe(true);

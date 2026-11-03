@@ -4,6 +4,7 @@ import { enforceRateLimit } from "@/lib/rate-limit";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
+import { isPendingObject } from "@/lib/upload-limits";
 import { createProduct, specsToColumns } from "@/lib/products";
 import type { ProductState } from "@/lib/products";
 import {
@@ -151,6 +152,9 @@ export async function POST(request: Request) {
  */
 async function sizeOfOwnFile(userId: string, path: string): Promise<number | null> {
   if (!path.startsWith(`${userId}/`) || path.includes("..")) return null;
+  // Файл, не прошедший confirm, лежит под pending-: его содержимое никто не
+  // проверял, и покупатель его не получит.
+  if (isPendingObject(path)) return null;
   const { data, error } = await getSupabaseAdmin()
     .storage.from(PRODUCT_FILES_BUCKET)
     .info(path);

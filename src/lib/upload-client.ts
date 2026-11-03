@@ -83,7 +83,9 @@ export async function uploadMapFile(file: File): Promise<string> {
   });
   if (!confirmResponse.ok) throw new Error(await problemFromGateway(confirmResponse));
 
-  return path;
+  // Проверенный файл уже на постоянном пути: путь из sign больше не годится.
+  const { path: finalPath } = (await confirmResponse.json()) as { path: string };
+  return finalPath;
 }
 
 /**

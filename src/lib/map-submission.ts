@@ -1,5 +1,6 @@
 import type { EditableSpecs, ProductCategory, ProductState } from "@/lib/products";
 import { SHOP_CATEGORIES } from "@/lib/products";
+import { isPendingObject } from "@/lib/upload-limits";
 
 // ============================================================
 // Форма того, что браузер присылает шлюзу записи карты, и правила, по
@@ -87,6 +88,8 @@ const CATEGORY_SLUGS = new Set<string>(SHOP_CATEGORIES.map((c) => c.slug));
  */
 export function isOwnImageUrl(url: string, supabaseUrl: string): boolean {
   if (typeof url !== "string" || url.length === 0 || url.length > 2048) return false;
+  // Непроверенная загрузка — ещё не наша картинка, см. PENDING_PREFIX.
+  if (isPendingObject(url)) return false;
   // Свой статический файл. «//evil.com» сюда НЕ попадает: это
   // протокол-относительный адрес, ведущий наружу — ровно та ловушка,
   // которую ловит safeHref в уведомлениях.
