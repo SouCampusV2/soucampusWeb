@@ -6,6 +6,7 @@ import { ArrowDown, ArrowUp, Plus, X } from "@phosphor-icons/react";
 import { Button, DANGER_COLORS, TOGGLE_PILL_COLORS } from "@/components/Button";
 import { TextField } from "@/components/MapFormParts";
 import DiscordPreview from "@/components/DiscordPreview";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { problemFromGateway } from "@/lib/upload-client";
 import {
   CHANNEL_KEYS,
@@ -92,6 +93,9 @@ export function DiscordPostEditor({
   const [reactions, setReactions] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState<Action | null>(null);
+  // Какое действие ждёт подтверждения. Одно поле, а не флаг на каждое:
+  // открытым может быть только одно окно, и два флага умели бы спорить.
+  const [confirming, setConfirming] = useState<"delete" | "unpublish" | null>(null);
 
   // Пингуется ли одна из ролей каналов (у них свои пилюли).
   const knownPing = post.mention === "role" && knownRoleName(post.roleId) !== null;
@@ -183,10 +187,14 @@ export function DiscordPostEditor({
     return result.id;
   }
 
-  async function run(action: Action) {
+  // ConfirmDialog, а не confirm() браузера — шапка ConfirmDialog.tsx.
+  async function run(action: Action, confirmed = false) {
     setError(null);
-    if (action === "delete" && !window.confirm("Delete this draft?")) return;
-    if (action === "unpublish" && !window.confirm("Remove this post from the Discord channel?")) return;
+    if ((action === "delete" || action === "unpublish") && !confirmed) {
+      setConfirming(action);
+      return;
+    }
+    setConfirming(null);
     setPending(action);
 
     if (action === "save") {
@@ -208,6 +216,14 @@ export function DiscordPostEditor({
 
   return (
     <div className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <ConfirmDialog
+        open={confirming !== null}
+        title={confirming === "delete" ? "Delete this draft?" : "Remove this post from the Discord channel?"}
+        confirmLabel={confirming === "delete" ? "Delete" : "Remove"}
+        danger
+        onConfirm={() => confirming && run(confirming, true)}
+        onCancel={() => setConfirming(null)}
+      />
       <div className="space-y-6 rounded-3xl border border-zinc-200 bg-[#fbfbff] p-6 dark:border-zinc-800 dark:bg-zinc-950 sm:p-8">
         <div>
           <p className={LABEL}>Channel</p>

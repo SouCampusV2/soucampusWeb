@@ -16,6 +16,8 @@
 // Почему вебхук, а не токен бота: ссылка вебхука умеет только писать,
 // править и удалять СВОИ сообщения в ОДНОМ канале.
 
+import { callWebhook, webhookError, withParams } from "@/lib/discord-webhook";
+
 /** Пост витрины — то, что лежит в discord_posts.post и рисуется в превью. */
 export type ShowcasePost = {
   title: string;
@@ -252,15 +254,7 @@ export function toWebhookPayload(post: ShowcasePost, accentColor?: number) {
 
 type WebhookResult = { ok: true; messageId: string } | { ok: false; error: string };
 
-async function call(url: string, method: "POST" | "PATCH" | "DELETE", body: unknown, fetchFn: typeof fetch) {
-  return fetchFn(url, {
-    method,
-    headers: body ? { "content-type": "application/json" } : undefined,
-    body: body ? JSON.stringify(body) : undefined,
-  });
-}
-
-const withQuery = (url: string) => `${url}${url.includes("?") ? "&" : "?"}wait=true&with_components=true`;
+const withQuery = (url: string) => withParams(url, "wait=true&with_components=true");
 
 /** Опубликовать. wait=true — Discord возвращает сообщение, его id нужен для правки и удаления. */
 export async function publishPost(
@@ -269,8 +263,8 @@ export async function publishPost(
   fetchFn: typeof fetch = fetch,
   accentColor?: number
 ): Promise<WebhookResult> {
-  const res = await call(withQuery(webhookUrl), "POST", toWebhookPayload(post, accentColor), fetchFn);
-  if (!res.ok) return { ok: false, error: `Discord answered ${res.status}: ${(await res.text()).slice(0, 300)}` };
+  const res = await callWebhook(withQuery(webhookUrl), "POST", toWebhookPayload(post, accentColor), fetchFn);
+  if (!res.ok) return { ok: false, error: await webhookError(res) };
   const message = (await res.json()) as { id?: string };
   return message.id ? { ok: true, messageId: message.id } : { ok: false, error: "Discord did not return the message id." };
 }
@@ -289,14 +283,14 @@ export async function updatePost(
   // Имя и аватар отбрасываются намеренно — Discord их при правке не принимает.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { username: _u, avatar_url: _a, ...payload } = toWebhookPayload(post, accentColor) as Record<string, unknown>;
-  const res = await call(withQuery(`${webhookUrl}/messages/${messageId}`), "PATCH", payload, fetchFn);
-  if (!res.ok) return { ok: false, error: `Discord answered ${res.status}: ${(await res.text()).slice(0, 300)}` };
+  const res = await callWebhook(withQuery(`${webhookUrl}/messages/${messageId}`), "PATCH", payload, fetchFn);
+  if (!res.ok) return { ok: false, error: await webhookError(res) };
   return { ok: true, messageId };
 }
 
 /** Убрать пост из Discord. 404 — уже удалён руками: считаем успехом. */
 export async function deletePost(webhookUrl: string, messageId: string, fetchFn: typeof fetch = fetch): Promise<WebhookResult> {
-  const res = await call(`${webhookUrl}/messages/${messageId}`, "DELETE", null, fetchFn);
+  const res = await callWebhook(`${webhookUrl}/messages/${messageId}`, "DELETE", null, fetchFn);
   if (!res.ok && res.status !== 404) return { ok: false, error: `Discord answered ${res.status}` };
   return { ok: true, messageId };
 }
