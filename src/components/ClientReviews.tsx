@@ -24,7 +24,7 @@ const HIGHLIGHT_MS = 2200;
 // Card width used to be a fixed 340px, always — on a 375px phone that's
 // almost the entire screen with no room to peek the next card, and the
 // carousel's arrows were hidden below `sm:` besides, so mobile had no way
-// to reach cards past the first (see RESPONSIVE_PLAN.md). Card width is now
+// to reach cards past the first (see docs/archive/RESPONSIVE_PLAN.md). Card width is now
 // responsive via CSS (`w-[78vw] sm:w-[340px]`), so `cardWidth` below is
 // *measured* from the actual rendered card rather than assumed — the
 // spring-animated `x` offset needs the real pixel width to land each card

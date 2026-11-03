@@ -302,6 +302,13 @@ conversion fee. Stripe Connect (if used later) has its own additional fees.
 
 ### General
 
+- 🔴 **На 03.11 снова 5 находок** (`npm audit --omit=dev`): `next` 16.0–16.4.0
+      — **critical**, лечится только апгрейдом `next` (`--force`, тот же путь,
+      что 26.09: changelog, тесты, глазами); `sharp`, `source-map-js`,
+      `deepmerge` (через `sanitize-html`) — обычным `npm audit fix`. Ни одна
+      не от нашего кода: советы опубликованы после 26.09. ⚠️ Отсюда правило:
+      **«0 уязвимостей» — факт на дату, а не статус**; проверять перед каждым
+      мёржем в `master`.
 - 🟢 **`npm audit` — 0 уязвимостей в продакшен-зависимостях (26.09).**
       `next` 16.3.6 (версия пришпилена точно, как была), `eslint-config-next`
       16.3.6, Tiptap 3.31.3, свежие `sanitize-html`/`nanoid`. `npm audit fix`
