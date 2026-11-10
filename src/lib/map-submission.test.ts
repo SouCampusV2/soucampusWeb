@@ -61,6 +61,13 @@ describe("checkMapSubmission", () => {
     expect(checkMapSubmission(submission({ priceCents: 0 }), SUPABASE)).toBeNull();
   });
 
+  // Аудит 2026-11, S-09: Stripe не проводит платёж меньше €0.50.
+  it("отбивает платную цену ниже минимума Stripe", () => {
+    expect(checkMapSubmission(submission({ priceCents: 1 }), SUPABASE)).toMatch(/at least/i);
+    expect(checkMapSubmission(submission({ priceCents: 49 }), SUPABASE)).toMatch(/at least/i);
+    expect(checkMapSubmission(submission({ priceCents: 50 }), SUPABASE)).toBeNull();
+  });
+
   it("отбивает цену выше потолка", () => {
     expect(
       checkMapSubmission(submission({ priceCents: PRICE_MAX_CENTS + 1 }), SUPABASE)
@@ -126,6 +133,19 @@ describe("isOwnImageUrl", () => {
     expect(isOwnImageUrl("//evil.com/a.jpg", SUPABASE)).toBe(false);
   });
 
+  // Аудит 2026-11, S-21.
+  it("не пускает обратный слэш: браузер читает /\\ как //", () => {
+    expect(isOwnImageUrl("/\\evil.com/a.png", SUPABASE)).toBe(false);
+    expect(isOwnImageUrl("/portfolio\\a.png", SUPABASE)).toBe(false);
+    expect(isOwnImageUrl("/\t/evil.com/a.png", SUPABASE)).toBe(false);
+  });
+
+  it("не пускает свои обработчики под видом картинки", () => {
+    expect(isOwnImageUrl("/api/download?product=x", SUPABASE)).toBe(false);
+    expect(isOwnImageUrl("/auth/callback?code=x", SUPABASE)).toBe(false);
+    expect(isOwnImageUrl("/_next/image?url=x", SUPABASE)).toBe(false);
+  });
+
   it("без адреса проекта не пускает ничего внешнего", () => {
     expect(isOwnImageUrl(OWN_IMAGE, "")).toBe(false);
   });
@@ -157,8 +177,20 @@ describe("outcomeOfAuthorEdit — повторяет guard_product_author_edit",
     expect(outcomeOfAuthorEdit("live", false)).toBeNull();
   });
 
-  it("ждущую разбора и спрятанную автором не трогает", () => {
+  it("ждущую разбора не трогает", () => {
     expect(outcomeOfAuthorEdit("pending", true)).toBeNull();
-    expect(outcomeOfAuthorEdit("hidden", true)).toBeNull();
+  });
+
+  // Аудит 2026-11, S-13: спрятать → заменить файл → вернуть обходило
+  // модерацию. Спрятанная карта одобрена, и новый файл в ней — заявка.
+  it("спрятанную с подменённым файлом отправляет в очередь", () => {
+    expect(outcomeOfAuthorEdit("hidden", true)).toEqual({
+      state: "pending",
+      submissionKind: "file_changed",
+    });
+  });
+
+  it("спрятанную без подмены файла не трогает", () => {
+    expect(outcomeOfAuthorEdit("hidden", false)).toBeNull();
   });
 });

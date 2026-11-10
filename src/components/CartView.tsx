@@ -16,6 +16,7 @@ import {
   X,
 } from "@phosphor-icons/react";
 import { useCart, type CartItem } from "@/lib/cart-context";
+import { useIsAvailable } from "@/components/CartAvailability";
 import { useUser } from "@/lib/useUser";
 import {
   Button,
@@ -62,7 +63,16 @@ const FACTS = [
 // стояло `const STRIPE_TEST_MODE = true` с пометкой «переключить при
 // переходе на live», то есть ещё одно место, которое надо не забыть.
 export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
-  const { items, removeItem, addItem, clear, totalCents } = useCart();
+  const { items, removeItem, addItem, clear } = useCart();
+  // Недоступные позиции (сняты, отклонены, автор без статуса) остаются в
+  // корзине серыми — убирает их сам человек (решение владельца 04.11).
+  // До этого их молча выбрасывал /api/checkout, и человек платил за
+  // меньше карт, чем видел. В сумму, счётчик и чекаут идут только
+  // доступные — разбор источника данных в CartAvailability.tsx.
+  const isAvailable = useIsAvailable();
+  const available = items.filter((i) => isAvailable(i.slug));
+  const unavailableCount = items.length - available.length;
+  const totalCents = available.reduce((sum, i) => sum + i.priceCents, 0);
   const { user } = useUser();
   const router = useRouter();
   const [state, setState] = useState<"idle" | "loading" | "error">("idle");
@@ -98,7 +108,7 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
   }
 
   async function checkout() {
-    if (state === "loading" || items.length === 0) return;
+    if (state === "loading" || available.length === 0) return;
     // Покупка требует аккаунта. Не залогинен — уводим на вход, а после
     // него обратно в корзину (?next=/cart). Сервер всё равно проверяет
     // это сам (401), тут — только удобство.
@@ -117,8 +127,10 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         // Наружу уходят только slug'и — цену сервер снова берёт из БД, не
-        // отсюда (см. AddToCartButton).
-        body: JSON.stringify({ items: items.map((i) => ({ slug: i.slug })), waiver }),
+        // отсюда (см. AddToCartButton). Недоступные не отправляем: сервер
+        // их всё равно отбросит, а так запрос совпадает с тем, что
+        // человек видит в Order summary.
+        body: JSON.stringify({ items: available.map((i) => ({ slug: i.slug })), waiver }),
       });
       // Сессия истекла между загрузкой страницы и оплатой — на вход.
       if (res.status === 401) {
@@ -128,7 +140,11 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
       // 429 — единственный отказ, который надо объяснить словами: он не
       // сбой, он проходит сам через несколько минут, и «попробуйте
       // позже» без причины выглядит как поломка магазина.
-      if (res.status === 429) {
+      //
+      // 409 — туда же: сервер отказался продавать уже купленную или
+      // собственную карту и назвал её в message (аудит 2026-11, S-05).
+      // Это тоже не сбой — человеку надо убрать позицию из корзины.
+      if (res.status === 429 || res.status === 409) {
         const { message } = await readApiError(res);
         setLimitMessage(message ?? "Too many attempts. Try again in a few minutes.");
         setState("idle");
@@ -142,8 +158,10 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
       // Корзину чистим ЗДЕСЬ, а не на странице назначения: у платного
       // пути это делает ClearCartOnSuccess на /marketplace/success, а
       // бесплатный туда не заходит, и чистить его было бы некому.
+      // Убираем только полученное: недоступные остаются, пока человек
+      // не уберёт их сам.
       if (data?.claimed) {
-        clear();
+        available.forEach((i) => removeItem(i.slug));
         router.push("/purchases");
         return;
       }
@@ -207,7 +225,9 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
             заголовок уже всё сказал. */}
         {items.length > 0 && (
           <p className="mt-3 text-center text-sm text-zinc-600 dark:text-zinc-400">
-            {`${items.length} ${items.length === 1 ? "map" : "maps"} ready to download.`}
+            {`${available.length} ${available.length === 1 ? "map" : "maps"} ready to download.`}
+            {unavailableCount > 0 &&
+              ` ${unavailableCount} ${unavailableCount === 1 ? "is" : "are"} no longer available.`}
           </p>
         )}
 
@@ -298,37 +318,78 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
             {/* Позиции */}
             <div>
               <ul className="space-y-3">
-                {items.map((item) => (
+                {items.map((item) => {
+                  const unavailable = !isAvailable(item.slug);
+                  return (
                   <li
                     key={item.slug}
                     className="flex flex-wrap items-center gap-4 rounded-2xl border border-zinc-200 bg-[#fbfbff] p-4 dark:border-zinc-800 dark:bg-zinc-950 sm:flex-nowrap"
                   >
-                    <Link
-                      href={`/marketplace/${item.slug}`}
-                      className="relative h-20 w-32 shrink-0 overflow-hidden rounded-xl"
-                    >
-                      <Image
-                        src={item.image}
-                        alt={item.title}
-                        fill
-                        sizes="128px"
-                        className="object-cover"
-                      />
-                    </Link>
-
-                    <div className="min-w-0 flex-1">
+                    {/* Недоступная — без ссылок: страница карты всё равно
+                        ответит 404, и клик вёл бы в тупик. Серая картинка
+                        и приглушённый текст, но корзина (кнопка удаления)
+                        остаётся живой — серым красится товар, а не
+                        действие над ним. Серый, а не красный: это не
+                        ошибка покупателя и не отказ ему (DESIGN.md → Red). */}
+                    {unavailable ? (
+                      <div className="relative h-20 w-32 shrink-0 overflow-hidden rounded-xl">
+                        <Image
+                          src={item.image}
+                          alt={item.title}
+                          fill
+                          sizes="128px"
+                          className="object-cover opacity-50 grayscale"
+                        />
+                      </div>
+                    ) : (
                       <Link
                         href={`/marketplace/${item.slug}`}
-                        className="font-semibold text-zinc-950 hover:underline dark:text-zinc-50"
+                        className="relative h-20 w-32 shrink-0 overflow-hidden rounded-xl"
                       >
-                        {item.title}
+                        <Image
+                          src={item.image}
+                          alt={item.title}
+                          fill
+                          sizes="128px"
+                          className="object-cover"
+                        />
                       </Link>
-                      <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                        Digital download · one-time purchase
-                      </p>
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                      {unavailable ? (
+                        <span className="font-semibold text-zinc-400 dark:text-zinc-500">
+                          {item.title}
+                        </span>
+                      ) : (
+                        <Link
+                          href={`/marketplace/${item.slug}`}
+                          className="font-semibold text-zinc-950 hover:underline dark:text-zinc-50"
+                        >
+                          {item.title}
+                        </Link>
+                      )}
+                      {unavailable ? (
+                        <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                          <span className="rounded-full bg-zinc-200 px-2 py-0.5 font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
+                            Unavailable
+                          </span>
+                          This map was taken down. It won&apos;t be included in your order.
+                        </p>
+                      ) : (
+                        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                          Digital download · one-time purchase
+                        </p>
+                      )}
                     </div>
 
-                    <p className="w-20 shrink-0 text-right font-semibold text-zinc-950 dark:text-zinc-50">
+                    <p
+                      className={`w-20 shrink-0 text-right font-semibold ${
+                        unavailable
+                          ? "text-zinc-400 line-through dark:text-zinc-500"
+                          : "text-zinc-950 dark:text-zinc-50"
+                      }`}
+                    >
                       {item.priceCents === 0 ? "Free" : formatCents(item.priceCents)}
                     </p>
 
@@ -346,7 +407,8 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
                       <Trash size={18} />
                     </button>
                   </li>
-                ))}
+                  );
+                })}
               </ul>
 
               {/* Разрушающее действие второго плана: DANGER_COLORS.quiet
@@ -375,7 +437,7 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
                 <dl className="mt-5 space-y-2 text-sm">
                   <div className="flex items-center justify-between">
                     <dt className="text-zinc-600 dark:text-zinc-400">
-                      {items.length} {items.length === 1 ? "map" : "maps"}
+                      {available.length} {available.length === 1 ? "map" : "maps"}
                     </dt>
                     <dd className="text-zinc-950 dark:text-zinc-50">{formatCents(totalCents)}</dd>
                   </div>
@@ -407,11 +469,21 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
                   </div>
                 )}
 
-                <Button size="lg" onClick={checkout} className={`${needsWaiver ? "mt-4" : "mt-6"} w-full`}>
+                <Button
+                  size="lg"
+                  onClick={checkout}
+                  // Всё в корзине недоступно — оплачивать нечего. Раньше
+                  // такой запрос уходил на сервер и возвращался 404,
+                  // а человек видел «Something went wrong».
+                  disabled={available.length === 0}
+                  className={`${needsWaiver ? "mt-4" : "mt-6"} w-full`}
+                >
                   {/* Надпись честно называет то, что произойдёт: у
                       корзины из одних бесплатных карт не будет ни
                       перехода к оплате, ни самой оплаты. */}
-                  {state === "loading"
+                  {available.length === 0
+                    ? "Nothing to check out"
+                    : state === "loading"
                     ? totalCents === 0
                       ? "Getting your maps…"
                       : "Redirecting…"

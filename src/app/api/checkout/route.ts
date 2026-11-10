@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { getProduct } from "@/lib/products";
 import { freeOrderKey, recordPaidOrder } from "@/lib/orders";
+import { hasPurchased } from "@/lib/purchases";
 import { getStripe } from "@/lib/stripe";
 import { SITE_URL } from "@/lib/site";
 import { WAIVER_STRIPE_NOTE, WAIVER_VERSION } from "@/lib/legal";
@@ -51,13 +52,40 @@ function parseSlugs(body: unknown): string[] | null {
 // улетал бы с превью на прод. Белый список, а не слепое доверие
 // заголовку: origin приходит от клиента, и подставной origin означал бы
 // редирект покупателя после оплаты на чужой сайт.
+//
+// ⚠️ Список ТОЧНЫЙ (аудит 2026-11, S-10). Раньше здесь стояли
+// startsWith("http://localhost") и endsWith(".vercel.app") — первое
+// пропускало и http://localhost.evil.com, второе — любой чужой проект
+// на Vercel. Сегодня подставить такой origin нечем (Vercel направляет к
+// нам только наши домены), но проверка не должна держаться на чужой
+// маршрутизации.
+const LOCAL_ORIGINS = ["http://localhost:3000", "http://localhost:3001"];
+
+// Адреса этого деплоя и его ветки — их называет сам Vercel (системные
+// переменные, без протокола). Шаблон ниже — запасной путь на случай,
+// когда переменные выключены в настройках проекта: только НАШИ превью.
+const OWN_PREVIEW = /^https:\/\/soucampus-builds-[a-z0-9-]+-sou-campus\.vercel\.app$/;
+
 function returnBase(request: Request): string {
   const origin = new URL(request.url).origin;
+  const vercel = [process.env.VERCEL_URL, process.env.VERCEL_BRANCH_URL]
+    .filter((host): host is string => Boolean(host))
+    .map((host) => `https://${host}`);
   const allowed =
     origin === SITE_URL ||
-    origin.startsWith("http://localhost") ||
-    origin.endsWith(".vercel.app");
+    LOCAL_ORIGINS.includes(origin) ||
+    vercel.includes(origin) ||
+    OWN_PREVIEW.test(origin);
   return allowed ? origin : SITE_URL;
+}
+
+// Адрес обложки для страницы оплаты Stripe. У засеянных карт путь
+// относительный («/portfolio/x.png») — к нему нужен домен. У карты
+// креатора это уже полный адрес Storage, и приклеивать к нему домен
+// значит получить «https://soucampus.onlinehttps://…» (аудит 2026-11,
+// S-09): Stripe такой адрес не примет, и карта не купится.
+function absoluteImage(image: string): string {
+  return image.startsWith("/") ? `${SITE_URL}${image}` : image;
 }
 
 export async function POST(request: Request) {
@@ -93,7 +121,10 @@ export async function POST(request: Request) {
   // getProduct ходит под anon-ключом, то есть через RLS: неопубликованный
   // товар отсюда не виден и купить его нельзя, даже зная slug. Продукты,
   // которых нет (удалённый slug, опечатка), просто выпадают — покупатель
-  // не должен потерять всю корзину из-за одной неверной позиции.
+  // не должен потерять всю корзину из-за одной неверной позиции. С 04.11
+  // корзина сама красит такие позиции серым и не присылает их сюда (см.
+  // CartAvailability.tsx), но этот фильтр остаётся: список в корзине
+  // может отставать на минуту кэша, и решает всё равно сервер.
   const products = await Promise.all(slugs.map((slug) => getProduct(slug)));
 
   const lineItems = products
@@ -105,7 +136,7 @@ export async function POST(request: Request) {
         unit_amount: product.priceCents,
         product_data: {
           name: product.title,
-          images: [`${SITE_URL}${product.image}`],
+          images: [absoluteImage(product.image)],
           // Metadata на КАЖДОЙ строке, не на сессии целиком: у корзины
           // может быть несколько товаров, а session-level metadata на всех
           // сразу не разложить (и она не привязана к конкретной строке).
@@ -118,6 +149,50 @@ export async function POST(request: Request) {
 
   if (lineItems.length === 0) {
     return NextResponse.json({ error: "no valid products" }, { status: 404 });
+  }
+
+  // ── Своё и уже купленное не продаём (аудит 2026-11, S-05) ────────────
+  //
+  // Обе проверки раньше жили только в браузере («You already own this
+  // map» на кнопке страницы карты), а корзина и сервер о них не знали.
+  // Итог — два разных вреда:
+  //   - покупатель платил за одну карту дважды (лежала в корзине, купил
+  //     кнопкой Buy now, потом оплатил корзину), и возврат с невозвратной
+  //     комиссией Stripe доставался владельцу;
+  //   - автор «брал» собственную карту и становился её покупателем: +1 к
+  //     продажам и право писать под ней от лица купившего.
+  //
+  // Отказ, а не молчаливое выбрасывание позиции: человек должен увидеть,
+  // ПОЧЕМУ заказ не тот, что в корзине (тот же довод, что у серых
+  // позиций в CartAvailability).
+  const wanted = products.filter(
+    (product): product is NonNullable<(typeof products)[number]> => product !== null
+  );
+
+  const own = wanted.find((product) => product.creatorId === user.id);
+  if (own) {
+    return NextResponse.json(
+      {
+        error: "own map",
+        message: `“${own.title}” is your own map — remove it from the order.`,
+      },
+      { status: 409 }
+    );
+  }
+
+  // Только платные: повторное получение бесплатной и так ничего не
+  // создаёт (уникальный ключ free:<карта>:<человек>), отказывать не в чем.
+  for (const product of wanted) {
+    if (product.priceCents === 0) continue;
+    if (await hasPurchased(product.id, user.id, user.email)) {
+      return NextResponse.json(
+        {
+          error: "already owned",
+          message: `You already own “${product.title}” — it's in My purchases. Remove it from the order.`,
+        },
+        { status: 409 }
+      );
+    }
   }
 
   // ── Бесплатные карты идут МИМО Stripe ────────────────────────────────
@@ -221,8 +296,20 @@ export async function POST(request: Request) {
 
   const base = returnBase(request);
 
-  const session = await getStripe().checkout.sessions.create({
+  // Отказ Stripe — не авария сервера (аудит 2026-11, S-09). Без этого
+  // try любая его ошибка (сумма ниже минимума, недоступность) уходила
+  // наружу голым 500. Текст ошибки — только в лог: в нём бывают
+  // подробности нашего аккаунта.
+  let session;
+  try {
+    session = await getStripe().checkout.sessions.create({
     mode: "payment",
+    // Страница оплаты живёт 30 минут, а не сутки по умолчанию (аудит
+    // 2026-11, S-06). Цена и доступность проверены СЕЙЧАС; за сутки карту
+    // могли снять или подорожать, а оплатить её по открытой странице
+    // всё ещё было можно. Полчаса — минимум, который разрешает Stripe;
+    // минута сверху — запас на расхождение часов.
+    expires_at: Math.floor(Date.now() / 1000) + 31 * 60,
     // ТОЛЬКО мгновенные способы оплаты (2026-09-26). Заказ пишется, когда
     // сессия уже paid (вебхук checkout.session.completed и страница
     // успеха), а событие async_payment_succeeded мы не слушаем. Способ с
@@ -252,7 +339,17 @@ export async function POST(request: Request) {
     // страница успеха получает ключ к заказу, не полагаясь на cookie.
     success_url: `${base}/marketplace/success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${base}/cart`,
-  });
+    });
+  } catch (err) {
+    console.error("Stripe не создал сессию оплаты:", err instanceof Error ? err.message : err);
+    return NextResponse.json(
+      {
+        error: "payment unavailable",
+        message: "We couldn't start the payment. Try again in a minute.",
+      },
+      { status: 502 }
+    );
+  }
 
   // session.url — адрес страницы оплаты на домене Stripe. Данные карты
   // вводятся там, наш сервер их не видит и не хранит — это и есть

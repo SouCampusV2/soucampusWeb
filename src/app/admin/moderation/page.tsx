@@ -164,7 +164,7 @@ export default async function ModerationPage() {
                 />
               </details>
 
-              <ModerationActions productId={product.id} />
+              <ModerationActions productId={product.id} version={product.version} />
             </li>
           ))}
         </ul>

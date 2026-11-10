@@ -1,5 +1,6 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { isLocalPath } from "@/lib/site";
 
 // Уведомления: что площадка говорит человеку сама, без его вопроса.
 //
@@ -40,9 +41,9 @@ const MAX_BODY = 1000;
  * адресом — отсюда вторая проверка.
  */
 function safeHref(href: string | null | undefined): string | null {
-  if (!href) return null;
-  if (!href.startsWith("/") || href.startsWith("//")) return null;
-  return href;
+  // Общая проверка с формой входа и картинками — см. isLocalPath:
+  // `/\evil.com` начинается с одного слэша, а открывается как чужой сайт.
+  return isLocalPath(href) ? href : null;
 }
 
 export type NewNotification = {

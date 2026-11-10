@@ -21,6 +21,12 @@ export type PendingProduct = {
   price: string;
   category: ProductCategory | null;
   createdAt: string;
+  /**
+   * Версия заявки, которую видит модератор, — products.updated_at.
+   * Уезжает обратно вместе с Approve: сервер публикует карту, только
+   * если с этого момента её не правили (аудит 2026-11, S-17).
+   */
+  version: string;
   /** Подписанная ссылка на файл карты; null — файла нет или подпись не удалась. */
   fileUrl: string | null;
   creator: { id: string; username: string } | null;
@@ -51,6 +57,7 @@ type Row = {
   category: ProductCategory | null;
   file_path: string | null;
   created_at: string;
+  updated_at: string;
   creator_id: string | null;
   product_images: { url: string; position: number }[] | null;
   submission_kind: SubmissionKind | null;
@@ -68,7 +75,7 @@ export async function getPendingProducts(): Promise<PendingProduct[]> {
   const { data, error } = await db
     .from("products")
     .select(
-      "id, slug, title, summary, description, image_url, price_label, category, file_path, created_at, creator_id, submission_kind, suspension_reason, product_images(url, position)"
+      "id, slug, title, summary, description, image_url, price_label, category, file_path, created_at, updated_at, creator_id, submission_kind, suspension_reason, product_images(url, position)"
     )
     // Одно сравнение вместо двух: «удалена» больше не отдельная метка
     // поверх статуса, а самостоятельное состояние — значит в pending
@@ -112,6 +119,7 @@ export async function getPendingProducts(): Promise<PendingProduct[]> {
         price: row.price_label,
         category: row.category,
         createdAt: row.created_at,
+        version: row.updated_at,
         fileUrl: row.file_path
           ? await signedDownloadUrl(
               row.file_path,

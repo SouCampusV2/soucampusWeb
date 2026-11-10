@@ -94,6 +94,21 @@ async function rate(
   // владельца 27.10): скачать её может каждый, и требовать сперва
   // скачать значило бы заставлять жать кнопку ради права написать отзыв.
   // Платные — как раньше, только купившие.
+  // Автор свою карту не оценивает (аудит 2026-11, S-20). Бесплатную
+  // живую карту вправе оценить любой вошедший — значит, без этой строки
+  // и её автор тоже: пять звёзд самому себе и место в «Top rated».
+  const { data: owner } = await getSupabaseAdmin()
+    .from("products")
+    .select("creator_id")
+    .eq("id", productId)
+    .maybeSingle();
+  if (owner?.creator_id === userId) {
+    return NextResponse.json(
+      { error: "You can't review your own map." },
+      { status: 403 }
+    );
+  }
+
   if (!(await isFreeLiveMap(productId)) && !(await hasPurchased(productId, userId, email))) {
     return NextResponse.json(
       { error: "Only buyers can rate a map." },

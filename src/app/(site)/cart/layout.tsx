@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getAllProductsWithStats } from "@/lib/products";
 import { CartRecommendationsProvider } from "@/components/CartRecommendations";
+import { CartAvailabilityProvider } from "@/components/CartAvailability";
 
 // Персональная страница (у каждого свой набор товаров в localStorage) —
 // поисковику здесь делать нечего, как на /marketplace/success и /terms.
@@ -36,9 +37,15 @@ export default async function CartLayout({
     .sort((a, b) => (b.salesCount ?? 0) - (a.salesCount ?? 0))
     .slice(0, RECOMMENDED_COUNT);
 
+  // Все живые slug'и — для пометки «Unavailable» в корзине (разбор — в
+  // CartAvailability.tsx). Тот же список, что выше, без второго запроса.
+  const liveSlugs = all.map((p) => p.slug);
+
   return (
-    <CartRecommendationsProvider products={popular}>
-      {children}
-    </CartRecommendationsProvider>
+    <CartAvailabilityProvider liveSlugs={liveSlugs}>
+      <CartRecommendationsProvider products={popular}>
+        {children}
+      </CartRecommendationsProvider>
+    </CartAvailabilityProvider>
   );
 }

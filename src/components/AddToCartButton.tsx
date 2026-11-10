@@ -216,7 +216,10 @@ export function AddToCartButton({
       // это ТОТ ЖЕ отказ от того же /api/checkout, который на странице
       // корзины показан красным: один смысл обязан выглядеть одинаково
       // независимо от того, с какой кнопки человек начал.
-      if (response.status === 429) {
+      //
+      // 409 — сервер отказался продавать уже купленную или собственную
+      // карту и назвал причину в message (аудит 2026-11, S-05).
+      if (response.status === 429 || response.status === 409) {
         const { message } = await readApiError(response);
         setBuying(false);
         setLimitMessage(message ?? "Too many attempts. Try again in a few minutes.");
