@@ -58,7 +58,7 @@ export async function POST() {
   // карте, и удалять её из-за правки первой нельзя.
   const { data: products, error } = await db
     .from("products")
-    .select("id, image_url, description, file_path")
+    .select("id, image_url, description, file_path, approved_file_path")
     .eq("creator_id", user.id);
 
   if (error) {
@@ -87,8 +87,14 @@ export async function POST() {
   }
   for (const row of gallery ?? []) usedImageUrls.add(row.url);
 
+  // ⚠️ Занят и путь заявки, и ОДОБРЕННЫЙ путь (аудит 2026-11, S-01).
+  // Пока здесь стоял один file_path, замена файла у проданной карты
+  // делала прежний, одобренный файл «ничьим» — и уборка стирала ровно
+  // то, что скачивают покупатели (инвариант 13).
   const usedFilePaths = new Set(
-    (products ?? []).map((p) => p.file_path).filter((path): path is string => Boolean(path))
+    (products ?? [])
+      .flatMap((p) => [p.file_path, p.approved_file_path])
+      .filter((path): path is string => Boolean(path))
   );
 
   const now = Date.now();

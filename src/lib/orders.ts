@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getStripe } from "@/lib/stripe";
 import { notify } from "@/lib/notifications";
+import { DELIVERY_FIELDS, deliverablePath, type DeliveryRow } from "@/lib/downloads";
 import {
   PRODUCT_FILES_BUCKET,
   FRESH_PURCHASE_MS,
@@ -417,7 +418,7 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
   const { data, error } = await db
     .from("orders")
     .select(
-      "customer_email, total_cents, currency, order_items(product_id, title, price_cents, quantity, products(file_path))"
+      `customer_email, total_cents, currency, order_items(product_id, title, price_cents, quantity, products(${DELIVERY_FIELDS}))`
     )
     .eq("stripe_session_id", sessionId)
     .eq("status", "paid")
@@ -431,7 +432,7 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
     title: string;
     price_cents: number;
     quantity: number;
-    products: { file_path: string | null } | { file_path: string | null }[] | null;
+    products: DeliveryRow | DeliveryRow[] | null;
   };
 
   return {
@@ -445,7 +446,8 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
         title: item.title,
         priceCents: Number(item.price_cents),
         quantity: Number(item.quantity),
-        filePath: product?.file_path ?? null,
+        // Одобренный файл, а не «тот, что лежит сейчас» — см. deliverablePath.
+        filePath: deliverablePath(product),
       };
     }),
   };
@@ -461,6 +463,12 @@ export type PurchasedItem = {
   title: string;
   slug: string | null;
   filePath: string | null;
+  /**
+   * Файл заблокирован админом (products.file_blocked). Отдельно от
+   * «файла ещё нет»: человеку надо сказать, что это решение площадки,
+   * а не обещать «скоро будет».
+   */
+  fileBlocked: boolean;
   purchasedAt: string;
 };
 
@@ -482,7 +490,7 @@ export async function getPurchasesForUser(
 ): Promise<PurchasedItem[]> {
   const db = getSupabaseAdmin();
   const select =
-    "created_at, order_items(product_id, title, products(slug, file_path))";
+    `created_at, order_items(product_id, title, products(slug, ${DELIVERY_FIELDS}))`;
 
   const [byUser, byEmail] = await Promise.all([
     db.from("orders").select(select).eq("status", "paid").eq("user_id", userId),
@@ -504,8 +512,8 @@ export async function getPurchasesForUser(
           product_id: string;
           title: string;
           products:
-            | { slug: string | null; file_path: string | null }
-            | { slug: string | null; file_path: string | null }[]
+            | ({ slug: string | null } & DeliveryRow)
+            | ({ slug: string | null } & DeliveryRow)[]
             | null;
         }[]
       | null;
@@ -529,7 +537,8 @@ export async function getPurchasesForUser(
         productId: item.product_id,
         title: item.title,
         slug: product?.slug ?? null,
-        filePath: product?.file_path ?? null,
+        filePath: deliverablePath(product),
+        fileBlocked: Boolean(product?.file_blocked),
         purchasedAt: order.created_at,
       });
     }

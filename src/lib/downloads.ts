@@ -52,13 +52,43 @@ type OrderRow = {
     | {
         product_id: string;
         title: string;
-        products: { file_path: string | null } | { file_path: string | null }[] | null;
+        products: DeliveryRow | DeliveryRow[] | null;
       }[]
     | null;
 };
 
-const GRANT_SELECT =
-  "id, user_id, customer_email, created_at, order_items!inner(product_id, title, products(file_path))";
+/** То, что решает, какой файл получит купивший. См. deliverablePath. */
+export type DeliveryRow = {
+  approved_file_path: string | null;
+  file_blocked: boolean | null;
+};
+
+/** Колонки карты для выдачи файла — одна строка на все запросы. */
+export const DELIVERY_FIELDS = "approved_file_path, file_blocked";
+
+/**
+ * Какой файл отдавать покупателю (аудит 2026-11, S-01 и S-02; миграция
+ * 20261110130000).
+ *
+ * ⚠️ НЕ products.file_path. Та колонка — заявка автора: он пишет в неё
+ * новый файл в момент правки, ДО решения модератора. Пока скачивание
+ * читало её, замена файла у проданной карты доезжала до всех купивших
+ * сразу, непросмотренной, — даже если правку потом отклоняли.
+ * approved_file_path пишет только база и только при одобрении.
+ *
+ * file_blocked — рубильник админа: вредный файл не отдаётся никому.
+ * Это единственное исключение из «покупатель не теряет оплаченное».
+ *
+ * Одна функция на все три места, где выдаётся файл (скачивание, список
+ * покупок, страница успеха): разойдутся — человек увидит кнопку
+ * Download и получит 404.
+ */
+export function deliverablePath(product: DeliveryRow | null | undefined): string | null {
+  if (!product || product.file_blocked) return null;
+  return product.approved_file_path ?? null;
+}
+
+const GRANT_SELECT = `id, user_id, customer_email, created_at, order_items!inner(product_id, title, products(${DELIVERY_FIELDS}))`;
 
 function grantFrom(row: OrderRow | null | undefined, productId: string): DownloadGrant | null {
   if (!row) return null;
@@ -70,7 +100,7 @@ function grantFrom(row: OrderRow | null | undefined, productId: string): Downloa
     userId: row.user_id,
     customerEmail: row.customer_email,
     title: item.title,
-    filePath: product?.file_path ?? null,
+    filePath: deliverablePath(product),
   };
 }
 

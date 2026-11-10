@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { downloadHref, escapeLike, isUuid, SESSION_ID_PATTERN } from "@/lib/downloads";
+import {
+  deliverablePath,
+  downloadHref,
+  escapeLike,
+  isUuid,
+  SESSION_ID_PATTERN,
+} from "@/lib/downloads";
 
 const PRODUCT = "3f2b8c1e-9a4d-4e6f-8b7a-1c2d3e4f5a6b";
 
@@ -44,5 +50,25 @@ describe("escapeLike", () => {
     // Точка, запятая и скобки — синтаксис PostgREST внутри or().
     expect(escapeLike("a.b@x.com")).toBe("a_b@x_com");
     expect(escapeLike("x),user_id.eq.(y")).not.toMatch(/[,().]/);
+  });
+});
+
+// Аудит 2026-11, S-01 и S-02: какой файл получает купивший.
+describe("deliverablePath", () => {
+  it("отдаёт одобренный файл", () => {
+    expect(
+      deliverablePath({ approved_file_path: "u1/1-map.zip", file_blocked: false })
+    ).toBe("u1/1-map.zip");
+  });
+
+  it("без одобренного файла не отдаёт ничего — заявка автора сюда не попадает", () => {
+    expect(deliverablePath({ approved_file_path: null, file_blocked: false })).toBeNull();
+    expect(deliverablePath(null)).toBeNull();
+  });
+
+  it("заблокированный файл не отдаёт, даже одобренный", () => {
+    expect(
+      deliverablePath({ approved_file_path: "u1/1-map.zip", file_blocked: true })
+    ).toBeNull();
   });
 });

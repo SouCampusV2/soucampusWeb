@@ -134,7 +134,19 @@ export default async function PurchasesPage() {
                     </a>
                   ) : (
                     <span className="shrink-0 text-xs text-zinc-400 dark:text-zinc-500">
-                      File coming soon
+                      {/* Заблокированный файл — решение площадки, а не
+                          «ещё не загрузили»: обещать «скоро» здесь значило
+                          бы соврать. */}
+                      {item.fileBlocked ? (
+                        <>
+                          File withdrawn —{" "}
+                          <Link href="/support" className="underline underline-offset-2">
+                            contact support
+                          </Link>
+                        </>
+                      ) : (
+                        "File coming soon"
+                      )}
                     </span>
                   )}
                 </li>
