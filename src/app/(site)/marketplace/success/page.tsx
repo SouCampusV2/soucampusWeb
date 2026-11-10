@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import {
   getPaidOrder,
   buildPaidOrderFromSession,
+  ownsOrder,
   recordPaidOrder,
   type PaidOrder,
 } from "@/lib/orders";
+import { createSupabaseServer } from "@/lib/supabase-server";
+import { getCurrentUser } from "@/lib/current-user";
 import { downloadHref, SESSION_ID_PATTERN } from "@/lib/downloads";
 import { Button, INLINE_LINK } from "@/components/Button";
 import { ClearCartOnSuccess } from "@/components/ClearCartOnSuccess";
@@ -83,11 +87,31 @@ export default async function SuccessPage({
   searchParams: Promise<{ session_id?: string }>;
 }) {
   const { session_id: sessionId } = await searchParams;
+  const validId = Boolean(sessionId && SESSION_ID_PATTERN.test(sessionId));
 
-  const order =
-    sessionId && SESSION_ID_PATTERN.test(sessionId)
-      ? await findOrRecordOrder(sessionId)
-      : null;
+  // ⚠️ Страница — только хозяину заказа (аудит 2026-11, S-04 и S-07).
+  //
+  // Раньше её открывал любой, у кого есть адрес: без входа, бессрочно,
+  // с почтой покупателя и рабочими кнопками Download. И каждый запрос с
+  // любым правдоподобным id заставлял сервер идти в Stripe нашим
+  // секретным ключом — без входа и без лимита.
+  //
+  // Теперь сначала спрашиваем, КТО пришёл. Со Stripe человек
+  // возвращается обычным переходом, cookie сессии при нём, так что
+  // покупатель разницы не заметит; истекла сессия — входит и попадает
+  // сюда же.
+  const supabase = await createSupabaseServer();
+  const viewer = await getCurrentUser(supabase);
+  if (!viewer && validId) {
+    redirect(
+      `/login?next=${encodeURIComponent(`/marketplace/success?session_id=${sessionId}`)}`
+    );
+  }
+
+  const found = viewer && validId ? await findOrRecordOrder(sessionId!) : null;
+  // Чужой заказ выглядит ровно как несуществующий: по разнице ответов
+  // нельзя проверять, настоящий ли id.
+  const order = found && viewer && ownsOrder(found, viewer) ? found : null;
 
   if (!order) {
     return (

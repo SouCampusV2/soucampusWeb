@@ -152,6 +152,10 @@ export async function POST(request: Request) {
     return sign(user.id, kind, body);
   }
 
+  // У confirm свой счёт — см. "upload-confirm" в rate-limit.ts.
+  const confirmLimited = await enforceRateLimit("upload-confirm", user.id);
+  if (confirmLimited) return confirmLimited;
+
   return confirm(user.id, kind, body);
 }
 

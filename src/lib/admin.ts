@@ -75,13 +75,15 @@ export async function getAdminUser(): Promise<AdminUser | null> {
     return deny(err instanceof Error ? err.message : "служебный клиент недоступен");
   }
 
-  if (!data) return deny(`у пользователя ${user.email} нет строки в profiles`);
+  // В лог — id, а не почта (аудит 2026-11, S-27). Сюда попадает КАЖДЫЙ
+  // вошедший, кто открыл /admin, а логи Vercel читает не только владелец
+  // базы; почта в них — персональные данные без надобности. По id строка
+  // находится так же.
+  if (!data) return deny(`у пользователя ${user.id} нет строки в profiles`);
   if (!data.is_admin) {
     return deny(
-      `у пользователя ${user.email} is_admin = false. ` +
-        "Проверить: select p.username, p.is_admin from profiles p join auth.users u on u.id = p.id where u.email = '" +
-        user.email +
-        "';"
+      `у пользователя ${user.id} is_admin = false. ` +
+        `Проверить: select username, is_admin from profiles where id = '${user.id}';`
     );
   }
 

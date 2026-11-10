@@ -1,9 +1,26 @@
 import { NextResponse } from "next/server";
 import { getStripe } from "@/lib/stripe";
-import { buildPaidOrderFromSession, recordPaidOrder } from "@/lib/orders";
+import { buildPaidOrderFromSession, markOrderRefunded, recordPaidOrder } from "@/lib/orders";
 import type Stripe from "stripe";
 
 export const dynamic = "force-dynamic";
+
+// Платёж, деньги за который ушли обратно, — или null, если событие не об
+// этом. Отдельной функцией, чтобы обработчик ниже читался как список
+// решений, а не как разбор форматов Stripe.
+function refundedPaymentIntent(event: Stripe.Event): string | null {
+  const idOf = (value: string | { id: string } | null | undefined) =>
+    typeof value === "string" ? value : (value?.id ?? null);
+
+  if (event.type === "charge.refunded") {
+    const charge = event.data.object;
+    return charge.refunded ? idOf(charge.payment_intent) : null;
+  }
+  if (event.type === "charge.dispute.created") {
+    return idOf(event.data.object.payment_intent);
+  }
+  return null;
+}
 
 // Вебхук Stripe: сюда Stripe сам присылает событие "оплата прошла".
 //
@@ -56,6 +73,35 @@ export async function POST(request: Request) {
       await recordPaidOrder(input);
     }
   }
+
+  // ── Деньги вернулись — доступ закрывается (аудит 2026-11, S-03) ──────
+  //
+  // Два события, один исход:
+  //   charge.refunded         — возврат из панели Stripe. Только ПОЛНЫЙ
+  //                             (charge.refunded = true): частичный
+  //                             возврат за одну карту из корзины заказ
+  //                             целиком не отменяет, его разбирают руками.
+  //   charge.dispute.created  — покупатель оспорил списание в банке.
+  //                             Деньги Stripe забирает сразу, до разбора.
+  //                             Выиграли спор — статус `paid` возвращается
+  //                             руками, это редкий и осознанный шаг.
+  //
+  // ⚠️ Эти события надо ВКЛЮЧИТЬ у адреса вебхука в панели Stripe — по
+  // умолчанию туда идёт одно checkout.session.completed. Пока не
+  // включены, этот код просто не вызывается.
+  //
+  // Ошибка здесь — честный 500: Stripe повторит доставку, и это ровно
+  // то, что нужно (тот же довод, что у записи заказа).
+  const refundedPayment = refundedPaymentIntent(event);
+  if (refundedPayment) {
+    const changed = await markOrderRefunded(refundedPayment);
+    // Громко: возврат и спор — редкие события, о которых владелец
+    // обязан узнать, а не найти через месяц.
+    console.warn(
+      `[stripe] ${event.type}: заказ ${changed ? "переведён в refunded" : "не найден или уже не paid"}`
+    );
+  }
+
   // Остальные типы событий подтверждаем не глядя: отвечать 400 нельзя —
   // Stripe посчитает вебхук сломанным и будет ретраить впустую.
 

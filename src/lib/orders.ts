@@ -226,6 +226,44 @@ export async function recordPaidOrder(input: PaidOrderInput): Promise<void> {
 }
 
 /**
+ * Деньги за заказ вернулись — заказ перестаёт быть покупкой (аудит
+ * 2026-11, S-03).
+ *
+ * Статус `refunded` в схеме был с первого дня, и весь код его уважает:
+ * скачивание, право на отзыв, роль Client, счётчик продаж считают только
+ * `paid`. Не было одного — того, кто этот статус ПОСТАВИТ. Возврат в
+ * панели Stripe и спор о списании в банке проходили мимо сайта: деньги
+ * уходили обратно, а файл, отзывы и «продажа» оставались.
+ *
+ * Stripe в этих событиях называет платёж (payment_intent), а заказ у
+ * нас найден по сессии Checkout. Мост между ними — сам Stripe: спросить
+ * у него сессию этого платежа. Отдельной колонки под id платежа не
+ * нужно, а значит и миграции.
+ *
+ * Возвращает true, если заказ действительно сменил статус. Повтор
+ * события ничего не меняет: условие `status = 'paid'` стоит в запросе.
+ */
+export async function markOrderRefunded(paymentIntentId: string): Promise<boolean> {
+  const sessions = await getStripe().checkout.sessions.list({
+    payment_intent: paymentIntentId,
+    limit: 1,
+  });
+  const sessionId = sessions.data[0]?.id;
+  // Платёж не из нашего Checkout (например, счёт, выставленный руками).
+  if (!sessionId) return false;
+
+  const { data, error } = await getSupabaseAdmin()
+    .from("orders")
+    .update({ status: "refunded" })
+    .eq("stripe_session_id", sessionId)
+    .eq("status", "paid")
+    .select("id");
+
+  if (error) throw new Error(`Не удалось отметить возврат: ${error.message}`);
+  return (data ?? []).length > 0;
+}
+
+/**
  * Кому что сказать о состоявшейся покупке: покупателю — что заказ
  * оплачен и файлы уже в его кабинете, каждому автору — что его карту
  * купили.
@@ -362,6 +400,8 @@ export type PaidOrderItem = {
 };
 
 export type PaidOrder = {
+  /** Чей заказ. null — старый гостевой (до 24.07), тогда хозяина знает только почта. */
+  userId: string | null;
   customerEmail: string;
   totalCents: number;
   currency: string;
@@ -393,6 +433,27 @@ export type PaidOrder = {
  * аккаунта тоже не тайна. Поэтому он не должен работать как пропуск —
  * см. getPaidOrder ниже, она принимает только настоящие сессии Stripe.
  */
+/**
+ * «Этот заказ — этого человека» (аудит 2026-11, S-04).
+ *
+ * Id сессии Stripe раньше был пропуском сам по себе: адрес страницы
+ * успеха и кнопки Download работали без входа и бессрочно — у любого, к
+ * кому попала ссылка (история браузера, пересланный адрес), вместе с
+ * почтой покупателя на экране. Путь задумывался для гостей, а гостевой
+ * покупки нет с 24.07: у каждого заказа есть хозяин, и спрашивать надо
+ * его, а не ссылку.
+ *
+ * Правило то же, что у списка покупок: по аккаунту, а у старого
+ * гостевого заказа (user_id пуст) — по почте.
+ */
+export function ownsOrder(
+  order: { userId: string | null; customerEmail: string },
+  viewer: { id: string; email: string | null }
+): boolean {
+  if (order.userId) return order.userId === viewer.id;
+  return Boolean(viewer.email) && order.customerEmail === viewer.email;
+}
+
 export function freeOrderKey(productId: string, userId: string): string {
   return `free:${productId}:${userId}`;
 }
@@ -418,7 +479,7 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
   const { data, error } = await db
     .from("orders")
     .select(
-      `customer_email, total_cents, currency, order_items(product_id, title, price_cents, quantity, products(${DELIVERY_FIELDS}))`
+      `user_id, customer_email, total_cents, currency, order_items(product_id, title, price_cents, quantity, products(${DELIVERY_FIELDS}))`
     )
     .eq("stripe_session_id", sessionId)
     .eq("status", "paid")
@@ -436,6 +497,7 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
   };
 
   return {
+    userId: (data.user_id as string | null) ?? null,
     customerEmail: data.customer_email,
     totalCents: Number(data.total_cents),
     currency: data.currency,
