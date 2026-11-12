@@ -31,6 +31,12 @@ export const WIKI_SECTIONS = [
       "Getting a downloaded map into your game, and keeping it working.",
   },
   {
+    id: "schematics",
+    title: "Schematics",
+    description:
+      "Getting WorldEdit, pasting a build, or raising it block by block in survival.",
+  },
+  {
     id: "commissions",
     title: "Commissions",
     description: "How a custom build is ordered, priced and delivered.",
@@ -166,9 +172,84 @@ export const WIKI_ARTICLES: WikiArticle[] = [
     ],
   },
   {
+    slug: "getting-worldedit",
+    title: "Getting WorldEdit and FastAsyncWorldEdit",
+    section: "schematics",
+    summary:
+      "Which one you need, where to download it safely, and where the file goes.",
+    body: [
+      {
+        heading: "Which one you need",
+        blocks: [
+          {
+            kind: "list",
+            items: [
+              "WorldEdit — the original. It comes as a server plugin for Spigot and Paper, and as a mod for Fabric, Forge and NeoForge. For singleplayer, this is the one.",
+              "FastAsyncWorldEdit, FAWE for short — a faster fork of WorldEdit, for servers only. Same commands, but it spreads a large paste over many ticks instead of freezing the server on one. It runs on Paper and its forks; there is no singleplayer version.",
+            ],
+          },
+          {
+            kind: "text",
+            text: "Run one or the other, never both. FAWE replaces WorldEdit rather than sitting beside it, and two copies end up fighting over the same commands.",
+          },
+        ],
+      },
+      {
+        heading: "Where to download it",
+        blocks: [
+          {
+            kind: "text",
+            text: "From the official pages, and nowhere else. Re-upload sites that rank well in search are a well-known way of passing round jars with something extra inside, and a plugin or a mod runs with full access to your server or your computer.",
+          },
+          {
+            kind: "list",
+            items: [
+              "WorldEdit — enginehub.org, or the WorldEdit pages on Modrinth and CurseForge, published by EngineHub.",
+              "FastAsyncWorldEdit — Hangar, PaperMC's own plugin site, or Modrinth, published by IntellectualSites.",
+              "Whichever you take, the file has to match both your Minecraft version and what it runs on. A Fabric jar does nothing on Forge, and a build for one version will not load on another.",
+            ],
+          },
+        ],
+      },
+      {
+        heading: "Installing it on a server",
+        blocks: [
+          {
+            kind: "steps",
+            items: [
+              "Stop the server. Plugins are only picked up on start.",
+              "Put the jar into the plugins folder next to the server jar. If you are switching to FAWE, take the old WorldEdit jar out in the same go.",
+              "Start the server and run /plugins. WorldEdit or FastAsyncWorldEdit should be in the list, in green.",
+              "Give yourself the rights to use it — op, or the worldedit permissions in whatever permission plugin the server uses. Without them every command answers that you are not allowed.",
+            ],
+          },
+        ],
+      },
+      {
+        heading: "Installing it for singleplayer",
+        blocks: [
+          {
+            kind: "steps",
+            items: [
+              "Install a mod loader for the version you play — Fabric is the simplest. Its installer adds a new profile to the launcher.",
+              "Download the WorldEdit build for that loader. On Fabric, also download Fabric API: WorldEdit needs it and will not start without it.",
+              "Put both jars into the mods folder inside your Minecraft directory. On Windows that is %appdata%/.minecraft/mods; launchers with separate instances keep a mods folder per instance.",
+              "Start the game on the loader's profile and open a world with cheats allowed. WorldEdit asks for the same permission as /gamemode; a world made without cheats can be opened to LAN with them switched on.",
+              "Run //wand. If a wooden axe lands in your hand, WorldEdit is working.",
+            ],
+          },
+          {
+            kind: "note",
+            text: "Commands start with two slashes — //paste, //undo, //wand. With one slash the game looks for an ordinary command of that name, finds none, and it looks as though WorldEdit is broken. It is the most common first-day mistake.",
+          },
+        ],
+      },
+    ],
+  },
+  {
     slug: "upload-a-schematic-to-a-server",
     title: "Upload a schematic to a server",
-    section: "maps",
+    section: "schematics",
     summary:
       "A schematic is a building, not a world — it needs WorldEdit and a place to paste it.",
     body: [
@@ -187,7 +268,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "steps",
             items: [
-              "Install WorldEdit on the server — FastAsyncWorldEdit is the usual choice on Paper, and it handles large pastes far better.",
+              "Install WorldEdit on the server — FastAsyncWorldEdit is the usual choice on Paper, and it handles large pastes far better. Where to get either is in the article on getting WorldEdit.",
               "Put the file in the plugins/WorldEdit/schematics folder. Some setups use plugins/FastAsyncWorldEdit/schematics instead; the plugin's own config says which.",
               "In game, run //schem load followed by the file name, without the extension.",
               "Stand where you want the build and run //paste. The structure appears relative to where you are standing, which is why the next step matters.",
@@ -765,7 +846,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
   {
     slug: "schematic-in-singleplayer",
     title: "Using a schematic in singleplayer",
-    section: "troubleshooting",
+    section: "schematics",
     summary:
       "A schematic is not a world and will never show up in your saves list. You need WorldEdit.",
     body: [
@@ -785,7 +866,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
             kind: "steps",
             items: [
               "Install a mod loader — Fabric or Forge — for the version you want to build in.",
-              "Install the WorldEdit mod for that loader. It is the same tool as the server plugin, in mod form.",
+              "Install the WorldEdit mod for that loader. It is the same tool as the server plugin, in mod form — the article on getting WorldEdit says where to download it safely.",
               "Put the .schem file in the schematics folder inside your Minecraft directory. WorldEdit creates that folder the first time it runs.",
               "Open the world you want to build in, run //schem load with the file name, stand where you want it and run //paste.",
               "Use //undo if the position is wrong. It works as reliably in singleplayer as it does on a server.",
@@ -803,6 +884,85 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "note",
             text: "If you would rather not deal with any of this, check the map's page before buying: builds delivered as a world folder need none of it, and the specs column says which formats a map ships in.",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    slug: "building-a-schematic-in-survival",
+    title: "Building a schematic in survival",
+    section: "schematics",
+    summary:
+      "Litematica shows the build as a ghost in your world and counts the blocks. The placing is yours.",
+    body: [
+      {
+        heading: "Why not just paste it",
+        blocks: [
+          {
+            kind: "text",
+            text: "WorldEdit makes blocks out of thin air. That is creative mode by nature, and on a survival server it is usually staff-only for exactly that reason. The survival way is different: the build hangs in the world as a see-through projection, and you fill it in block by block from your own inventory. The tool that does this is Litematica.",
+          },
+        ],
+      },
+      {
+        heading: "Installing Litematica",
+        blocks: [
+          {
+            kind: "steps",
+            items: [
+              "Install the Fabric loader for the version you play. Litematica is made for Fabric.",
+              "Download Litematica and MaLiLib from Modrinth or CurseForge — both are by masa, and MaLiLib is the library Litematica runs on. Take the builds for your exact game version.",
+              "Put both jars into the mods folder, the same place as any other Fabric mod.",
+              "Start the game, open a world and press M. If the Litematica menu opens, it is installed.",
+            ],
+          },
+          {
+            kind: "note",
+            text: "Litematica runs on your side only. The server does not need it, nobody else sees your projection, and it works the same in singleplayer and on any server.",
+          },
+        ],
+      },
+      {
+        heading: "Loading the build",
+        blocks: [
+          {
+            kind: "steps",
+            items: [
+              "Put the schematic into the schematics folder inside your Minecraft directory. Litematica creates it on first launch; launchers with instances keep one per instance.",
+              "In game, press M, open Load Schematics, pick the file and load it. The build appears as a ghost where you are standing.",
+              "Open Schematic Placements from the same menu to move, rotate or mirror it until it sits where you want. Line it up before you place a single real block — moving it later means rebuilding.",
+              "Build from the bottom up. The render layers option shows one horizontal slice at a time, which is far easier to follow than the whole ghost at once.",
+            ],
+          },
+          {
+            kind: "note",
+            text: "Litematica's own format is .litematic. Recent versions also open .schem files; if yours does not list the file at all, an older Litematica is the likely reason.",
+          },
+        ],
+      },
+      {
+        heading: "Gathering the blocks",
+        blocks: [
+          {
+            kind: "list",
+            items: [
+              "The Material List, in the placement's menu, shows how many of each block the build needs, how many are still missing from the world, and how many you are carrying. It updates as you build, so it doubles as a shopping list.",
+              "The Schematic Verifier compares the ghost with what is actually there and highlights wrong and missing blocks. Run it at the end — on a big build there is always a stair facing the wrong way somewhere.",
+            ],
+          },
+        ],
+      },
+      {
+        heading: "On someone else's server",
+        blocks: [
+          {
+            kind: "text",
+            text: "A projection only shows you things, and most survival servers are fine with it. Placing helpers are another matter: Easy Place mode, which puts the right block in the right rotation wherever you click, and printer add-ons that place blocks on their own are banned on plenty of servers. Read the rules or ask staff before switching either on. A build placed by hand is yours to defend; a ban for a printer is not.",
+          },
+          {
+            kind: "note",
+            text: "Maps from the shop that ship a schematic can be built this way, in any world you already have. The specs column on a map's page says which formats it comes in.",
           },
         ],
       },
