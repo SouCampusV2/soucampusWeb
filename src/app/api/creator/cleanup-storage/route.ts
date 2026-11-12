@@ -6,6 +6,7 @@ import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
 import { PRODUCT_IMAGES_BUCKET } from "@/lib/products";
 import {
   AVATARS_BUCKET,
+  IMAGE_PENDING_BUCKET,
   PENDING_PREFIX,
   PORTFOLIO_IMAGES_BUCKET,
 } from "@/lib/upload-limits";
@@ -140,7 +141,11 @@ export async function POST() {
   // --- Непроверенные загрузки в двух других бакетах ---
   // Аватар и фото портфолио ни на что выше не сверяются: брошенный pending-
   // там иначе лежал бы вечно, а бакеты публичные.
-  for (const bucket of [AVATARS_BUCKET, PORTFOLIO_IMAGES_BUCKET]) {
+  //
+  // С 12.11 новые непроверенные картинки ложатся в закрытый
+  // IMAGE_PENDING_BUCKET (аудит S-19) — он в списке первым. Два публичных
+  // остаются ради хвостов, загруженных до переезда.
+  for (const bucket of [IMAGE_PENDING_BUCKET, AVATARS_BUCKET, PORTFOLIO_IMAGES_BUCKET]) {
     const { data: files } = await db.storage.from(bucket).list(user.id, { limit: 1000 });
     const stale = (files ?? [])
       .filter(

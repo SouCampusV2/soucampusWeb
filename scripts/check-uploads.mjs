@@ -114,12 +114,16 @@ async function post(path, body) {
 async function signAndPut(route, bucket, extra, fileName, bytes, contentType) {
   const signed = await post(route, { action: "sign", fileName, size: bytes.length, ...extra });
   if (signed.status !== 200) throw new Error(`sign ${signed.status}: ${JSON.stringify(signed.json)}`);
+  // Куда загружать, называет сам ответ sign: с 12.11 картинки едут в
+  // закрытый бакет image-pending (аудит S-19). У файла карты поля нет —
+  // он, как и раньше, ложится в свой product-files.
+  const uploadBucket = signed.json.bucket ?? bucket;
   const { error } = await asUser.storage
-    .from(bucket)
+    .from(uploadBucket)
     .uploadToSignedUrl(signed.json.path, signed.json.token, new Blob([bytes], { type: contentType }), {
       contentType,
     });
-  return { path: signed.json.path, stored: !error, storageError: error?.message };
+  return { path: signed.json.path, stored: !error, storageError: error?.message, uploadBucket };
 }
 
 const exists = async (bucket, path) => {
@@ -174,11 +178,16 @@ try {
   // Аватар с дописанным хвостом
   {
     const bytes = Buffer.concat([png, Buffer.from(TAIL)]);
-    const { path } = await signAndPut("/api/creator/image", "avatars", { kind: "avatar" }, "a.png", bytes, "image/png");
+    const { path, uploadBucket } = await signAndPut("/api/creator/image", "avatars", { kind: "avatar" }, "a.png", bytes, "image/png");
     check("токен выдан на pending-путь", path.startsWith(`${userId}/pending-`), path);
+    // Аудит S-19: непроверенное не должно быть видно снаружи.
+    check("непроверенная картинка легла в закрытый бакет", uploadBucket === "image-pending" && (await exists("image-pending", path)), uploadBucket);
+    check("в публичном бакете её нет", !(await exists("avatars", path)));
+    const direct = await fetch(publicUrl("image-pending", path));
+    check("по прямой ссылке непроверенная не открывается", !direct.ok, `status ${direct.status}`);
     const confirmed = await post("/api/creator/image", { action: "confirm", kind: "avatar", path, fileName: "a.png" });
     check("аватар принят и лёг на постоянное имя", confirmed.status === 200 && confirmed.json.path === `${userId}/avatar`, JSON.stringify(confirmed));
-    check("временный файл убран", !(await exists("avatars", path)));
+    check("временный файл убран", !(await exists("image-pending", path)));
     const served = await fetch(publicUrl("avatars", `${userId}/avatar`));
     const body = Buffer.from(await served.arrayBuffer());
     check("хвост в отданном файле исчез", served.ok && !body.includes(TAIL), `status ${served.status}`);
@@ -210,7 +219,7 @@ try {
     const { path } = await signAndPut("/api/creator/image", "product-images", { kind: "product" }, "x.png", fake, "image/png");
     const confirmed = await post("/api/creator/image", { action: "confirm", kind: "product", path, fileName: "x.png" });
     check("подделка отклонена", confirmed.status === 400, JSON.stringify(confirmed));
-    check("подделка удалена из бакета", !(await exists("product-images", path)));
+    check("подделка удалена из бакета", !(await exists("image-pending", path)) && !(await exists("product-images", path)));
   }
 
   // Тип text/html: после миграции откажет Storage, до неё — confirm
@@ -327,7 +336,7 @@ try {
   if (userId) {
     // Карта держит ссылку на автора: снести раньше пользователя.
     await asServer.from("products").delete().eq("creator_id", userId);
-    for (const bucket of ["avatars", "product-images", "product-files"]) {
+    for (const bucket of ["avatars", "product-images", "product-files", "image-pending"]) {
       const { data } = await asServer.storage.from(bucket).list(userId, { limit: 1000 });
       if (data?.length) {
         await asServer.storage.from(bucket).remove(data.map((f) => `${userId}/${f.name}`));

@@ -115,7 +115,14 @@ export async function uploadImage(
     }),
   });
   if (!sign.ok) throw new Error(await problemFromGateway(sign));
-  const { path, token } = (await sign.json()) as { path: string; token: string };
+  // Куда загружать, называет сервер: с 12.11 непроверенная картинка
+  // ложится в отдельный закрытый бакет, а не в тот, где будет жить
+  // (аудит 2026-11, S-19). `bucket` ниже — уже про готовую картинку.
+  const {
+    path,
+    token,
+    bucket: uploadBucket,
+  } = (await sign.json()) as { path: string; token: string; bucket: string };
 
   const bucket =
     kind === "product"
@@ -129,7 +136,7 @@ export async function uploadImage(
   // функций: тот же обход потолка тела запроса у Vercel, что у файла
   // карты. Разрешение на эту запись уже выдали мы, на один путь.
   const { error: uploadError } = await supabase.storage
-    .from(bucket)
+    .from(uploadBucket)
     .uploadToSignedUrl(path, token, file, {
       contentType: file.type || "application/octet-stream",
     });

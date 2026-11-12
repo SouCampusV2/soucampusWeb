@@ -12,6 +12,8 @@ import {
   BANNER_NAME,
   PENDING_PREFIX,
   PORTFOLIO_IMAGES_BUCKET,
+  IMAGE_PENDING_BUCKET,
+  MAX_PENDING_IMAGES,
   IMAGE_EXTENSIONS,
   IMAGE_MAX_BYTES,
   HEAD_BYTES,
@@ -166,6 +168,46 @@ function bucketOf(kind: Kind): string {
   return AVATARS_BUCKET;
 }
 
+// Час — тот же срок, что у уборки Storage: честная загрузка проходит
+// confirm за секунды, всё, что висит дольше, уже не понадобится.
+const PENDING_MAX_AGE_MS = 60 * 60 * 1000;
+
+/**
+ * Убрать свои брошенные загрузки и сказать, сколько ещё висит.
+ *
+ * Зовётся перед выдачей каждого нового слота — и это вся «уборка по
+ * расписанию», которая здесь нужна: брошенное лежит в ЗАКРЫТОМ бакете
+ * (никому не видно), а копиться может только до потолка
+ * MAX_PENDING_IMAGES на человека. Отдельного крона ради этого заводить
+ * не стали: потолок считает та же функция, что и убирает.
+ *
+ * Ошибку списка не превращаем в отказ загрузки: ноль — «ничего не
+ * висит», и человек со сбоем Storage всё равно упрётся в него шагом ниже.
+ */
+async function sweepPending(userId: string): Promise<number> {
+  const storage = getSupabaseAdmin().storage.from(IMAGE_PENDING_BUCKET);
+  const { data: files, error } = await storage.list(userId, { limit: 1000 });
+  if (error || !files) {
+    if (error) console.error("Шлюз картинок: список ожидающих не прочитался:", error.message);
+    return 0;
+  }
+
+  const now = Date.now();
+  const stale = files.filter(
+    (file) => now - new Date(file.created_at ?? 0).getTime() > PENDING_MAX_AGE_MS
+  );
+  if (stale.length) {
+    const { error: removeError } = await storage.remove(
+      stale.map((file) => `${userId}/${file.name}`)
+    );
+    if (removeError) {
+      console.error("Шлюз картинок: брошенные загрузки не убрались:", removeError.message);
+      return files.length;
+    }
+  }
+  return files.length - stale.length;
+}
+
 // ------------------------------------------------------------
 // sign — «можно, вот сюда»
 // ------------------------------------------------------------
@@ -213,8 +255,23 @@ async function sign(
   const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const path = `${userId}/${PENDING_PREFIX}${stamp}.${ext}`;
 
+  // ⚠️ Слот выдаётся в ЗАКРЫТЫЙ бакет, а не в тот, где картинка будет
+  // жить (аудит 2026-11, S-19 — разбор у IMAGE_PENDING_BUCKET). Заодно
+  // убираем брошенное и держим потолок: без него «попросить слот,
+  // загрузить, не подтверждать» копило бы файлы без конца.
+  const waiting = await sweepPending(userId);
+  if (waiting >= MAX_PENDING_IMAGES) {
+    return NextResponse.json(
+      {
+        error: "rate limited",
+        message: "Too many unfinished uploads. Try again in an hour.",
+      },
+      { status: 429 }
+    );
+  }
+
   const { data, error } = await getSupabaseAdmin()
-    .storage.from(bucketOf(kind))
+    .storage.from(IMAGE_PENDING_BUCKET)
     .createSignedUploadUrl(path);
 
   if (error || !data) {
@@ -224,7 +281,13 @@ async function sign(
     return NextResponse.json({ error: "upload unavailable" }, { status: 500 });
   }
 
-  return NextResponse.json({ path: data.path, token: data.token });
+  // Бакет называем в ответе: браузер загружает туда, куда выдан токен,
+  // и знать это из своей таблицы «вид → бакет» он больше не может.
+  return NextResponse.json({
+    path: data.path,
+    token: data.token,
+    bucket: IMAGE_PENDING_BUCKET,
+  });
 }
 
 // ------------------------------------------------------------
@@ -247,7 +310,11 @@ async function confirm(
   }
 
   const db = getSupabaseAdmin();
-  const storage = db.storage.from(bucketOf(kind));
+  // Два бакета, а не один: читаем и удаляем непроверенное в закрытом
+  // (storage), готовую картинку пишем в публичный (published). До 12.11
+  // это был один и тот же бакет — и непроверенный файл был виден всем.
+  const storage = db.storage.from(IMAGE_PENDING_BUCKET);
+  const published = db.storage.from(bucketOf(kind));
 
   const { data: info, error: infoError } = await storage.info(path);
   if (infoError || !info) {
@@ -277,7 +344,7 @@ async function confirm(
     );
   }
 
-  const head = await readHead(db, bucketOf(kind), path, size);
+  const head = await readHead(db, IMAGE_PENDING_BUCKET, path, size);
   if (!head) {
     console.error("Шлюз картинок: не прочитались первые байты:", path);
     return NextResponse.json({ error: "upload unavailable" }, { status: 500 });
@@ -327,7 +394,7 @@ async function confirm(
     ? `${userId}/${kind === "banner" ? BANNER_NAME : AVATAR_NAME}`
     : `${userId}/${path.slice(`${userId}/${PENDING_PREFIX}`.length).replace(/\.[^.]+$/, "")}.${clean.ext}`;
 
-  const { error: writeError } = await storage.upload(finalPath, clean.bytes, {
+  const { error: writeError } = await published.upload(finalPath, clean.bytes, {
     contentType: clean.contentType,
     upsert: true,
   });
