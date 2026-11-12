@@ -17,7 +17,8 @@ type Body =
   | { action: "create"; project: ProjectInput }
   | { action: "update"; originalSlug: string; project: ProjectInput }
   | { action: "delete"; slug: string }
-  | { action: "publish"; slug: string; published: boolean };
+  | { action: "publish"; slug: string; published: boolean }
+  | { action: "reorder"; slugs: string[] };
 
 export async function POST(request: Request) {
   const admin = await getAdminUser();
@@ -90,6 +91,52 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "That work no longer exists." }, { status: 404 });
     }
     revalidate([body.slug]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.action === "reorder") {
+    // Порядок перетаскиванием в /admin/portfolio (12.11). Приходит весь
+    // список slug'ов сверху вниз; номера раздаём заново 1…N. Заодно
+    // уходят 0, -1, … которые копит Publish.
+    const slugs = body.slugs;
+    if (
+      !Array.isArray(slugs) ||
+      slugs.length === 0 ||
+      slugs.length > 1000 ||
+      slugs.some((slug) => typeof slug !== "string" || !slug) ||
+      new Set(slugs).size !== slugs.length
+    ) {
+      return NextResponse.json({ error: "bad request" }, { status: 400 });
+    }
+    // Список должен совпасть с базой ровно: ни пропусков, ни лишних.
+    // Вкладка, открытая до того, как добавили или удалили работу, иначе
+    // раздала бы номера не всем — и новая работа встала бы куда попало.
+    const { data: rows, error: readError } = await db.from("projects").select("slug");
+    if (readError) {
+      console.error("Портфолио: порядок не прочитался:", readError.message);
+      return NextResponse.json({ error: "Couldn't save the order." }, { status: 500 });
+    }
+    const known = new Set((rows ?? []).map((row) => row.slug as string));
+    if (known.size !== slugs.length || slugs.some((slug) => !known.has(slug))) {
+      return NextResponse.json(
+        { error: "The list changed in another tab. Reload the page and try again." },
+        { status: 409 }
+      );
+    }
+    // Запрос на строку: работ десятки, а записать «порядок целиком» одной
+    // командой PostgREST не умеет без своей функции в базе.
+    const results = await Promise.all(
+      slugs.map((slug, index) =>
+        db.from("projects").update({ sort_order: index + 1 }).eq("slug", slug)
+      )
+    );
+    const failed = results.find((result) => result.error);
+    if (failed?.error) {
+      console.error("Портфолио: порядок записался не целиком:", failed.error.message);
+      return NextResponse.json({ error: "Couldn't save the order. Try again." }, { status: 500 });
+    }
+    // Страницы работ порядок не показывают — сбрасываем только списки.
+    revalidate([]);
     return NextResponse.json({ ok: true });
   }
 
