@@ -31,7 +31,10 @@ const CONTENT_SECURITY_POLICY = [
   "style-src 'self' 'unsafe-inline'",
   // Картинки карт и аватары — Supabase Storage; data: и blob: — превью
   // в формах загрузки до отправки.
-  "img-src 'self' data: blob: https://*.supabase.co",
+  // cdn.discordapp.com — аватар бота и эмодзи в предпросмотре постов на
+  // /admin/discord (DiscordPreview.tsx). Добавлен 12.11 по аудиту (S-26):
+  // без него перевод CSP в боевой режим погасил бы эти картинки.
+  "img-src 'self' data: blob: https://*.supabase.co https://cdn.discordapp.com",
   "font-src 'self' data:",
   // Supabase по HTTP и Realtime по WebSocket; курсы валют в
   // калькуляторе (BuildEstimator) браузер спрашивает сам.

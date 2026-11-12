@@ -142,6 +142,15 @@ export function orderInputFromLineItems(
  * туда мы кладём наш product_id при создании сессии, а здесь читаем его
  * обратно через expand: "data.price.product".
  */
+/**
+ * Имя среды, в которой создана оплата: production / preview / local.
+ * Vercel называет её сам (VERCEL_ENV); вне Vercel это локальная машина.
+ * Одна функция на запись метки (/api/checkout) и на её сверку (ниже).
+ */
+export function checkoutEnv(): string {
+  return process.env.VERCEL_ENV ?? "local";
+}
+
 export async function buildPaidOrderFromSession(
   sessionId: string
 ): Promise<PaidOrderInput | null> {
@@ -149,6 +158,18 @@ export async function buildPaidOrderFromSession(
 
   const session = await stripe.checkout.sessions.retrieve(sessionId);
   if (session.payment_status !== "paid") return null;
+
+  // Сессия ЧУЖОЙ среды — не наш заказ (аудит 2026-11, S-11).
+  //
+  // В тестовом режиме у прода и preview один аккаунт Stripe. Если у него
+  // зарегистрированы оба адреса вебхука, каждое событие приходит обоим,
+  // и preview пытался бы записать прод-заказ в свою базу (и наоборот):
+  // карты и человека с такими id там нет, запись падает, вебхук отвечает
+  // 500, Stripe повторяет трое суток, а после череды отказов отключает
+  // адрес целиком. Среду кладёт в метаданные /api/checkout; у сессий,
+  // созданных до 12.11, метки нет — их принимаем как раньше.
+  const madeIn = session.metadata?.env;
+  if (madeIn && madeIn !== checkoutEnv()) return null;
 
   const { data: rawLineItems } = await stripe.checkout.sessions.listLineItems(sessionId, {
     expand: ["data.price.product"],

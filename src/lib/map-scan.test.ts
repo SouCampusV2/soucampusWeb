@@ -12,6 +12,8 @@ type TestEntry = {
   flags?: number;
   /** Соврать о размере в заголовках. */
   claimedSize?: number;
+  /** Права и тип файла в стиле Unix (0xA1FF — символическая ссылка). */
+  unixMode?: number;
 };
 
 function zip(entries: TestEntry[], options: { prefix?: number; trailing?: number } = {}): Uint8Array {
@@ -43,6 +45,7 @@ function zip(entries: TestEntry[], options: { prefix?: number; trailing?: number
     header.writeUInt32LE(body.length, 20);
     header.writeUInt32LE(size, 24);
     header.writeUInt16LE(name.length, 28);
+    header.writeUInt32LE(((entry.unixMode ?? 0) << 16) >>> 0, 38);
     header.writeUInt32LE(offset, 42);
     central.push(header, name);
 
@@ -65,6 +68,28 @@ function zip(entries: TestEntry[], options: { prefix?: number; trailing?: number
 const text = (value: string) => new Uint8Array(Buffer.from(value));
 const nbt = new Uint8Array([0x0a, 0x00, 0x00, 0x01, 0x02, 0x03]);
 const exe = new Uint8Array([0x4d, 0x5a, 0x90, 0x00, 0x03, 0x00]);
+
+// Аудит 2026-11, S-23.
+describe("scanMapFile: ссылки и дополненный список расширений", () => {
+  it("отклоняет запись-ссылку", async () => {
+    const file = zip([
+      { name: "World/level.dat", data: gzipSync(nbt) },
+      { name: "World/saves", data: text("/etc"), method: 0, unixMode: 0xa1ff },
+    ]);
+    expect(await scanMapFile(file, "map.zip")).toMatch(/link to another location/);
+  });
+
+  it("обычные права файла ссылкой не считает", async () => {
+    const file = zip([{ name: "World/level.dat", data: gzipSync(nbt), unixMode: 0x81a4 }]);
+    expect(await scanMapFile(file, "map.zip")).toBeNull();
+  });
+
+  it("отклоняет html, chm и ярлык .desktop", async () => {
+    for (const name of ["readme.html", "docs/help.chm", "install.desktop", "pic.SVG"]) {
+      expect(checkEntryName(name), name).toMatch(/aren't allowed/);
+    }
+  });
+});
 
 describe("scanMapFile: zip", () => {
   it("пропускает обычный мир", async () => {

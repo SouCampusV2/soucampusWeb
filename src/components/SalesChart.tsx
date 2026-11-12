@@ -1,4 +1,5 @@
-import { formatMoney, type DayPoint, type Range } from "@/lib/analytics";
+import { formatMoney, type DayPoint } from "@/lib/analytics";
+import type { Range } from "@/lib/analytics-shape";
 import { formatDate, formatDayMonth } from "@/lib/dates";
 
 // Продажи по дням — инлайновый SVG, без библиотеки графиков.

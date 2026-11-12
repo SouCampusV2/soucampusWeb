@@ -45,6 +45,12 @@ const BLOCKED_EXTENSIONS = new Set([
   "exe", "com", "scr", "pif", "msi", "msp", "cpl", "dll", "sys", "ocx", "drv",
   "bat", "cmd", "ps1", "psm1", "vbs", "vbe", "js", "jse", "wsf", "wsh", "hta",
   "lnk", "url", "reg", "inf", "scf", "docm", "xlsm", "pptm",
+  // Дополнено 12.11 по аудиту (S-23): открываются двойным щелчком и
+  // исполняют код или уводят на чужой сайт, а в списке их не было. Это
+  // по-прежнему ЧЁРНЫЙ список — он ловит известное, а не всё опасное.
+  "html", "htm", "xhtml", "svg", "chm", "msc", "jnlp", "xll", "xlam", "dotm",
+  "sct", "wsc", "gadget", "appx", "msix", "appinstaller", "diagcab", "ps1xml",
+  "psd1", "vhd", "vhdx", "desktop", "one", "website",
   // Java: мод с вредоносом — самый вероятный случай для Minecraft
   "jar", "class", "war",
   // Linux и macOS
@@ -172,6 +178,11 @@ type Entry = {
   size: number;
   offset: number;
   dataStart: number;
+  /**
+   * Права и тип файла в стиле Unix — старшие 16 бит «внешних атрибутов»
+   * записи. По ним видно, что запись — ссылка, а не файл.
+   */
+  unixMode: number;
 };
 
 const EOCD_SIGNATURE = 0x06054b50;
@@ -280,6 +291,7 @@ function readEntries(bytes: Uint8Array): Entry[] {
       method: view.getUint16(at + 10, true),
       ...fields,
       dataStart: 0,
+      unixMode: view.getUint32(at + 38, true) >>> 16,
     });
     at = end;
   }
@@ -340,6 +352,16 @@ async function scanZip(bytes: Uint8Array, budget: Budget, depth: number): Promis
   for (const entry of entries) {
     const nameProblem = checkEntryName(entry.name);
     if (nameProblem) throw new ZipProblem(nameProblem);
+
+    // Запись-ссылка (symlink) — отказ (аудит 2026-11, S-23). Имена с
+    // «..» мы ловили, а ссылку — нет: запись `saves → /куда-угодно`
+    // плюс следующий файл `saves/level.dat` некоторые распаковщики
+    // пишут уже ЗА пределы папки карты. В мире Minecraft ссылок не
+    // бывает, так что честному архиву отказ не грозит. 0xA000 — тип
+    // «символическая ссылка» в старших битах прав.
+    if ((entry.unixMode & 0xf000) === 0xa000) {
+      throw new ZipProblem("it contains a link to another location instead of a real file.");
+    }
 
     if (entry.flags & 0x01) {
       throw new ZipProblem("the archive is password-protected, so it can't be checked.");

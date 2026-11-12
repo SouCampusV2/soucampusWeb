@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { getProduct } from "@/lib/products";
-import { freeOrderKey, recordPaidOrder } from "@/lib/orders";
+import { checkoutEnv, freeOrderKey, recordPaidOrder } from "@/lib/orders";
 import { hasPurchased } from "@/lib/purchases";
 import { getStripe } from "@/lib/stripe";
 import { SITE_URL } from "@/lib/site";
@@ -292,6 +292,9 @@ export async function POST(request: Request) {
     withdrawal_waiver: "accepted",
     withdrawal_waiver_version: WAIVER_VERSION,
     withdrawal_waiver_at: new Date().toISOString(),
+    // В какой среде создана оплата — чтобы вебхук другой среды того же
+    // аккаунта Stripe не пытался записать её к себе (orders.ts, S-11).
+    env: checkoutEnv(),
   };
 
   const base = returnBase(request);

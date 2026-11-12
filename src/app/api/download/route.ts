@@ -51,6 +51,18 @@ export async function GET(request: Request) {
 
   if (!isUuid(productId)) return notFound();
 
+  // Скачивание начинает ЧЕЛОВЕК, а не страница (аудит 2026-11, S-21).
+  //
+  // Это GET, и он пишет в журнал, по которому решаются споры о списании.
+  // Значит, любой тег на чужой странице, который сам ходит по адресу —
+  // <img>, <script>, <iframe>, — «скачивал» бы карту от имени смотрящего.
+  // Браузер честно сообщает, ради чего делает запрос (Sec-Fetch-Dest):
+  // переход по ссылке и кнопка Download — это document, всё остальное
+  // сюда не относится. Заголовка нет (старый браузер, curl) — пропускаем:
+  // вход и право на файл проверяются ниже в любом случае.
+  const dest = request.headers.get("sec-fetch-dest");
+  if (dest && dest !== "document" && dest !== "empty") return notFound();
+
   let grant: DownloadGrant | null;
   let actor: string;
 

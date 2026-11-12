@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { PERIOD_PRESETS, type Range } from "@/lib/analytics-shape";
 
 // Сводка по магазину для владельца.
 //
@@ -13,8 +14,14 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 /** Период по умолчанию, когда в адресе ничего не выбрано. */
 export const WINDOW_DAYS = 30;
 
-/** Готовые периоды в переключателе над графиком. */
-export const PERIOD_PRESETS = [7, 30, 90, 365] as const;
+// ⚠️ Список периодов и тип Range ПЕРЕЕХАЛИ в analytics-shape.ts, здесь
+// остался ре-экспорт (аудит 2026-11, S-27). Причина — в шапке того
+// файла: клиентский PeriodPicker брал их отсюда и утаскивал в браузер
+// весь этот модуль вместе с supabase-admin. Серверный код продолжает
+// писать `from "@/lib/analytics"`; КЛИЕНТСКИЙ обязан импортировать из
+// analytics-shape напрямую.
+export { PERIOD_PRESETS };
+export type { Range };
 
 /** Дальше 2 лет не пускаем: это не аналитика, а способ уронить страницу. */
 const MAX_DAYS = 730;
@@ -22,7 +29,6 @@ const MAX_DAYS = 730;
 export type DayPoint = { date: string; orders: number; revenueCents: number };
 
 /** Отрезок дат, включая обе границы. Ключи в UTC — как `created_at`. */
-export type Range = { from: string; to: string; days: number };
 
 function dayKey(d: Date): string {
   return d.toISOString().slice(0, 10);
