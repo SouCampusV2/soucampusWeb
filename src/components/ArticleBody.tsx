@@ -1,6 +1,7 @@
 import Image from "next/image";
-import { Info } from "@phosphor-icons/react/dist/ssr";
+import { ArrowSquareOut, Info } from "@phosphor-icons/react/dist/ssr";
 import type { ArticleSection } from "@/lib/article-blocks";
+import { TERTIARY_COLORS, TERTIARY_UNDERLINE } from "@/components/Button";
 
 // Единственный отрисовщик тела текста — статьи Wiki, лицензии в /terms и
 // поста What's new. До 2026-09-15 назывался WikiArticleBody и принимал
@@ -10,7 +11,7 @@ import type { ArticleSection } from "@/lib/article-blocks";
 // Блоки превращаются в разметку ЗДЕСЬ — в данных её нет, поэтому никакого
 // dangerouslySetInnerHTML на этом пути не появится даже случайно.
 //
-// Пять видов блока, и они разные по смыслу, а не по виду:
+// Шесть видов блока, и они разные по смыслу, а не по виду:
 //   text  — абзац.
 //   steps — нумерованный порядок: шаги, которые делают ПОДРЯД.
 //   list  — маркированный набор: пункты, независимые друг от друга.
@@ -19,6 +20,10 @@ import type { ArticleSection } from "@/lib/article-blocks";
 //   image — картинка из public/ в собственной пропорции (появилась с
 //           постами: новость «одиннадцать новых работ» без самих работ
 //           была бы списком названий).
+//   links — внешние ссылки списком: куда идти скачивать (с 2026-11-12).
+//           Ветка обязана стоять ДО последнего return: тот рисует note
+//           для всего, что не узнал, и ссылки превратились бы в пустую
+//           рамку без единой ошибки.
 // Разница между steps и list не косметическая: перепутав их, мы говорим
 // «делай в любом порядке» там, где порядок обязателен.
 export function ArticleBody({ sections }: { sections: ArticleSection[] }) {
@@ -73,6 +78,36 @@ export function ArticleBody({ sections }: { sections: ArticleSection[] }) {
                         <span className="mt-3 h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400" />
                         <span className="leading-7 text-zinc-600 dark:text-zinc-400">
                           {item}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                );
+              }
+
+              if (block.kind === "links") {
+                return (
+                  <ul key={key} className="space-y-3">
+                    {block.items.map((link) => (
+                      <li key={link.href} className="flex gap-3">
+                        <ArrowSquareOut
+                          size={18}
+                          weight="duotone"
+                          className="mt-1 shrink-0 text-orange-400"
+                        />
+                        <span className="leading-7 text-zinc-600 dark:text-zinc-400">
+                          {/* Чужой сайт — новая вкладка, и rel обязателен:
+                              без noopener открытая страница получает
+                              window.opener и может увести нашу вкладку. */}
+                          <a
+                            href={link.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className={`font-semibold ${TERTIARY_COLORS} ${TERTIARY_UNDERLINE}`}
+                          >
+                            {link.label}
+                          </a>
+                          {link.detail && <> — {link.detail}</>}
                         </span>
                       </li>
                     ))}
