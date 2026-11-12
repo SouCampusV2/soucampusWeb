@@ -61,6 +61,23 @@ describe("checkMapSubmission", () => {
     expect(checkMapSubmission(submission({ priceCents: 0 }), SUPABASE)).toBeNull();
   });
 
+  // Аудит 2026-11, S-18.
+  it("отбивает описание со ссылкой на чужой сайт и называет её", () => {
+    const problem = checkMapSubmission(
+      submission({ description: '<p>New version <a href="https://evil.test/map.zip">here</a></p>' }),
+      SUPABASE
+    );
+    expect(problem).toMatch(/Discord, BuiltByBit or Planet Minecraft/);
+    expect(problem).toContain("evil.test");
+  });
+
+  it("пускает описание со ссылками на сайт и площадки", () => {
+    const description =
+      '<p><a href="/@me">me</a> <a href="https://discord.gg/abc">discord</a> ' +
+      "<a href='https://www.planetminecraft.com/member/x'>pmc</a></p>";
+    expect(checkMapSubmission(submission({ description }), SUPABASE)).toBeNull();
+  });
+
   // Аудит 2026-11, S-09: Stripe не проводит платёж меньше €0.50.
   it("отбивает платную цену ниже минимума Stripe", () => {
     expect(checkMapSubmission(submission({ priceCents: 1 }), SUPABASE)).toMatch(/at least/i);

@@ -2,6 +2,7 @@ import type { EditableSpecs, ProductCategory, ProductState } from "@/lib/product
 import { SHOP_CATEGORIES } from "@/lib/products";
 import { isPendingObject } from "@/lib/upload-limits";
 import { isLocalPath } from "@/lib/site";
+import { DESCRIPTION_LINK_SITES, disallowedDescriptionLinks } from "@/lib/description-links";
 
 // Свои адреса, которые картинками не бывают: обработчики и служебные
 // маршруты. Запрос к ним из <img> — это действие от имени смотрящего.
@@ -140,6 +141,15 @@ export function checkMapSubmission(
   }
   if (badText(input.description, DESCRIPTION_MAX)) {
     return "Write a description.";
+  }
+  // Ссылки описания — только на сайт и три площадки (аудит 2026-11,
+  // S-18). Отказ здесь — чтобы автор увидел, какая ссылка не подошла, а
+  // не обнаружил после сохранения, что она стала обычным текстом.
+  // Защищает не эта строка, а санитайзер при показе: см. шапку
+  // description-links.ts.
+  const badLink = disallowedDescriptionLinks(input.description)[0];
+  if (badLink !== undefined) {
+    return `Links in the description can only lead to ${DESCRIPTION_LINK_SITES}. Remove the link to “${badLink.slice(0, 80)}”.`;
   }
   // «free» — не категория, а цена 0 (см. filterByCategory в products.ts).
   // Пришла она сюда — значит запрос собран мимо формы.

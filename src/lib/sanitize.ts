@@ -1,5 +1,6 @@
 import sanitizeHtml from "sanitize-html";
 import { isOwnImageUrl } from "@/lib/map-submission";
+import { isAllowedDescriptionLink } from "@/lib/description-links";
 
 // Очистка описания карты — ОДНА функция на все места, где креаторский
 // HTML попадает в dangerouslySetInnerHTML.
@@ -73,7 +74,9 @@ export function sanitizeDescription(
     // Протоколы ссылок. Без этого ограничения href="javascript:…"
     // остался бы обычным атрибутом обычной ссылки и выполнил бы код по
     // клику — тег-то разрешён.
-    allowedSchemes: ["http", "https", "mailto"],
+    // mailto убран 12.11: ссылка описания ведёт на сайт или площадку
+    // (см. transformTags ниже), а почта — ни то ни другое.
+    allowedSchemes: ["http", "https"],
     // Картинкам дополнительно data: — редактор показывает только что
     // выбранный файл как data-URI, пока идёт загрузка в Storage.
     allowedSchemesByTag: { img: ["http", "https", "data"] },
@@ -101,11 +104,33 @@ export function sanitizeDescription(
       return !isOwnImageUrl(src, supabaseUrl);
     },
 
-    // Чужая ссылка в новой вкладке без noopener даёт открытой странице
-    // доступ к window.opener нашей. Дописываем сами, на автора не
-    // полагаемся.
+    // Ссылка — только внутрь сайта или на три площадки (аудит 2026-11,
+    // S-18; правило и разбор — в description-links.ts).
+    //
+    // ⚠️ Схемы выше для этого мало: https бывает у любого сервера. До
+    // 12.11 описание могло вести куда угодно, а правится оно без
+    // модерации — то есть под одобренной картой появлялась ссылка на
+    // файл, которого мы не видели.
+    //
+    // Чужая ссылка превращается в ТЕКСТ, а не пропадает: тег меняется
+    // на span, span нет в белом списке — санитайзер снимает обёртку и
+    // оставляет слова. Вырезать ссылку целиком значило бы молча съесть
+    // кусок описания.
+    //
+    // Разрешённой дописываем rel сами, на автора не полагаемся: без
+    // noopener открытая вкладка получает доступ к window.opener нашей
+    // страницы; nofollow и ugc говорят поисковику, что ссылку поставил
+    // пользователь, а не мы.
     transformTags: {
-      a: sanitizeHtml.simpleTransform("a", { rel: "noopener noreferrer" }),
+      a: (tagName, attribs) => {
+        if (!isAllowedDescriptionLink(attribs.href)) {
+          return { tagName: "span", attribs: {} };
+        }
+        return {
+          tagName,
+          attribs: { ...attribs, rel: "noopener noreferrer nofollow ugc" },
+        };
+      },
     },
   });
 }
