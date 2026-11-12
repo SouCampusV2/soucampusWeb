@@ -19,6 +19,16 @@ export type ArticleBlock =
   | { kind: "list"; items: string[] }
   | { kind: "note"; text: string }
   | {
+      kind: "links";
+      /**
+       * Внешние ссылки списком (с 2026-11-12, вики про WorldEdit). Ссылка
+       * — отдельный блок, а не кусок строки: разметки в строках нет, и
+       * адрес здесь — данные, из которых тег делает только отрисовщик.
+       * Только https:// — держит тест в wiki.test.ts.
+       */
+      items: { label: string; href: string; detail?: string }[];
+    }
+  | {
       kind: "image";
       /**
        * Только файл из public/, путь от корня ("/portfolio/…"). Чужой

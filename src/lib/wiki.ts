@@ -202,12 +202,43 @@ export const WIKI_ARTICLES: WikiArticle[] = [
             text: "From the official pages, and nowhere else. Re-upload sites that rank well in search are a well-known way of passing round jars with something extra inside, and a plugin or a mod runs with full access to your server or your computer.",
           },
           {
-            kind: "list",
+            kind: "links",
             items: [
-              "WorldEdit — enginehub.org, or the WorldEdit pages on Modrinth and CurseForge, published by EngineHub.",
-              "FastAsyncWorldEdit — Hangar, PaperMC's own plugin site, or Modrinth, published by IntellectualSites.",
-              "Whichever you take, the file has to match both your Minecraft version and what it runs on. A Fabric jar does nothing on Forge, and a build for one version will not load on another.",
+              {
+                label: "WorldEdit for Spigot and Paper",
+                href: "https://modrinth.com/plugin/worldedit/versions?l=bukkit",
+                detail: "the server plugin.",
+              },
+              {
+                label: "WorldEdit for Fabric",
+                href: "https://modrinth.com/plugin/worldedit/versions?l=fabric",
+                detail: "the mod for singleplayer and Fabric servers.",
+              },
+              {
+                label: "WorldEdit for NeoForge",
+                href: "https://modrinth.com/plugin/worldedit/versions?l=neoforge",
+                detail: "the mod for NeoForge modpacks.",
+              },
+              {
+                label: "WorldEdit for Forge",
+                href: "https://modrinth.com/plugin/worldedit/versions?l=forge",
+                detail: "older game versions only; EngineHub no longer builds for Forge.",
+              },
+              {
+                label: "FastAsyncWorldEdit",
+                href: "https://modrinth.com/plugin/fastasyncworldedit",
+                detail: "for Spigot, Paper and Purpur servers, published by IntellectualSites.",
+              },
+              {
+                label: "enginehub.org/worldedit",
+                href: "https://enginehub.org/worldedit",
+                detail: "WorldEdit's own page. Every link above is the one it points to.",
+              },
             ],
+          },
+          {
+            kind: "text",
+            text: "On each page, pick the file that matches both your Minecraft version and what it runs on. A Fabric jar does nothing on NeoForge, and a build for one version will not load on another.",
           },
         ],
       },
@@ -236,6 +267,21 @@ export const WIKI_ARTICLES: WikiArticle[] = [
               "Put both jars into the mods folder inside your Minecraft directory. On Windows that is %appdata%/.minecraft/mods; launchers with separate instances keep a mods folder per instance.",
               "Start the game on the loader's profile and open a world with cheats allowed. WorldEdit asks for the same permission as /gamemode; a world made without cheats can be opened to LAN with them switched on.",
               "Run //wand. If a wooden axe lands in your hand, WorldEdit is working.",
+            ],
+          },
+          {
+            kind: "links",
+            items: [
+              {
+                label: "Fabric installer",
+                href: "https://fabricmc.net/use/installer/",
+                detail: "adds the Fabric profile to your launcher.",
+              },
+              {
+                label: "Fabric API",
+                href: "https://modrinth.com/mod/fabric-api",
+                detail: "the library WorldEdit and most Fabric mods need.",
+              },
             ],
           },
           {
@@ -915,6 +961,26 @@ export const WIKI_ARTICLES: WikiArticle[] = [
               "Download Litematica and MaLiLib from Modrinth or CurseForge — both are by masa, and MaLiLib is the library Litematica runs on. Take the builds for your exact game version.",
               "Put both jars into the mods folder, the same place as any other Fabric mod.",
               "Start the game, open a world and press M. If the Litematica menu opens, it is installed.",
+            ],
+          },
+          {
+            kind: "links",
+            items: [
+              {
+                label: "Litematica",
+                href: "https://modrinth.com/mod/litematica",
+                detail: "the mod itself. The same files are on CurseForge.",
+              },
+              {
+                label: "MaLiLib",
+                href: "https://modrinth.com/mod/malilib",
+                detail: "the library it needs. Take the version made for the same game version.",
+              },
+              {
+                label: "Fabric installer",
+                href: "https://fabricmc.net/use/installer/",
+                detail: "if you do not have Fabric yet.",
+              },
             ],
           },
           {
