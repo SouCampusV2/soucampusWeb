@@ -1,4 +1,4 @@
-import { getAllProjects } from "@/lib/projects";
+import { getAllProjectsForAdmin } from "@/lib/projects-admin";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { PortfolioForm } from "@/components/PortfolioForm";
 import {
@@ -17,7 +17,7 @@ export default async function NewPortfolioWorkPage({
 }) {
   // Теги — подсказкой под полем: «Order» и «Personal project» должны
   // писаться одинаково, иначе на сайте окажется два почти одинаковых.
-  const tags = [...new Set((await getAllProjects()).map((p) => p.tag))];
+  const tags = [...new Set((await getAllProjectsForAdmin()).map((p) => p.tag))];
 
   // ?inbox=<key> — «Open as new work» из /admin/discord (27.10): форма
   // приходит заполненной фактами из Discord. Права проверил layout

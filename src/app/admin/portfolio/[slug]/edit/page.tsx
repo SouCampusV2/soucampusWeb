@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { INLINE_LINK } from "@/components/Button";
-import { getAllProjects } from "@/lib/projects";
+import { getAllProjectsForAdmin } from "@/lib/projects-admin";
 import { PortfolioForm } from "@/components/PortfolioForm";
 
 export const dynamic = "force-dynamic";
@@ -13,7 +13,7 @@ export default async function EditPortfolioWorkPage({
 }) {
   const { slug } = await params;
   // Один запрос на всё: и сама работа, и теги для подсказки.
-  const projects = await getAllProjects();
+  const projects = await getAllProjectsForAdmin();
   const project = projects.find((p) => p.slug === slug);
   if (!project) notFound();
 

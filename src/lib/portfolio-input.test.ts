@@ -76,6 +76,8 @@ describe("checkProjectInput", () => {
     expect(checkProjectInput({ ...valid, priceAmount: -1 }, SUPABASE)).not.toBeNull();
     expect(checkProjectInput({ ...valid, sizeX: null, sizeZ: null, priceAmount: null }, SUPABASE)).toBeNull();
     expect(checkProjectInput({ ...valid, sortOrder: 1.5 }, SUPABASE)).not.toBeNull();
+    // Publish ставит работу выше первой — порядок уходит в 0 и ниже (12.11).
+    expect(checkProjectInput({ ...valid, sortOrder: -3 }, SUPABASE)).toBeNull();
   });
 
   it("подписи обязательны", () => {

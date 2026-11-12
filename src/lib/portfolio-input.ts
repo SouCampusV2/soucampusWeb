@@ -117,7 +117,10 @@ export function checkProjectInput(input: ProjectInput, supabaseUrl: string): str
 
   if (badNumber(input.priceAmount)) return "The price must be a positive number or empty.";
   if (badNumber(input.sizeX) || badNumber(input.sizeZ)) return "Size in blocks must be positive numbers or empty.";
-  if (input.sortOrder !== null && (!Number.isInteger(input.sortOrder) || input.sortOrder < 0)) {
+  // Отрицательный порядок законен с 12.11: Publish ставит работу на
+  // единицу выше первой, и после нескольких публикаций первая уходит в
+  // 0, -1, … Запрет здесь не дал бы потом сохранить такую работу.
+  if (input.sortOrder !== null && !Number.isInteger(input.sortOrder)) {
     return "The order must be a whole number or empty.";
   }
 
