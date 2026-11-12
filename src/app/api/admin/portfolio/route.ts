@@ -16,7 +16,8 @@ export const dynamic = "force-dynamic";
 type Body =
   | { action: "create"; project: ProjectInput }
   | { action: "update"; originalSlug: string; project: ProjectInput }
-  | { action: "delete"; slug: string };
+  | { action: "delete"; slug: string }
+  | { action: "publish"; slug: string; published: boolean };
 
 export async function POST(request: Request) {
   const admin = await getAdminUser();
@@ -48,6 +49,45 @@ export async function POST(request: Request) {
     if (error) {
       console.error("Портфолио: не удалилось:", error.message);
       return NextResponse.json({ error: "Couldn't delete the work." }, { status: 500 });
+    }
+    revalidate([body.slug]);
+    return NextResponse.json({ ok: true });
+  }
+
+  if (body.action === "publish") {
+    if (typeof body.slug !== "string" || !body.slug || typeof body.published !== "boolean") {
+      return NextResponse.json({ error: "bad request" }, { status: 400 });
+    }
+    // Публикация ставит работу ПЕРВОЙ (решение владельца 12.11): её
+    // выкладывают вместе с постом в Discord, и посетитель с того поста
+    // должен увидеть её сверху. Место — на единицу выше нынешней первой,
+    // остальные не сдвигаем: одна запись вместо перенумерации всех.
+    // Снятие с публикации место не трогает — вернётся туда же.
+    const change: { is_published: boolean; sort_order?: number } = {
+      is_published: body.published,
+    };
+    if (body.published) {
+      const { data: first } = await db
+        .from("projects")
+        .select("sort_order")
+        .neq("slug", body.slug)
+        .order("sort_order", { ascending: true, nullsFirst: false })
+        .limit(1)
+        .maybeSingle();
+      change.sort_order = (first?.sort_order ?? 1) - 1;
+    }
+    const { data, error } = await db
+      .from("projects")
+      .update(change)
+      .eq("slug", body.slug)
+      .select("slug")
+      .maybeSingle();
+    if (error) {
+      console.error("Портфолио: публикация не записалась:", error.message);
+      return NextResponse.json({ error: "Couldn't change the work." }, { status: 500 });
+    }
+    if (!data) {
+      return NextResponse.json({ error: "That work no longer exists." }, { status: 404 });
     }
     revalidate([body.slug]);
     return NextResponse.json({ ok: true });

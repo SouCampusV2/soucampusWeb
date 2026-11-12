@@ -26,6 +26,7 @@ const row = {
   listing_url: null,
   listing_is_free: false,
   sort_order: 1,
+  is_published: true,
   project_images: null,
 };
 

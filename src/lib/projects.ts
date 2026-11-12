@@ -1,3 +1,4 @@
+import type { SupabaseClient } from "@supabase/supabase-js";
 import { getSupabase } from "@/lib/supabase";
 
 // Форма проекта, которой пользуется весь сайт. Осталась ровно такой же,
@@ -30,6 +31,12 @@ export type Project = {
   listingIsFree: boolean;
   /** Место в списке; null у строк без порядка (уходят в конец). */
   sortOrder: number | null;
+  /**
+   * Видна ли посетителям. false — черновик: его видит только админка
+   * (служебным ключом), публичный ключ такую строку не получит вовсе —
+   * прячет политика в базе (миграция 20261112140000_project_drafts).
+   */
+  isPublished: boolean;
 };
 
 // Верхняя граница на размер hero-карусели. Раскрывающиеся панели читаются
@@ -60,6 +67,7 @@ type ProjectRow = {
   listing_url: string | null;
   listing_is_free: boolean;
   sort_order: number | null;
+  is_published: boolean;
   project_images: { url: string; position: number }[] | null;
 };
 
@@ -97,6 +105,7 @@ export function rowToProject(row: ProjectRow): Project {
     listingUrl: row.listing_url,
     listingIsFree: row.listing_is_free,
     sortOrder: row.sort_order,
+    isPublished: row.is_published,
   };
 }
 
@@ -108,7 +117,7 @@ const PROJECT_FIELDS = `
   slug, title, tag, summary, description, image_url,
   price_label, size_label, deadline_label, is_featured,
   size_x, size_z, price_amount, listing_url, listing_is_free, sort_order,
-  project_images ( url, position )
+  is_published, project_images ( url, position )
 `;
 
 // Площадь участка в футбольных полях — чтобы «200×200» стало понятно
@@ -133,11 +142,27 @@ export function footprintInPitches(project: Pick<Project, "size" | "sizeX" | "si
   return pitches < 10 ? Math.round(pitches * 10) / 10 : Math.round(pitches);
 }
 
+/** Работы для посетителей: только опубликованные. */
 export async function getAllProjects(): Promise<Project[]> {
-  const { data, error } = await getSupabase()
-    .from("projects")
-    .select(PROJECT_FIELDS)
-    .order("sort_order", { ascending: true });
+  return loadProjects(getSupabase(), { onlyPublished: true });
+}
+
+/**
+ * Общий запрос списка. Клиент передаётся снаружи, чтобы админка могла
+ * прочитать черновики служебным ключом (projects-admin.ts), не таща
+ * этот ключ сюда: projects.ts импортируют и клиентские компоненты.
+ *
+ * onlyPublished у публичного ключа дублирует политику базы — это не
+ * защита, а честность запроса: если сюда однажды передадут служебный
+ * ключ, черновики всё равно не уедут на сайт.
+ */
+export async function loadProjects(
+  db: SupabaseClient,
+  { onlyPublished }: { onlyPublished: boolean }
+): Promise<Project[]> {
+  let query = db.from("projects").select(PROJECT_FIELDS);
+  if (onlyPublished) query = query.eq("is_published", true);
+  const { data, error } = await query.order("sort_order", { ascending: true });
 
   // Молча отдать пустой список — худший вариант: сайт соберётся с пустым
   // портфолио, и никто не заметит. Лучше упасть на сборке с текстом ошибки.
@@ -151,6 +176,7 @@ export async function getProject(slug: string): Promise<Project | null> {
     .from("projects")
     .select(PROJECT_FIELDS)
     .eq("slug", slug)
+    .eq("is_published", true)
     // maybeSingle: ждём одну строку или ни одной. В отличие от single()
     // отсутствие строки — не ошибка, а null: несуществующий /portfolio/xxx
     // должен показать 404, а не уронить страницу.

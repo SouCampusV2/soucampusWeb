@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getAllProjects, type Project } from "@/lib/projects";
+import { type Project } from "@/lib/projects";
+import { getAllProjectsForAdmin } from "@/lib/projects-admin";
 import { getProduct, type Product } from "@/lib/products";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { SITE_URL } from "@/lib/site";
@@ -78,7 +79,7 @@ export default async function AdminDiscordPage({
   // Редактор поста: ?post=<id> — сохранённый, ?from=<slug> — новый из
   // работы (Portfolio), ?product=<slug> — новый из карты (Premade / Free).
   if (showcase && (postId || from || productParam)) {
-    const projects = await getAllProjects();
+    const projects = await getAllProjectsForAdmin();
     let editor: {
       id: string | null;
       projectSlug: string | null;
@@ -181,7 +182,7 @@ export default async function AdminDiscordPage({
   }
 
   const [projects, { data: postRows, error: postsError }] = await Promise.all([
-    getAllProjects(),
+    getAllProjectsForAdmin(),
     db
       .from("discord_posts")
       .select("id, project_slug, product_slug, channel, post, status, published_at, updated_at")
