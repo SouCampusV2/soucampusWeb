@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { AdminNav } from "@/components/AdminNav";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 import { Unbounded } from "next/font/google";
-import { getAdminUser } from "@/lib/admin";
+import { getAdminGate } from "@/lib/admin";
 import { INLINE_LINK, NEW_TAB } from "@/components/Button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 
@@ -22,13 +22,21 @@ export const metadata: Metadata = {
 // админки получает проверку автоматически, а не «если не забыли».
 // notFound(), а не redirect: постороннему админка не должна выдавать
 // самим фактом ответа, что она существует.
+//
+// Единственный redirect — на ввод кода двухшагового входа (аудит
+// 2026-11, S-25), и постороннему он ничего не выдаёт: до этой ветки
+// доходит только тот, кто уже вошёл под аккаунтом админа. Это либо сам
+// владелец в новой сессии, либо тот, у кого его пароль, — и второму
+// страница с полем для кода не помогает ничем.
 export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const admin = await getAdminUser();
-  if (!admin) notFound();
+  const gate = await getAdminGate();
+  if (gate.status === "needs-code") redirect("/two-step?next=/admin");
+  if (gate.status !== "ok") notFound();
+  const admin = gate.admin;
 
   return (
     <div className="flex min-h-screen flex-col bg-[#fbfbff] dark:bg-zinc-950">
@@ -80,6 +88,25 @@ export default async function AdminLayout({
           </div>
         </div>
       </header>
+
+      {/* Плашка, пока двухшаговый вход не включён. Оранжевая — по
+          назначению: это «обрати внимание», а не ошибка (DESIGN.md →
+          bg-orange-50 занят под предупреждения). Не закрывается: закрытое
+          предупреждение о том, что админку открывает один пароль, —
+          это предупреждение, которого нет. Пропадает сама, когда
+          приложение привязано. */}
+      {!admin.twoStep && (
+        <div className="border-b border-orange-200 bg-orange-50 dark:border-orange-900 dark:bg-orange-950/40">
+          <p className="mx-auto max-w-6xl px-6 py-3 text-sm text-orange-800 dark:text-orange-200">
+            <span className="font-semibold">Two-step sign-in is off.</span> Right now a
+            password alone opens this admin.{" "}
+            <Link href="/admin/security" className="font-semibold underline underline-offset-2">
+              Turn it on
+            </Link>
+          </p>
+        </div>
+      )}
+
       <main className="flex-1">{children}</main>
     </div>
   );
