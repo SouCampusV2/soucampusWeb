@@ -132,42 +132,29 @@ export async function grantBySession(
 /**
  * Право скачать карту вошедшему человеку (список покупок).
  *
- * Два пути, те же, что у getPurchasesForUser: заказ под аккаунтом и
- * гостевой заказ на ту же почту. ⚠️ Правило должно совпадать с тем
- * списком дословно: разойдутся — человек увидит кнопку Download и
- * получит 404.
+ * Только заказ под аккаунтом — то же правило, что у
+ * getPurchasesForUser (там же разбор, почему «по почте» убрано 12.11).
+ * ⚠️ Правило должно совпадать с тем списком дословно: разойдутся —
+ * человек увидит кнопку Download и получит 404.
  *
  * Из нескольких подходящих заказов берётся самый свежий.
  */
 export async function grantForUser(
   userId: string,
-  email: string | null,
   productId: string
 ): Promise<DownloadGrant | null> {
-  const db = getSupabaseAdmin();
-  const base = () =>
-    db
-      .from("orders")
-      .select(GRANT_SELECT)
-      .eq("status", "paid")
-      .eq("order_items.product_id", productId)
-      .order("created_at", { ascending: false })
-      .limit(1);
+  const { data, error } = await getSupabaseAdmin()
+    .from("orders")
+    .select(GRANT_SELECT)
+    .eq("status", "paid")
+    .eq("order_items.product_id", productId)
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(1);
 
-  const [byUser, byEmail] = await Promise.all([
-    base().eq("user_id", userId),
-    // Без почты гостевой путь не ищем вовсе: eq("customer_email", "")
-    // ничего бы не нашёл, но и спрашивать незачем.
-    email ? base().is("user_id", null).eq("customer_email", email) : null,
-  ]);
+  if (error) throw new Error(`Не удалось проверить заказ: ${error.message}`);
 
-  if (byUser.error) throw new Error(`Не удалось проверить заказ: ${byUser.error.message}`);
-  if (byEmail?.error) throw new Error(`Не удалось проверить заказ: ${byEmail.error.message}`);
-
-  return (
-    grantFrom((byUser.data as OrderRow[] | null)?.[0], productId) ??
-    grantFrom((byEmail?.data as OrderRow[] | null)?.[0], productId)
-  );
+  return grantFrom((data as OrderRow[] | null)?.[0], productId);
 }
 
 // Строка браузера нужна как «с какого устройства», и ей хватает начала.

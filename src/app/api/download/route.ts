@@ -85,7 +85,7 @@ export async function GET(request: Request) {
       const bySession = await grantBySession(sessionId, productId);
       grant = bySession && ownsOrder(bySession, user) ? bySession : null;
     } else {
-      grant = await grantForUser(user.id, user.email, productId);
+      grant = await grantForUser(user.id, productId);
     }
   } catch (err) {
     console.error("[download] проверка права упала:", err instanceof Error ? err.message : err);

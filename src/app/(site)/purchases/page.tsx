@@ -43,7 +43,7 @@ export default async function PurchasesPage() {
   // Storage (с 2026-09-26): он пишет журнал скачиваний и подписывает
   // файл в момент клика. Раньше здесь подписывался каждый файл на
   // каждый показ страницы, и факт скачивания не видел никто.
-  const purchases = await getPurchasesForUser(user.id, user.email ?? "");
+  const purchases = await getPurchasesForUser(user.id);
   const downloads = purchases.map((p) => ({
     ...p,
     url: p.filePath ? downloadHref(p.productId) : null,

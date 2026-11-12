@@ -464,15 +464,15 @@ export type PaidOrder = {
  * покупки нет с 24.07: у каждого заказа есть хозяин, и спрашивать надо
  * его, а не ссылку.
  *
- * Правило то же, что у списка покупок: по аккаунту, а у старого
- * гостевого заказа (user_id пуст) — по почте.
+ * Правило то же, что у списка покупок, и оно одно: заказ принадлежит
+ * АККАУНТУ. Заказ без аккаунта не принадлежит никому — см. разбор у
+ * getPurchasesForUser.
  */
 export function ownsOrder(
-  order: { userId: string | null; customerEmail: string },
-  viewer: { id: string; email: string | null }
+  order: { userId: string | null },
+  viewer: { id: string }
 ): boolean {
-  if (order.userId) return order.userId === viewer.id;
-  return Boolean(viewer.email) && order.customerEmail === viewer.email;
+  return order.userId !== null && order.userId === viewer.id;
 }
 
 export function freeOrderKey(productId: string, userId: string): string {
@@ -556,37 +556,39 @@ export type PurchasedItem = {
 };
 
 /**
- * Все купленные пользователем карты — для страницы профиля. Берём
- * заказы двумя способами и объединяем:
- *   1) по user_id — заказы, сделанные уже под аккаунтом;
- *   2) по email среди ГОСТЕВЫХ заказов (user_id null) — покупки до
- *      регистрации на ту же почту «подтягиваются» в профиль (решение
- *      2026-07-24: связывать гостевые заказы по email).
+ * Все купленные пользователем карты — для страницы профиля.
+ *
+ * ⚠️ ТОЛЬКО ПО АККАУНТУ (аудит 2026-11, S-08; решение владельца 12.11).
+ * До этого путей было два: заказ под аккаунтом и «гостевой» заказ без
+ * аккаунта, который считался принадлежащим любому, кто войдёт с той же
+ * почтой. Второй путь остался с июля, когда покупать можно было без
+ * входа. С 24.07 без аккаунта не купить, новых таких заказов нет, а
+ * правило продолжало жить в четырёх местах — здесь, в скачивании и в
+ * двух функциях базы. Опасно оно стало бы в день, когда появится
+ * удаление аккаунта: у заказа обнуляется user_id, он превращается в
+ * «гостевой», и следующий человек на этой почте получает чужие покупки.
+ *
+ * Старые заказы без аккаунта не потеряны: миграция 20261112160000 один
+ * раз привязала их к аккаунтам с той же почтой и только после этого
+ * убрала правило из базы.
+ *
  * Дубли по товару схлопываем: карта покупается один раз, в списке она
  * одна, даже если попала в несколько заказов.
  *
  * Только сервер: orders/order_items закрыты RLS, читает service_role.
  */
-export async function getPurchasesForUser(
-  userId: string,
-  email: string
-): Promise<PurchasedItem[]> {
+export async function getPurchasesForUser(userId: string): Promise<PurchasedItem[]> {
   const db = getSupabaseAdmin();
   const select =
     `created_at, order_items(product_id, title, products(slug, ${DELIVERY_FIELDS}))`;
 
-  const [byUser, byEmail] = await Promise.all([
-    db.from("orders").select(select).eq("status", "paid").eq("user_id", userId),
-    db
-      .from("orders")
-      .select(select)
-      .eq("status", "paid")
-      .is("user_id", null)
-      .eq("customer_email", email),
-  ]);
+  const byUser = await db
+    .from("orders")
+    .select(select)
+    .eq("status", "paid")
+    .eq("user_id", userId);
 
   if (byUser.error) throw new Error(`Не удалось загрузить покупки: ${byUser.error.message}`);
-  if (byEmail.error) throw new Error(`Не удалось загрузить покупки: ${byEmail.error.message}`);
 
   type OrderRow = {
     created_at: string;
@@ -603,11 +605,11 @@ export async function getPurchasesForUser(
   };
 
   const byProduct = new Map<string, PurchasedItem>();
-  for (const order of [...(byUser.data ?? []), ...(byEmail.data ?? [])] as OrderRow[]) {
+  for (const order of (byUser.data ?? []) as unknown as OrderRow[]) {
     for (const item of order.order_items ?? []) {
       // ⚠️ У дубля берём БОЛЕЕ СВЕЖУЮ дату, а не первую попавшуюся.
-      // Одна карта приходит сюда дважды, когда гостевой заказ на ту же
-      // почту встречается с заказом под аккаунтом; порядок строк при
+      // Одна карта приходит сюда дважды, когда человек взял её в двух
+      // заказах (бесплатно, а потом в платной корзине); порядок строк при
       // этом задаёт база, то есть он произвольный. Раньше выигрывала
       // случайная из двух — для списка это было незаметно, а для «NEW»
       // означало бы, что бейдж иногда не появляется на свежей покупке.
