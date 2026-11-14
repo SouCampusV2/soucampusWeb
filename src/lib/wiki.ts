@@ -402,23 +402,39 @@ export const WIKI_ARTICLES: WikiArticle[] = [
     slug: "using-a-map-you-bought",
     title: "Using a map you bought",
     section: "maps",
+    // Это и есть лицензия: /terms#licensing рисует эту же статью. Текст
+    // утверждён владельцем 2026-11-14 — узкая лицензия «пользоваться, а не
+    // распоряжаться»; права на карту остаются у её автора. Меняется только
+    // с его согласия.
     summary:
-      "Play it, host it, build on it. Do not resell it or pass the files on.",
+      "Play it, host it, change it for yourself. Do not resell it or pass the files on.",
     body: [
       {
-        heading: "The short version",
+        heading: "You can",
         blocks: [
           {
             kind: "list",
             items: [
-              "Play the map alone, with friends, or on a server you run — public servers included.",
-              "Edit it, build on top of it, use it as the base of your own project.",
-              "Show it off: streams, videos, screenshots. A credit and a link back are appreciated, never demanded.",
+              "Play the map alone or with friends, and run it on servers you operate, public ones included.",
+              "Change it for your own use: edit, extend, rebuild parts of it.",
+              "Show it in streams, videos and screenshots. Credit is appreciated, never required.",
+            ],
+          },
+        ],
+      },
+      {
+        heading: "You can't",
+        blocks: [
+          {
+            kind: "list",
+            items: [
+              "Resell it, give it away, or upload the files anywhere they can be downloaded. This applies to the original and to edited versions, whole or in recognisable parts.",
+              "Present the build as your own work.",
             ],
           },
           {
             kind: "text",
-            text: "What is not on that list: reselling the map, giving the files away, or publishing them anywhere they can be downloaded from — whole or in recognisable pieces. Buying a map buys the use of it, not the right to hand it on.",
+            text: "The map's creator keeps the rights to it. Buying a map gets you a licence to use it, not ownership.",
           },
           {
             kind: "note",
