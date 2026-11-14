@@ -327,6 +327,9 @@ export function ProfileEditForm({
         // профиль», не ходя за ними в базу на каждой странице.
         username: nextUsername,
         avatar_url: nextAvatarUrl,
+        // Цвет ника для навбара. Пишем только у купивших — тот же отбор,
+        // что у записи в profiles выше; у остальных null снимает старый.
+        name_color: initial.isClient ? nameColor || null : null,
       },
     });
 

@@ -6,6 +6,7 @@ import type { Product } from "@/lib/products";
 import { ProductCardImage } from "@/components/ProductCardImage";
 import { INLINE_LINK } from "@/components/Button";
 import { StarRating } from "@/components/StarRating";
+import { nameColorStyle } from "@/lib/name-colors";
 
 // Тот же дисплейный шрифт, что у hero-заголовков и карточек портфолио
 // (см. DESIGN.md, "Hero-секции страниц").
@@ -115,10 +116,10 @@ export function ProductCard({
             <Link
               href={author.href}
               className={`pointer-events-auto relative z-10 inline-flex items-center gap-1 ${INLINE_LINK}`}
-              // style, а не класс: значение произвольное, в Tailwind его
-              // не выразить. Так же сделано в CreatorCard и под
-              // комментарием — одно имя, один способ его покрасить.
-              style={author.nameColor ? { color: author.nameColor } : undefined}
+              // Мелкий текст — оттенок под тему из nameColorStyle. Так же
+              // сделано в CreatorCard и под комментарием — одно имя, один
+              // способ его покрасить.
+              style={nameColorStyle(author.nameColor)}
             >
               {author.name}
               {author.isVerified && <SealCheck size={12} weight="fill" aria-hidden />}

@@ -23,6 +23,7 @@ import { useUser } from "@/lib/useUser";
 import { CREATOR_SIGNUPS_OPEN } from "@/lib/flags";
 import { SHOP_NAV_LINKS } from "@/lib/products";
 import { creatorHref } from "@/lib/creators";
+import { isPaletteColor, nameColorStyle } from "@/lib/name-colors";
 
 // Колокол — отдельным чанком: он есть только в режиме магазина, а тянет
 // за собой клиент Supabase и Realtime. Статический импорт клал их в
@@ -64,6 +65,12 @@ export function Navbar() {
     (user?.user_metadata?.display_name as string | undefined) ??
     user?.email;
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
+  // Цвет ника — тоже копия в user_metadata (кладёт ProfileEditForm), по той
+  // же причине: без похода в базу. Метаданные человек может переписать сам,
+  // но этот ник видит только он же, поэтому проверка — лишь «цвет из
+  // палитры», а не «купил ли». Право на цвет стережёт база (protect_name_color).
+  const metaColor = user?.user_metadata?.name_color as string | undefined;
+  const nameColor = isPaletteColor(metaColor ?? null) ? metaColor : undefined;
 
   // Ссылка на СВОЙ публичный профиль — /@<username>.
   //
@@ -188,10 +195,9 @@ export function Navbar() {
             <>
               {/* Категории + Support — навигация магазина. Без
                   data-page-transition: внутри магазина анимации-волны нет.
-                  Раньше здесь стояло «только на выходе через лого
-                  SouCampus» — с 2026-08-20 неверно: лого в магазине никуда
-                  не выходит, оно ведёт на витрину. Выход — пункт
-                  "Studio", последний в SHOP_NAV_LINKS. */}
+                  Исключение — пункт "Studio" (последний в SHOP_NAV_LINKS),
+                  выход из магазина на сайт студии: у него волна играет, как
+                  у колонки Studio в футере (решение владельца 2026-11-14). */}
               {/* flex-1 + justify-center — чтобы ссылки стояли ПО ЦЕНТРУ,
                   как в портфолио-режиме (просьба владельца 2026-08-22).
                   Раньше стоял shrink-0, и группа прижималась к лого.
@@ -220,6 +226,7 @@ export function Navbar() {
                     <Link
                       key={link.href}
                       href={link.href}
+                      data-page-transition={link.href === "/" ? "true" : undefined}
                       className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
                     >
                       {link.label}
@@ -257,6 +264,7 @@ export function Navbar() {
                     user={user}
                     loading={userLoading}
                     displayName={displayName}
+                    nameColor={nameColor}
                     avatarUrl={avatarUrl}
                     profileHref={ownProfileHref}
                     onLogout={handleLogout}
@@ -462,6 +470,7 @@ export function Navbar() {
                     ) : (
                       <Link
                         href={link.href}
+                        data-page-transition={link.href === "/" ? "true" : undefined}
                         onClick={() => setOpen(false)}
                         className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
                       >
@@ -476,6 +485,7 @@ export function Navbar() {
                 user={user}
                 loading={userLoading}
                 displayName={displayName}
+                nameColor={nameColor}
                 avatarUrl={avatarUrl}
                 profileHref={ownProfileHref}
                 onLogout={handleLogout}
@@ -509,6 +519,7 @@ type AccountProps = {
   user: User | null;
   loading: boolean;
   displayName?: string;
+  nameColor?: string;
   avatarUrl?: string;
   profileHref: string;
   onLogout: () => void;
@@ -539,6 +550,7 @@ function AccountMenu({
   user,
   loading,
   displayName,
+  nameColor,
   avatarUrl,
   profileHref,
   onLogout,
@@ -582,7 +594,9 @@ function AccountMenu({
       >
         <Avatar avatarUrl={avatarUrl ?? null} size={22} />
         {showName && (
-          <span className="truncate text-sm font-medium">{displayName}</span>
+          <span className="truncate text-sm font-medium" style={nameColorStyle(nameColor)}>
+            {displayName}
+          </span>
         )}
       </Link>
 
@@ -608,7 +622,11 @@ function AccountMenu({
               (портфолио-сторона). В магазине ник написан рядом с аватаром,
               и повторять его в меню значило бы сказать одно дважды. */}
           {!showName && (
-            <Link href={profileHref} className={`${MENU_ITEM} max-w-[14rem] truncate`}>
+            <Link
+              href={profileHref}
+              className={`${MENU_ITEM} max-w-[14rem] truncate`}
+              style={nameColorStyle(nameColor)}
+            >
               {displayName}
             </Link>
           )}
@@ -657,6 +675,7 @@ function AccountLinks({
   user,
   loading,
   displayName,
+  nameColor,
   avatarUrl,
   profileHref,
   onLogout,
@@ -683,7 +702,9 @@ function AccountLinks({
             className="flex items-center gap-3 px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
           >
             <Avatar avatarUrl={avatarUrl ?? null} size={24} />
-            <span className="truncate">{displayName}</span>
+            <span className="truncate" style={nameColorStyle(nameColor)}>
+              {displayName}
+            </span>
           </Link>
           <Link href="/settings" onClick={onNavigate} className={MOBILE_ITEM}>
             Settings

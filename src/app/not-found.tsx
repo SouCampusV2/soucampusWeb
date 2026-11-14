@@ -29,29 +29,47 @@ export const metadata: Metadata = {
 //   • PageTransition — анимация перехода живёт в (site), и проигрывать
 //     ей здесь нечего.
 //
-// Вся страница — одна ссылка. Цифра и есть кнопка: делать под ней ещё и
-// «вернуться на главную» значило бы предложить два способа сделать одно
-// и то же, а на экране, где всего два элемента, второй способ лишний.
+// Цифра и есть кнопка на главную: делать под ней ещё и «вернуться на
+// главную» значило бы предложить два способа сделать одно и то же.
+//
+// Строка про покупки (возвращена 2026-11-14, решение владельца). Сюда
+// попадает и покупатель, который из /purchases кликнул по карте, снятой
+// с витрины. Для него голая «404» читается как «покупка пропала», хотя
+// скачивание остаётся (getPurchasesForUser на state не смотрит). Строка
+// стоит ОТДЕЛЬНО от ссылки-цифры: ссылка внутри ссылки — невалидный HTML.
 export default function NotFound() {
   return (
-    <Link
-      href="/"
-      aria-label="Go to the homepage"
-      className="group flex min-h-screen w-full cursor-pointer flex-col items-center justify-center gap-4 px-6 text-center"
-    >
-      {/* Размер в vw, а не в rem: цифра должна занимать экран целиком на
-          любой ширине — на телефоне это ~90% ширины, на мониторе тоже.
-          leading-none и tracking убирают воздух, который на таком кегле
-          превращается в пустые поля сверху и снизу. */}
-      <span
-        className={`${displayFont.className} select-none text-[38vw] font-extrabold leading-none tracking-tighter text-zinc-950 transition-colors group-hover:text-orange-500 dark:text-zinc-50 dark:group-hover:text-orange-400 sm:text-[30vw]`}
+    <main className="flex min-h-screen w-full flex-col items-center justify-center gap-4 px-6 text-center">
+      <Link
+        href="/"
+        aria-label="Go to the homepage"
+        className="group flex cursor-pointer flex-col items-center gap-4"
       >
-        404
-      </span>
+        {/* Размер в vw, а не в rem: цифра должна занимать экран целиком на
+            любой ширине — на телефоне это ~90% ширины, на мониторе тоже.
+            leading-none и tracking убирают воздух, который на таком кегле
+            превращается в пустые поля сверху и снизу. */}
+        <span
+          className={`${displayFont.className} select-none text-[38vw] font-extrabold leading-none tracking-tighter text-zinc-950 transition-colors group-hover:text-orange-500 dark:text-zinc-50 dark:group-hover:text-orange-400 sm:text-[30vw]`}
+        >
+          404
+        </span>
 
-      <span className="max-w-md text-sm text-zinc-500 dark:text-zinc-400 sm:text-base">
-        This page wasn&apos;t crafted on our site.
-      </span>
-    </Link>
+        <span className="max-w-md text-sm text-zinc-500 dark:text-zinc-400 sm:text-base">
+          This page wasn&apos;t crafted on our site.
+        </span>
+      </Link>
+
+      <p className="max-w-md text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
+        Bought a map that&apos;s no longer listed? Your download is still in{" "}
+        <Link
+          href="/purchases"
+          className="font-medium text-zinc-950 underline underline-offset-4 hover:text-orange-500 dark:text-zinc-50 dark:hover:text-orange-400"
+        >
+          My purchases
+        </Link>
+        .
+      </p>
+    </main>
   );
 }

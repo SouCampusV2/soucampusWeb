@@ -20,6 +20,7 @@ import {
   type Comment,
   type CommentRow,
 } from "@/lib/comment-shape";
+import { nameColorStyle } from "@/lib/name-colors";
 
 // Комментарии под картой.
 //
@@ -316,13 +317,8 @@ export function CommentSection({
                       <Avatar avatarUrl={comment.avatarUrl} size={28} />
                       <span
                         className="truncate text-sm font-semibold text-zinc-950 dark:text-zinc-50"
-                        // Цвет ника — привилегия купивших. style, а не
-                        // класс: значение произвольное, в Tailwind не выразить.
-                        style={
-                          comment.nameColor
-                            ? { color: comment.nameColor }
-                            : undefined
-                        }
+                        // Цвет ника — привилегия купивших; оттенок под тему.
+                        style={nameColorStyle(comment.nameColor)}
                       >
                         {comment.username}
                       </span>

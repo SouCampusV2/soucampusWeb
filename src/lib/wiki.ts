@@ -422,7 +422,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           },
           {
             kind: "note",
-            text: `This is the plain-language summary, not the contract. Anything unusual — a paid server network, a commercial project, a build you want to redistribute — is worth asking about first: ${SUPPORT_EMAIL}.`,
+            text: `Anything unusual — a paid server network, a commercial project, a build you want to redistribute — is worth asking about first: ${SUPPORT_EMAIL}.`,
           },
         ],
       },
@@ -505,21 +505,29 @@ export const WIKI_ARTICLES: WikiArticle[] = [
     section: "account",
     summary:
       "Everything you buy stays in My purchases, and you can download it again whenever you need.",
+    // Сверено с кодом 2026-11-14: покупка только с аккаунтом (checkout
+    // отвечает 401 без входа, гостевые заказы привязаны миграцией
+    // orders_account_only); доступ снимают полный возврат и спор по оплате
+    // (вебхук Stripe) и блокировка файла админом (File withdrawn в
+    // /purchases). Меняется что-то из этого — меняется и текст ниже.
     body: [
       {
         heading: "Where your files live",
         blocks: [
           {
             kind: "text",
-            text: "Buying a map ties it to your account, and it stays in My purchases from then on. Download it as many times as you need, on as many machines as you like.",
+            text: "You buy maps from your account, and each one stays in My purchases from then on. Download it as many times as you need, on as many machines as you like.",
           },
           {
             kind: "list",
             items: [
-              "Bought as a guest, before making an account? Sign up with the same email address and the purchase attaches itself to the new account.",
               "A map taken off the shop stays in your purchases. Delisting removes it from the catalogue, not from you.",
               "Download links themselves are short-lived on purpose. Open the page again and it hands you a fresh one.",
             ],
+          },
+          {
+            kind: "note",
+            text: `Access ends in two cases. A payment that is refunded in full or disputed with your bank removes the map from My purchases. And if a file ever has to be withdrawn — for safety or legal reasons — My purchases says so in place of the download button; write to ${SUPPORT_EMAIL} and we will sort it out.`,
           },
         ],
       },
