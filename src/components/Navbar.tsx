@@ -39,11 +39,13 @@ import { isPaletteColor, nameColorStyle } from "@/lib/name-colors";
 
 // ── Навбар с 16.11: группы, как в админке ──────────────────────────────
 // Выбран в лаборатории бренда (вариант Н1·1, docs/BRAND-IDEAS.md):
-//   · слева знак-цветок SouCampus (пиксельный, жёлтая серединка, без
-//     тени) и ник оранжевым — всегда ведут на главную;
+//   · слева знак SouCampus — кремовый пиксельный цветок с жёлтой
+//     серединкой на оранжевом квадрате, как фавиконка — и ник оранжевым;
+//     всегда ведут на главную. Знак слева от ника, как во вкладке браузера;
 //   · группы Studio и Marketplace раскрываются панелью — как AdminNav:
 //     заголовок капсом с точкой, у пункта название и пояснение, иконка
-//     справа, без анимаций (владельцу не нравится движение стрелок);
+//     справа, без анимаций (владельцу не нравится движение стрелок).
+//     Открытая группа подсвечена своим цветом — лайм или оранжевый, не серым;
 //   · справа ВСЕГДА сообщения, уведомления, корзина, аккаунт и последней
 //     кнопка «Order a map».
 //
@@ -83,6 +85,8 @@ type NavGroup = {
   dot: string;
   icon: string;
   bar: string;
+  /** Подсветка кнопки группы, когда вы в ней или она раскрыта — цветом группы, а не серым (16.11). */
+  on: string;
   /** Волна PageTransition на ссылках группы: на студийной стороне есть, внутри магазина нет. */
   wave: boolean;
   items: NavItem[];
@@ -97,6 +101,7 @@ const GROUPS: NavGroup[] = [
     dot: "bg-lime-500",
     icon: "text-lime-700 dark:text-lime-400",
     bar: "border-lime-500",
+    on: "bg-lime-400/25 text-lime-900 dark:bg-lime-400/15 dark:text-lime-200",
     wave: true,
     items: [
       { href: "/", label: "Home", hint: "The studio at a glance", icon: House },
@@ -111,6 +116,7 @@ const GROUPS: NavGroup[] = [
     dot: "bg-orange-500",
     icon: "text-orange-600 dark:text-orange-400",
     bar: "border-orange-500",
+    on: "bg-orange-400/25 text-orange-900 dark:bg-orange-400/15 dark:text-orange-200",
     wave: false,
     items: [
       { href: "/marketplace", label: "Maps", hint: "Ready maps to download", icon: Storefront },
@@ -123,6 +129,7 @@ const GROUPS: NavGroup[] = [
 ];
 
 // Жёлтая серединка цветка (владелец 16.11) — краситель yellow из игры.
+// Лепестки кремовые, квадрат оранжевый — знак как у фавиконки (F2).
 const YELLOW_CENTER = { C: "#fed83d", c: "#c6a830" };
 
 const GLASS =
@@ -208,7 +215,9 @@ export function Navbar() {
 
   return (
     <div className="sticky top-4 z-50 px-4">
-      <header className="relative mx-auto max-w-6xl rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/60 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/60">
+      {/* Пилюля чуть серее прежней (#fbfbff/60 → zinc-100/75, просьба
+          владельца 16.11): на белых страницах она сливалась с фоном. */}
+      <header className="relative mx-auto max-w-6xl rounded-full border border-zinc-950/[0.07] bg-zinc-100/75 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-900/70">
         {/* Фиксированная высота, не «по содержимому»: навбар всегда одной
             высоты, чем бы ни был заполнен — 4.5rem на телефоне, 5rem от sm. */}
         <nav className="flex h-[4.5rem] items-center justify-between gap-3 px-4 sm:h-20 sm:px-5">
@@ -219,7 +228,11 @@ export function Navbar() {
               data-page-transition="true"
               className="flex shrink-0 items-center gap-2.5"
             >
-              <PixelFlower colors={YELLOW_CENTER} className="size-10" />
+              {/* Знак — тот же, что фавиконка (F2, 16.11): кремовый
+                  цветок на оранжевом квадрате. */}
+              <span className="grid size-10 place-items-center rounded-[22%] bg-[#ff6900]">
+                <PixelFlower palette="cream" colors={YELLOW_CENTER} className="size-8" />
+              </span>
               <span className={`${displayFont.className} hidden text-lg tracking-tight text-orange-500 sm:inline`}>
                 SouCampus
               </span>
@@ -237,7 +250,7 @@ export function Navbar() {
                       aria-expanded={group === g.key}
                       className={`flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
                         inGroup || group === g.key
-                          ? "bg-zinc-950/[0.06] text-zinc-950 dark:bg-zinc-50/[0.08] dark:text-zinc-50"
+                          ? g.on
                           : "text-zinc-600 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50"
                       }`}
                     >

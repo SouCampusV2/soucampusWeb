@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Unbounded } from "next/font/google";
 import { Button, INLINE_LINK, TERTIARY_UNDERLINE } from "@/components/Button";
 import Image from "next/image";
+import { DiscordLogo } from "@phosphor-icons/react/dist/ssr";
 import { ArrowCircle } from "@/components/ArrowCircle";
 import { FaqAccordion } from "@/components/FaqAccordion";
 import { BuildEstimator } from "@/components/BuildEstimator";
@@ -107,12 +108,9 @@ export default function ContactPage() {
                 className="group gap-3"
               >
                 Join Discord
-                <ArrowCircle
-                  direction="right"
-                  variant="bare"
-                  className="h-6 w-6 transition-transform duration-300 group-hover:-rotate-45"
-                  colorClassName="text-zinc-950"
-                />
+                {/* Иконка Discord справа вместо стрелки (просьба владельца
+                    16.11): кнопка и так ведёт наружу, логотип говорит куда. */}
+                <DiscordLogo size={24} weight="fill" aria-hidden="true" />
               </Button>
             </div>
           </div>

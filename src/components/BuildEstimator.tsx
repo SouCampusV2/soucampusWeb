@@ -173,17 +173,9 @@ function CurrencyDropdown({
   );
 }
 
-export function BuildEstimator({
-  onSizeChange,
-}: {
-  /** Сообщает размер карты наружу — по нему знак рядом растёт (бренд, 16.11). */
-  onSizeChange?: (width: number, height: number) => void;
-} = {}) {
+export function BuildEstimator() {
   const [width, setWidth] = useState(100);
   const [height, setHeight] = useState(100);
-  useEffect(() => {
-    onSizeChange?.(width, height);
-  }, [width, height, onSizeChange]);
   const [currency, setCurrency] = useState("EUR");
   const { names, rates } = useCurrencies();
 

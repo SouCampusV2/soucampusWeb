@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Unbounded } from "next/font/google";
+import { ChunkFlower } from "@/components/brand/ChunkFlower";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
 //   • PageTransition — анимация перехода живёт в (site), и проигрывать
 //     ей здесь нечего.
 //
-// Цифра и есть кнопка на главную: делать под ней ещё и «вернуться на
+// Цифры с цветком и есть кнопка на главную: делать под ней ещё и «вернуться на
 // главную» значило бы предложить два способа сделать одно и то же.
 //
 // Строка про покупки (возвращена 2026-11-14, решение владельца). Сюда
@@ -45,18 +46,21 @@ export default function NotFound() {
         aria-label="Go to the homepage"
         className="group flex cursor-pointer flex-col items-center gap-4"
       >
-        {/* Размер в vw, а не в rem: цифра должна занимать экран целиком на
-            любой ширине — на телефоне это ~90% ширины, на мониторе тоже.
-            leading-none и tracking убирают воздух, который на таком кегле
-            превращается в пустые поля сверху и снизу. */}
+        {/* «4 · цветок · 4» с 16.11 (лаборатория бренда, вариант 404-2):
+            вместо нуля — цветок SouCampus, который «не догрузился», как
+            чанк. Размер в vw, а не в rem: цифры занимают экран на любой
+            ширине. Цветок — em от того же кегля, поэтому растёт вместе с
+            цифрами; 0.72em — высота прописной цифры у Unbounded. */}
         <span
-          className={`${displayFont.className} select-none text-[38vw] font-extrabold leading-none tracking-tighter text-zinc-950 transition-colors group-hover:text-orange-500 dark:text-zinc-50 dark:group-hover:text-orange-400 sm:text-[30vw]`}
+          className={`${displayFont.className} flex select-none items-center gap-[0.04em] text-[34vw] font-extrabold leading-none tracking-tighter text-zinc-950 transition-colors group-hover:text-orange-500 dark:text-zinc-50 dark:group-hover:text-orange-400 sm:text-[26vw]`}
         >
-          404
+          4
+          <ChunkFlower className="size-[0.72em]" />
+          4
         </span>
 
         <span className="max-w-md text-sm text-zinc-500 dark:text-zinc-400 sm:text-base">
-          This page wasn&apos;t crafted on our site.
+          This chunk hasn&apos;t loaded yet.
         </span>
       </Link>
 
