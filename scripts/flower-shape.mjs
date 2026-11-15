@@ -6,9 +6,9 @@
 // src/lib/flower-shape.json. Генератор мира (world-gen.ts → smallFlower)
 // рисует по ним цветок любого размера — форма та же, что у знака.
 //
-// Заодно — веер для секции «How an order works» (HowItWorks): из
-// public/brand/parts/fan-parts.svg берутся пути petal-1…12 и sun как есть
-// (рисует их сам браузер, ломаная не нужна) в src/lib/fan-shape.json.
+// Заодно — пиксельный веер по частям для «How an order works»
+// (src/lib/fan-pixels.json, подробности — в разделе ниже). Гладкий
+// fan-parts.svg нужен ему только ради углов лепестков.
 //
 // Перерисовал владелец знак — запустить заново:
 //   node scripts/flower-shape.mjs
@@ -90,16 +90,6 @@ const fanD = (id) => {
 };
 const fanPetals = [];
 for (let n = 1; fan.includes(`id="petal-${n}"`); n++) fanPetals.push(fanD(`petal-${n}`));
-writeFileSync(
-  "src/lib/fan-shape.json",
-  JSON.stringify({
-    source: "public/brand/parts/fan-parts.svg",
-    viewBox: fan.match(/viewBox="([^"]+)"/)[1],
-    petals: fanPetals,
-    sun: fanD("sun"),
-  }) + "\n",
-);
-console.log(`fan-shape.json: ${fanPetals.length} лепестков и солнце`);
 
 
 // ── Пиксельный веер по частям ──
