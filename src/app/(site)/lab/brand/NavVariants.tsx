@@ -1,9 +1,10 @@
 "use client";
 
-// ⚠️ ЛАБОРАТОРИЯ бренда (15.11): варианты навбара со структурой как в
-// админке (группы → панель с пунктами) и цветком SouCampus. Это макеты:
-// ссылки настоящие, но корзина, колокольчик, сообщения и аккаунт —
-// картинки, без данных. Выбранный вариант переносится в Navbar.tsx.
+// ⚠️ ЛАБОРАТОРИЯ бренда, круг 2 (16.11). Владелец выбрал Н1 (надпись +
+// знак слева, группы панелью) с размером знака как в Н2. Здесь — какой
+// знак (цветок с жёлтой серединкой, с тенью блока или без, или веер) и
+// пункты панели как в админке, иконки справа. Это макеты: корзина,
+// колокольчик, сообщения и аккаунт — картинки, без данных.
 import Link from "next/link";
 import { useRef, useState } from "react";
 import {
@@ -20,17 +21,18 @@ import {
   Bell,
   ChatsCircle,
   CaretDown,
+  ArrowRight,
   type Icon,
 } from "@phosphor-icons/react";
 import { Unbounded } from "next/font/google";
 import { BUTTON_COLORS, BUTTON_PILL } from "@/components/Button";
-import { PixelFlower } from "@/components/brand/PixelArt";
+import { PixelFanMark, PixelFlower } from "@/components/brand/PixelArt";
 import { useDismiss } from "@/lib/useDismiss";
 
 const display = Unbounded({ weight: "800", subsets: ["latin"] });
 
 type Item = { href: string; label: string; hint: string; icon: Icon };
-type Group = { key: string; label: string; dot: string; icon: string; items: Item[] };
+type Group = { key: string; label: string; dot: string; icon: string; bar: string; items: Item[] };
 
 const GROUPS: Group[] = [
   {
@@ -38,11 +40,12 @@ const GROUPS: Group[] = [
     label: "Studio",
     dot: "bg-lime-500",
     icon: "text-lime-700 dark:text-lime-400",
+    bar: "border-lime-500",
     items: [
       { href: "/", label: "Home", hint: "The studio at a glance", icon: House },
       { href: "/portfolio", label: "Portfolio", hint: "Builds made to order", icon: Briefcase },
       { href: "/about", label: "About me", hint: "Who builds them", icon: User },
-      { href: "/contact", label: "Contact", hint: "Order a build", icon: EnvelopeSimple },
+      { href: "/contact", label: "Contact", hint: "Order a custom build", icon: EnvelopeSimple },
     ],
   },
   {
@@ -50,6 +53,7 @@ const GROUPS: Group[] = [
     label: "Marketplace",
     dot: "bg-orange-500",
     icon: "text-orange-600 dark:text-orange-400",
+    bar: "border-orange-500",
     items: [
       { href: "/marketplace", label: "Maps", hint: "Ready maps to download", icon: Storefront },
       { href: "/updates", label: "What's new", hint: "Latest changes on the site", icon: Sparkle },
@@ -67,55 +71,46 @@ const GLASS =
 const ICON_BTN =
   "grid size-10 place-items-center rounded-full text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06]";
 
-function Panel({ group, onPick }: { group: Group; onPick: () => void }) {
+/**
+ * Панель группы — как в админке: заголовок капсом с точкой, у пункта
+ * название и пояснение, иконка СПРАВА (просьба владельца 16.11), стрелка
+ * без движения (анимация в админке ему не нравится). Активный пункт —
+ * цветная черта слева.
+ */
+function Panel({ group, onPick, arrow }: { group: Group; onPick: () => void; arrow: boolean }) {
+  const active = group.items[0].href;
   return (
-    <div className={`absolute left-0 top-[calc(100%+10px)] z-50 w-80 p-2 ${GLASS}`}>
-      {group.items.map((item) => (
-        <Link
-          key={item.label}
-          href={item.href}
-          onClick={onPick}
-          className="flex items-start gap-3 rounded-2xl px-3 py-2.5 hover:bg-zinc-950/[0.05] dark:hover:bg-zinc-50/[0.06]"
-        >
-          <item.icon size={20} className={`mt-0.5 shrink-0 ${group.icon}`} />
-          <span>
-            <span className="block text-sm font-semibold text-zinc-950 dark:text-zinc-50">{item.label}</span>
-            <span className="block text-xs text-zinc-500 dark:text-zinc-400">{item.hint}</span>
-          </span>
-        </Link>
-      ))}
+    <div className={`absolute left-0 top-[calc(100%+10px)] z-50 w-80 p-3 ${GLASS}`}>
+      <p className="flex items-center gap-2 px-3 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+        <span className={`size-1.5 rounded-full ${group.dot}`} aria-hidden />
+        {group.label}
+      </p>
+      <ul className="space-y-1">
+        {group.items.map((item) => (
+          <li key={item.label}>
+            <Link
+              href={item.href}
+              onClick={onPick}
+              className={`flex items-center gap-3 rounded-2xl border-l-2 px-3 py-2.5 transition-colors ${
+                item.href === active
+                  ? `${group.bar} bg-zinc-950/[0.05] dark:bg-zinc-50/[0.06]`
+                  : "border-transparent hover:bg-zinc-950/[0.04] dark:hover:bg-zinc-50/[0.05]"
+              }`}
+            >
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-semibold text-zinc-950 dark:text-zinc-50">{item.label}</span>
+                <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">{item.hint}</span>
+              </span>
+              <item.icon size={20} className={`shrink-0 ${group.icon}`} aria-hidden />
+              {arrow && <ArrowRight size={14} className="shrink-0 text-zinc-400" aria-hidden />}
+            </Link>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
 
-/** Группы-кнопки с панелью, как в админке. */
-function Groups({ withPanel = true, open, setOpen }: { withPanel?: boolean; open: string | null; setOpen: (k: string | null) => void }) {
-  return (
-    <nav className="flex items-center gap-1">
-      {GROUPS.map((g) => (
-        <div key={g.key} className="relative">
-          <button
-            type="button"
-            onClick={() => setOpen(open === g.key ? null : g.key)}
-            aria-expanded={open === g.key}
-            className={`flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
-              open === g.key
-                ? "bg-zinc-950/[0.06] text-zinc-950 dark:bg-zinc-50/[0.08] dark:text-zinc-50"
-                : "text-zinc-600 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50"
-            }`}
-          >
-            <span className={`size-2 rounded-full ${g.dot}`} aria-hidden />
-            {g.label}
-            <CaretDown size={14} className={`transition-transform ${open === g.key ? "rotate-180" : ""}`} />
-          </button>
-          {withPanel && open === g.key && <Panel group={g} onPick={() => setOpen(null)} />}
-        </div>
-      ))}
-    </nav>
-  );
-}
-
-/** Правая часть: корзина, уведомления, сообщения, аккаунт и всегда последней — Order now. */
 function Actions() {
   return (
     <div className="flex items-center gap-0.5">
@@ -139,98 +134,53 @@ function Actions() {
   );
 }
 
-function useOpen() {
+// Жёлтая серединка (просьба владельца 16.11) — краситель yellow из игры.
+const YELLOW_CENTER = { C: "#fed83d", c: "#c6a830" };
+
+export type Mark = "flower" | "flower-shadow" | "fan";
+
+function Logo({ mark }: { mark: Mark }) {
+  if (mark === "fan") return <PixelFanMark petals="#ff6900" sun="#fed83d" shadow="#c23a0055" className="size-10" />;
+  return (
+    <PixelFlower colors={YELLOW_CENTER} shadow={mark === "flower-shadow" ? "#7c2d1266" : undefined} className="size-10" />
+  );
+}
+
+/** Н1 с размером знака как в Н2. */
+export function Nav({ mark, arrow }: { mark: Mark; arrow: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState<string | null>(null);
   useDismiss(ref, () => setOpen(null), { enabled: open !== null });
-  return { ref, open, setOpen };
-}
-
-/** 1 — надпись SouCampus и цветок слева. */
-export function Nav1() {
-  const { ref, open, setOpen } = useOpen();
-  return (
-    <div ref={ref} className={`${PILL} flex items-center justify-between gap-4 px-3 py-2`}>
-      <div className="flex items-center gap-4">
-        <Link href="/" className="flex items-center gap-2 pl-2">
-          <PixelFlower className="size-8" />
-          <span className={`${display.className} text-lg text-zinc-950 dark:text-zinc-50`}>SouCampus</span>
-        </Link>
-        <Groups open={open} setOpen={setOpen} />
-      </div>
-      <Actions />
-    </div>
-  );
-}
-
-/** 2 — только крупный цветок слева, без надписи. */
-export function Nav2() {
-  const { ref, open, setOpen } = useOpen();
   return (
     <div ref={ref} className={`${PILL} flex items-center justify-between gap-4 px-3 py-1.5`}>
-      <div className="flex items-center gap-3">
-        <Link href="/" aria-label="SouCampus — home" className="grid size-12 place-items-center rounded-full hover:bg-zinc-950/[0.04]">
-          <PixelFlower className="size-10" />
+      <div className="flex items-center gap-4">
+        <Link href="/" className="flex items-center gap-2.5 pl-1">
+          <Logo mark={mark} />
+          <span className={`${display.className} text-lg text-zinc-950 dark:text-zinc-50`}>SouCampus</span>
         </Link>
-        <Groups open={open} setOpen={setOpen} />
+        <nav className="flex items-center gap-1">
+          {GROUPS.map((g) => (
+            <div key={g.key} className="relative">
+              <button
+                type="button"
+                onClick={() => setOpen(open === g.key ? null : g.key)}
+                aria-expanded={open === g.key}
+                className={`flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
+                  open === g.key
+                    ? "bg-zinc-950/[0.06] text-zinc-950 dark:bg-zinc-50/[0.08] dark:text-zinc-50"
+                    : "text-zinc-600 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50"
+                }`}
+              >
+                <span className={`size-2 rounded-full ${g.dot}`} aria-hidden />
+                {g.label}
+                <CaretDown size={12} weight="bold" className={open === g.key ? "rotate-180" : ""} />
+              </button>
+              {open === g.key && <Panel group={g} arrow={arrow} onPick={() => setOpen(null)} />}
+            </div>
+          ))}
+        </nav>
       </div>
       <Actions />
-    </div>
-  );
-}
-
-/** 3 — большой цветок по центру, как значок, выступает из шапки. */
-export function Nav3() {
-  const { ref, open, setOpen } = useOpen();
-  return (
-    <div ref={ref} className={`${PILL} grid grid-cols-[1fr_auto_1fr] items-center px-3 py-2`}>
-      <div className="justify-self-start">
-        <Groups open={open} setOpen={setOpen} />
-      </div>
-      <Link
-        href="/"
-        aria-label="SouCampus — home"
-        className="-my-6 grid size-20 place-items-center rounded-full border border-zinc-950/[0.06] bg-[#fbfbff] shadow-lg shadow-orange-500/20 transition-transform hover:scale-105 dark:border-zinc-50/[0.08] dark:bg-zinc-950"
-      >
-        <PixelFlower className="size-14" />
-      </Link>
-      <div className="justify-self-end">
-        <Actions />
-      </div>
-    </div>
-  );
-}
-
-/** 4 — группы как вкладки: под шапкой второй ряд со ссылками открытой группы. */
-export function Nav4() {
-  const { ref, open, setOpen } = useOpen();
-  const group = GROUPS.find((g) => g.key === open);
-  return (
-    <div ref={ref}>
-      <div className={`${PILL} flex items-center justify-between gap-4 px-3 py-2`}>
-        <div className="flex items-center gap-4">
-          <Link href="/" className="flex items-center gap-2 pl-2">
-            <PixelFlower className="size-8" />
-            <span className={`${display.className} text-lg text-zinc-950 dark:text-zinc-50`}>SouCampus</span>
-          </Link>
-          <Groups withPanel={false} open={open} setOpen={setOpen} />
-        </div>
-        <Actions />
-      </div>
-      {group && (
-        <div className={`mx-auto mt-2 flex w-fit flex-wrap justify-center gap-1 px-2 py-1.5 ${PILL}`}>
-          {group.items.map((item) => (
-            <Link
-              key={item.label}
-              href={item.href}
-              className="flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium text-zinc-700 hover:bg-zinc-950/[0.05] dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06]"
-            >
-              <item.icon size={16} className={group.icon} />
-              {item.label}
-            </Link>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
