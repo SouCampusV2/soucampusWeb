@@ -84,16 +84,17 @@ export default function ContactPage() {
         <PageGlow color="rgba(59,130,246,0.35)" />
         <div className="mx-auto grid max-w-6xl items-start gap-10 px-6 sm:grid-cols-2">
           <div>
-            <span className="text-sm font-semibold text-blue-500">
-              Get in touch
-            </span>
+            {/* Заголовок — имя страницы, как в навбаре и на /portfolio, без
+                плашки «Get in touch» (решение владельца 16.11). Фраза про
+                Discord ушла в абзац. */}
             <h1
-              className={`${displayFont.className} mt-3 text-4xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
+              className={`${displayFont.className} text-4xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
             >
-              I&apos;m here, always on{" "}
-              <span className="text-blue-500">Discord</span>
+              Contact
             </h1>
             <p className="mt-4 max-w-md text-zinc-700 dark:text-zinc-300">
+              I&apos;m here, always on{" "}
+              <span className="font-semibold text-blue-500">Discord</span>.
               Orders, questions and support — all in one place. We reply on
               weekdays and weekends alike.
             </p>

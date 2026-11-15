@@ -55,7 +55,7 @@ export default async function MarketplacePage() {
         <h1
           className={`${displayFont.className} text-4xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
         >
-          SouCampus Marketplace
+          Marketplace
         </h1>
         <p className="mt-4 max-w-2xl text-zinc-600 dark:text-zinc-400">
           Ready-made maps and builds. Pick one, and it&apos;s yours to download

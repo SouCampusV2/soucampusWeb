@@ -8,7 +8,8 @@ import { BUTTON_COLORS, BUTTON_PILL } from "@/components/Button";
 import { PixelFlower } from "@/components/brand/PixelArt";
 
 // Первая секция /about с 16.11 (бренд, docs/BRAND-IDEAS.md, раздел 2;
-// выбрана в лаборатории — вариант А2·1). Слева — SouCampus, пара фраз,
+// выбрана в лаборатории — вариант А2·1). Слева — заголовок «About me»
+// (имя страницы, как на /portfolio — 16.11), пара фраз,
 // команды и кнопки; в правом верхнем углу — большой пиксельный цветок
 // SouCampus на лаймовом свечении, растёт и поворачивается при прокрутке.
 // Заменила AuthorCta («зелёное яблоко на пол-экрана»).
@@ -18,8 +19,9 @@ import { PixelFlower } from "@/components/brand/PixelArt";
 //   · крупный сразу, а не вырастающий из маленького; размер — от ширины
 //     экрана, на широком мониторе маленький цветок «терялся»;
 //   · бейджа «About me» над заголовком нет — убран по просьбе;
-//   · секция прозрачная: свечение и лёгкое размытие под текстом, без
-//     белой подложки во всю ширину.
+//   · свечение и лёгкое размытие под текстом; фон секции — лаймовый
+//     градиент с линией по низу, чтобы были видны её границы (16.11);
+//   · левая часть высокая (min-h), цветок ближе к тексту (right ≈ -1vw).
 //
 // ⚠️ Пиксельный знак — SVG одним контуром на часть (PixelArt.tsx): при
 // росте в 1.8 раза отдельные прямоугольники давали щели между клетками.
@@ -58,11 +60,16 @@ export function AboutFlowerIntro() {
   return (
     // -mt-[82px]: обёртка навбара (sticky) занимает ~82px в потоке, и без
     // этого над свечением была белая полоса — тот же приём был у AuthorCta.
-    <section ref={sectionRef} className="relative -mt-[82px] overflow-hidden">
+    // Фон — лаймовый градиент с линией по низу (16.11): секция читается
+    // отдельным блоком, а не растворяется в белой странице.
+    <section
+      ref={sectionRef}
+      className="relative -mt-[82px] overflow-hidden border-b border-lime-200/70 bg-gradient-to-b from-lime-100/80 via-lime-50/60 to-lime-50/0 dark:border-lime-900/40 dark:from-lime-950/70 dark:via-lime-950/30 dark:to-transparent"
+    >
       <motion.div
         style={reduce ? undefined : { scale, rotate }}
         aria-hidden="true"
-        className="pointer-events-none absolute right-[-8vw] top-[-6rem] size-[min(58vw,37rem)] origin-top-right lg:size-[min(45vw,48rem)]"
+        className="pointer-events-none absolute right-[-1vw] top-[-6rem] size-[min(58vw,37rem)] origin-top-right lg:size-[min(45vw,48rem)]"
       >
         <div
           className="absolute inset-[-25%] rounded-full blur-3xl"
@@ -71,15 +78,15 @@ export function AboutFlowerIntro() {
         <PixelFlower palette="lime" className="relative size-full" />
       </motion.div>
 
-      <div className="relative mx-auto max-w-6xl px-6 pb-24 pt-44 sm:pb-32 sm:pt-52">
+      <div className="relative mx-auto flex min-h-[44rem] max-w-6xl items-center px-6 pb-28 pt-44 sm:min-h-[52rem] sm:pb-40 sm:pt-52">
         <div className="max-w-xl rounded-3xl bg-white/50 p-1 backdrop-blur-[2px] dark:bg-zinc-950/40">
           <h1
             className={`${displayFont.className} text-5xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-7xl`}
           >
-            SouCampus
+            About me
           </h1>
           <p className="mt-6 text-lg leading-8 text-zinc-700 dark:text-zinc-300">
-            8 years building worlds in Minecraft professionally — maps and worlds for servers, studios and
+            I&apos;m SouCampus. For 8 years I&apos;ve been building in Minecraft professionally — maps and worlds for servers, studios and
             Marketplace teams. My goal is to turn every idea into a map worth exploring.
           </p>
 

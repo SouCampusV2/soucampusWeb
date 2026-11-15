@@ -41,16 +41,17 @@ export default function FaqPage() {
   return (
     // Клип на полноширинном <main>, ограничение ширины — на секциях
     // внутри: требование PageGlow.
-    <main className="relative w-full overflow-x-clip px-6">
+    <main className="relative w-full overflow-x-clip">
       <JsonLd data={FAQ_JSON_LD} />
 
-      <section className="relative mx-auto max-w-3xl pb-8 pt-20 sm:pb-12">
+      <section className="relative mx-auto max-w-6xl px-6 pb-8 pt-20 sm:pb-12">
         <PageGlow color="rgba(251,146,60,0.35)" />
-        <span className="text-sm font-semibold text-orange-500">FAQ</span>
+        {/* Заголовок — имя страницы, как в навбаре и на /portfolio; без
+            плашки над ним (решение владельца 16.11 — одна схема на весь сайт). */}
         <h1
-          className={`${displayFont.className} mt-3 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
+          className={`${displayFont.className} text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
         >
-          Questions, answered
+          FAQ
         </h1>
         <p className="mt-4 text-zinc-600 dark:text-zinc-400">
           How a commission works from the first message to the delivered
@@ -63,7 +64,7 @@ export default function FaqPage() {
         </p>
       </section>
 
-      <div className="mx-auto max-w-3xl space-y-14 pb-16 sm:pb-24">
+      <div className="mx-auto max-w-6xl space-y-14 px-6 pb-16 sm:pb-24">
         {FAQ_SECTIONS.map((section) => (
           <section key={section.id} id={section.id} className="scroll-mt-24">
             {/* Заголовок раздела длинного документа — без sm:-шага, как в
