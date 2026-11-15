@@ -433,11 +433,14 @@ window_seconds)`** — функция в `public`, потому что табл�
 
 ### Навигация (навбар)
 
-Home · Portfolio · About me · Contact · Marketplace (Marketplace последним — клик по нему переключает навбар в режим магазина; порядок сверен с `docs/DESIGN.md` 28.09)
+Две группы, один навбар на весь сайт (с 16.11, вид — `docs/DESIGN.md` → «Навбар»):
+
+- **Studio:** Home · Portfolio · About me · Contact · FAQ
+- **Marketplace:** Maps · What's new · Wiki · Support · FAQ
+- справа всегда: сообщения · уведомления · корзина · аккаунт · «Order a map» (→ `/contact`)
 
 - 🟢 Раздел переименован в **Marketplace** (2026-08-13), роут `/marketplace`; со старого `/shop/:path*` стоит постоянный редирект 308 — на него ведут закладки, письма Stripe и уже разосланные уведомления.
 - 🔴 Отдельный поддомен (`shop.domain.com`) через Vercel domain mapping — не сделан, маркетплейс живёт в `(site)/marketplace`. См. `SHOP.md`.
-- В навбаре маркетплейса: **Maps · Wiki · What's new · Support · Studio**. 🟢 Wiki работает с 05.09, What's new — с 15.09; обе больше не заглушки.
 
 ### Страницы
 
