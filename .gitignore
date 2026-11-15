@@ -45,3 +45,6 @@ next-env.d.ts
 
 # Тяжёлые оригиналы картинок портфолио — бэкап, в деплой не идут
 assets/portfolio-originals/
+
+# Claude Code: personal permissions, not shared
+.claude/settings.local.json
