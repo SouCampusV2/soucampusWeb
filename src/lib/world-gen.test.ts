@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { clouds, paintClouds, terrain } from "./world-gen";
+import { clouds, heights, paintClouds, placeFlowers, stampFlowers, terrain } from "./world-gen";
+import stamps from "../../public/brand/pixel/flower-stamps.json";
 
 // Генерация мира для фона главной — чистые функции над массивами, в сеть
 // не ходят и DOM не трогают. Гоняются в CI.
@@ -111,5 +112,70 @@ describe("clouds", () => {
     // Облака есть, и все выросли до одной прозрачности — не застряли на полпути.
     expect(cloudy.length).toBeGreaterThan(0);
     expect(new Set(cloudy).size).toBe(1);
+  });
+});
+
+// Цветы SouCampus в мире (docs/BRAND-IDEAS.md, раздел 1). Закреплены
+// требования владельца: то же зерно — те же цветы; цветок не стоит на
+// воде; в первом кадре не растёт под карточкой с текстом; и цветок
+// вообще виден — иначе вся затея молча исчезает после правки порога.
+describe("flowers", () => {
+  // Карточка с текстом на ноутбуке: левая половина экрана, по центру.
+  const SCREEN = 160;
+  const CARD = { x: 0, y: 25, w: 100, h: 60 };
+  const grow = (seed: number) => {
+    const hmap = heights(seed, COLS, ROWS);
+    return { hmap, flowers: placeFlowers(seed, hmap, COLS, ROWS, "flower32", SCREEN, [CARD]) };
+  };
+
+  it("grows the same flowers for the same seed", () => {
+    expect(grow(4242).flowers).toEqual(grow(4242).flowers);
+  });
+
+  it("never grows on water or sand and keeps out of the card", () => {
+    const { w, h, rows } = stamps.stamps.flower32;
+    for (let seed = 1; seed <= 60; seed++) {
+      const { hmap, flowers } = grow(seed * 977);
+      expect(flowers.length).toBeLessThanOrEqual(3);
+      for (const f of flowers) {
+        for (let sy = 0; sy < h; sy++) {
+          for (let sx = 0; sx < w; sx++) {
+            if (rows[sy][sx] !== ".") expect(hmap[(f.y + sy) * COLS + f.x + sx]).toBeGreaterThanOrEqual(0.48);
+          }
+        }
+        if (f.x < SCREEN) {
+          const inCard = f.x < CARD.x + CARD.w && CARD.x < f.x + w && f.y < CARD.y + CARD.h && CARD.y < f.y + h;
+          expect(inCard).toBe(false);
+        }
+      }
+    }
+  });
+
+  it("shows a flower in the first frame of most worlds", () => {
+    let seen = 0;
+    for (let seed = 1; seed <= 100; seed++) {
+      if (grow(seed * 31).flowers.some((f) => f.x + stamps.stamps.flower32.w <= SCREEN)) seen++;
+    }
+    // Замер 15.11: 76 из 100. В остальных мирах свободная часть первого
+    // кадра — вода, и цветок выезжает позже.
+    expect(seen).toBeGreaterThanOrEqual(65);
+  });
+
+  it("paints only the stamp cells", () => {
+    const img = terrain(5, COLS, ROWS);
+    const before = img.slice();
+    stampFlowers(img, COLS, [{ x: 10, y: 10, stamp: "flower24", palette: "orange" }]);
+    const { w, h, rows } = stamps.stamps.flower24;
+    let changed = 0;
+    for (let i = 0; i < img.length; i++) if (img[i] !== before[i]) changed++;
+    // Центр серединки — цвет лайма из палитры, клетка «.» в углу — мир как был.
+    const cy = rows.findIndex((r) => r.includes("C"));
+    const cx = rows[cy].indexOf("C");
+    const at = ((10 + cy) * COLS + 10 + cx) * 4;
+    expect([img[at], img[at + 1], img[at + 2]]).toEqual([0x7c, 0xcf, 0x00]);
+    expect(img[(10 * COLS + 10) * 4]).toBe(before[(10 * COLS + 10) * 4]);
+    // Изменились только клетки штампа: не больше w × h пикселей по 3 канала.
+    expect(changed).toBeGreaterThan(0);
+    expect(changed).toBeLessThanOrEqual(w * h * 3);
   });
 });

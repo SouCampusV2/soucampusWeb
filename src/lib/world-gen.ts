@@ -8,6 +8,9 @@
 // TBT главной вырос с 20–60 до 110–130 мс (замер Lighthouse на проде).
 // Не возвращать генерацию в компонент.
 
+// Штамп цветка SouCampus — тот же файл, что лежит среди знаков бренда.
+import flowerStamps from "../../public/brand/pixel/flower-stamps.json";
+
 /** Детерминированный генератор (mulberry32): одно зерно — один мир. */
 function rng(seed: number) {
   let a = seed >>> 0;
@@ -266,14 +269,13 @@ const CLIMATE_SCALE = 0.008; // частота климата: вдвое реж
 const WARP = 18; // на сколько клеток искривлены границы климата
 const WARP_SCALE = 0.012; // частота искривления: плавные изгибы, а не рябь
 
-export function terrain(seed: number, cols: number, rows: number) {
+/**
+ * Высота каждой клетки 0..1. Отдельно от terrain(), потому что по ней же
+ * цветы ищут сушу (placeFlowers) — считать дважды незачем.
+ */
+export function heights(seed: number, cols: number, rows: number) {
   // Каждый шум — бесшовный по X с периодом ровно в ширину мира (tiled).
   const height = tiled(valueNoise, seed, SCALE, cols);
-  const temp = tiled(perlinNoise, seed ^ 0x7f4a7c15, CLIMATE_SCALE, cols);
-  const moist = tiled(perlinNoise, seed ^ 0x9e3779b9, CLIMATE_SCALE, cols);
-  const warpX = tiled(perlinNoise, seed ^ 0x3c6ef372, WARP_SCALE, cols);
-  const warpY = tiled(perlinNoise, seed ^ 0xa54ff53a, WARP_SCALE, cols);
-  const detail = tiled(valueNoise, seed ^ 0x1f83d9ab, 0.15, cols);
   const hmap = new Float32Array(cols * rows);
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
@@ -284,6 +286,15 @@ export function terrain(seed: number, cols: number, rows: number) {
       hmap[y * cols + x] = height(x, y, 5) + 0.12 - d * 0.25;
     }
   }
+  return hmap;
+}
+
+export function terrain(seed: number, cols: number, rows: number, hmap = heights(seed, cols, rows)) {
+  const temp = tiled(perlinNoise, seed ^ 0x7f4a7c15, CLIMATE_SCALE, cols);
+  const moist = tiled(perlinNoise, seed ^ 0x9e3779b9, CLIMATE_SCALE, cols);
+  const warpX = tiled(perlinNoise, seed ^ 0x3c6ef372, WARP_SCALE, cols);
+  const warpY = tiled(perlinNoise, seed ^ 0xa54ff53a, WARP_SCALE, cols);
+  const detail = tiled(valueNoise, seed ^ 0x1f83d9ab, 0.15, cols);
   const img = new Uint8ClampedArray(cols * rows * 4);
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
@@ -374,3 +385,113 @@ export function paintClouds(img: Uint8ClampedArray, appearAt: Float32Array, elap
 
 /** Что отдаёт clouds(): белые пиксели неба, момент появления каждой клетки и конец набегания. */
 export type CloudField = ReturnType<typeof clouds>;
+
+// ── Цветы SouCampus (бренд, 15.11) ───────────────────────────────────────
+// Пиксельный цветок из знака студии вырастает в мире как редкий объект:
+// 1–3 штуки на мир, крупно, в цветах сайта. Сам рисунок — штамп-сетка из
+// public/brand/pixel/flower-stamps.json (источник один, рисовал владелец),
+// идея и требования — docs/BRAND-IDEAS.md, раздел 1.
+//
+// Места и палитра выбираются тем же зерном, что и мир: то же зерно —
+// те же цветы в тех же местах. «Рядом с картой» тоже от зерна, а не от
+// Math.random — иначе число в плашке перестало бы быть обещанием.
+//
+// ⚠️ Мир ПЛЫВЁТ (HeroWorld → drift). Запретные зоны (карточка с текстом,
+// плашка зерна, шапка) — это зоны ПЕРВОГО кадра: первый цветок встаёт на
+// видимое свободное место, остальные где угодно на суше и выезжают позже.
+// Под карточку любой цветок рано или поздно уедет, как и весь мир.
+
+
+export type FlowerStamp = keyof typeof flowerStamps.stamps;
+export type FlowerPalette = keyof typeof flowerStamps.palettes;
+
+/** Прямоугольник в клетках мира: x, y — левый верхний угол. */
+export type CellRect = { x: number; y: number; w: number; h: number };
+
+export type Flower = { x: number; y: number; stamp: FlowerStamp; palette: FlowerPalette };
+
+// Решение владельца: оранжевый и лайм, как исходные цвета сайта.
+// Кремовая и персиковая палитры в штампах есть, но на карте не участвуют.
+const FLOWER_PALETTES: FlowerPalette[] = ["orange", "lime"];
+
+// Суша для цветка — выше пляжа (см. biome(): до 0.48 вода и берег).
+const FLOWER_GROUND = 0.48;
+
+const overlaps = (a: CellRect, b: CellRect) =>
+  a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
+
+/**
+ * Где растут цветы. `screenCols` — сколько клеток мира видно в первом
+ * кадре (слева от нулевого столбца, см. HeroWorld), `keepOut` — запретные
+ * зоны этого кадра. Может вернуть меньше цветов, чем загадано, и даже ни
+ * одного: в мире-океане им негде расти — это честнее цветка на воде.
+ */
+export function placeFlowers(
+  seed: number,
+  hmap: Float32Array,
+  cols: number,
+  rows: number,
+  stamp: FlowerStamp,
+  screenCols: number,
+  keepOut: CellRect[] = [],
+): Flower[] {
+  const { w, h, rows: grid } = flowerStamps.stamps[stamp];
+  const random = rng(seed ^ 0x2f1b7a3d);
+  const wanted = 1 + Math.floor(random() * 3);
+  const flowers: Flower[] = [];
+  // Между цветами (по левым верхним углам) — полтора штампа: при одном
+  // штампе на превью 15.11 два цветка стояли почти вплотную, пятном.
+  const gap = Math.max(w, h) * 1.5;
+
+  const onLand = (x: number, y: number) => {
+    for (let sy = 0; sy < h; sy++) {
+      for (let sx = 0; sx < w; sx++) {
+        if (grid[sy][sx] !== "." && hmap[(y + sy) * cols + x + sx] < FLOWER_GROUND) return false;
+      }
+    }
+    return true;
+  };
+
+  for (let attempt = 0; attempt < 400 && flowers.length < wanted; attempt++) {
+    // Первый цветок — в первом кадре, чтобы его увидели сразу. Не нашлось
+    // места за 200 попыток (узкий экран, суши мало) — ищем по всему миру.
+    const first = flowers.length === 0 && attempt < 200;
+    const maxX = (first ? Math.min(cols, screenCols) : cols) - w;
+    if (maxX < 0 || rows < h) break;
+    // Целиком внутри ширины мира: через шов (x + w > cols) не ставим.
+    const x = Math.floor(random() * (maxX + 1));
+    const y = Math.floor(random() * (rows - h + 1));
+    const box = { x, y, w, h };
+    // Запретные зоны — только для того, что видно в первом кадре.
+    if (x < screenCols && keepOut.some((zone) => overlaps(box, zone))) continue;
+    if (flowers.some((f) => Math.hypot(f.x - x, f.y - y) < gap)) continue;
+    if (!onLand(x, y)) continue;
+    flowers.push({ x, y, stamp, palette: FLOWER_PALETTES[Math.floor(random() * FLOWER_PALETTES.length)] });
+  }
+  return flowers;
+}
+
+const hexToRgb = (hex: string): RGB => [
+  parseInt(hex.slice(1, 3), 16),
+  parseInt(hex.slice(3, 5), 16),
+  parseInt(hex.slice(5, 7), 16),
+];
+
+/** Рисует цветы поверх мира. Клетки штампа «.» мир не трогают. */
+export function stampFlowers(img: Uint8ClampedArray, cols: number, flowers: Flower[]) {
+  for (const flower of flowers) {
+    const { w, h, rows: grid } = flowerStamps.stamps[flower.stamp];
+    const palette = flowerStamps.palettes[flower.palette] as Record<string, string>;
+    for (let sy = 0; sy < h; sy++) {
+      for (let sx = 0; sx < w; sx++) {
+        const cell = grid[sy][sx];
+        if (cell === ".") continue;
+        const [r, g, b] = hexToRgb(palette[cell]);
+        const i = ((flower.y + sy) * cols + flower.x + sx) * 4;
+        img[i] = r;
+        img[i + 1] = g;
+        img[i + 2] = b;
+      }
+    }
+  }
+}

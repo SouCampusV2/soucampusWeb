@@ -5,6 +5,7 @@ import { BUTTON_COLORS } from "@/components/Button";
 import { useHydrated } from "@/lib/useHydrated";
 import { paintClouds } from "@/lib/world-gen";
 import type { WorldRequest, WorldResponse } from "@/components/hero-world.worker";
+import type { CellRect } from "@/lib/world-gen";
 
 // Фон первого экрана — генеративная карта мира. Перенесена из лаборатории
 // (ветка design-lab, вариант «Seed», 22.09) по решению владельца 24.09.
@@ -79,6 +80,7 @@ export function HeroWorld() {
   const boxRef = useRef<HTMLDivElement>(null);
   const landRef = useRef<HTMLCanvasElement>(null);
   const skyRef = useRef<HTMLCanvasElement>(null);
+  const pillRef = useRef<HTMLDivElement>(null);
   const hydrated = useHydrated();
   // Своё число на сервере и в браузере — не беда: до гидратации оно нигде
   // не напечатано, а рисует холст только эффект, то есть браузер.
@@ -204,6 +206,41 @@ export function HeroWorld() {
       rampTimer = window.setInterval(step, 100);
     }
 
+    /**
+     * Где в первом кадре цветам расти нельзя — в клетках мира: под
+     * карточкой с текстом, под плашкой зерна и под шапкой сайта (она
+     * лежит поверх первого экрана). С запасом в две клетки.
+     * Первый кадр показывает столбцы мира с нулевого (drift стартует со
+     * сдвига на целую копию), поэтому экранный X делится на CELL как есть.
+     */
+    function keepOutCells(): CellRect[] {
+      if (!box) return [];
+      const origin = box.getBoundingClientRect();
+      const toCells = (r: { left: number; top: number; right: number; bottom: number }): CellRect => {
+        const x = Math.floor((r.left - origin.left) / CELL) - 2;
+        const y = Math.floor((r.top - origin.top) / CELL) - 2;
+        return {
+          x,
+          y,
+          w: Math.ceil((r.right - origin.left) / CELL) + 2 - x,
+          h: Math.ceil((r.bottom - origin.top) / CELL) + 2 - y,
+        };
+      };
+      const zones = [toCells({ left: origin.left, top: origin.top, right: origin.right, bottom: origin.top + 80 })];
+      // Плашка зерна появляется после гидратации; если её ещё нет — место
+      // под неё в правом нижнем углу (bottom-5 right-5, ~240×52).
+      const pill = pillRef.current?.getBoundingClientRect() ?? {
+        left: origin.right - 260,
+        top: origin.bottom - 72,
+        right: origin.right,
+        bottom: origin.bottom,
+      };
+      zones.push(toCells(pill));
+      const card = box.parentElement?.querySelector("[data-hero-card]");
+      if (card) zones.push(toCells(card.getBoundingClientRect()));
+      return zones;
+    }
+
     /** Просит воркер посчитать мир под текущее зерно и размер первого экрана. */
     function build() {
       if (!box) return;
@@ -221,6 +258,11 @@ export function HeroWorld() {
         cols,
         rows,
         skyCols: Math.ceil((box.clientWidth * 2) / CELL),
+        // Цветы SouCampus (docs/BRAND-IDEAS.md, раздел 1). flower32 —
+        // ~200 px при CELL = 7, на телефоне это половина ширины, там flower24.
+        flowerStamp: box.clientWidth < 640 ? "flower24" : "flower32",
+        screenCols: Math.floor(box.clientWidth / CELL),
+        keepOut: keepOutCells(),
       };
       worker.postMessage(request);
     }
@@ -355,7 +397,7 @@ export function HeroWorld() {
         <canvas ref={skyRef} className={`${layer} opacity-55`} />
       </div>
       {hydrated && (
-        <div className="absolute bottom-5 right-5 z-10 flex items-center gap-3 rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/80 py-1.5 pl-4 pr-1.5 text-sm text-zinc-950 backdrop-blur-xl pointer-coarse:bg-[#fbfbff]/90 pointer-coarse:backdrop-blur-none dark:border-zinc-50/[0.08] dark:bg-zinc-950/80 dark:text-zinc-50 dark:pointer-coarse:bg-zinc-950/90">
+        <div ref={pillRef} className="absolute bottom-5 right-5 z-10 flex items-center gap-3 rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/80 py-1.5 pl-4 pr-1.5 text-sm text-zinc-950 backdrop-blur-xl pointer-coarse:bg-[#fbfbff]/90 pointer-coarse:backdrop-blur-none dark:border-zinc-50/[0.08] dark:bg-zinc-950/80 dark:text-zinc-50 dark:pointer-coarse:bg-zinc-950/90">
           <span className="tabular-nums">
             World seed <span className="font-semibold">{seed}</span>
           </span>
