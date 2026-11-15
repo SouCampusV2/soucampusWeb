@@ -21,7 +21,7 @@ import {
   Sparkle,
   BookOpen,
   Lifebuoy,
-  ChatCircleText,
+  Question,
   type Icon,
 } from "@phosphor-icons/react";
 import { Avatar } from "@/components/Avatar";
@@ -92,8 +92,9 @@ type NavGroup = {
   items: NavItem[];
 };
 
-// Состав групп — со слов владельца 16.11. Contact есть в обеих: заказ
-// постройки и вопрос по карте ведут в одно место.
+// Состав групп — со слов владельца 16.11. Contact — только в Studio (из
+// Marketplace убран тем же днём); FAQ — в обеих: на /faq есть разделы и
+// про заказы, и про карты магазина, подписи у пунктов поэтому разные.
 const GROUPS: NavGroup[] = [
   {
     key: "studio",
@@ -108,6 +109,7 @@ const GROUPS: NavGroup[] = [
       { href: "/portfolio", label: "Portfolio", hint: "Builds made to order", icon: Briefcase },
       { href: "/about", label: "About me", hint: "Who builds them", icon: UserIcon },
       { href: "/contact", label: "Contact", hint: "Order a custom build", icon: EnvelopeSimple },
+      { href: "/faq", label: "FAQ", hint: "Commissions, prices, timelines", icon: Question },
     ],
   },
   {
@@ -123,7 +125,7 @@ const GROUPS: NavGroup[] = [
       { href: "/updates", label: "What's new", hint: "Latest changes on the site", icon: Sparkle },
       { href: "/wiki", label: "Wiki", hint: "How to install a map", icon: BookOpen },
       { href: "/support", label: "Support", hint: "Help with a purchase", icon: Lifebuoy },
-      { href: "/contact", label: "Contact", hint: "Ask about a map", icon: ChatCircleText },
+      { href: "/faq", label: "FAQ", hint: "Buying and using maps", icon: Question },
     ],
   },
 ];
