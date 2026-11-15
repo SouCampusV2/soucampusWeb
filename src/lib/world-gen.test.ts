@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { clouds, heights, paintClouds, placeFlowers, stampFlowers, terrain } from "./world-gen";
+import { clouds, FLOWER_TUNING, heights, paintClouds, placeFlowers, stampFlowers, terrain } from "./world-gen";
 import stamps from "../../public/brand/pixel/flower-stamps.json";
 
 // Генерация мира для фона главной — чистые функции над массивами, в сеть
@@ -117,8 +117,8 @@ describe("clouds", () => {
 
 // Цветы SouCampus в мире (docs/BRAND-IDEAS.md, раздел 1). Закреплены
 // требования владельца: то же зерно — те же цветы; цветок не стоит на
-// воде; в первом кадре не растёт под карточкой с текстом; и цветок
-// вообще виден — иначе вся затея молча исчезает после правки порога.
+// воде; в первом кадре не растёт под карточкой с текстом; большой цветок
+// виден сразу — иначе вся затея молча исчезает после правки порога.
 describe("flowers", () => {
   // Карточка с текстом на ноутбуке: левая половина экрана, по центру.
   const SCREEN = 160;
@@ -133,49 +133,55 @@ describe("flowers", () => {
   });
 
   it("never grows on water or sand and keeps out of the card", () => {
-    const { w, h, rows } = stamps.stamps.flower32;
     for (let seed = 1; seed <= 60; seed++) {
       const { hmap, flowers } = grow(seed * 977);
-      expect(flowers.length).toBeLessThanOrEqual(3);
+      expect(flowers.filter((f) => f.big).length).toBeLessThanOrEqual(FLOWER_TUNING.bigCount[1]);
+      expect(flowers.filter((f) => !f.big).length).toBeLessThanOrEqual(FLOWER_TUNING.smallCount[1]);
       for (const f of flowers) {
-        for (let sy = 0; sy < h; sy++) {
-          for (let sx = 0; sx < w; sx++) {
-            if (rows[sy][sx] !== ".") expect(hmap[(f.y + sy) * COLS + f.x + sx]).toBeGreaterThanOrEqual(0.48);
+        for (let sy = 0; sy < f.h; sy++) {
+          for (let sx = 0; sx < f.w; sx++) {
+            if (f.grid[sy][sx] !== ".") expect(hmap[(f.y + sy) * COLS + f.x + sx]).toBeGreaterThanOrEqual(0.48);
           }
         }
         if (f.x < SCREEN) {
-          const inCard = f.x < CARD.x + CARD.w && CARD.x < f.x + w && f.y < CARD.y + CARD.h && CARD.y < f.y + h;
+          const inCard = f.x < CARD.x + CARD.w && CARD.x < f.x + f.w && f.y < CARD.y + CARD.h && CARD.y < f.y + f.h;
           expect(inCard).toBe(false);
         }
       }
     }
   });
 
-  it("shows a flower in the first frame of most worlds", () => {
+  it("shows a big flower in the first frame of most worlds", () => {
     let seen = 0;
     for (let seed = 1; seed <= 100; seed++) {
-      if (grow(seed * 31).flowers.some((f) => f.x + stamps.stamps.flower32.w <= SCREEN)) seen++;
+      if (grow(seed * 31).flowers.some((f) => f.big && f.x + f.w <= SCREEN)) seen++;
     }
     // Замер 15.11: 76 из 100. В остальных мирах свободная часть первого
     // кадра — вода, и цветок выезжает позже.
     expect(seen).toBeGreaterThanOrEqual(65);
   });
 
-  it("paints only the stamp cells", () => {
+  it("scatters small flowers too", () => {
+    let small = 0;
+    for (let seed = 1; seed <= 20; seed++) small += grow(seed * 53).flowers.filter((f) => !f.big).length;
+    // В среднем больше половины загаданных: суши хватает не везде.
+    expect(small / 20).toBeGreaterThan(FLOWER_TUNING.smallCount[0] / 2);
+  });
+
+  it("paints only the flower cells", () => {
     const img = terrain(5, COLS, ROWS);
     const before = img.slice();
-    stampFlowers(img, COLS, [{ x: 10, y: 10, stamp: "flower24", palette: "orange" }]);
-    const { w, h, rows } = stamps.stamps.flower24;
+    const grid = stamps.stamps.flower24.rows;
+    stampFlowers(img, COLS, [{ x: 10, y: 10, w: grid[0].length, h: grid.length, grid, palette: "orange", big: true }]);
     let changed = 0;
     for (let i = 0; i < img.length; i++) if (img[i] !== before[i]) changed++;
-    // Центр серединки — цвет лайма из палитры, клетка «.» в углу — мир как был.
-    const cy = rows.findIndex((r) => r.includes("C"));
-    const cx = rows[cy].indexOf("C");
+    // Клетка серединки — цвет лайма из палитры, клетка «.» в углу — мир как был.
+    const cy = grid.findIndex((r) => r.includes("C"));
+    const cx = grid[cy].indexOf("C");
     const at = ((10 + cy) * COLS + 10 + cx) * 4;
     expect([img[at], img[at + 1], img[at + 2]]).toEqual([0x7c, 0xcf, 0x00]);
     expect(img[(10 * COLS + 10) * 4]).toBe(before[(10 * COLS + 10) * 4]);
-    // Изменились только клетки штампа: не больше w × h пикселей по 3 канала.
     expect(changed).toBeGreaterThan(0);
-    expect(changed).toBeLessThanOrEqual(w * h * 3);
+    expect(changed).toBeLessThanOrEqual(grid.length * grid[0].length * 3);
   });
 });
