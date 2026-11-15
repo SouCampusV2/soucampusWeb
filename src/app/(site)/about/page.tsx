@@ -17,7 +17,7 @@ import {
   Armchair,
   House,
 } from "@phosphor-icons/react/dist/ssr";
-import { AuthorCta } from "@/components/AuthorCta";
+import { AboutFlowerIntro } from "@/components/AboutFlowerIntro";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_SAMEAS, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 
@@ -139,17 +139,18 @@ export default function AboutPage() {
   return (
     <>
       <JsonLd data={ABOUT_JSON_LD} />
-      <AuthorCta />
-
       <main className="w-full mx-auto max-w-6xl flex-1 px-6">
+      {/* С 15.11 вместо AuthorCta (зелёные кольца со скином) — цветок
+          SouCampus, растущий при прокрутке (docs/BRAND-IDEAS.md, раздел 2). */}
+      <AboutFlowerIntro />
+
       {/* С 09.10 на всю ширину страницы (max-w-6xl), а не колонкой
           max-w-3xl, как с 24.09: рядом с остальными страницами About
           выглядел другим сайтом (замечание владельца). Две колонки:
           слева заголовок и рассказ — они «прилипают» при прокрутке,
           пока справа идёт дерево достижений; справа само дерево, его
-          тексты остаются удобной для чтения ширины.
-          No top glow here — AuthorCta right above already bleeds one in. */}
-      <section className="mt-8 grid gap-10 pt-20 sm:mt-16 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-16">
+          тексты остаются удобной для чтения ширины. */}
+      <section className="mt-16 grid gap-10 sm:mt-20 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-16">
         <div className="md:sticky md:top-28 md:self-start">
           <span className="text-sm font-semibold text-lime-600">
             A Long Journey
