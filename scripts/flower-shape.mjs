@@ -6,6 +6,10 @@
 // src/lib/flower-shape.json. Генератор мира (world-gen.ts → smallFlower)
 // рисует по ним цветок любого размера — форма та же, что у знака.
 //
+// Заодно — веер для секции «How an order works» (HowItWorks): из
+// public/brand/parts/fan-parts.svg берутся пути petal-1…12 и sun как есть
+// (рисует их сам браузер, ломаная не нужна) в src/lib/fan-shape.json.
+//
 // Перерисовал владелец знак — запустить заново:
 //   node scripts/flower-shape.mjs
 
@@ -75,3 +79,24 @@ writeFileSync(
   JSON.stringify({ source: "public/brand/parts/flower-parts.svg", petals, center }) + "\n",
 );
 console.log(`flower-shape.json: ${petals.length} лепестков, серединка r = ${center.r}`);
+
+// ── Веер ──
+const fan = readFileSync("public/brand/parts/fan-parts.svg", "utf8");
+const fanD = (id) => {
+  const m = fan.match(new RegExp(`<path[^>]*id="${id}"[^>]*d="([^"]+)"`)) ??
+    fan.match(new RegExp(`<path[^>]*d="([^"]+)"[^>]*id="${id}"`));
+  if (!m) throw new Error(`Нет пути ${id} в fan-parts.svg`);
+  return m[1];
+};
+const fanPetals = [];
+for (let n = 1; fan.includes(`id="petal-${n}"`); n++) fanPetals.push(fanD(`petal-${n}`));
+writeFileSync(
+  "src/lib/fan-shape.json",
+  JSON.stringify({
+    source: "public/brand/parts/fan-parts.svg",
+    viewBox: fan.match(/viewBox="([^"]+)"/)[1],
+    petals: fanPetals,
+    sun: fanD("sun"),
+  }) + "\n",
+);
+console.log(`fan-shape.json: ${fanPetals.length} лепестков и солнце`);
