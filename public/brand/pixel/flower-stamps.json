@@ -1,0 +1,96 @@
+{
+ "legend": {
+  ".": "пусто (клетка мира остаётся как есть)",
+  "P": "лепесток",
+  "p": "тень лепестка (низ/право)",
+  "C": "серединка",
+  "c": "тень серединки"
+ },
+ "palettes": {
+  "orange": {
+   "P": "#ff6900",
+   "p": "#f54900",
+   "C": "#7ccf00",
+   "c": "#5ea500"
+  },
+  "lime": {
+   "P": "#7ccf00",
+   "p": "#5ea500",
+   "C": "#ff6900",
+   "c": "#f54900"
+  },
+  "cream": {
+   "P": "#fff7ed",
+   "p": "#ffd6a7",
+   "C": "#ff6900",
+   "c": "#f54900"
+  },
+  "peach": {
+   "P": "#ffb86a",
+   "p": "#f99a4f",
+   "C": "#ff6900",
+   "c": "#f54900"
+  }
+ },
+ "stamps": {
+  "flower24": {
+   "w": 21,
+   "h": 20,
+   "rows": [
+    "...PPp.pPPp...p......",
+    "...PPp..pPp..Pp..PPp.",
+    "..pPPPp..Pp.PPp.PPPPp",
+    "...PPPPp.pp.Pp..PPPPp",
+    "...pppPp..p.p..PPPPp.",
+    "......ppp.p...PPppp..",
+    ".PPPp...p....pPp....p",
+    ".pPPPPp...Cc..p..ppPp",
+    "..PPPPPp.CCCc......pp",
+    "..PPPppp.cCCc.ppPp...",
+    "..Ppp.....cc....pPPp.",
+    "..p....Pp.....p..pPPp",
+    "....PPPPp.p.p.pp..ppp",
+    ".PPPPPPPp.p.p..Pp....",
+    "PPPPPPPp..p.Pp.pPPp..",
+    "PPPPPPPp.Pp.Pp..PPPp.",
+    "pPPPPPp..Pp.PPp.PPPp.",
+    ".ppppp..pPp.PPp.PPPp.",
+    ".........pp.ppp.pPPp.",
+    ".................pp.."
+   ]
+  },
+  "flower32": {
+   "w": 29,
+   "h": 27,
+   "rows": [
+    "..........Pp.................",
+    ".....PPp..PPPPp....p.........",
+    "....PPPp..pPPPPp..PPp...PPp..",
+    "....PPPPp..pPPPp.PPp...PPPPp.",
+    "....PPPPPp..PPPp.PPp..PPPPPp.",
+    "....PPPPPPp.pPp..PPp.PPPPPPp.",
+    "....pPPPPPp..pp.PPp..PPPPPPp.",
+    ".....pppPPPp..p.Pp..PPPPPPp..",
+    "........ppPPp.p.p..PPPpppp...",
+    "..PPPPp...ppp.....PPPp.....p.",
+    "..PPPPPPp.....Cc..pPp..PPPPPp",
+    "..pPPPPPPPp..CCCc..p..pppPPPp",
+    "...PPPPPPPp.CCCCCc.......pppp",
+    "...PPPPPPpp.cCCCCc.ppPPp.....",
+    "...PPPPpp....cCCc....pPPPPp..",
+    "..pPPpp.......cc..Pp..pPPPPp.",
+    "...pp....PPPp.....pPp..pPPPp.",
+    "......PPPPPPp.p.p..pPp..ppPp.",
+    "..PPPPPPPPPp..p.Pp..Pp....p..",
+    ".PPPPPPPPPPp.Pp.pPp.PPPp.....",
+    "PPPPPPPPPPp..Pp..Pp.pPPPPp...",
+    "PPPPPPPPPPp.PPPp.Pp..PPPPPp..",
+    "PPPPPPPPPPp.PPPp.PPp.PPPPPp..",
+    "pPPPPPpppp..PPPp.PPp.PPPPPPp.",
+    ".ppppp.....pPPp..PPp.pPPPPPp.",
+    "............ppp..ppp..PPPPp..",
+    "......................pppp..."
+   ]
+  }
+ }
+}
