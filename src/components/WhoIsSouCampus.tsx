@@ -52,8 +52,8 @@ export function WhoIsSouCampus() {
             рядами, а бока, не влезшие по ширине, обрезает overflow-hidden.
             В поток не входит намеренно — иначе картинка сама раздувала бы
             высоту рядов. 75% высоты — подобрано владельцем (94 было много).
-            Исходник 276×368 меньше места под него, отсюда мягкость — тот
-            же TODO, что в AuthorCta: нужен рендер шире ~800px. */}
+            Исходник 276×368 меньше места под него, отсюда мягкость —
+            TODO: нужен рендер скина шире ~800px. */}
         <div className={`${CARD} pixel-texture relative min-h-[28rem] overflow-hidden md:row-span-2`}>
           <Image
             src="/aboutme/soucampusModel.png"
