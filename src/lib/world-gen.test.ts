@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { clouds, FLOWER_TUNING, heights, paintClouds, placeFlowers, stampFlowers, terrain } from "./world-gen";
+import { clouds, FLOWER_TUNING, heights, paintClouds, placeFlowers, smallFlower, stampFlowers, terrain } from "./world-gen";
 import stamps from "../../public/brand/pixel/flower-stamps.json";
 
 // Генерация мира для фона главной — чистые функции над массивами, в сеть
@@ -168,11 +168,26 @@ describe("flowers", () => {
     expect(small / 20).toBeGreaterThan(FLOWER_TUNING.smallCount[0] / 2);
   });
 
+  it("keeps small flowers airy, not a blob", () => {
+    // 15.11 мелкие цветы слипались в кляксы — у цветка между лепестками
+    // должен быть просвет. Замер на чистых каплях: 25–40% квадрата.
+    for (let size = FLOWER_TUNING.smallSize[0]; size <= FLOWER_TUNING.smallSize[1]; size++) {
+      const [lo, hi] = FLOWER_TUNING.smallSize;
+      const seq = [(size - lo + 0.5) / (hi - lo + 1), 0.4];
+      let i = 0;
+      const grid = smallFlower(() => seq[i++ % 2]);
+      const filled = grid.join("").replace(/\./g, "").length;
+      expect(grid).toHaveLength(size);
+      expect(filled / (size * size)).toBeLessThan(0.5);
+      expect(grid.join("")).toMatch(/[Cc]/);
+    }
+  });
+
   it("paints only the flower cells", () => {
     const img = terrain(5, COLS, ROWS);
     const before = img.slice();
     const grid = stamps.stamps.flower24.rows;
-    stampFlowers(img, COLS, [{ x: 10, y: 10, w: grid[0].length, h: grid.length, grid, palette: "orange", big: true }]);
+    stampFlowers(img, COLS, [{ x: 10, y: 10, w: grid[0].length, h: grid.length, grid, colors: stamps.palettes.orange, big: true }]);
     let changed = 0;
     for (let i = 0; i < img.length; i++) if (img[i] !== before[i]) changed++;
     // Клетка серединки — цвет лайма из палитры, клетка «.» в углу — мир как был.
