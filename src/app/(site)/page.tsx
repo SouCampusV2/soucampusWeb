@@ -56,11 +56,14 @@ export default async function Home() {
       <JsonLd data={HOME_JSON_LD} />
       <Hero />
       <Stats stats={stats} />
-      <WhoIsSouCampus />
+      {/* Работы — раньше рассказа о себе (владелец 17.11): сначала
+          что построено, потом кто строил. Отступы пары переставлены
+          вместе с ними — см. шапки обеих секций. */}
       <RecentProjects projects={projects} />
+      <WhoIsSouCampus />
       <CountriesMarquee />
       <ClientReviews reviews={reviews} />
-      <HowItWorks />
+      <HowItWorks showContact />
     </main>
   );
 }

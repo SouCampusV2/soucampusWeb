@@ -37,6 +37,8 @@ export type Project = {
    * прячет политика в базе (миграция 20261112140000_project_drafts).
    */
   isPublished: boolean;
+  /** Когда работа добавлена (created_at). По ней Recent projects на главной берёт самые новые. */
+  createdAt: string;
 };
 
 // Верхняя граница на размер hero-карусели. Раскрывающиеся панели читаются
@@ -68,6 +70,7 @@ type ProjectRow = {
   listing_is_free: boolean;
   sort_order: number | null;
   is_published: boolean;
+  created_at: string;
   project_images: { url: string; position: number }[] | null;
 };
 
@@ -106,6 +109,7 @@ export function rowToProject(row: ProjectRow): Project {
     listingIsFree: row.listing_is_free,
     sortOrder: row.sort_order,
     isPublished: row.is_published,
+    createdAt: row.created_at,
   };
 }
 
@@ -117,7 +121,7 @@ const PROJECT_FIELDS = `
   slug, title, tag, summary, description, image_url,
   price_label, size_label, deadline_label, is_featured,
   size_x, size_z, price_amount, listing_url, listing_is_free, sort_order,
-  is_published, project_images ( url, position )
+  is_published, created_at, project_images ( url, position )
 `;
 
 // Площадь участка в футбольных полях — чтобы «200×200» стало понятно
