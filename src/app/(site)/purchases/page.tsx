@@ -56,7 +56,9 @@ export default async function PurchasesPage() {
     <main className="relative w-full overflow-x-clip px-6">
       <PageGlow color="rgba(249,115,22,0.28)" />
       <section className="relative pb-28 pt-20">
-        <div className="mx-auto max-w-2xl">
+        {/* max-w-3xl — одна колонка с /resources (17.11, владелец: «как
+            Your resources»); до этого 2xl. */}
+        <div className="mx-auto max-w-3xl">
           <h1
             className={`${displayFont.className} text-center text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
           >
