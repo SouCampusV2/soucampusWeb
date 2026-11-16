@@ -10,7 +10,7 @@ import { BuildEstimator } from "@/components/BuildEstimator";
 import { PageGlow } from "@/components/PageGlow";
 import { HowItWorks } from "@/components/HowItWorks";
 import { DISCORD_INVITE } from "@/lib/site";
-import { BASE_RATE } from "@/lib/pricing";
+import { CONTACT_FAQ } from "@/lib/faq";
 
 // Тот же дисплейный шрифт, что у Hero на главной — тут используется на
 // H1 страницы, чтобы обе "герой"-секции сайта визуально рифмовались.
@@ -26,48 +26,13 @@ export const metadata: Metadata = {
   alternates: { canonical: "/contact" },
 };
 
-const FAQ = [
-  {
-    question: "How much does a map cost?",
-    answer:
-      `The base rate is ${BASE_RATE}€ per 1×1 unit. For example, a 100×100 map costs ${100 * BASE_RATE}€ under this pricing. The exact final price depends on the size and scope of your project — feel free to share your idea in a Discord ticket and I'll calculate the cost for you.`,
-  },
-  {
-    question: "How long does an order take?",
-    answer:
-      "A 150×150 map can be done in as little as 2-3 days at minimum, but the actual timeline mainly depends on the amount of work involved and my personal schedule at the time. Larger or more detailed projects will naturally take longer.",
-  },
-  {
-    question: "How does payment work?",
-    answer:
-      "Payment is required upfront — either: 50% before starting, and the remaining 50% before I send the schematic or world file, or 100% upfront, in which case you'll get to watch the build process live on my server as it happens.",
-  },
-  {
-    question: "Can I request changes after delivery?",
-    answer:
-      "A certain number of revisions is included in the price (agreed on in advance — for example, 1-2 free revisions within a week after delivery). Additional revisions beyond the agreed scope are billed separately by arrangement.",
-  },
-  {
-    question: "Which Minecraft versions do you build on?",
-    answer:
-      "I work across a wide range of versions — both older and current ones. If you have a specific version or modpack in mind, just mention it in the ticket and we'll figure out together whether it's feasible for your idea.",
-  },
-  {
-    question: "Do you improve existing maps?",
-    answer:
-      "Yes, I do improve/enhance existing maps. How much can be done depends heavily on your specific requests and the overall scope of work needed. Reach out on Discord to discuss the details of your map and what you'd like improved.",
-  },
-  {
-    question: "Can I order a map for a specific mode (PvP, RPG, parkour)?",
-    answer:
-      "Yes, of course. Describe your idea on Discord and I'll suggest options — suitable mechanics, style, and map structure for the mode you have in mind (PvP arenas, RPG locations with quest structures, parkour courses with checkpoints, and so on).",
-  },
-  {
-    question: "What if I don't like the result?",
-    answer:
-      "I send you continuous updates throughout the build, so you'll always be able to see and comment on progress as it happens. If everything looked good along the way and you're only unhappy with the final result at the very end, that won't be grounds for a refund or rework. However, if we go through a couple of rounds of rebuilding early on and it's genuinely not working out, I'll refund part of what you paid: 45% back if you paid 50% upfront, or 95% back if you paid the full 100% upfront.",
-  },
-];
+// Вопросы — выборка из общего FAQ (lib/faq.ts, CONTACT_FAQ), а не своя
+// копия: до 17.11 здесь жили восемь своих ответов, и они разошлись с /faq
+// (сроки, правки, версии). Аккордеон печатает ответ одним абзацем.
+const FAQ = CONTACT_FAQ.map((item) => ({
+  question: item.question,
+  answer: item.answer.join(" "),
+}));
 
 export default function ContactPage() {
   return (
@@ -84,17 +49,23 @@ export default function ContactPage() {
         <PageGlow color="rgba(59,130,246,0.35)" />
         <div className="mx-auto grid max-w-6xl items-start gap-10 px-6 sm:grid-cols-2">
           <div>
-            {/* Заголовок — имя страницы, как в навбаре и на /portfolio, без
-                плашки «Get in touch» (решение владельца 16.11). Фраза про
-                Discord ушла в абзац. */}
+            {/* Заголовок (17.11, владелец): большой «I'm here, always on
+                Discord» вернулся, а слово «Contact» — внутри самого
+                заголовка первой строкой, не плашкой над ним (плашки над
+                заголовками убраны 16.11 и не возвращаются). Голое «Contact»
+                (16.11) не понравилось: левая колонка стала короткой рядом
+                с калькулятором. */}
             <h1
-              className={`${displayFont.className} text-4xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
+              className={`${displayFont.className} text-4xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl lg:text-6xl`}
             >
-              Contact
+              Contact me.{" "}
+              {/* zinc-600, не 500: на синем свечении 500 читался бледно (17.11). */}
+              <span className="text-zinc-600 dark:text-zinc-300">
+                I&apos;m here, always on{" "}
+                <span className="text-blue-500">Discord</span>
+              </span>
             </h1>
-            <p className="mt-4 max-w-md text-zinc-700 dark:text-zinc-300">
-              I&apos;m here, always on{" "}
-              <span className="font-semibold text-blue-500">Discord</span>.
+            <p className="mt-6 max-w-md text-zinc-700 dark:text-zinc-300">
               Orders, questions and support — all in one place. We reply on
               weekdays and weekends alike.
             </p>
@@ -134,16 +105,18 @@ export default function ContactPage() {
       <main className="w-full mx-auto max-w-6xl flex-1 px-6">
       {/* Chat to us directly */}
       <section className="grid items-center gap-8 py-10 sm:gap-10 sm:py-20 sm:grid-cols-2">
-        {/* Pixel-art scene (24.09): SVG from a 64×36 grid, one <path> per
-            colour, a few KB. The sky is the slot's background, not part of
-            the file, so it follows the theme; the figures carry their own
-            dark outline and read on both. */}
-        <div className="relative aspect-video overflow-hidden rounded-2xl bg-blue-100 dark:bg-blue-950/60">
+        {/* С 17.11 — объёмная воксельная сцена вместо пиксельной SVG
+            (владелец: «Стив в тёмной комнате пишет в Discord, вид сзади»).
+            Сгенерирована в Figma (файл «SouCampus — Contact illustrations»),
+            персонаж свой, не Стив; фигурок мобов и логотипов на ней нет
+            намеренно — первый вариант с Крипером и значками Discord
+            отброшен. WebP 1536×864, ~65 КБ; ночная сцена одна на обе темы. */}
+        <div className="relative aspect-video overflow-hidden rounded-2xl bg-zinc-900">
           <Image
-            src="/contact/pixel-chat.svg"
-            alt="A blocky builder waving at two chat bubbles"
+            src="/contact/chat-room.webp"
+            alt="A blocky builder in a dark room typing a message on a glowing chat screen"
             fill
-            unoptimized
+            sizes="(min-width: 640px) 50vw, 100vw"
             className="object-cover"
           />
         </div>
@@ -200,12 +173,15 @@ export default function ContactPage() {
             </Button>
           </div>
         </div>
-        <div className="relative order-first aspect-video overflow-hidden rounded-2xl bg-blue-100 sm:order-2 dark:bg-blue-950/60">
+        {/* Пара к сцене выше (17.11): тот же персонаж ночью в библиотеке
+            читает светящуюся книгу — «ответы уже написаны». Figma, файл
+            «SouCampus — Contact illustrations»; WebP 1536×864. */}
+        <div className="relative order-first aspect-video overflow-hidden rounded-2xl bg-zinc-900 sm:order-2">
           <Image
-            src="/contact/pixel-answers.svg"
-            alt="An open book on a lectern under a big question mark"
+            src="/contact/answers-library.webp"
+            alt="The same blocky builder reading a glowing book in a cozy library at night"
             fill
-            unoptimized
+            sizes="(min-width: 640px) 50vw, 100vw"
             className="object-cover"
           />
         </div>

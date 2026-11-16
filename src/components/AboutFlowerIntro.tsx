@@ -21,7 +21,10 @@ import { PixelFlower } from "@/components/brand/PixelArt";
 //   · бейджа «About me» над заголовком нет — убран по просьбе;
 //   · свечение и лёгкое размытие под текстом; фон секции — лаймовый
 //     градиент с линией по низу, чтобы были видны её границы (16.11);
-//   · левая часть высокая (min-h), цветок ближе к тексту (right ≈ -1vw).
+//   · цветок ближе к тексту (right ≈ -1vw);
+//   · 17.11: секция ниже — «нахуя он тут такой большой»: min-h убран,
+//     отступы сверху и снизу меньше; текст в нормальной карточке с
+//     отступами (p-1 читалось как «белый квадрат с паддингом 2px»).
 //
 // ⚠️ Пиксельный знак — SVG одним контуром на часть (PixelArt.tsx): при
 // росте в 1.8 раза отдельные прямоугольники давали щели между клетками.
@@ -78,8 +81,11 @@ export function AboutFlowerIntro() {
         <PixelFlower palette="lime" className="relative size-full" />
       </motion.div>
 
-      <div className="relative mx-auto flex min-h-[44rem] max-w-6xl items-center px-6 pb-28 pt-44 sm:min-h-[52rem] sm:pb-40 sm:pt-52">
-        <div className="max-w-xl rounded-3xl bg-white/50 p-1 backdrop-blur-[2px] dark:bg-zinc-950/40">
+      {/* pt считается от верха окна: 82px из него — под навбаром (см. -mt выше). */}
+      <div className="relative mx-auto flex max-w-6xl items-center px-6 pb-12 pt-32 sm:pb-16 sm:pt-36">
+        {/* Стекло: полупрозрачный белый и размытие, без рамки и тени
+            (17.11, владелец: серая обводка с тенью — «ужасная»). */}
+        <div className="max-w-xl rounded-3xl bg-[#fbfbff]/45 p-6 backdrop-blur-xl sm:p-8 dark:bg-zinc-950/40">
           <h1
             className={`${displayFont.className} text-5xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-7xl`}
           >

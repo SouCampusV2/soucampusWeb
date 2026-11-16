@@ -152,13 +152,12 @@ export default function AboutPage() {
           слева заголовок и рассказ — они «прилипают» при прокрутке,
           пока справа идёт дерево достижений; справа само дерево, его
           тексты остаются удобной для чтения ширины. */}
-      <section className="grid gap-10 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-16">
+      {/* 17.11: бейджи над заголовками («A Long Journey», «Skills & toolkit»)
+          убраны по просьбе владельца — не возвращать. mt — воздух под интро. */}
+      <section className="mt-16 grid gap-10 sm:mt-20 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-16">
         <div className="md:sticky md:top-28 md:self-start">
-          <span className="text-sm font-semibold text-lime-600">
-            A Long Journey
-          </span>
           <h2
-            className={`${displayFont.className} mt-3 text-4xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
+            className={`${displayFont.className} text-4xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
           >
             Building Worlds Since Childhood
           </h2>
@@ -240,9 +239,8 @@ export default function AboutPage() {
 
       {/* На всю ширину страницы, как и блок выше (с 09.10). */}
       <section className="mt-16 sm:mt-20">
-        <span className="text-sm font-semibold text-lime-600">Skills & toolkit</span>
         <h2
-          className={`${displayFont.className} mt-3 text-3xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl`}
+          className={`${displayFont.className} text-3xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl`}
         >
           What I build with
         </h2>

@@ -1,14 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Unbounded } from "next/font/google";
-import { PageGlow } from "@/components/PageGlow";
-import { WIKI_SECTIONS, articlesInSection } from "@/lib/wiki";
+import { HELP_BODY, HELP_H2, HelpPageHeader } from "@/components/HelpTabs";
+import { WIKI_SECTIONS, WIKI_UPDATED, articlesInSection } from "@/lib/wiki";
 
-// Тот же дисплейный шрифт, что у остальных заголовков сайта.
-const displayFont = Unbounded({
-  weight: "800",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "Wiki",
@@ -22,38 +16,24 @@ export default function WikiIndexPage() {
     // Клип на полноширинном <main>, ограничение ширины — на секциях
     // внутри: требование PageGlow.
     <main className="relative w-full overflow-x-clip">
-      <section className="relative mx-auto max-w-6xl px-6 pb-8 pt-20 sm:pb-12">
-        <PageGlow color="rgba(251,146,60,0.35)" />
-        {/* Заголовок — имя страницы, как в навбаре и на /portfolio; без
-            плашки над ним (решение владельца 16.11 — одна схема на весь сайт). */}
-        <h1
-          className={`${displayFont.className} text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
-        >
-          Wiki
-        </h1>
-        <p className="mt-4 max-w-2xl text-zinc-600 dark:text-zinc-400">
-          The answers that would otherwise be repeated in Discord: getting a
-          map into your game, what a download contains, and how commissions
-          are priced and delivered.
-        </p>
-      </section>
+      {/* Шапка общая для четырёх справочных страниц (HelpTabs.tsx). */}
+      <HelpPageHeader active="wiki" title="Wiki" updated={WIKI_UPDATED}>
+        The answers that would otherwise be repeated in Discord: getting a
+        map into your game, what a download contains, and how commissions
+        are priced and delivered.
+      </HelpPageHeader>
 
       {/* Разделы идут в порядке WIKI_SECTIONS, статьи внутри — в порядке
           объявления в wiki.ts. Сортировки здесь нет намеренно: порядок
           справки задаёт автор, а не алфавит — «как поставить карту»
           обязана стоять первой. */}
-      <div className="mx-auto max-w-6xl space-y-14 px-6 pb-16 sm:pb-24">
+      <div className={HELP_BODY}>
         {WIKI_SECTIONS.map((section) => (
           <section key={section.id}>
-            {/* Заголовок раздела внутри длинного документа — без
-                sm:-шага, как в /privacy и в теле статьи вики
-                (DESIGN.md → «Типографика»). До 07.09 здесь стоял ещё и
-                sm:text-3xl, и на сайте было ТРИ разных начертания
-                «заголовка секции» вместо двух. */}
-            <h2 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
+            <h2 className={HELP_H2}>
               {section.title}
             </h2>
-            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
+            <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
               {section.description}
             </p>
 

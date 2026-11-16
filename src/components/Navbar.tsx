@@ -27,7 +27,7 @@ import {
 import { Avatar } from "@/components/Avatar";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
-import { PixelFlower } from "@/components/brand/PixelArt";
+import { SiteMark } from "@/components/brand/SiteMark";
 import { isMarketplaceRoute } from "@/lib/marketplace-routes";
 import { useCart } from "@/lib/cart-context";
 import { useDismiss } from "@/lib/useDismiss";
@@ -81,6 +81,8 @@ const displayFont = Unbounded({
 type NavItem = { href: string; label: string; hint: string; icon: Icon };
 type NavGroup = {
   key: string;
+  /** Что это за сторона сайта — подпись в раскрытой панели вместо повтора названия группы. */
+  about: string;
   label: string;
   dot: string;
   icon: string;
@@ -99,6 +101,7 @@ const GROUPS: NavGroup[] = [
   {
     key: "studio",
     label: "Studio",
+    about: "Custom builds made to order",
     dot: "bg-lime-500",
     icon: "text-lime-700 dark:text-lime-400",
     bar: "border-lime-500",
@@ -115,6 +118,7 @@ const GROUPS: NavGroup[] = [
   {
     key: "market",
     label: "Marketplace",
+    about: "Ready maps to buy and download",
     dot: "bg-orange-500",
     icon: "text-orange-600 dark:text-orange-400",
     bar: "border-orange-500",
@@ -130,12 +134,19 @@ const GROUPS: NavGroup[] = [
   },
 ];
 
-// Жёлтая серединка цветка (владелец 16.11) — краситель yellow из игры.
-// Лепестки кремовые, квадрат оранжевый — знак как у фавиконки (F2).
-const YELLOW_CENTER = { C: "#fed83d", c: "#c6a830" };
 
 const GLASS =
   "rounded-3xl border border-white/60 bg-[#fbfbff]/95 shadow-xl shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-zinc-900/95";
+
+// Справочные страницы под вкладками HelpTabs. На них ни одна группа не
+// подсвечена (решение 17.11): они общие для студии и магазина — FAQ стоит
+// в обеих группах, Terms и Privacy ни в одной, — и раньше /faq подсвечивал
+// Studio, /wiki — Marketplace, а /terms ничего. Где ты — видно по вкладкам.
+const HELP_PAGES = ["/faq", "/wiki", "/terms", "/privacy"];
+
+function isHelpPage(pathname: string) {
+  return HELP_PAGES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
 
 /** Пункт активен на своей странице и на вложенных (/wiki/…, /portfolio/…). "/" — только сама главная. */
 function isActive(href: string, pathname: string) {
@@ -217,9 +228,11 @@ export function Navbar() {
 
   return (
     <div className="sticky top-4 z-50 px-4">
-      {/* Пилюля чуть серее прежней (#fbfbff/60 → zinc-100/75, просьба
-          владельца 16.11): на белых страницах она сливалась с фоном. */}
-      <header className="relative mx-auto max-w-6xl rounded-full border border-zinc-950/[0.07] bg-zinc-100/75 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-900/70">
+      {/* Пилюля белая полупрозрачная с размытием того, что под ней (17.11,
+          владелец: серая zinc-100/75 от 16.11 не понравилась). Отличать её
+          от белой страницы — дело тонкой рамки и размытия, а не серого фона;
+          текст и иконки зато темнее (zinc-800), чтобы читались. */}
+      <header className="relative mx-auto max-w-6xl rounded-full border border-zinc-950/[0.08] bg-[#fbfbff]/70 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-900/70">
         {/* Фиксированная высота, не «по содержимому»: навбар всегда одной
             высоты, чем бы ни был заполнен — 4.5rem на телефоне, 5rem от sm. */}
         <nav className="flex h-[4.5rem] items-center justify-between gap-3 px-4 sm:h-20 sm:px-5">
@@ -230,20 +243,20 @@ export function Navbar() {
               data-page-transition="true"
               className="flex shrink-0 items-center gap-2.5"
             >
-              {/* Знак — тот же, что фавиконка (F2, 16.11): кремовый
-                  цветок на оранжевом квадрате. */}
-              <span className="grid size-10 place-items-center rounded-[22%] bg-[#ff6900]">
-                <PixelFlower palette="cream" colors={YELLOW_CENTER} className="size-8" />
-              </span>
-              <span className={`${displayFont.className} hidden text-lg tracking-tight text-orange-500 sm:inline`}>
+              {/* Знак — общий с футером (brand/SiteMark.tsx). */}
+              <SiteMark />
+              <span className={`${displayFont.className} hidden text-lg tracking-tight text-[#ff6900] sm:inline`}>
                 SouCampus
               </span>
             </Link>
 
             <div className="hidden items-center gap-1 min-[760px]:flex">
               {GROUPS.map((g) => {
-                const inGroup =
-                  g.key === "market" ? isMarketplaceActive : !isMarketplaceActive && g.items.some((i) => isActive(i.href, pathname));
+                const inGroup = isHelpPage(pathname)
+                  ? false
+                  : g.key === "market"
+                    ? isMarketplaceActive
+                    : !isMarketplaceActive && g.items.some((i) => isActive(i.href, pathname));
                 return (
                   <div key={g.key} className="relative">
                     <button
@@ -253,7 +266,7 @@ export function Navbar() {
                       className={`flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
                         inGroup || group === g.key
                           ? g.on
-                          : "text-zinc-600 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50"
+                          : "text-zinc-800 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50"
                       }`}
                     >
                       <span className={`size-2 rounded-full ${g.dot}`} aria-hidden />
@@ -272,7 +285,10 @@ export function Navbar() {
           </div>
 
           {/* Правая часть, десктоп: сообщения, колокол, корзина, аккаунт, кнопка. */}
-          <div className="hidden shrink-0 items-center gap-1 text-zinc-700 dark:text-zinc-200 min-[760px]:flex">
+          {/* self-stretch: колонка на всю высоту навбара, чтобы «top-full»
+              у меню аккаунта значил низ пилюли, а не низ ряда иконок —
+              иначе меню вылезало поверх нижнего края навбара (17.11). */}
+          <div className="hidden shrink-0 items-center gap-1 self-stretch text-zinc-800 dark:text-zinc-200 min-[760px]:flex">
             <button
               type="button"
               disabled
@@ -304,7 +320,9 @@ export function Navbar() {
               avatarUrl={avatarUrl}
               profileHref={ownProfileHref}
               onLogout={handleLogout}
-              showName={false}
+              // Ник рядом с аватаром, как было до 16.11 (владелец 17.11: «ник
+              // не в навбаре — странное решение, верни»).
+              showName
             />
             {/* «Order a map» и /contact (26.08, подтверждено 16.11): надпись
                 говорит, что человек получит, и совпадает с кнопкой в hero.
@@ -315,7 +333,7 @@ export function Navbar() {
           </div>
 
           {/* Телефон: колокол, корзина, аккаунт и гамбургер с группами. */}
-          <div className="flex items-center gap-1 text-zinc-700 dark:text-zinc-200 min-[760px]:hidden">
+          <div className="flex items-center gap-1 text-zinc-800 dark:text-zinc-200 min-[760px]:hidden">
             {accountReady ? (
               <NotificationsBell userId={user?.id ?? null} size={24} />
             ) : (
@@ -373,7 +391,7 @@ export function Navbar() {
             >
               <div className="space-y-3 p-3">
                 {GROUPS.map((g) => (
-                  <GroupItems key={g.key} group={g} pathname={pathname} onPick={() => setOpen(false)} />
+                  <GroupItems key={g.key} group={g} pathname={pathname} onPick={() => setOpen(false)} withLabel />
                 ))}
                 <Button href="/contact" variant="primary" size="sm" pageTransition className="w-full">
                   Order a map
@@ -403,12 +421,31 @@ export function Navbar() {
  * она слева). Активный пункт — цветная черта слева. Без анимаций.
  * Одна разметка и для панели на десктопе, и для гамбургера.
  */
-function GroupItems({ group, pathname, onPick }: { group: NavGroup; pathname: string; onPick: () => void }) {
+// Шапка панели (17.11, владелец): на десктопе — не название группы (оно
+// уже написано на кнопке, которую нажали), а что эта сторона значит. В
+// мобильном меню кнопок нет и обе группы идут подряд, поэтому там
+// название остаётся, а подпись — рядом с ним.
+function GroupItems({
+  group,
+  pathname,
+  onPick,
+  withLabel = false,
+}: {
+  group: NavGroup;
+  pathname: string;
+  onPick: () => void;
+  withLabel?: boolean;
+}) {
   return (
     <div>
-      <p className="flex items-center gap-2 px-3 pb-2 pt-1 text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
-        <span className={`size-1.5 rounded-full ${group.dot}`} aria-hidden />
-        {group.label}
+      <p className="flex items-center gap-2 px-3 pb-2 pt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <span className={`size-1.5 shrink-0 rounded-full ${group.dot}`} aria-hidden />
+        {withLabel && (
+          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+            {group.label} ·
+          </span>
+        )}
+        {group.about}
       </p>
       <ul className="space-y-1">
         {group.items.map((item) => {
@@ -518,7 +555,7 @@ function AccountMenu({
         href="/login"
         aria-label="Sign in"
         title="Sign in"
-        className="flex items-center justify-center rounded-full p-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+        className="flex items-center justify-center rounded-full p-2 text-zinc-800 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
       >
         <UserCircle size={22} />
       </Link>
@@ -531,11 +568,13 @@ function AccountMenu({
         href={profileHref}
         title={displayName}
         aria-label={showName ? undefined : "My profile"}
-        className={`flex max-w-[11rem] items-center rounded-full py-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50 ${
-          showName ? "gap-2 px-2.5" : "px-2"
+        className={`flex max-w-[11rem] items-center rounded-full py-2 text-zinc-800 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50 ${
+          // pr больше pl: у аватара свои прозрачные поля, и при равных
+          // отступах справа казалось тесно (владелец 17.11).
+          showName ? "gap-1.5 pl-2 pr-4" : "px-2"
         }`}
       >
-        <Avatar avatarUrl={avatarUrl ?? null} size={22} />
+        <Avatar avatarUrl={avatarUrl ?? null} size={28} />
         {showName && (
           <span className="truncate text-sm font-medium" style={nameColorStyle(nameColor)}>
             {displayName}
@@ -543,6 +582,11 @@ function AccountMenu({
         )}
       </Link>
 
+      {/* Меню — вплотную к нижнему краю навбара, без зазора (владелец 17.11,
+          третий заход: 14px и 6px — «гап всё ещё есть»). top-full считается
+          от колонки во всю высоту навбара (self-stretch выше), поэтому это
+          и есть низ пилюли. left-0: меню начинается от левого края кнопки
+          профиля и, будучи шире, выступает вправо (владелец 17.11). */}
       <div className="invisible absolute left-0 top-full z-50 w-max opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
         {/* Без вертикального паддинга: py-1 оставлял 4px фона над первым и
             под последним пунктом, из-за чего их подсветка при наведении не

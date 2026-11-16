@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { FAQ_ITEMS, FAQ_SECTIONS } from "@/lib/faq";
+import { CONTACT_FAQ, CONTACT_FAQ_QUESTIONS, FAQ_ITEMS, FAQ_SECTIONS } from "@/lib/faq";
 import { WIKI_ARTICLES } from "@/lib/wiki";
 
 describe("FAQ", () => {
@@ -36,5 +36,11 @@ describe("FAQ", () => {
       if (!item.link) continue;
       expect(item.link.href.startsWith("/") && !item.link.href.startsWith("//")).toBe(true);
     }
+  });
+
+  // /contact берёт вопросы из FAQ по тексту. Переименовал вопрос здесь —
+  // он молча пропал бы с /contact; тест не даёт.
+  it("все вопросы для /contact есть в FAQ", () => {
+    expect(CONTACT_FAQ.map((item) => item.question)).toEqual([...CONTACT_FAQ_QUESTIONS]);
   });
 });
