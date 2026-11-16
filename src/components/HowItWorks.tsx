@@ -71,8 +71,9 @@ function useScrollStep() {
   return { ref, step };
 }
 
-// showContact — шестой пункт «Your map is next» с кнопкой Contact me (17.11,
-// владелец; только на главной: на самой /contact она вела бы туда же).
+// Шестой пункт «Your map is next» — везде (17.11, владелец). showContact —
+// кнопка Contact me под ним: только на главной, на самой /contact она вела
+// бы на ту же страницу.
 export function HowItWorks({ showContact = false }: { showContact?: boolean }) {
   const { ref, step } = useScrollStep();
   return (
@@ -127,8 +128,7 @@ export function HowItWorks({ showContact = false }: { showContact?: boolean }) {
               цифрами»). Та же разметка, что у шага, номер тем же синим;
               всегда яркий — прокрутка его не приглушает. Кнопка tertiary,
               синяя, как ссылки секции на /contact. */}
-          {showContact && (
-            <div className="flex gap-3">
+          <div className="flex gap-3">
               <span className="w-10 shrink-0 text-2xl font-bold tabular-nums text-blue-800 dark:text-blue-400">
                 06
               </span>
@@ -140,18 +140,19 @@ export function HowItWorks({ showContact = false }: { showContact?: boolean }) {
                 <p className="mt-1 max-w-xs text-sm text-zinc-700 dark:text-zinc-300">
                   One message is all it takes to start.
                 </p>
-                <Button
-                  href="/contact"
-                  variant="tertiary"
-                  pageTransition
-                  className="mt-1"
-                  colorClassName={`text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 ${TERTIARY_UNDERLINE}`}
-                >
-                  Contact me
-                </Button>
+                {showContact && (
+                  <Button
+                    href="/contact"
+                    variant="tertiary"
+                    pageTransition
+                    className="mt-1"
+                    colorClassName={`text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 ${TERTIARY_UNDERLINE}`}
+                  >
+                    Contact me
+                  </Button>
+                )}
               </div>
             </div>
-          )}
           </div>
         </div>
       </div>
