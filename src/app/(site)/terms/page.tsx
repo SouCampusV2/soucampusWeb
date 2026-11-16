@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { ChatsCircle, FileText } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { BASE_RATE } from "@/lib/pricing";
-import { HELP_BODY, HELP_CARD, HELP_CARD_TITLE, HELP_CARDS, HELP_H2, HelpPageHeader } from "@/components/HelpTabs";
+import { HELP_BODY, HELP_CARD, HELP_CARDS, HELP_CARD_TITLE, HELP_DOT, HELP_H2, HELP_ICON, HELP_LINK, HelpPageHeader } from "@/components/HelpTabs";
 import { ArticleBody } from "@/components/ArticleBody";
 import { getWikiArticle } from "@/lib/wiki";
 import { SUPPORT_EMAIL } from "@/lib/site";
@@ -136,7 +136,7 @@ export default function TermsPage() {
               The same text lives in the{" "}
               <Link
                 href="/wiki/using-a-map-you-bought"
-                className="font-medium text-orange-500 transition-colors hover:text-orange-600"
+                className={HELP_LINK}
               >
                 wiki
               </Link>
@@ -161,7 +161,7 @@ export default function TermsPage() {
             moment your payment goes through. Before paying, you tick a box
             that reads:
           </p>
-          <blockquote className="border-l-4 border-orange-400 pl-4 text-zinc-950 dark:text-zinc-50">
+          <blockquote className="border-l-4 border-blue-400 pl-4 text-zinc-950 dark:text-zinc-50">
             {WAIVER_TEXT}
           </blockquote>
           <p>
@@ -178,7 +178,7 @@ export default function TermsPage() {
             listing describes, write to{" "}
             <a
               href={`mailto:${SUPPORT_EMAIL}`}
-              className="font-medium text-orange-500 transition-colors hover:text-orange-600"
+              className={HELP_LINK}
             >
               {SUPPORT_EMAIL}
             </a>
@@ -197,7 +197,7 @@ export default function TermsPage() {
             comes back. The details are in the{" "}
             <Link
               href="/faq#ordering"
-              className="font-medium text-orange-500 transition-colors hover:text-orange-600"
+              className={HELP_LINK}
             >
               FAQ
             </Link>
@@ -232,7 +232,7 @@ export default function TermsPage() {
       {/* Две карточки в ряд (17.11): что ещё пишется — и что уже есть. */}
       <section className={HELP_CARDS}>
         <div className={HELP_CARD}>
-          <FileText size={32} className="text-orange-400" weight="duotone" />
+          <FileText size={32} className={HELP_ICON} weight="duotone" />
           <h2 className={HELP_CARD_TITLE}>Commission terms — coming soon</h2>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
             Full terms for custom commissions are being written. Until then,
@@ -241,7 +241,7 @@ export default function TermsPage() {
           <ul className="mt-6 space-y-2 border-t border-zinc-200 pt-6 text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
             {SECTIONS.map((section) => (
               <li key={section} className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
+                <span className={`h-1.5 w-1.5 rounded-full ${HELP_DOT}`} />
                 {section}
               </li>
             ))}
@@ -251,7 +251,7 @@ export default function TermsPage() {
         {/* Как устроен сам заказ через тикет — уже написано (26.10):
             отдельная страница, на неё ссылается и панель бота. */}
         <div className={HELP_CARD}>
-          <ChatsCircle size={32} className="text-orange-400" weight="duotone" />
+          <ChatsCircle size={32} className={HELP_ICON} weight="duotone" />
           <h2 className={HELP_CARD_TITLE}>Ordering through Discord</h2>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
             How our Discord tickets work — quotes, payment, delivery and
@@ -259,7 +259,7 @@ export default function TermsPage() {
           </p>
           <Link
             href="/terms/discord"
-            className="mt-6 inline-block font-medium text-orange-500 transition-colors hover:text-orange-600"
+            className={`mt-6 inline-block ${HELP_LINK}`}
           >
             Ordering through Discord →
           </Link>

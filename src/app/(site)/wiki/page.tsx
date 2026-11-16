@@ -42,9 +42,9 @@ export default function WikiIndexPage() {
                 <Link
                   key={article.slug}
                   href={`/wiki/${article.slug}`}
-                  className="group rounded-3xl border border-zinc-200 bg-[#fbfbff] p-6 transition-colors hover:border-orange-500 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-orange-400"
+                  className="group rounded-3xl border border-zinc-200 bg-[#fbfbff] p-6 transition-colors hover:border-blue-500 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-blue-400"
                 >
-                  <h3 className="font-semibold text-zinc-950 group-hover:text-orange-600 dark:text-zinc-50 dark:group-hover:text-orange-400">
+                  <h3 className="font-semibold text-zinc-950 group-hover:text-blue-600 dark:text-zinc-50 dark:group-hover:text-blue-400">
                     {article.title}
                   </h3>
                   <p className="mt-2 text-sm leading-6 text-zinc-600 dark:text-zinc-400">
