@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { FileText, ShieldCheck } from "@phosphor-icons/react/dist/ssr";
-import { HELP_BODY, HELP_CARD, HELP_CARD_TITLE, HELP_CARDS, HELP_H2, HelpPageHeader } from "@/components/HelpTabs";
-import { INLINE_LINK } from "@/components/Button";
+import { HELP_BODY, HELP_CARD, HELP_CARDS, HELP_CARD_TITLE, HELP_DOT, HELP_H2, HELP_ICON, HELP_LINK, HelpPageHeader } from "@/components/HelpTabs";
 import { SITE_NAME, SITE_URL, SUPPORT_EMAIL } from "@/lib/site";
 
 // Политика конфиденциальности.
@@ -326,7 +325,7 @@ export default function PrivacyPage() {
               <ul className="mt-4 space-y-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
                 {section.bullets.map((item) => (
                   <li key={item.term} className="flex gap-3">
-                    <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400" />
+                    <span className={`mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full ${HELP_DOT}`} />
                     <span className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
                       <span className="font-semibold text-zinc-950 dark:text-zinc-50">
                         {item.term}.
@@ -344,12 +343,12 @@ export default function PrivacyPage() {
           условиями покупки. */}
       <section className={HELP_CARDS}>
         <div className={HELP_CARD}>
-          <ShieldCheck size={32} className="text-orange-400" weight="duotone" />
+          <ShieldCheck size={32} className={HELP_ICON} weight="duotone" />
           <h2 className={HELP_CARD_TITLE}>Get in touch</h2>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
             Questions about your data, or a request to see or delete it — write
             to{" "}
-            <a href={`mailto:${SUPPORT_EMAIL}`} className={INLINE_LINK}>
+            <a href={`mailto:${SUPPORT_EMAIL}`} className={HELP_LINK}>
               {SUPPORT_EMAIL}
             </a>
             .
@@ -357,12 +356,12 @@ export default function PrivacyPage() {
         </div>
 
         <div className={HELP_CARD}>
-          <FileText size={32} className="text-orange-400" weight="duotone" />
+          <FileText size={32} className={HELP_ICON} weight="duotone" />
           <h2 className={HELP_CARD_TITLE}>Terms of Service</h2>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
             Pricing, the licence for shop maps, refunds and who you are buying
             from live on the{" "}
-            <Link href="/terms" className={INLINE_LINK}>
+            <Link href="/terms" className={HELP_LINK}>
               Terms of Service
             </Link>{" "}
             page.

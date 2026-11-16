@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Plus } from "@phosphor-icons/react/dist/ssr";
-import { INLINE_LINK } from "@/components/Button";
 import { JsonLd } from "@/components/JsonLd";
-import { HELP_BODY, HELP_H2, HelpPageHeader } from "@/components/HelpTabs";
+import { HELP_BODY, HELP_H2, HELP_LINK, HelpPageHeader } from "@/components/HelpTabs";
 import { FAQ_ITEMS, FAQ_SECTIONS, FAQ_UPDATED } from "@/lib/faq";
 import { SITE_URL } from "@/lib/site";
 
@@ -45,7 +44,7 @@ export default function FaqPage() {
         world, buying maps in the shop, and the Minecraft questions that
         come up along the way. Installing a map, pasting a schematic and
         fixing what looks wrong are walked through in the{" "}
-        <Link href="/wiki" className={INLINE_LINK}>
+        <Link href="/wiki" className={HELP_LINK}>
           Wiki
         </Link>
         .
@@ -84,7 +83,7 @@ export default function FaqPage() {
                       <p>
                         <Link
                           href={item.link.href}
-                          className={INLINE_LINK}
+                          className={HELP_LINK}
                           data-page-transition="true"
                         >
                           {item.link.label} →

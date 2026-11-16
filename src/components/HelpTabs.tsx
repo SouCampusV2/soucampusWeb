@@ -12,8 +12,8 @@ import { PageGlow } from "@/components/PageGlow";
 //     для поиска и читалки;
 //   · вкладки — ячейки вплотную на всю ширину, между ними тёмно-серые
 //     вертикальные разделители, верхней и нижней линии нет, отступы
-//     крупные; активная — зелёная заливка (lime-300), наведение — светло-
-//     зелёный фон, текст тёмный. Отвергнуты по очереди: подчёркивание,
+//     крупные; активная — синяя заливка (blue-300), наведение — светло-
+//     синий фон, текст тёмный. Отвергнуты по очереди: подчёркивание,
 //     блоки с серым фоном, голый оранжевый текст, скруглённые ячейки,
 //     таблица с полной сеткой, ярко- и мягко-оранжевая заливка;
 //   · без волны перехода: она только на страницы студии (PageTransition.tsx);
@@ -33,6 +33,12 @@ const TABS = [
 ] as const;
 
 export type HelpTabId = (typeof TABS)[number]["id"];
+
+/** Ссылка внутри справочной страницы — синяя, в цвет страниц (17.11), а не оранжевый INLINE_LINK. */
+export const HELP_LINK = "font-medium text-blue-600 hover:underline dark:text-blue-400";
+/** Цвет акцентов справочных страниц: иконки карточек, точки списков. */
+export const HELP_ICON = "text-blue-500 dark:text-blue-400";
+export const HELP_DOT = "bg-blue-400";
 
 /** Контейнер тела справочной страницы: та же ширина, что у шапки, разделы через одинаковый зазор. */
 export const HELP_BODY = "mx-auto max-w-6xl space-y-14 px-6 pb-16 sm:pb-24";
@@ -55,8 +61,9 @@ export function HelpTabs({ active }: { active: HelpTabId }) {
       {/* 17.11, шестой заход (владелец): без верхней и нижней линии —
           только вертикальные разделители между ячейками, тёмно-серые
           (zinc-500). Соседние рамки ложатся в одну приёмом «-1px» по
-          горизонтали. Активная — зелёная (lime): оранжевый на сайте —
-          цвет главных кнопок, и вкладка в нём спорила бы с ними. */}
+          горизонтали. Активная — синяя: справочные страницы целиком
+          синие (владелец 17.11 — свечение, вкладки, ссылки; до этого были
+          зелёная и оранжевая вкладки). */}
       <ul className="grid grid-cols-2 pl-px lg:grid-cols-4">
         {TABS.map((tab) => {
           const on = tab.id === active;
@@ -67,8 +74,8 @@ export function HelpTabs({ active }: { active: HelpTabId }) {
                 aria-current={on ? "page" : undefined}
                 className={`relative block border-x px-4 py-6 text-center text-lg font-extrabold tracking-tight text-zinc-900 transition-colors sm:py-8 sm:text-xl lg:text-2xl ${
                   on
-                    ? "z-10 border-lime-400 bg-lime-300 dark:border-lime-700 dark:bg-lime-800 dark:text-lime-50"
-                    : "border-zinc-500 hover:bg-lime-100 dark:border-zinc-500 dark:text-zinc-100 dark:hover:bg-lime-950"
+                    ? "z-10 border-blue-400 bg-blue-300 dark:border-blue-700 dark:bg-blue-800 dark:text-blue-50"
+                    : "border-zinc-500 hover:bg-blue-100 dark:border-zinc-500 dark:text-zinc-100 dark:hover:bg-blue-950"
                 }`}
               >
                 {tab.label}
@@ -97,7 +104,7 @@ export function HelpPageHeader({
 }) {
   return (
     <section className="relative mx-auto max-w-6xl px-6 pb-10 pt-20 sm:pb-14">
-      <PageGlow color="rgba(251,146,60,0.35)" />
+      <PageGlow color="rgba(59,130,246,0.35)" />
       <HelpTabs active={active} />
       <h1 className="sr-only">{title}</h1>
       <p className="mt-8 max-w-3xl text-zinc-600 dark:text-zinc-400">{children}</p>
