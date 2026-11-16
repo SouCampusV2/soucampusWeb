@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Unbounded } from "next/font/google";
 import { Plus } from "@phosphor-icons/react/dist/ssr";
 import { INLINE_LINK } from "@/components/Button";
 import { JsonLd } from "@/components/JsonLd";
-import { PageGlow } from "@/components/PageGlow";
-import { FAQ_ITEMS, FAQ_SECTIONS } from "@/lib/faq";
+import { HELP_BODY, HELP_H2, HelpPageHeader } from "@/components/HelpTabs";
+import { FAQ_ITEMS, FAQ_SECTIONS, FAQ_UPDATED } from "@/lib/faq";
 import { SITE_URL } from "@/lib/site";
 
-// Тот же дисплейный шрифт, что у остальных заголовков сайта.
-const displayFont = Unbounded({
-  weight: "800",
-  subsets: ["latin"],
-});
 
 export const metadata: Metadata = {
   title: "FAQ",
@@ -41,34 +35,26 @@ export default function FaqPage() {
   return (
     // Клип на полноширинном <main>, ограничение ширины — на секциях
     // внутри: требование PageGlow.
-    <main className="relative w-full overflow-x-clip px-6">
+    <main className="relative w-full overflow-x-clip">
       <JsonLd data={FAQ_JSON_LD} />
 
-      <section className="relative mx-auto max-w-3xl pb-8 pt-20 sm:pb-12">
-        <PageGlow color="rgba(251,146,60,0.35)" />
-        <span className="text-sm font-semibold text-orange-500">FAQ</span>
-        <h1
-          className={`${displayFont.className} mt-3 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
-        >
-          Questions, answered
-        </h1>
-        <p className="mt-4 text-zinc-600 dark:text-zinc-400">
-          How a commission works from the first message to the delivered
-          world, and the Minecraft questions that come up along the way.
-          Step-by-step guides live in the{" "}
-          <Link href="/wiki" className={INLINE_LINK} data-page-transition="true">
-            wiki
-          </Link>
-          .
-        </p>
-      </section>
+      {/* Шапка общая для четырёх справочных страниц (HelpTabs.tsx): вкладки
+          вместо видимого h1, абзац, дата. Отступы — там, не здесь. */}
+      <HelpPageHeader active="faq" title="FAQ" updated={FAQ_UPDATED}>
+        How a commission works from the first message to the delivered
+        world, buying maps in the shop, and the Minecraft questions that
+        come up along the way. Installing a map, pasting a schematic and
+        fixing what looks wrong are walked through in the{" "}
+        <Link href="/wiki" className={INLINE_LINK}>
+          Wiki
+        </Link>
+        .
+      </HelpPageHeader>
 
-      <div className="mx-auto max-w-3xl space-y-14 pb-16 sm:pb-24">
+      <div className={HELP_BODY}>
         {FAQ_SECTIONS.map((section) => (
           <section key={section.id} id={section.id} className="scroll-mt-24">
-            {/* Заголовок раздела длинного документа — без sm:-шага, как в
-                /wiki и /privacy (DESIGN.md → «Типографика»). */}
-            <h2 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
+            <h2 className={HELP_H2}>
               {section.title}
             </h2>
 

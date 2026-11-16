@@ -173,10 +173,10 @@ const SECTIONS: Section[] = [
 
 export default function DiscordTermsPage() {
   return (
-    // Та же колонка max-w-3xl, что у /terms и /privacy (24.09): три
+    // Та же ширина max-w-6xl, что у /terms и /privacy (с 17.11; до — 3xl): три
     // юридические страницы выглядят одной семьёй.
     <main className="relative w-full overflow-x-clip px-6">
-      <section className="relative mx-auto max-w-3xl pb-8 pt-20 sm:pb-16">
+      <section className="relative mx-auto max-w-6xl pb-8 pt-20 sm:pb-16">
         <PageGlow color="rgba(251,146,60,0.35)" />
         <span className="text-sm font-semibold text-orange-500">Legal</span>
         <h1
@@ -195,7 +195,7 @@ export default function DiscordTermsPage() {
         </p>
       </section>
 
-      <section className="mx-auto max-w-3xl pb-10">
+      <section className="mx-auto max-w-6xl pb-10">
         <ol className="space-y-2">
           {SECTIONS.map((section, index) => (
             <li key={section.id} id={section.id} className="scroll-mt-24 py-6">
@@ -218,7 +218,7 @@ export default function DiscordTermsPage() {
         </ol>
       </section>
 
-      <section className="mx-auto max-w-3xl pb-16 sm:pb-28">
+      <section className="mx-auto max-w-6xl pb-16 sm:pb-28">
         <div className="rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-900 sm:p-12">
           <DiscordLogo size={32} className="text-orange-400" weight="duotone" />
           <h2 className="mt-4 text-lg font-semibold text-zinc-950 dark:text-zinc-50">

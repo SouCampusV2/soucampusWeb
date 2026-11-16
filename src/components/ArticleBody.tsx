@@ -26,14 +26,25 @@ import { TERTIARY_COLORS, TERTIARY_UNDERLINE } from "@/components/Button";
 //           рамку без единой ошибки.
 // Разница между steps и list не косметическая: перепутав их, мы говорим
 // «делай в любом порядке» там, где порядок обязателен.
-export function ArticleBody({ sections }: { sections: ArticleSection[] }) {
+//
+// nested (17.11): тело вложено в раздел чужой страницы — лицензия на /terms
+// под своим h2 «Licence: …». Тогда заголовки разделов статьи — h3 и
+// мельче, иначе «You can» стоял бы вровень с заголовком самого раздела.
+export function ArticleBody({ sections, nested = false }: { sections: ArticleSection[]; nested?: boolean }) {
+  const Heading = nested ? "h3" : "h2";
   return (
-    <div className="mt-10 space-y-12">
+    <div className={nested ? "mt-4 space-y-8" : "mt-10 space-y-12"}>
       {sections.map((section) => (
         <section key={section.heading}>
-          <h2 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
+          <Heading
+            className={
+              nested
+                ? "text-lg font-semibold text-zinc-950 dark:text-zinc-50"
+                : "text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50"
+            }
+          >
             {section.heading}
-          </h2>
+          </Heading>
 
           <div className="mt-4 space-y-4">
             {section.blocks.map((block, index) => {

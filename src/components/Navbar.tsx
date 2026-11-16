@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import type { User } from "@supabase/supabase-js";
 import { Unbounded } from "next/font/google";
@@ -11,23 +11,63 @@ import {
   ShoppingCart,
   ChatCircleDots,
   UserCircle,
+  Bell,
+  CaretDown,
+  House,
+  Briefcase,
+  User as UserIcon,
+  EnvelopeSimple,
+  Storefront,
+  Sparkle,
+  BookOpen,
+  Lifebuoy,
+  Question,
+  type Icon,
 } from "@phosphor-icons/react";
 import { Avatar } from "@/components/Avatar";
 import { Button } from "@/components/Button";
 import { Skeleton } from "@/components/Skeleton";
-import { NAV_LINKS } from "@/lib/site";
+import { SiteMark } from "@/components/brand/SiteMark";
 import { isMarketplaceRoute } from "@/lib/marketplace-routes";
 import { useCart } from "@/lib/cart-context";
+import { useDismiss } from "@/lib/useDismiss";
 import { useLogout } from "@/lib/useLogout";
 import { useUser } from "@/lib/useUser";
 import { CREATOR_SIGNUPS_OPEN } from "@/lib/flags";
-import { SHOP_NAV_LINKS } from "@/lib/products";
 import { creatorHref } from "@/lib/creators";
 import { isPaletteColor, nameColorStyle } from "@/lib/name-colors";
 
-// Колокол — отдельным чанком: он есть только в режиме магазина, а тянет
-// за собой клиент Supabase и Realtime. Статический импорт клал их в
-// бандл каждой страницы, включая лендинг (25.09).
+// ── Навбар с 16.11: группы, как в админке ──────────────────────────────
+// Выбран в лаборатории бренда (вариант Н1·1, docs/BRAND-IDEAS.md):
+//   · слева знак SouCampus — кремовый пиксельный цветок с жёлтой
+//     серединкой на оранжевом квадрате, как фавиконка — и ник оранжевым;
+//     всегда ведут на главную. Знак слева от ника, как во вкладке браузера;
+//   · группы Studio и Marketplace раскрываются панелью — как AdminNav:
+//     заголовок капсом с точкой, у пункта название и пояснение, иконка
+//     справа, без анимаций (владельцу не нравится движение стрелок).
+//     Открытая группа подсвечена своим цветом — лайм или оранжевый, не серым;
+//   · справа ВСЕГДА сообщения, уведомления, корзина, аккаунт и последней
+//     кнопка «Order a map».
+//
+// ⚠️ Это сознательно ОТМЕНЯЕТ прежние решения, записанные здесь раньше:
+//   · «два навбара — студийный и магазинный, содержимое меняется
+//     целиком» (с 27.07) — теперь навбар один на весь сайт, обе стороны —
+//     группы в нём;
+//   · «в студийном навбаре нет корзины и аккаунта» (28.08, 05.09) —
+//     владелец 16.11: корзина, уведомления, сообщения и аккаунт всегда;
+//   · «лого в магазине ведёт на витрину» (20.08) — теперь всегда на "/":
+//     дверь в магазин есть всегда, это группа Marketplace.
+// Остаётся в силе: надпись «Order a map» и адрес /contact (26.08,
+// подтверждено 16.11), стрелки у кнопки нет (она никуда не уводит).
+//
+// Скорость главной (вариант «а», решение владельца 16.11). Аккаунт на
+// студийной стороне требует клиента Supabase (~64 КиБ), а главная его
+// намеренно не грузила (замер 25.09, docs/PERF.md). Поэтому вне магазина
+// он подтягивается, когда браузер освободился после показа страницы
+// (useIdle ниже); до этого — заглушка-кружок вместо аватара и простая
+// иконка вместо колокола. В магазине — сразу, как раньше.
+
+// Колокол — отдельным чанком: тянет клиент Supabase и Realtime (25.09).
 const NotificationsBell = dynamic(() =>
   import("@/components/NotificationsBell").then((m) => m.NotificationsBell),
 );
@@ -38,15 +78,113 @@ const displayFont = Unbounded({
   subsets: ["latin"],
 });
 
+type NavItem = { href: string; label: string; hint: string; icon: Icon };
+type NavGroup = {
+  key: string;
+  /** Что это за сторона сайта — подпись в раскрытой панели вместо повтора названия группы. */
+  about: string;
+  label: string;
+  dot: string;
+  icon: string;
+  bar: string;
+  /** Подсветка кнопки группы, когда вы в ней или она раскрыта — цветом группы, а не серым (16.11). */
+  on: string;
+  /** Волна PageTransition на ссылках группы: на студийной стороне есть, внутри магазина нет. */
+  wave: boolean;
+  items: NavItem[];
+};
+
+// Состав групп — со слов владельца 16.11. Contact — только в Studio (из
+// Marketplace убран тем же днём); FAQ — в обеих: на /faq есть разделы и
+// про заказы, и про карты магазина, подписи у пунктов поэтому разные.
+const GROUPS: NavGroup[] = [
+  {
+    key: "studio",
+    label: "Studio",
+    about: "Custom builds made to order",
+    dot: "bg-lime-500",
+    icon: "text-lime-700 dark:text-lime-400",
+    bar: "border-lime-500",
+    on: "bg-lime-400/25 text-lime-900 dark:bg-lime-400/15 dark:text-lime-200",
+    wave: true,
+    items: [
+      { href: "/", label: "Home", hint: "The studio at a glance", icon: House },
+      { href: "/portfolio", label: "Portfolio", hint: "Builds made to order", icon: Briefcase },
+      { href: "/about", label: "About me", hint: "Who builds them", icon: UserIcon },
+      { href: "/contact", label: "Contact", hint: "Order a custom build", icon: EnvelopeSimple },
+      { href: "/faq", label: "FAQ", hint: "Commissions, prices, timelines", icon: Question },
+    ],
+  },
+  {
+    key: "market",
+    label: "Marketplace",
+    about: "Ready maps to buy and download",
+    dot: "bg-orange-500",
+    icon: "text-orange-600 dark:text-orange-400",
+    bar: "border-orange-500",
+    on: "bg-orange-400/25 text-orange-900 dark:bg-orange-400/15 dark:text-orange-200",
+    wave: false,
+    items: [
+      { href: "/marketplace", label: "Maps", hint: "Ready maps to download", icon: Storefront },
+      { href: "/updates", label: "What's new", hint: "Latest changes on the site", icon: Sparkle },
+      { href: "/wiki", label: "Wiki", hint: "How to install a map", icon: BookOpen },
+      { href: "/support", label: "Support", hint: "Help with a purchase", icon: Lifebuoy },
+      { href: "/faq", label: "FAQ", hint: "Buying and using maps", icon: Question },
+    ],
+  },
+];
+
+
+const GLASS =
+  "rounded-3xl border border-white/60 bg-[#fbfbff]/95 shadow-xl shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-zinc-900/95";
+
+// Справочные страницы под вкладками HelpTabs. На них ни одна группа не
+// подсвечена (решение 17.11): они общие для студии и магазина — FAQ стоит
+// в обеих группах, Terms и Privacy ни в одной, — и раньше /faq подсвечивал
+// Studio, /wiki — Marketplace, а /terms ничего. Где ты — видно по вкладкам.
+const HELP_PAGES = ["/faq", "/wiki", "/terms", "/privacy"];
+
+function isHelpPage(pathname: string) {
+  return HELP_PAGES.some((p) => pathname === p || pathname.startsWith(`${p}/`));
+}
+
+/** Пункт активен на своей странице и на вложенных (/wiki/…, /portfolio/…). "/" — только сама главная. */
+function isActive(href: string, pathname: string) {
+  return href === "/" ? pathname === "/" : pathname === href || pathname.startsWith(`${href}/`);
+}
+
+/**
+ * true, когда браузер освободился после первой отрисовки. Нужен, чтобы
+ * клиент Supabase не грузился на студийной стороне вместе со страницей
+ * (см. шапку файла). Safari без requestIdleCallback — запасной таймер.
+ */
+function useIdle() {
+  const [idle, setIdle] = useState(false);
+  useEffect(() => {
+    if ("requestIdleCallback" in window) {
+      const id = window.requestIdleCallback(() => setIdle(true), { timeout: 3000 });
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = globalThis.setTimeout(() => setIdle(true), 1500);
+    return () => globalThis.clearTimeout(id);
+  }, []);
+  return idle;
+}
+
 export function Navbar() {
   const [open, setOpen] = useState(false);
+  // Какая группа раскрыта на десктопе.
+  const [group, setGroup] = useState<string | null>(null);
+  const groupsRef = useRef<HTMLDivElement>(null);
+  useDismiss(groupsRef, () => setGroup(null), { enabled: group !== null });
   const pathname = usePathname();
   const [prevPathname, setPrevPathname] = useState(pathname);
   const { count } = useCart();
-  // Аккаунт навбар показывает только в режиме магазина — там и спрашиваем
-  // Supabase. На студийной стороне хук молчит, и клиент Supabase на
-  // лендинг не грузится вовсе (замер 25.09, docs/PERF.md).
-  const { user, loading: userLoading } = useUser(isMarketplaceRoute(pathname));
+  const isMarketplaceActive = isMarketplaceRoute(pathname);
+  const idle = useIdle();
+  // В магазине аккаунт нужен сразу, на студийной стороне — после простоя.
+  const accountReady = isMarketplaceActive || idle;
+  const { user, loading: userLoading } = useUser(accountReady);
 
   const logout = useLogout();
 
@@ -56,431 +194,209 @@ export function Navbar() {
   }
 
   // Ник и аватар — из user_metadata (их синхронизирует ProfileEditForm),
-  // чтобы навбар не ходил в БД на каждой странице.
-  // Одно имя на всё (миграция 20260821150000): им подписан профиль, из
-  // него же строится ссылка. display_name читаем запасным вариантом —
-  // у вкладок, открытых до деплоя, в метаданных лежит только он.
+  // чтобы навбар не ходил в БД на каждой странице. Одно имя на всё
+  // (миграция 20260821150000); display_name — запасной вариант для
+  // вкладок, открытых до деплоя.
   const displayName =
     (user?.user_metadata?.username as string | undefined) ??
     (user?.user_metadata?.display_name as string | undefined) ??
     user?.email;
   const avatarUrl = user?.user_metadata?.avatar_url as string | undefined;
-  // Цвет ника — тоже копия в user_metadata (кладёт ProfileEditForm), по той
-  // же причине: без похода в базу. Метаданные человек может переписать сам,
-  // но этот ник видит только он же, поэтому проверка — лишь «цвет из
-  // палитры», а не «купил ли». Право на цвет стережёт база (protect_name_color).
+  // Цвет ника — копия в user_metadata. Ник видит только сам человек,
+  // поэтому проверка — лишь «цвет из палитры»; право на цвет стережёт
+  // база (protect_name_color).
   const metaColor = user?.user_metadata?.name_color as string | undefined;
   const nameColor = isPaletteColor(metaColor ?? null) ? metaColor : undefined;
 
-  // Ссылка на СВОЙ публичный профиль — /@<username>.
-  //
-  // Раньше здесь стоял захардкоженный /creator/soucampus, из-за чего
-  // любой залогиненный уходил на витрину бренда (баг владельца
-  // 2026-07-27).
-  //
-  // Метаданные, а не запрос в БД: навбар рисуется на каждой странице, и
-  // поход в базу ради одной ссылки стоил бы дороже всего остального
-  // навбара. Копию имени кладут туда форма настроек и регистрация.
-  // У аккаунта, который с 21.08 ещё не сохранялся, копии нет — тогда
-  // ведём на /profile: это в любом случае своя страница, просто личная
-  // вместо публичной.
-  //
-  // toLowerCase: имя хранится как введено («SouCampus»), адрес строчный.
+  // Ссылка на СВОЙ публичный профиль — /@<username> (до 27.07 тут был
+  // захардкоженный /creator/soucampus). Без копии имени в метаданных —
+  // /profile. toLowerCase: имя хранится как введено, адрес строчный.
   const handle =
     (user?.user_metadata?.username as string | undefined) ??
     (user?.user_metadata?.display_name as string | undefined);
   const ownProfileHref = handle ? creatorHref(handle.toLowerCase()) : "/profile";
 
-  // Внутри магазина (каталог, страница товара, корзина, поддержка, а также
-  // вход/регистрация — покупка требует аккаунта, это часть флоу магазина)
-  // содержимое навбара ЗАМЕНЯЕТСЯ целиком: обычные ссылки и "Order now"
-  // уступают место магазинным кнопкам. /cart и /support считаются частью
-  // магазина — тот же навбар, что на /marketplace, а не первоначальный:
-  // посетитель не должен видеть портфолио-навигацию посреди оформления
-  // заказа или обращения в поддержку по купленному товару.
-  // Поиска в пилюле НЕТ (убран 2026-07-30): он переехал на саму витрину
-  // (CategoryFilter), где поле показывает текущий запрос. В навбаре это
-  // было невозможно без того, чтобы утянуть все статические страницы
-  // сайта в клиентский рендер — навбар живёт в layout.
-  // Форма/стекло самой пилюли не меняются — высоту держит фиксированная
-  // h-[…] на <nav> (см. ниже), не кнопка Order now, именно поэтому
-  // переход между режимами не дёргает высоту.
-  // Куда ведёт лого — зависит от режима (изменено 2026-08-20, решение
-  // владельца). Раньше правило было «всегда на "/"», и лого работало
-  // единственной дверью из магазина наружу. Правило родилось 27.07, когда
-  // сайт был портфолио с пристроенным магазином; по docs/BUSINESS.md всё
-  // наоборот — продажа карт основной путь. Выбрасывать покупателя из
-  // корзины на лендинг про заказные постройки значит терять его на
-  // полпути, поэтому в режиме магазина лого ведёт на витрину: "домой" для
-  // него — /marketplace.
-  //
-  // Дверь наружу при этом никуда не делась, иначе получилась бы ловушка:
-  // из магазина не выйти. Её роль перешла к пункту "Studio" в
-  // SHOP_NAV_LINKS (последним в списке) — он же попадает и в мобильное
-  // меню, потому что оба рисуются из одного массива.
-  // Список адресов жил здесь, пока ответ на «это страница магазина?» нужен
-  // был одному навбару. Теперь тот же вопрос задаёт PricingSection, поэтому
-  // список один и лежит в lib/marketplace-routes.ts (там же и почему
-  // вход с кабинетом считаются магазином).
-  const isMarketplaceActive = isMarketplaceRoute(pathname);
-
-  // PageTransition intercepts nav-link clicks in the capture phase and
-  // calls stopPropagation (see PageTransition.tsx) so its own delayed
-  // router.push wins the race against Next's Link — but that also stops
-  // the click from ever reaching this menu's own onClick={() =>
-  // setOpen(false)} on the mobile link, since stopPropagation there halts
-  // propagation before it can reach any bubble-phase handler on the
-  // target. Closing on route change instead sidesteps the click entirely:
-  // whenever the pathname actually changes, the menu closes, regardless of
-  // how the navigation got triggered. Done during render (the "adjusting
-  // state when a prop changes" pattern React recommends), not in a useEffect
-  // — setState synchronously inside an effect body triggers an extra
-  // cascading render for no benefit here.
+  // Меню и панели закрываются при смене адреса, а не по клику:
+  // PageTransition перехватывает клик по ссылке с волной и останавливает
+  // его, и onClick ссылки не срабатывает. Сделано во время рендера
+  // (паттерн «подстроить состояние под смену пропа»), а не в эффекте.
   if (pathname !== prevPathname) {
     setPrevPathname(pathname);
     setOpen(false);
+    setGroup(null);
   }
 
   return (
     <div className="sticky top-4 z-50 px-4">
-      <header className="relative mx-auto max-w-6xl rounded-full border border-zinc-950/[0.06] bg-[#fbfbff]/60 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/60">
-        {/* Фиксированная высота, не "по содержимому": раньше высоту пилюли
-            задавала кнопка Order now (h-12/h-14) + вертикальный паддинг
-            (py-3, ещё 24px) — без кнопки, в режиме магазина, содержимое
-            занимало меньше места, и min-h (без учёта паддинга) этого не
-            перекрывал: сама кнопка "72px = py-3 24px + h-12 48px" всегда
-            была выше, чем формальный минимум. Точное число — то, что
-            раньше получалось само: 4.5rem (72px) мобильный, 5rem (80px)
-            от sm — навбар всегда одной высоты, чем бы ни было заполнено. */}
-        <nav className="flex h-[4.5rem] items-center justify-between gap-4 px-6 sm:h-20">
-          {/* ⚠️ ОБЁРТКА ЕСТЬ ТОЛЬКО В МАГАЗИНЕ, и она несущая, а не
-              декоративная. Чтобы средний блок стоял по центру ПИЛЮЛИ, а
-              не по центру промежутка между соседями, боковые колонки
-              обязаны быть одной ширины — это и делает flex-1 basis-0 с
-              обеих сторон. Без обёртки левая колонка равна ширине слова
-              «SouCampus», правая — пяти иконкам, и центр уезжает влево
-              ровно на половину разницы.
-
-              В портфолио-режиме — display:contents: обёртка исчезает из
-              раскладки целиком, и <nav> видит ссылку своим прямым
-              ребёнком, как было. Там центрировать нечего: у nav трое
-              детей и justify-between уже ставит средний посередине. */}
-          <div
-            className={
-              isMarketplaceActive
-                ? "flex min-w-0 flex-1 basis-0 items-center"
-                : "contents"
-            }
-          >
-            {/* Волна — только на портфолио-стороне. До 2026-08-20 лого в
-                магазине вело на "/", то есть было ВЫХОДОМ наружу, и
-                анимация там была уместна; тогда же адрес сменили на
-                витрину, а атрибут остался безусловным — и лого стало
-                единственной ссылкой магазина, запускающей волну.
-
-                ⚠️ undefined, а не false: PageTransition спрашивает
-                hasAttribute, а false React отрисовал бы строкой "false" —
-                атрибут остался бы на месте и проверка бы его нашла. Тот же
-                приём, что в Button.tsx. */}
+      {/* Пилюля белая полупрозрачная с размытием того, что под ней (17.11,
+          владелец: серая zinc-100/75 от 16.11 не понравилась). Отличать её
+          от белой страницы — дело тонкой рамки и размытия, а не серого фона;
+          текст и иконки зато темнее (zinc-800), чтобы читались. */}
+      <header className="relative mx-auto max-w-6xl rounded-full border border-zinc-950/[0.08] bg-[#fbfbff]/70 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-900/70">
+        {/* Фиксированная высота, не «по содержимому»: навбар всегда одной
+            высоты, чем бы ни был заполнен — 4.5rem на телефоне, 5rem от sm. */}
+        <nav className="flex h-[4.5rem] items-center justify-between gap-3 px-4 sm:h-20 sm:px-5">
+          <div ref={groupsRef} className="flex min-w-0 items-center gap-3 lg:gap-5">
+            {/* Знак и ник — всегда на главную, с волной. */}
             <Link
-              href={isMarketplaceActive ? "/marketplace" : "/"}
-              className={`${displayFont.className} shrink-0 text-lg tracking-tight text-orange-500`}
-              data-page-transition={isMarketplaceActive ? undefined : "true"}
+              href="/"
+              data-page-transition="true"
+              className="flex shrink-0 items-center gap-2.5"
             >
-              SouCampus
+              {/* Знак — общий с футером (brand/SiteMark.tsx). */}
+              <SiteMark />
+              <span className={`${displayFont.className} hidden text-lg tracking-tight text-[#ff6900] sm:inline`}>
+                SouCampus
+              </span>
             </Link>
+
+            <div className="hidden items-center gap-1 min-[760px]:flex">
+              {GROUPS.map((g) => {
+                const inGroup = isHelpPage(pathname)
+                  ? false
+                  : g.key === "market"
+                    ? isMarketplaceActive
+                    : !isMarketplaceActive && g.items.some((i) => isActive(i.href, pathname));
+                return (
+                  <div key={g.key} className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setGroup(group === g.key ? null : g.key)}
+                      aria-expanded={group === g.key}
+                      className={`flex items-center gap-2 rounded-full px-3.5 py-2 text-sm font-medium transition-colors ${
+                        inGroup || group === g.key
+                          ? g.on
+                          : "text-zinc-800 hover:text-zinc-950 dark:text-zinc-300 dark:hover:text-zinc-50"
+                      }`}
+                    >
+                      <span className={`size-2 rounded-full ${g.dot}`} aria-hidden />
+                      {g.label}
+                      <CaretDown size={12} weight="bold" className={group === g.key ? "rotate-180" : ""} aria-hidden />
+                    </button>
+                    {group === g.key && (
+                      <div className={`absolute left-0 top-[calc(100%+14px)] z-50 w-80 p-3 ${GLASS}`}>
+                        <GroupItems group={g} pathname={pathname} onPick={() => setGroup(null)} />
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
-          {isMarketplaceActive ? (
-            <>
-              {/* Категории + Support — навигация магазина. Без
-                  data-page-transition: внутри магазина анимации-волны нет.
-                  Исключение — пункт "Studio" (последний в SHOP_NAV_LINKS),
-                  выход из магазина на сайт студии: у него волна играет, как
-                  у колонки Studio в футере (решение владельца 2026-11-14). */}
-              {/* flex-1 + justify-center — чтобы ссылки стояли ПО ЦЕНТРУ,
-                  как в портфолио-режиме (просьба владельца 2026-08-22).
-                  Раньше стоял shrink-0, и группа прижималась к лого.
+          {/* Правая часть, десктоп: сообщения, колокол, корзина, аккаунт, кнопка. */}
+          {/* self-stretch: колонка на всю высоту навбара, чтобы «top-full»
+              у меню аккаунта значил низ пилюли, а не низ ряда иконок —
+              иначе меню вылезало поверх нижнего края навбара (17.11). */}
+          <div className="hidden shrink-0 items-center gap-1 self-stretch text-zinc-800 dark:text-zinc-200 min-[760px]:flex">
+            <button
+              type="button"
+              disabled
+              title="Messages are coming soon"
+              className="flex cursor-not-allowed items-center justify-center rounded-full p-2"
+            >
+              <ChatCircleDots size={22} />
+            </button>
+            {/* Колокол стоит всегда — иконка, которая то появляется, то
+                нет, дёргала бы соседей. Пока аккаунт не подгружен — просто
+                иконка того же размера. */}
+            {accountReady ? (
+              <NotificationsBell userId={user?.id ?? null} />
+            ) : (
+              <span className="flex items-center justify-center rounded-full p-2" aria-hidden>
+                <Bell size={22} />
+              </span>
+            )}
+            <CartLink
+              count={count}
+              size={22}
+              className="transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+            />
+            <AccountMenu
+              user={user}
+              loading={userLoading}
+              displayName={displayName}
+              nameColor={nameColor}
+              avatarUrl={avatarUrl}
+              profileHref={ownProfileHref}
+              onLogout={handleLogout}
+              // Ник рядом с аватаром, как было до 16.11 (владелец 17.11: «ник
+              // не в навбаре — странное решение, верни»).
+              showName
+            />
+            {/* «Order a map» и /contact (26.08, подтверждено 16.11): надпись
+                говорит, что человек получит, и совпадает с кнопкой в hero.
+                Стрелки нет — кнопка никуда с сайта не уводит. */}
+            <Button href="/contact" variant="primary" size="sm" pageTransition className="ml-1">
+              Order a map
+            </Button>
+          </div>
 
-                  Почему в портфолио это вышло само: там у <nav> трое детей
-                  (лого, список, кнопка) и justify-between — средний оказывается
-                  ровно посередине между крайними. В магазине ссылки и иконки
-                  лежат внутри ОДНОГО ребёнка, то есть среднего детя нет вовсе —
-                  распорка его и заменяет.
-
-                  whitespace-nowrap обязателен: flex-1 разрешает не только расти,
-                  но и сжиматься, а «What’s new» на узком экране порвалось бы
-                  на две строки и раздуло пилюлю по высоте. */}
-              <div className="hidden shrink-0 items-center justify-center gap-1 whitespace-nowrap text-sm font-medium text-zinc-600 dark:text-zinc-300 min-[760px]:flex">
-                {SHOP_NAV_LINKS.map((link) =>
-                  link.soon ? (
-                    <span
-                      key={link.href}
-                      title={link.title}
-                      aria-disabled="true"
-                      className="cursor-not-allowed px-2 py-1.5 text-zinc-400 dark:text-zinc-500"
-                    >
-                      {link.label}
-                    </span>
-                  ) : (
-                    <Link
-                      key={link.href}
-                      href={link.href}
-                      data-page-transition={link.href === "/" ? "true" : undefined}
-                      className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                    >
-                      {link.label}
-                    </Link>
-                  )
-                )}
+          {/* Телефон: колокол, корзина, аккаунт и гамбургер с группами. */}
+          <div className="flex items-center gap-1 text-zinc-800 dark:text-zinc-200 min-[760px]:hidden">
+            {accountReady ? (
+              <NotificationsBell userId={user?.id ?? null} size={24} />
+            ) : (
+              <span className="flex items-center justify-center rounded-full p-2" aria-hidden>
+                <Bell size={24} />
+              </span>
+            )}
+            <CartLink count={count} size={24} />
+            {userLoading ? (
+              <div className="flex items-center justify-center p-2" aria-hidden>
+                <Skeleton className="h-6 w-6 rounded-full" />
               </div>
-
-              {/* Правая колонка. flex-1 basis-0 — тот же вес, что у
-                  колонки с лого: две одинаковые боковые колонки и есть
-                  весь механизм центрирования средней. justify-end
-                  прижимает иконки к краю пилюли. */}
-              <div className="hidden min-w-0 flex-1 basis-0 items-center justify-end gap-3 text-zinc-600 dark:text-zinc-300 min-[760px]:flex">
-                {/* Иконки: gap-1 + p-2 на каждой — крупная зона нажатия. */}
-                <div className="flex shrink-0 items-center gap-1">
-                  <button
-                    type="button"
-                    disabled
-                    title="Messages are coming soon"
-                    className="flex cursor-not-allowed items-center justify-center rounded-full p-2 text-zinc-700 dark:text-zinc-200"
-                  >
-                    <ChatCircleDots size={22} />
-                  </button>
-                  {/* Колокол стоит всегда — и у гостя, и при нуле
-                      уведомлений: иконка, которая то появляется, то нет,
-                      дёргала бы соседние и выглядела бы поломкой. Бейдж
-                      появляется только когда есть что читать. */}
-                  <NotificationsBell userId={user?.id ?? null} />
-                  <CartLink
-                    count={count}
-                    size={22}
-                    className="transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
-                  />
-                  <AccountMenu
-                    user={user}
-                    loading={userLoading}
-                    displayName={displayName}
-                    nameColor={nameColor}
-                    avatarUrl={avatarUrl}
-                    profileHref={ownProfileHref}
-                    onLogout={handleLogout}
-                    showName
-                  />
-                </div>
-              </div>
-            </>
-          ) : (
-            <ul className="ml-6 hidden items-center gap-2 text-sm font-medium text-zinc-600 dark:text-zinc-300 min-[760px]:flex">
-              {NAV_LINKS.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    className="px-2 py-1.5 transition-colors hover:text-zinc-950 dark:hover:text-zinc-50"
-                    data-page-transition="true"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          )}
-
-          {/* Корзина — ТОЛЬКО в режиме магазина (см. правую группу выше).
-              Обычный навбар её не показывает: магазин и портфолио-сайт
-              рекламируются раздельно, корзина не должна маячить, пока
-              посетитель просто листает портфолио. */}
-          {!isMarketplaceActive && (
-            /* ⚠️ АККАУНТА ЗДЕСЬ НЕТ — и это решение, а не пропуск
-               (владелец, 2026-09-05). 01.09 вход в аккаунт сюда добавили
-               по просьбе из TEMP.md 1.8, владелец посмотрел на живом
-               сайте и убрал: аватар в студийном навбаре — не то решение.
-               Вопрос не в кнопке, а в том, как студия и магазин вообще
-               соединяются; владелец продумает это отдельно.
-
-               ⚠️ Не возвращать «заодно» с чем-нибудь другим. Корзины
-               здесь нет по тому же счёту (решение 28.08): студия и
-               магазин рекламируются раздельно, и всё магазинное на этой
-               стороне маячить не должно, пока связь не придумана.
-
-               Компоненты AccountMenu/AccountLinks живы и работают — их
-               рисует режим магазина. Убран вызов, а не механизм. */
-            <div className="hidden items-center gap-1 min-[760px]:flex">
-              {/* «Order a map», а не «Order now», и ведёт на /contact, а не
-                  сразу в Discord (решение владельца 2026-08-26). Надпись
-                  здесь и в hero главной была разной, а обещание одно —
-                  два имени у одного действия читаются как два разных.
-                  Выбрана та, что говорит, ЧТО человек получит.
-
-                  Адрес поменялся вместе с надписью, иначе две одинаковые
-                  кнопки на одном экране (навбар виден и на главной) вели
-                  бы в разные места. /contact держит калькулятор и FAQ —
-                  ответы на «сколько» и «когда» ДО того, как человек
-                  напишет; своя кнопка в Discord там и так стоит
-                  последней. */}
-              {/* ⚠️ Стрелки здесь НЕТ намеренно (решение владельца
-                  2026-08-26, в тот же день, что и её появление). Поворот
-                  на -45 у нас означает «уходишь с сайта» — так он стоит у
-                  «Join Discord» и «Open Discord». Кнопка ведёт на
-                  /contact, то есть никуда не уводит, и стрелка обещала бы
-                  переход, которого не будет. Появится внешний адрес —
-                  вернуть вместе с ним. */}
-              <Button href="/contact" variant="primary" size="sm" pageTransition>
-                Order a map
-              </Button>
-            </div>
-          )}
-
-          {/* Мобильный гамбургер. В обоих режимах: вне магазина открывает
-              обычную навигацию, в магазине — магазинные вкладки (Maps,
-              категории, Support, поиск). Сами дропдауны — ниже, каждый под
-              свой режим. */}
-          {!isMarketplaceActive && (
+            ) : user ? (
+              // Тап по аватару — на СВОЙ публичный профиль; пункты
+              // аккаунта лежат в гамбургере.
+              <Link
+                href={ownProfileHref}
+                aria-label="My profile"
+                title={displayName}
+                className="flex items-center justify-center rounded-full p-2"
+              >
+                <Avatar avatarUrl={avatarUrl ?? null} size={24} />
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                aria-label="Sign in"
+                title="Sign in"
+                className="flex items-center justify-center rounded-full p-2"
+              >
+                <UserCircle size={24} />
+              </Link>
+            )}
             <button
               onClick={() => setOpen((v) => !v)}
-              className="flex h-9 w-9 cursor-pointer flex-col items-center justify-center gap-1.5 min-[760px]:hidden"
+              className="ml-0.5 flex h-9 w-9 cursor-pointer flex-col items-center justify-center gap-1.5"
               aria-label="Toggle menu"
+              aria-expanded={open}
             >
               <HamburgerIcon open={open} />
             </button>
-          )}
-
-          {/* Мобильно, в режиме магазина: корзина + аккаунт (профиль или
-              вход) + гамбургер с магазинной навигацией. Иконки крупнее с
-              зоной нажатия p-2, как на десктопе. */}
-          {isMarketplaceActive && (
-            <div className="flex items-center gap-1 text-zinc-700 dark:text-zinc-200 min-[760px]:hidden">
-              <NotificationsBell userId={user?.id ?? null} size={24} />
-              <CartLink count={count} size={24} />
-
-              {userLoading ? (
-                <div className="flex items-center justify-center p-2" aria-hidden>
-                  <Skeleton className="h-6 w-6 rounded-full" />
-                </div>
-              ) : user ? (
-                // Тап по аватару ведёт на СВОЙ публичный профиль — как
-                // клик по аватару на десктопе. До 26.08 он вёл на
-                // /settings, потому что был единственной дверью в аккаунт
-                // с телефона и приходилось выбирать один пункт из
-                // четырёх. Теперь все четыре лежат в гамбургере (ниже), и
-                // выбирать больше не нужно — два аватара ведут в одно
-                // место.
-                <Link
-                  href={ownProfileHref}
-                  aria-label="My profile"
-                  title={displayName}
-                  className="flex items-center justify-center rounded-full p-2"
-                >
-                  <Avatar avatarUrl={avatarUrl ?? null} size={24} />
-                </Link>
-              ) : (
-                <Link
-                  href="/login"
-                  aria-label="Sign in"
-                  title="Sign in"
-                  className="flex items-center justify-center rounded-full p-2"
-                >
-                  <UserCircle size={24} />
-                </Link>
-              )}
-
-              <button
-                onClick={() => setOpen((v) => !v)}
-                className="ml-0.5 flex h-9 w-9 cursor-pointer flex-col items-center justify-center gap-1.5"
-                aria-label="Toggle menu"
-              >
-                <HamburgerIcon open={open} />
-              </button>
-            </div>
-          )}
+          </div>
         </nav>
 
+        {/* Гамбургер: обе группы подряд, кнопка заказа, аккаунт.
+            absolute + top-[calc(100%+8px)] — карточка под пилюлей, а не
+            сосед в потоке: иначе раскрытие сдвигало бы всю страницу. */}
         <AnimatePresence>
-          {open && !isMarketplaceActive && (
-            /* Снова motion.ul, как было до 01.09. На один день здесь
-               появлялся раздел аккаунта, а он не пункт списка — <div>
-               внутри <ul> невалиден, из-за него список и уезжал на
-               уровень внутрь motion.div. Аккаунт убран (см. десктопную
-               группу выше), лишний уровень вместе с ним. */
-            <motion.ul
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: "auto", opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              // absolute + top-[calc(100%+8px)]: a floating card below the
-              // pill, not a normal-flow sibling — growing/shrinking this no
-              // longer changes the header's own flow height, which is what
-              // was shoving every section on the page down (and briefly
-              // exposing the plain white body background) every time the
-              // menu opened. Its own rounded-3xl card (not flush against
-              // the pill) means the always-`rounded-full` header above
-              // never has to flatten its corners to fit a flush dropdown.
-              className="absolute inset-x-0 top-[calc(100%+8px)] overflow-hidden rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/95 min-[760px]:hidden"
-            >
-              {NAV_LINKS.map((link) => (
-                <li key={link.href}>
-                  <Link
-                    href={link.href}
-                    onClick={() => setOpen(false)}
-                    className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                    data-page-transition="true"
-                  >
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
-              <li className="px-6 py-3">
-                <Button
-                  href="/contact"
-                  variant="primary"
-                  size="sm"
-                  pageTransition
-                  className="w-full"
-                >
-                  Order a map
-                </Button>
-              </li>
-            </motion.ul>
-          )}
-
-          {/* Магазинная выпадашка: те же вкладки, что в пилюле на десктопе
-              (Maps + категории + Support) плюс рабочий поиск. Карта и
-              аккаунт уже в верхней строке — здесь только навигация. */}
-          {open && isMarketplaceActive && (
+          {open && (
             <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              className="absolute inset-x-0 top-[calc(100%+8px)] overflow-hidden rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/95 min-[760px]:hidden"
+              className="absolute inset-x-0 top-[calc(100%+8px)] max-h-[calc(100svh-7rem)] overflow-y-auto rounded-3xl border border-zinc-950/[0.06] bg-[#fbfbff]/95 backdrop-blur-xl dark:border-zinc-50/[0.08] dark:bg-zinc-950/95 min-[760px]:hidden"
             >
-              <ul className="pb-2">
-                {SHOP_NAV_LINKS.map((link) => (
-                  <li key={link.href}>
-                    {link.soon ? (
-                      <span
-                        title={link.title}
-                        aria-disabled="true"
-                        className="block cursor-not-allowed px-6 py-3 text-sm font-medium text-zinc-400 dark:text-zinc-500"
-                      >
-                        {link.label}
-                        <span className="ml-2 text-xs font-normal">soon</span>
-                      </span>
-                    ) : (
-                      <Link
-                        href={link.href}
-                        data-page-transition={link.href === "/" ? "true" : undefined}
-                        onClick={() => setOpen(false)}
-                        className="block px-6 py-3 text-sm font-medium text-zinc-700 dark:text-zinc-300"
-                      >
-                        {link.label}
-                      </Link>
-                    )}
-                  </li>
+              <div className="space-y-3 p-3">
+                {GROUPS.map((g) => (
+                  <GroupItems key={g.key} group={g} pathname={pathname} onPick={() => setOpen(false)} withLabel />
                 ))}
-              </ul>
-
+                <Button href="/contact" variant="primary" size="sm" pageTransition className="w-full">
+                  Order a map
+                </Button>
+              </div>
               <AccountLinks
                 user={user}
                 loading={userLoading}
@@ -495,6 +411,70 @@ export function Navbar() {
           )}
         </AnimatePresence>
       </header>
+    </div>
+  );
+}
+
+/**
+ * Пункты группы — как в AdminNav: заголовок капсом с точкой, у пункта
+ * название и пояснение, иконка справа (просьба владельца 16.11, в админке
+ * она слева). Активный пункт — цветная черта слева. Без анимаций.
+ * Одна разметка и для панели на десктопе, и для гамбургера.
+ */
+// Шапка панели (17.11, владелец): на десктопе — не название группы (оно
+// уже написано на кнопке, которую нажали), а что эта сторона значит. В
+// мобильном меню кнопок нет и обе группы идут подряд, поэтому там
+// название остаётся, а подпись — рядом с ним.
+function GroupItems({
+  group,
+  pathname,
+  onPick,
+  withLabel = false,
+}: {
+  group: NavGroup;
+  pathname: string;
+  onPick: () => void;
+  withLabel?: boolean;
+}) {
+  return (
+    <div>
+      <p className="flex items-center gap-2 px-3 pb-2 pt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        <span className={`size-1.5 shrink-0 rounded-full ${group.dot}`} aria-hidden />
+        {withLabel && (
+          <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
+            {group.label} ·
+          </span>
+        )}
+        {group.about}
+      </p>
+      <ul className="space-y-1">
+        {group.items.map((item) => {
+          const on = isActive(item.href, pathname);
+          return (
+            <li key={item.label}>
+              <Link
+                href={item.href}
+                onClick={onPick}
+                aria-current={on ? "page" : undefined}
+                // ⚠️ undefined, а не false: PageTransition проверяет
+                // hasAttribute, а false React напечатал бы строкой.
+                data-page-transition={group.wave ? "true" : undefined}
+                className={`flex items-center gap-3 rounded-2xl border-l-2 px-3 py-2.5 transition-colors ${
+                  on
+                    ? `${group.bar} bg-zinc-950/[0.05] dark:bg-zinc-50/[0.06]`
+                    : "border-transparent hover:bg-zinc-950/[0.04] dark:hover:bg-zinc-50/[0.05]"
+                }`}
+              >
+                <span className="min-w-0 flex-1">
+                  <span className="block text-sm font-semibold text-zinc-950 dark:text-zinc-50">{item.label}</span>
+                  <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">{item.hint}</span>
+                </span>
+                <item.icon size={20} className={`shrink-0 ${group.icon}`} aria-hidden />
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }
@@ -575,7 +555,7 @@ function AccountMenu({
         href="/login"
         aria-label="Sign in"
         title="Sign in"
-        className="flex items-center justify-center rounded-full p-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
+        className="flex items-center justify-center rounded-full p-2 text-zinc-800 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50"
       >
         <UserCircle size={22} />
       </Link>
@@ -588,11 +568,13 @@ function AccountMenu({
         href={profileHref}
         title={displayName}
         aria-label={showName ? undefined : "My profile"}
-        className={`flex max-w-[11rem] items-center rounded-full py-2 text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50 ${
-          showName ? "gap-2 px-2.5" : "px-2"
+        className={`flex max-w-[11rem] items-center rounded-full py-2 text-zinc-800 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-200 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50 ${
+          // pr больше pl: у аватара свои прозрачные поля, и при равных
+          // отступах справа казалось тесно (владелец 17.11).
+          showName ? "gap-1.5 pl-2 pr-4" : "px-2"
         }`}
       >
-        <Avatar avatarUrl={avatarUrl ?? null} size={22} />
+        <Avatar avatarUrl={avatarUrl ?? null} size={28} />
         {showName && (
           <span className="truncate text-sm font-medium" style={nameColorStyle(nameColor)}>
             {displayName}
@@ -600,6 +582,11 @@ function AccountMenu({
         )}
       </Link>
 
+      {/* Меню — вплотную к нижнему краю навбара, без зазора (владелец 17.11,
+          третий заход: 14px и 6px — «гап всё ещё есть»). top-full считается
+          от колонки во всю высоту навбара (self-stretch выше), поэтому это
+          и есть низ пилюли. left-0: меню начинается от левого края кнопки
+          профиля и, будучи шире, выступает вправо (владелец 17.11). */}
       <div className="invisible absolute left-0 top-full z-50 w-max opacity-0 transition-opacity group-focus-within:visible group-focus-within:opacity-100 group-hover:visible group-hover:opacity-100">
         {/* Без вертикального паддинга: py-1 оставлял 4px фона над первым и
             под последним пунктом, из-за чего их подсветка при наведении не

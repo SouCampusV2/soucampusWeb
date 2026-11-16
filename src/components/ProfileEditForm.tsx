@@ -23,6 +23,7 @@ import {
 } from "@/lib/profile-media";
 import { checkProfileLink, profileLinkLabel, type ProfileLink } from "@/lib/profile-links";
 import { ProfileLinksDialog } from "@/components/ProfileLinksDialog";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 // GIF уходит в шлюз как есть — обрезка через <canvas> убила бы анимацию.
 // Поэтому у него прежние потолки: настоящий предел (IMAGE_MAX_BYTES)
@@ -620,6 +621,20 @@ export function ProfileEditForm({
           <Key size={16} weight="bold" />
           Change password
         </Link>
+      </div>
+
+      {/* Тема (17.11, владелец: «под паролем — light/dark mode»). Та же
+          кнопка, что в футере: тема общая (ThemeProvider), здесь просто
+          ещё одно место, где её ищут. type="button" внутри — форма не
+          отправляется. */}
+      <div className="mt-6 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+        <h2 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+          Appearance
+        </h2>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          Light or dark — remembered in this browser.
+        </p>
+        <ThemeToggle className="mt-3" />
       </div>
     </form>
 

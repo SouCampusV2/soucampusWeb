@@ -16,6 +16,7 @@ import {
   YoutubeLogo,
 } from "@phosphor-icons/react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SiteMark } from "@/components/brand/SiteMark";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
 import { SHOP_NAV_LINKS } from "@/lib/products";
 import { isMarketplaceRoute } from "@/lib/marketplace-routes";
@@ -105,11 +106,13 @@ export function ContactFooter() {
         <div className="mx-auto flex max-w-6xl flex-col gap-10 sm:flex-row sm:justify-between">
           <div className="max-w-xs">
             <div className="flex items-center gap-3">
+              {/* Знак и ник — как в навбаре (17.11, владелец). */}
               <Link
                 href="/"
-                className={`${displayFont.className} text-lg tracking-tight text-orange-500`}
+                className={`${displayFont.className} flex items-center gap-2.5 text-lg tracking-tight text-[#ff6900]`}
                 data-page-transition={wave}
               >
+                <SiteMark />
                 SouCampus
               </Link>
               <ThemeToggle />

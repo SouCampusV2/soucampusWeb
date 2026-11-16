@@ -17,7 +17,7 @@ import {
   Armchair,
   House,
 } from "@phosphor-icons/react/dist/ssr";
-import { AuthorCta } from "@/components/AuthorCta";
+import { AboutFlowerIntro } from "@/components/AboutFlowerIntro";
 import { JsonLd } from "@/components/JsonLd";
 import { SITE_SAMEAS, SITE_TAGLINE, SITE_URL } from "@/lib/site";
 
@@ -139,26 +139,28 @@ export default function AboutPage() {
   return (
     <>
       <JsonLd data={ABOUT_JSON_LD} />
-      <AuthorCta />
+      {/* С 16.11 вместо AuthorCta (зелёные кольца со скином) — цветок
+          SouCampus, растущий при прокрутке (docs/BRAND-IDEAS.md, раздел 2).
+          Вне main: свечение — на всю ширину окна. В ней h1 страницы. */}
+      <AboutFlowerIntro />
 
       <main className="w-full mx-auto max-w-6xl flex-1 px-6">
+
       {/* С 09.10 на всю ширину страницы (max-w-6xl), а не колонкой
           max-w-3xl, как с 24.09: рядом с остальными страницами About
           выглядел другим сайтом (замечание владельца). Две колонки:
           слева заголовок и рассказ — они «прилипают» при прокрутке,
           пока справа идёт дерево достижений; справа само дерево, его
-          тексты остаются удобной для чтения ширины.
-          No top glow here — AuthorCta right above already bleeds one in. */}
-      <section className="mt-8 grid gap-10 pt-20 sm:mt-16 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-16">
+          тексты остаются удобной для чтения ширины. */}
+      {/* 17.11: бейджи над заголовками («A Long Journey», «Skills & toolkit»)
+          убраны по просьбе владельца — не возвращать. mt — воздух под интро. */}
+      <section className="mt-16 grid gap-10 sm:mt-20 md:grid-cols-[minmax(0,2fr)_minmax(0,3fr)] md:gap-16">
         <div className="md:sticky md:top-28 md:self-start">
-          <span className="text-sm font-semibold text-lime-600">
-            A Long Journey
-          </span>
-          <h1
-            className={`${displayFont.className} mt-3 text-4xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
+          <h2
+            className={`${displayFont.className} text-4xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
           >
             Building Worlds Since Childhood
-          </h1>
+          </h2>
           <p className="mt-6 leading-7 text-zinc-600 dark:text-zinc-400">
             <b>For 8 years I&apos;ve been building in Minecraft professionally</b>
             — from childhood sandcastles to large-scale architectural
@@ -237,9 +239,8 @@ export default function AboutPage() {
 
       {/* На всю ширину страницы, как и блок выше (с 09.10). */}
       <section className="mt-16 sm:mt-20">
-        <span className="text-sm font-semibold text-lime-600">Skills & toolkit</span>
         <h2
-          className={`${displayFont.className} mt-3 text-3xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl`}
+          className={`${displayFont.className} text-3xl leading-tight tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl`}
         >
           What I build with
         </h2>

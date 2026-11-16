@@ -22,6 +22,9 @@ import { DISCORD_INVITE, SUPPORT_EMAIL } from "@/lib/site";
 // адреса — из site.ts. Справка, разошедшаяся с тем, что считает
 // калькулятор, хуже отсутствующей: человек ей поверит.
 
+/** Дата последней правки статей вики — показывается под вкладками. Правишь статью — меняй. */
+export const WIKI_UPDATED = "17 November 2026";
+
 /** Раздел оглавления. Порядок здесь = порядок на странице. */
 export const WIKI_SECTIONS = [
   {
@@ -102,16 +105,14 @@ export const WIKI_ARTICLES: WikiArticle[] = [
         ],
       },
       {
+        // До 17.11 здесь были свои четыре шага — короткая копия статьи
+        // upload-a-world-to-a-server. Две копии инструкции однажды
+        // разойдутся, поэтому здесь только указатель.
         heading: "Putting a map on a server",
         blocks: [
           {
-            kind: "steps",
-            items: [
-              "Stop the server first. Copying a world into a running server corrupts it.",
-              "Rename or remove the existing world folder. Its name comes from level-name in server.properties, and it is world by default.",
-              "Upload the map folder and give it that same name.",
-              "Start the server and check the console for the version it loaded.",
-            ],
+            kind: "text",
+            text: "A server needs a few more steps — stopping it first, matching the folder name in server.properties, bringing the nether and the end across. They are in the article on uploading a world to a server.",
           },
         ],
       },
@@ -343,14 +344,14 @@ export const WIKI_ARTICLES: WikiArticle[] = [
     title: "What is inside the download",
     section: "maps",
     summary:
-      "One .zip per map: the world folder, plus whatever extras that particular build needs.",
+      "One file per map: a .zip with the world and any extras, or a single schematic.",
     body: [
       {
         heading: "One archive per map",
         blocks: [
           {
             kind: "text",
-            text: "Every map is delivered as a single .zip file. If a build ships in more than one form — a world folder plus a schematic, say — both sit inside that one archive, and the map's own page says so.",
+            text: "Every map is delivered as one file: usually a .zip, or a single schematic (.schem, .schematic or .litematic) when the build is only a structure. If a build ships in more than one form — a world folder plus a schematic, say — both sit inside that one .zip, and the map's own page says so.",
           },
           {
             kind: "list",
@@ -449,7 +450,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
     title: "Ordering a custom build",
     section: "commissions",
     summary:
-      "Describe the build, get an estimate the same day, agree the scope, then work starts.",
+      "Describe the build, get a price and a timeframe, agree the scope, then work starts.",
     body: [
       {
         heading: "How it goes",
@@ -457,10 +458,10 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "steps",
             items: [
-              "Send the idea, through the Contact page or straight into Discord. Reference images and a rough size help more than a long description.",
+              "Open a ticket in Discord and describe the idea — the invite is on the Contact page. Reference images and a rough size help more than a long description.",
               "You get a price and a timeframe back. The estimator on the Contact page gives you the same number instantly if you would rather check first.",
               "Scope and payment are agreed before anything is built.",
-              "The build gets made, with progress shots along the way and a round of changes at the end.",
+              "The build gets made, with progress updates along the way. After delivery, one or two free rounds of small changes are included.",
               "You get the world as a .zip — the same way maps from the shop are delivered.",
             ],
           },
@@ -666,7 +667,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
             items: [
               "Press F3+A. That forces every loaded chunk to redraw and fixes it most of the time, instantly and with no side effects.",
               "Walk far enough away that the chunks unload, then come back. This forces a full reload rather than a redraw.",
-              "On a server, run /reload or restart it — some lighting is only recalculated on load.",
+              "On a server, restart it — some lighting is only recalculated on load. Not /reload: it reloads plugins, not the world, and breaks many of them.",
               "Turn off any resource pack and look again. If the blocks appear, the pack is the problem, not the map.",
             ],
           },
@@ -935,7 +936,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "steps",
             items: [
-              "Install a mod loader — Fabric or Forge — for the version you want to build in.",
+              "Install a mod loader — Fabric or NeoForge — for the version you want to build in. Forge works only on older game versions.",
               "Install the WorldEdit mod for that loader. It is the same tool as the server plugin, in mod form — the article on getting WorldEdit says where to download it safely.",
               "Put the .schem file in the schematics folder inside your Minecraft directory. WorldEdit creates that folder the first time it runs.",
               "Open the world you want to build in, run //schem load with the file name, stand where you want it and run //paste.",
