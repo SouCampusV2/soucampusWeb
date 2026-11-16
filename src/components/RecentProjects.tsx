@@ -5,20 +5,26 @@ import Link from "next/link";
 import Image from "next/image";
 import type { Project } from "@/lib/projects";
 import { HashHighlight } from "@/components/HashHighlight";
+import { Button } from "@/components/Button";
 
 // Проекты приходят пропсом, а не импортом массива: это клиентский
 // компонент ("use client"), он живёт в браузере и в базу ходить не может
 // и не должен. Данные загружает серверная страница (app/(site)/page.tsx)
 // и передаёт сюда уже готовыми — граница "сервер грузит, клиент рисует".
 export function RecentProjects({ projects }: { projects: Project[] }) {
-  const recent = projects.slice(0, 3);
+  // Три последние ДОБАВЛЕННЫЕ работы (владелец 17.11), а не первые три по
+  // ручному порядку каталога (sort_order), как было до этого. Копия
+  // массива: sort меняет исходный, а тот же список нужен странице дальше.
+  // ISO-даты сравниваются строкой правильно.
+  const recent = [...projects]
+    .sort((a, b) => (a.createdAt < b.createdAt ? 1 : a.createdAt > b.createdAt ? -1 : 0))
+    .slice(0, 3);
 
   return (
-    // Верх уменьшен (10.10): над секцией теперь «Who is SouCampus», и они
-    // читаются одним блоком «кто я → что я построил». 64px между ними —
-    // чуть больше, чем от заголовка до карточек (48px), чтобы граница
-    // между секциями всё же оставалась видна.
-    <section className="mx-auto max-w-6xl px-6 pb-16 pt-12 sm:pb-28 sm:pt-16">
+    // С 17.11 секция ПЕРЕД «Who is SouCampus» (владелец: сначала работы).
+    // Полный верхний отступ, нижнего нет: пара читается одним блоком
+    // «что построено → кто строил», зазор между ними задаёт Who is.
+    <section className="mx-auto max-w-6xl px-6 pt-16 sm:pt-28">
       <HashHighlight />
       <FadeIn>
         <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
@@ -31,14 +37,17 @@ export function RecentProjects({ projects }: { projects: Project[] }) {
 
       <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {recent.map((project, i) => (
-          <FadeIn key={project.slug} y={24} delay={i * 100}>
+          // h-full по цепочке FadeIn → Link → flex-колонка: карточки ряда одной
+          // высоты, даже если у одной описание длиннее (владелец 17.11:
+          // «Redspire выделяется»).
+          <FadeIn key={project.slug} y={24} delay={i * 100} className="h-full">
             <Link
               // Цель ссылки «Home» со страницы работы (PortfolioBackLink).
               id={`home-work-${project.slug}`}
               href={`/portfolio/${project.slug}?from=home`}
-              className="group block scroll-mt-28 overflow-hidden rounded-2xl border border-zinc-200 ring-orange-500 ring-offset-4 ring-offset-[#fbfbff] transition-shadow duration-500 data-[returned=true]:ring-2 dark:ring-offset-zinc-950 dark:border-zinc-800"
+              className="group flex h-full scroll-mt-28 flex-col overflow-hidden rounded-2xl border border-zinc-200 ring-orange-500 ring-offset-4 ring-offset-[#fbfbff] transition-shadow duration-500 data-[returned=true]:ring-2 dark:ring-offset-zinc-950 dark:border-zinc-800"
             >
-              <div className="relative aspect-[4/3] overflow-hidden">
+              <div className="relative aspect-[4/3] shrink-0 overflow-hidden">
                 <Image
                   src={project.image}
                   alt={project.title}
@@ -47,7 +56,7 @@ export function RecentProjects({ projects }: { projects: Project[] }) {
                   className="object-cover transition-transform duration-300 group-hover:scale-105"
                 />
               </div>
-              <div className="p-5">
+              <div className="flex-1 p-5">
                 <span className="text-xs font-medium uppercase tracking-wide text-lime-600 dark:text-lime-400">
                   {project.tag}
                 </span>
@@ -62,6 +71,16 @@ export function RecentProjects({ projects }: { projects: Project[] }) {
           </FadeIn>
         ))}
       </div>
+
+      {/* Под всеми тремя — путь в полный каталог (владелец 17.11). По
+          центру, как вывод ряда; tertiary — подчёркнутая ссылка, как все
+          «читать дальше» главной (владелец 17.11; secondary и стрелку в
+          кружке отверг). Волна — портфолио это студия. */}
+      <FadeIn className="mt-8 flex justify-center">
+        <Button href="/portfolio" variant="tertiary" size="lg" pageTransition>
+          See the whole portfolio
+        </Button>
+      </FadeIn>
     </section>
   );
 }

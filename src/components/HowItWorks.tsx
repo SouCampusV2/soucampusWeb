@@ -7,8 +7,10 @@ import {
   Wallet,
   Cube,
   Gift,
+  PaperPlaneTilt,
 } from "@phosphor-icons/react/dist/ssr";
 import { PixelFan } from "@/components/brand/PixelArt";
+import { Button, TERTIARY_UNDERLINE } from "@/components/Button";
 
 // Иконка на шаг (2026-10-06, набор выбран владельцем): письмо → разговор
 // → кошелёк → блок → подарок. Простые и однозначные, без игровых
@@ -69,7 +71,9 @@ function useScrollStep() {
   return { ref, step };
 }
 
-export function HowItWorks() {
+// showContact — шестой пункт «Your map is next» с кнопкой Contact me (17.11,
+// владелец; только на главной: на самой /contact она вела бы туда же).
+export function HowItWorks({ showContact = false }: { showContact?: boolean }) {
   const { ref, step } = useScrollStep();
   return (
     <section
@@ -92,7 +96,12 @@ export function HowItWorks() {
             From the first message to a finished map — a transparent process in
             5 steps.
           </p>
-          <ol className="mt-8 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+          {/* Сетка — на обёртке, список внутри «contents»: пять шагов в две
+              колонки оставляют пустой шестую ячейку, и кнопка встаёт в неё,
+              на одну линию с шагами. Внутрь <ol> её класть нельзя — там
+              только <li>. */}
+          <div className="mt-8 grid gap-x-8 gap-y-5 sm:grid-cols-2">
+          <ol className="contents">
             {steps.map((s, i) => (
               <li
                 key={s.title}
@@ -113,6 +122,37 @@ export function HowItWorks() {
               </li>
             ))}
           </ol>
+          {/* Шестой пункт — не шаг, а приглашение (17.11, владелец: «сделай
+              06 с заголовком, подписью и кнопкой, синей, наравне с
+              цифрами»). Та же разметка, что у шага, номер тем же синим;
+              всегда яркий — прокрутка его не приглушает. Кнопка tertiary,
+              синяя, как ссылки секции на /contact. */}
+          {showContact && (
+            <div className="flex gap-3">
+              <span className="w-10 shrink-0 text-2xl font-bold tabular-nums text-blue-800 dark:text-blue-400">
+                06
+              </span>
+              <div>
+                <h3 className="flex items-center gap-2 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
+                  Your map is next
+                  <PaperPlaneTilt size={22} aria-hidden="true" className="shrink-0" />
+                </h3>
+                <p className="mt-1 max-w-xs text-sm text-zinc-700 dark:text-zinc-300">
+                  One message is all it takes to start.
+                </p>
+                <Button
+                  href="/contact"
+                  variant="tertiary"
+                  pageTransition
+                  className="mt-1"
+                  colorClassName={`text-blue-700 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300 ${TERTIARY_UNDERLINE}`}
+                >
+                  Contact me
+                </Button>
+              </div>
+            </div>
+          )}
+          </div>
         </div>
       </div>
     </section>

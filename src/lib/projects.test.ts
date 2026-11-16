@@ -27,6 +27,7 @@ const row = {
   listing_is_free: false,
   sort_order: 1,
   is_published: true,
+  created_at: "2026-10-25T12:00:00Z",
   project_images: null,
 };
 
