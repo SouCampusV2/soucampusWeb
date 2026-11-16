@@ -8,6 +8,7 @@ import { Button } from "@/components/Button";
 import { AuthField } from "@/components/AuthField";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { safeNextPath } from "@/lib/site";
+import { AUTH_CARD } from "@/lib/auth-card";
 
 // Ввод кода двухшагового входа (аудит 2026-11, S-25).
 //
@@ -20,8 +21,6 @@ import { safeNextPath } from "@/lib/site";
 // сессии; спрашивает его сервер на каждом запросе к админке
 // (getAdminGate), и открыть /admin мимо формы не получится.
 
-const CARD =
-  "mx-auto max-w-md rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-950";
 
 export function TwoStepChallenge({ next }: { next?: string }) {
   const router = useRouter();
@@ -73,7 +72,7 @@ export function TwoStepChallenge({ next }: { next?: string }) {
 
   if (checking) {
     return (
-      <div className={`${CARD} text-center`}>
+      <div className={`${AUTH_CARD} text-center`}>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">Checking…</p>
       </div>
     );
@@ -82,7 +81,7 @@ export function TwoStepChallenge({ next }: { next?: string }) {
   // Не вошёл или приложение не привязано: спрашивать код не у кого.
   if (!factorId) {
     return (
-      <div className={`${CARD} text-center`}>
+      <div className={`${AUTH_CARD} text-center`}>
         <h2 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
           Nothing to confirm here
         </h2>
@@ -99,7 +98,7 @@ export function TwoStepChallenge({ next }: { next?: string }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className={CARD}>
+    <form onSubmit={handleSubmit} className={AUTH_CARD}>
       <AuthField
         id="two-step-code"
         label="Code from your authenticator app"

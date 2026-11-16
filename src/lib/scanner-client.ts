@@ -68,3 +68,41 @@ export async function scanWithService(
     return { verdict: "error", reason: UNAVAILABLE };
   }
 }
+
+/** Хранилище, у которого можно подписать ссылку на чтение (Supabase Storage). */
+export type SignableStorage = {
+  createSignedUrl(path: string, expiresIn: number): Promise<{ data: { signedUrl: string } | null }>;
+};
+
+export type StoredFileCheck =
+  | { ok: true }
+  /** Файл негоден — роут удаляет его своим reject() и показывает причину. */
+  | { ok: false; problem: string; infected: boolean }
+  /** Проверить не вышло — ответ 500/503, файл остаётся непроверенным. */
+  | { ok: false; unavailable: string; status: 500 | 503 };
+
+/**
+ * Один шаг «подписать ссылку → спросить сервис → разобрать вердикт» для карт
+ * и картинок (17.11, владелец: «пускай это будет одна проверка»). До этого
+ * оба роута, /api/creator/upload и /api/creator/image, держали по копии этих
+ * строк — отчёты 09.11 и 16.11 дважды находили дублирование. Сервис и так
+ * один (soucampus-scanner), теперь и путь к нему с сайта один. У роутов
+ * остаётся только своё: уборка в reject() и текст в журнале.
+ */
+export async function checkStoredFile(
+  storage: SignableStorage,
+  path: string,
+  kind: ScanKind,
+  scan: typeof scanWithService = scanWithService
+): Promise<StoredFileCheck> {
+  // Ссылка живёт три минуты: сервис скачивает файл сам.
+  const { data: signed } = await storage.createSignedUrl(path, 180);
+  if (!signed?.signedUrl) return { ok: false, unavailable: "upload unavailable", status: 500 };
+
+  const result = await scan(signed.signedUrl, kind, path);
+  if (result.verdict === "rejected" || result.verdict === "infected") {
+    return { ok: false, problem: result.reason, infected: result.verdict === "infected" };
+  }
+  if (result.verdict === "error") return { ok: false, unavailable: result.reason, status: 503 };
+  return { ok: true };
+}

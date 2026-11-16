@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import { Unbounded } from "next/font/google";
 import { TwoStepSetup } from "@/components/TwoStepSetup";
-
-const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Two-step sign-in",
@@ -23,9 +20,9 @@ export default function AdminSecurityPage() {
   return (
     <div className="px-6 py-12 sm:py-16">
       <div className="mx-auto max-w-md text-center">
-        <h1
-          className={`${displayFont.className} text-3xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl`}
-        >
+        {/* H1 как у остальных страниц /admin (отчёт 16.11): служебная
+            страница, дисплейный шрифт здесь ни к чему. */}
+        <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
           Two-step sign-in
         </h1>
         <p className="mt-4 text-zinc-600 dark:text-zinc-400">

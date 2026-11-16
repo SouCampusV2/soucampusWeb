@@ -4,7 +4,7 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
 import { scanMapFile } from "@/lib/map-scan";
-import { scanWithService } from "@/lib/scanner-client";
+import { checkStoredFile } from "@/lib/scanner-client";
 import {
   HEAD_BYTES,
   MAP_FILE_EXTENSIONS,
@@ -298,19 +298,14 @@ async function confirm(
   }
   if (contentProblem) return reject(contentProblem);
 
-  // Антивирус: отдельный сервис (lib/scanner-client.ts). Ссылка живёт три минуты,
-  // сервис скачивает файл сам.
-  const { data: signed } = await storage.createSignedUrl(path, 180);
-  if (!signed?.signedUrl) {
-    return NextResponse.json({ error: "upload unavailable" }, { status: 500 });
-  }
-  const scan = await scanWithService(signed.signedUrl, "map", path);
-  if (scan.verdict === "rejected" || scan.verdict === "infected") {
-    if (scan.verdict === "infected") console.warn("Шлюз загрузки: антивирус нашёл файл у", userId);
-    return reject(scan.reason);
-  }
-  if (scan.verdict === "error") {
-    return NextResponse.json({ error: scan.reason }, { status: 503 });
+  // Антивирус: общий шаг для карт и картинок (lib/scanner-client.ts).
+  const scan = await checkStoredFile(storage, path, "map");
+  if (!scan.ok) {
+    if ("problem" in scan) {
+      if (scan.infected) console.warn("Шлюз загрузки: антивирус нашёл файл у", userId);
+      return reject(scan.problem);
+    }
+    return NextResponse.json({ error: scan.unavailable }, { status: scan.status });
   }
 
   const finalPath = path.replace(`/${PENDING_PREFIX}`, "/");

@@ -5,7 +5,7 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { PRODUCT_IMAGES_BUCKET } from "@/lib/products";
 import { getAdminUser } from "@/lib/admin";
 import { cleanImage } from "@/lib/image-clean";
-import { scanWithService } from "@/lib/scanner-client";
+import { checkStoredFile } from "@/lib/scanner-client";
 import {
   AVATARS_BUCKET,
   AVATAR_NAME,
@@ -356,19 +356,16 @@ async function confirm(
   const typeProblem = checkImageContentType(info.contentType);
   if (typeProblem) return reject(typeProblem);
 
-  // Антивирус: отдельный сервис (lib/scanner-client.ts). Пересборка ниже всё
-  // равно уничтожит вложенное, но заражённый файл незачем принимать вовсе.
-  const { data: signed } = await storage.createSignedUrl(path, 180);
-  if (!signed?.signedUrl) {
-    return NextResponse.json({ error: "upload unavailable" }, { status: 500 });
-  }
-  const scan = await scanWithService(signed.signedUrl, "image", path);
-  if (scan.verdict === "rejected" || scan.verdict === "infected") {
-    if (scan.verdict === "infected") console.warn("Шлюз картинок: антивирус нашёл файл у", userId);
-    return reject(scan.reason);
-  }
-  if (scan.verdict === "error") {
-    return NextResponse.json({ error: scan.reason }, { status: 503 });
+  // Антивирус: общий шаг для карт и картинок (lib/scanner-client.ts).
+  // Пересборка ниже всё равно уничтожит вложенное, но заражённый файл
+  // незачем принимать вовсе.
+  const scan = await checkStoredFile(storage, path, "image");
+  if (!scan.ok) {
+    if ("problem" in scan) {
+      if (scan.infected) console.warn("Шлюз картинок: антивирус нашёл файл у", userId);
+      return reject(scan.problem);
+    }
+    return NextResponse.json({ error: scan.unavailable }, { status: scan.status });
   }
 
   // Собрать заново: хвосты и метаданные не переживут этот шаг. Не скачалось

@@ -6,6 +6,7 @@ import { useRefresh } from "@/lib/useRefresh";
 import { Button, BUTTON_PILL, DANGER_COLORS } from "@/components/Button";
 import { AuthField } from "@/components/AuthField";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { AUTH_CARD } from "@/lib/auth-card";
 
 // Включение и выключение двухшагового входа (аудит 2026-11, S-25).
 //
@@ -30,8 +31,6 @@ type Factor = { id: string; friendlyName: string | null; createdAt: string };
 
 type Enrolling = { factorId: string; qr: string; secret: string };
 
-const CARD =
-  "mx-auto max-w-md rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-950";
 
 /** Привязанные приложения. Только подтверждённые: брошенная привязка кодов не даёт. */
 async function fetchFactors(): Promise<{ factors: Factor[]; error: string | null }> {
@@ -145,7 +144,7 @@ export function TwoStepSetup() {
 
   if (loading) {
     return (
-      <div className={`${CARD} text-center`}>
+      <div className={`${AUTH_CARD} text-center`}>
         <p className="text-sm text-zinc-500 dark:text-zinc-400">Checking…</p>
       </div>
     );
@@ -153,7 +152,7 @@ export function TwoStepSetup() {
 
   if (enrolling) {
     return (
-      <form onSubmit={confirm} className={CARD}>
+      <form onSubmit={confirm} className={AUTH_CARD}>
         <h2 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">
           Scan this in your authenticator app
         </h2>
@@ -174,7 +173,9 @@ export function TwoStepSetup() {
             alt="QR code for your authenticator app"
             width={200}
             height={200}
-            className="rounded-2xl bg-white p-3"
+            // #fbfbff, как весь «белый» сайта (DESIGN.md): камера читает
+            // код на нём так же, как на чистом белом (отчёт 16.11).
+            className="rounded-2xl bg-[#fbfbff] p-3"
           />
         </div>
 
@@ -227,7 +228,7 @@ export function TwoStepSetup() {
   }
 
   return (
-    <div className={CARD}>
+    <div className={AUTH_CARD}>
       <div className="flex items-center gap-3">
         <span
           className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${
@@ -255,7 +256,7 @@ export function TwoStepSetup() {
           {factors.map((factor) => (
             <li
               key={factor.id}
-              className="flex items-center justify-between gap-3 rounded-2xl border border-zinc-200 px-4 py-3 dark:border-zinc-800"
+              className="flex items-center justify-between gap-3 rounded-xl border border-zinc-200 px-4 py-3 dark:border-zinc-800"
             >
               <span className="min-w-0 truncate text-sm text-zinc-950 dark:text-zinc-50">
                 {factor.friendlyName ?? "Authenticator app"}
