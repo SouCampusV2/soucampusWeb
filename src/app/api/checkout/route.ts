@@ -7,6 +7,7 @@ import { getStripe } from "@/lib/stripe";
 import { SITE_URL } from "@/lib/site";
 import { WAIVER_STRIPE_NOTE, WAIVER_VERSION } from "@/lib/legal";
 import { createSupabaseServer } from "@/lib/supabase-server";
+import { getSupabaseAdmin } from "@/lib/supabase-admin";
 
 // Создание Stripe Checkout Session. Выполняется на каждый запрос —
 // сессия персональная, кэшировать нечего.
@@ -168,6 +169,30 @@ export async function POST(request: Request) {
   const wanted = products.filter(
     (product): product is NonNullable<(typeof products)[number]> => product !== null
   );
+
+  // ── Заблокированный файл не продаём (24.11) ──────────────────────────
+  //
+  // Block file в админке отнимал скачивание у купивших, но карта
+  // оставалась на витрине и оплата проходила: с живыми платежами это
+  // деньги за файл, который никто не получит. Флаг читаем служебным
+  // ключом: он про отдачу файла, а не про витрину, и в Product его нет.
+  const { data: blockedRows } = await getSupabaseAdmin()
+    .from("products")
+    .select("title")
+    .in(
+      "id",
+      wanted.map((product) => product.id)
+    )
+    .eq("file_blocked", true);
+  if (blockedRows && blockedRows.length > 0) {
+    return NextResponse.json(
+      {
+        error: "file blocked",
+        message: `“${blockedRows[0].title}” can't be bought right now — remove it from the order.`,
+      },
+      { status: 409 }
+    );
+  }
 
   const own = wanted.find((product) => product.creatorId === user.id);
   if (own) {

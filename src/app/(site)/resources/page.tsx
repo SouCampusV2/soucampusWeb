@@ -240,6 +240,14 @@ function ResourceRow({ product }: { product: OwnProduct }) {
  */
 function ReasonNote({ product }: { product: OwnProduct }) {
   const note = (() => {
+    // Блокировка файла — первой: она бьёт по купившим прямо сейчас, в
+    // каком бы состоянии ни была карта (24.11).
+    if (product.fileBlocked) {
+      return {
+        label: "File blocked by the site team:",
+        text: `${product.fileBlockReason ?? "No reason was recorded."} Buyers can't download it and the map can't be bought. Write to support to sort it out.`,
+      };
+    }
     if (product.state === "deleted") {
       // Своё удаление сюда не доходит — такие карты в список не
       // попадают вовсе (см. getOwnProducts). Ветка на него всё равно
@@ -293,6 +301,15 @@ function ReasonNote({ product }: { product: OwnProduct }) {
 }
 
 function StatusBadge({ product }: { product: OwnProduct }) {
+  // Заблокированный файл важнее состояния: карта может быть «живой», а
+  // купить и скачать её нельзя — бейдж «Live» здесь врал бы (24.11).
+  if (product.fileBlocked) {
+    return (
+      <Badge className="bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400">
+        File blocked
+      </Badge>
+    );
+  }
   // Порядок веток = что важнее автору прямо сейчас. Раньше здесь
   // сравнивались три поля в шести ветках; теперь состояние одно, и
   // отдельной проверки требует только статус самого автора — он про

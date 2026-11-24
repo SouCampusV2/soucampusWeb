@@ -167,6 +167,9 @@ export type OwnProduct = {
   suspensionReason: string | null;
   /** Кто удалил: площадка или сам автор. */
   deletedBy: "creator" | "moderator" | null;
+  /** Рубильник админа: файл не отдаётся и карта не продаётся (24.11). */
+  fileBlocked: boolean;
+  fileBlockReason: string | null;
   createdAt: string;
 };
 
@@ -177,7 +180,7 @@ export async function getOwnProducts(
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, slug, title, image_url, price_label, state, creator_active, rejection_reason, rejection_flags, suspension_reason, deleted_by, created_at"
+      "id, slug, title, image_url, price_label, state, creator_active, rejection_reason, rejection_flags, suspension_reason, deleted_by, file_blocked, file_block_reason, created_at"
     )
     .eq("creator_id", userId)
     // Своё же удаление автор в списке не видит: он его и сделал, а
@@ -211,6 +214,8 @@ export async function getOwnProducts(
     rejectionFlags: row.rejection_flags ?? [],
     suspensionReason: row.suspension_reason ?? null,
     deletedBy: row.deleted_by ?? null,
+    fileBlocked: row.file_blocked === true,
+    fileBlockReason: row.file_block_reason ?? null,
     createdAt: row.created_at,
   }));
 }

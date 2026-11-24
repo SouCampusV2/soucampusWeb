@@ -160,8 +160,13 @@ export async function POST(request: Request) {
   //
   // Причина обязательна — как у снятия: купивший увидит «File withdrawn»
   // и придёт в поддержку, и отвечать ему надо будет по записи, а не по
-  // памяти. Автору уведомление не шлём: о блокировке за вредоносный файл
-  // с ним говорят лично, а не карточкой в колокольчике.
+  // памяти.
+  //
+  // Автору — уведомление (решение владельца 24.11). Раньше здесь стояло
+  // обратное: «о вредоносном файле говорят лично». На деле автор не
+  // узнавал ничего — карта в /resources выглядела живой, а купившие уже
+  // не могли скачать. Разговор лично не отменяется, но факт и причина
+  // теперь у автора в колокольчике и на карточке карты.
   if (action === "block_file" || action === "unblock_file") {
     const blocking = action === "block_file";
     let blockReason: string | null = null;
@@ -193,6 +198,32 @@ export async function POST(request: Request) {
     // Журнал знает эти действия с миграции 20261112150000; до неё вставку
     // отклонит ограничение, а сама блокировка уже записана.
     if (blockLogError) console.error("Журнал модерации:", blockLogError.message);
+
+    const { data: blocked } = await db
+      .from("products")
+      .select("title, creator_id")
+      .eq("id", productId)
+      .maybeSingle();
+    if (blocked?.creator_id) {
+      await notify(
+        blocked.creator_id as string,
+        blocking
+          ? {
+              // map_suspended — ближайший по смыслу вид из разрешённых
+              // в базе (notifications_kind_check); свой вид = миграция.
+              kind: "map_suspended",
+              title: `The file of “${blocked.title}” was blocked`,
+              body: `${blockReason} Buyers can't download it and the map can't be bought until this is resolved. Questions — write to support.`,
+              href: "/resources",
+            }
+          : {
+              kind: "map_approved",
+              title: `The file of “${blocked.title}” is available again`,
+              body: "Buyers can download it, and the map can be bought again.",
+              href: "/resources",
+            }
+      );
+    }
 
     return NextResponse.json({ ok: true });
   }
