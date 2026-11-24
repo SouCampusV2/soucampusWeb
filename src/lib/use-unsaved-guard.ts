@@ -7,7 +7,7 @@ import { useRouter } from "next/navigation";
 // «назад» или ссылку — правки пропадали молча).
 //
 // Три пути ухода, и у каждого свой перехват:
-//   1. ссылка внутри сайта — клик ловится на document в фазе захвата,
+//   1. ссылка внутри сайта — клик ловится на window в фазе захвата,
 //      РАНЬШЕ, чем next/link начнёт переход; показываем своё окно;
 //   2. «назад» в браузере — пока правки есть, в истории лежит лишняя
 //      запись-заглушка: «назад» снимает её, мы возвращаем её на место и
@@ -64,8 +64,12 @@ export function useUnsavedGuard(dirty: boolean, paused = false) {
       e.stopPropagation();
       setPending({ kind: "link", href: url.pathname + url.search + url.hash });
     };
-    document.addEventListener("click", onClick, true);
-    return () => document.removeEventListener("click", onClick, true);
+    // На window, а не на document: волна перехода (PageTransition) тоже
+    // ловит клики на document в фазе захвата и стоит раньше — она забирала
+    // клик по логотипу, и окно не появлялось (владелец 24.11). Захват на
+    // window срабатывает ДО document, а stopPropagation дальше не пускает.
+    window.addEventListener("click", onClick, true);
+    return () => window.removeEventListener("click", onClick, true);
   }, [active]);
 
   // 2. «Назад» в браузере: заглушка в истории, пока правки есть.
