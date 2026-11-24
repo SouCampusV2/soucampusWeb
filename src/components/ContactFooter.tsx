@@ -7,10 +7,8 @@ import {
   DiscordLogo,
   InstagramLogo,
   TiktokLogo,
-  GithubLogo,
   Planet,
   PatreonLogo,
-  Cube,
   RedditLogo,
   XLogo,
   YoutubeLogo,
@@ -27,8 +25,9 @@ const displayFont = Unbounded({
   subsets: ["latin"],
 });
 
-// Порядок задаёт раскладку 5×2 в футере (grid grid-cols-5): первые пять —
-// верхний ряд, следующие пять — нижний.
+// Порядок задаёт раскладку 4×2 в футере: первые четыре — верхний ряд,
+// следующие четыре — нижний. 24.11 владелец убрал GitHub и ChunkFactory
+// (GitHub — «так надо», ChunkFactory — для симметрии), было 5×2.
 // href "#" — заглушки для аккаунтов, которых ещё нет. Такие в structured data
 // (SITE_SAMEAS) НЕ попадают, только реальные ссылки. Сейчас заглушек нет —
 // все десять ведут на живые профили.
@@ -41,17 +40,10 @@ const SOCIALS = [
     icon: PatreonLogo,
   },
   {
-    // У ChunkFactory нет фирменной иконки — берём нейтральный «блок».
-    label: "ChunkFactory",
-    href: "https://chunkfactory.com/community/members/soucampus.19017/",
-    icon: Cube,
-  },
-  {
     label: "PlanetMinecraft",
     href: "https://www.planetminecraft.com/member/soucampus/",
     icon: Planet,
   },
-  { label: "GitHub", href: "https://github.com/SouCampusV2", icon: GithubLogo },
 
   // Нижний ряд
   {
@@ -243,7 +235,7 @@ export function ContactFooter() {
             </div>
           </div>
 
-          <div className="grid w-fit content-start self-start grid-cols-[repeat(5,auto)] gap-4">
+          <div className="grid w-fit content-start self-start grid-cols-[repeat(4,auto)] gap-4">
             {SOCIALS.map(({ label, href, icon: Icon }) => {
               const isPlaceholder = href === "#";
               return (

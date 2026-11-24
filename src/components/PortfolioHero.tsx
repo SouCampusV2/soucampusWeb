@@ -119,7 +119,7 @@ export function PortfolioHero({ projects: allProjects }: Props) {
             Portfolio
           </h1>
           <p className="mt-3 max-w-xl text-zinc-600 dark:text-zinc-400">
-           <b>Latest:</b> Hover or tap a build to preview it, then click/tap again for the full story.
+           <b>Favourites:</b> Hover or tap a build to preview it, then click or tap again for the full story.
           </p>
         </div>
 

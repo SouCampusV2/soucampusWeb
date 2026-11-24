@@ -27,7 +27,6 @@ export const SITE_SAMEAS: string[] = [
   "https://www.instagram.com/soucampusbuilds/",
   "https://www.tiktok.com/@soucampus",
   "https://www.patreon.com/c/SouCampus",
-  "https://chunkfactory.com/community/members/soucampus.19017/",
   "https://www.reddit.com/user/SouCampus/",
   "https://www.youtube.com/@SouCampus",
   "https://x.com/SouCampusBuilds",

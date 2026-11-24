@@ -5,15 +5,6 @@ import { FadeIn } from "@/components/FadeIn";
 import { ArrowCircle } from "@/components/ArrowCircle";
 import { isMarketplaceRoute } from "@/lib/marketplace-routes";
 
-// PricingSection is global (rendered once in layout.tsx, right after
-// {children}, on every page), so this is the only place that can react to
-// "no divider/top padding after the last section" requests that are
-// page-specific rather than site-wide — these three pages end their own
-// content with a section that already reads as a natural full stop (Ages
-// timeline, portfolio grid, FAQ), so PricingSection's own border-t + top
-// padding on top of that looked like a redundant second seam. Every other
-// route (home, a project detail page, /marketplace, /terms) keeps the divider.
-const NO_TOP_DIVIDER_ROUTES = ["/about", "/portfolio", "/contact"];
 
 type Accent = "blue" | "orange" | "lime";
 
@@ -84,11 +75,9 @@ export function PricingSection() {
   // что тарифы тоже можно оплатить.
   //
   // Убрано именно отсюда, а не из layout: PricingSection и так уже
-  // единственное место, знающее про свои страницы (см. NO_TOP_DIVIDER_ROUTES
-  // выше), и разносить это знание по двум файлам незачем.
+  // единственное место, знающее про свои страницы (раньше и
+  // про линию сверху), и разносить это знание по двум файлам незачем.
   if (isMarketplaceRoute(pathname)) return null;
-
-  const noTopDivider = NO_TOP_DIVIDER_ROUTES.includes(pathname);
 
   return (
     <section
@@ -98,9 +87,8 @@ export function PricingSection() {
       // section). Only the divider line itself is conditional: these three
       // pages already end their own content on a natural full stop, so a
       // border-t on top of matching padding read as a redundant seam.
-      className={`pb-16 pt-16 dark:border-zinc-800 sm:pb-28 sm:pt-28 ${
-        noTopDivider ? "" : "border-t border-zinc-200"
-      }`}
+      // 24.11: линии сверху больше нет нигде — владелец: «зачем он нужен?».
+      className="pb-16 pt-16 sm:pb-28 sm:pt-28"
     >
       <div className="mx-auto max-w-6xl px-6">
         <h2 className="mt-4 text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">

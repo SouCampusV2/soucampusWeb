@@ -81,7 +81,7 @@ export function CountriesMarquee() {
   const loop = [...COUNTRIES, ...COUNTRIES];
 
   return (
-    <section className="overflow-hidden border-t border-zinc-200 py-12 dark:border-zinc-800 sm:py-20">
+    <section className="overflow-hidden py-12 sm:py-20">
       <div className="mx-auto max-w-6xl px-6">
         <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
           Countries I&apos;ve worked with
