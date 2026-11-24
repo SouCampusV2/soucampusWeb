@@ -94,40 +94,12 @@ body {
   }
 }
 
-/*
- * AuthorCta ring colors, 150 steps darker in dark mode (250->400, 350->500,
- * etc. — a 100 shift per user request, then another 50 on top, which lands
- * exactly on native Tailwind lime steps, hence var(--color-lime-N) instead
- * of a hex literal here).
- * Written unlayered (not inside @layer utilities) on purpose: the site's
- * `dark:` variant is `:where(.dark, .dark *)`, which has zero specificity,
- * so a Tailwind-generated `dark:bg-lime-N` utility ties with (and loses to,
- * by source order) the manual .bg-lime-N classes above. Unlayered CSS always
- * wins over @layer rules regardless of specificity, so this reliably
- * overrides the light-mode ring color once .dark is on <html>.
- */
-.dark .author-ring-0 {
-  background-color: var(--color-lime-400);
-}
-.dark .author-ring-1 {
-  background-color: var(--color-lime-500);
-}
-.dark .author-ring-2 {
-  background-color: var(--color-lime-600);
-}
-.dark .author-ring-3 {
-  background-color: var(--color-lime-700);
-}
-.dark .author-ring-4 {
-  background-color: var(--color-lime-800);
-}
-
 /* Пиксельная текстура «блок» для дерева достижений на /about.
    Плитка 64×64 из клеток 8×8 четырёх оттенков — как текстура блока
    в игре, но в нейтральных zinc-тонах сайта, а не в цветах земли.
    Собрана скриптом (случайный узор с фиксированным зерном), поэтому
    правится палитра, а не отдельные клетки. Тёмная версия — тот же узор
-   вокруг zinc-900; класс .dark на <html>, как у .author-ring-* выше. */
+   вокруг zinc-900; класс .dark на <html>. */
 .pixel-texture {
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='64' height='64' shape-rendering='crispEdges'%3E%3Crect width='64' height='64' fill='%23f1f1f3'/%3E%3Cg fill='%23e7e7ea'%3E%3Crect x='16' y='0' width='8' height='8'/%3E%3Crect x='0' y='16' width='8' height='8'/%3E%3Crect x='16' y='16' width='8' height='8'/%3E%3Crect x='40' y='24' width='8' height='8'/%3E%3Crect x='48' y='24' width='8' height='8'/%3E%3Crect x='32' y='32' width='8' height='8'/%3E%3Crect x='56' y='32' width='8' height='8'/%3E%3Crect x='24' y='40' width='8' height='8'/%3E%3Crect x='40' y='40' width='8' height='8'/%3E%3Crect x='0' y='48' width='8' height='8'/%3E%3Crect x='40' y='48' width='8' height='8'/%3E%3Crect x='8' y='56' width='8' height='8'/%3E%3Crect x='16' y='56' width='8' height='8'/%3E%3Crect x='24' y='56' width='8' height='8'/%3E%3Crect x='48' y='56' width='8' height='8'/%3E%3Crect x='56' y='56' width='8' height='8'/%3E%3C/g%3E%3Cg fill='%23f8f8fa'%3E%3Crect x='40' y='8' width='8' height='8'/%3E%3Crect x='48' y='16' width='8' height='8'/%3E%3Crect x='24' y='24' width='8' height='8'/%3E%3Crect x='16' y='40' width='8' height='8'/%3E%3Crect x='56' y='40' width='8' height='8'/%3E%3Crect x='32' y='56' width='8' height='8'/%3E%3C/g%3E%3Cg fill='%23dcdce0'%3E%3Crect x='8' y='16' width='8' height='8'/%3E%3Crect x='32' y='16' width='8' height='8'/%3E%3Crect x='16' y='48' width='8' height='8'/%3E%3C/g%3E%3C/svg%3E");
   background-size: 64px 64px;

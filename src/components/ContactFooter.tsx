@@ -16,6 +16,7 @@ import {
   YoutubeLogo,
 } from "@phosphor-icons/react";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SiteMark } from "@/components/brand/SiteMark";
 import { DISCORD_INVITE, NAV_LINKS } from "@/lib/site";
 import { SHOP_NAV_LINKS } from "@/lib/products";
 import { isMarketplaceRoute } from "@/lib/marketplace-routes";
@@ -82,8 +83,7 @@ export function ContactFooter() {
   // которой внутри магазина быть не должно (правило из CLAUDE.md).
   //
   // ⚠️ Решает страница, НА КОТОРОЙ стоим, а не та, КУДА ведём. Так же
-  // устроен навбар: пункт "Studio" уводит из магазина наружу и волны при
-  // этом не играет. Одно правило на оба места дешевле двух похожих.
+  // устроены лого и пункты магазина в навбаре.
   //
   // undefined, а не false: PageTransition спрашивает hasAttribute, и
   // строку "false" он бы нашёл.
@@ -92,7 +92,8 @@ export function ContactFooter() {
   // разделов своё решение (владелец, 2026-09-15), и оно по КОЛОНКЕ, а не
   // по странице:
   //   Studio      — волна ВСЕГДА, в том числе со страниц магазина: эти
-  //                 ссылки ведут в студию, а волна — её язык.
+  //                 ссылки ведут в студию, а волна — её язык. Пункт
+  //                 "Studio" в навбаре магазина живёт так же (2026-11-14).
   //   Marketplace — волны НЕТ никогда, в том числе со страниц студии:
   //                 магазин живёт без неё, и входить в него волной значило
   //                 бы обещать анимацию, которой внутри не будет.
@@ -105,11 +106,13 @@ export function ContactFooter() {
         <div className="mx-auto flex max-w-6xl flex-col gap-10 sm:flex-row sm:justify-between">
           <div className="max-w-xs">
             <div className="flex items-center gap-3">
+              {/* Знак и ник — как в навбаре (17.11, владелец). */}
               <Link
                 href="/"
-                className={`${displayFont.className} text-lg tracking-tight text-orange-500`}
+                className={`${displayFont.className} flex items-center gap-2.5 text-lg tracking-tight text-[#ff6900]`}
                 data-page-transition={wave}
               >
+                <SiteMark />
                 SouCampus
               </Link>
               <ThemeToggle />

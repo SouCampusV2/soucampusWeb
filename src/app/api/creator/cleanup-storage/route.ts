@@ -4,6 +4,12 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
 import { PRODUCT_IMAGES_BUCKET } from "@/lib/products";
+import {
+  AVATARS_BUCKET,
+  IMAGE_PENDING_BUCKET,
+  PENDING_PREFIX,
+  PORTFOLIO_IMAGES_BUCKET,
+} from "@/lib/upload-limits";
 
 // Уборка мусора в своей папке Storage.
 //
@@ -53,7 +59,7 @@ export async function POST() {
   // карте, и удалять её из-за правки первой нельзя.
   const { data: products, error } = await db
     .from("products")
-    .select("id, image_url, description, file_path")
+    .select("id, image_url, description, file_path, approved_file_path")
     .eq("creator_id", user.id);
 
   if (error) {
@@ -82,8 +88,14 @@ export async function POST() {
   }
   for (const row of gallery ?? []) usedImageUrls.add(row.url);
 
+  // ⚠️ Занят и путь заявки, и ОДОБРЕННЫЙ путь (аудит 2026-11, S-01).
+  // Пока здесь стоял один file_path, замена файла у проданной карты
+  // делала прежний, одобренный файл «ничьим» — и уборка стирала ровно
+  // то, что скачивают покупатели (инвариант 13).
   const usedFilePaths = new Set(
-    (products ?? []).map((p) => p.file_path).filter((path): path is string => Boolean(path))
+    (products ?? [])
+      .flatMap((p) => [p.file_path, p.approved_file_path])
+      .filter((path): path is string => Boolean(path))
   );
 
   const now = Date.now();
@@ -124,6 +136,28 @@ export async function POST() {
   if (staleFiles.length) {
     await db.storage.from(PRODUCT_FILES_BUCKET).remove(staleFiles);
     removed.push(...staleFiles);
+  }
+
+  // --- Непроверенные загрузки в двух других бакетах ---
+  // Аватар и фото портфолио ни на что выше не сверяются: брошенный pending-
+  // там иначе лежал бы вечно, а бакеты публичные.
+  //
+  // С 12.11 новые непроверенные картинки ложатся в закрытый
+  // IMAGE_PENDING_BUCKET (аудит S-19) — он в списке первым. Два публичных
+  // остаются ради хвостов, загруженных до переезда.
+  for (const bucket of [IMAGE_PENDING_BUCKET, AVATARS_BUCKET, PORTFOLIO_IMAGES_BUCKET]) {
+    const { data: files } = await db.storage.from(bucket).list(user.id, { limit: 1000 });
+    const stale = (files ?? [])
+      .filter(
+        (file) =>
+          file.name.startsWith(PENDING_PREFIX) &&
+          now - new Date(file.created_at ?? 0).getTime() > GRACE_PERIOD_MS
+      )
+      .map((file) => `${user.id}/${file.name}`);
+    if (stale.length) {
+      await db.storage.from(bucket).remove(stale);
+      removed.push(...stale);
+    }
   }
 
   return NextResponse.json({ ok: true, removed: removed.length, paths: removed });

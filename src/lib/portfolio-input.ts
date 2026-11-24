@@ -1,4 +1,4 @@
-import { PORTFOLIO_IMAGES_BUCKET } from "@/lib/upload-limits";
+import { PORTFOLIO_IMAGES_BUCKET, isPendingObject } from "@/lib/upload-limits";
 
 // Работа портфолио, какой её присылает форма админки (2026-10-25).
 //
@@ -74,6 +74,8 @@ export function isPortfolioImageUrl(url: string, supabaseUrl: string): boolean {
   if (typeof url !== "string" || url.length === 0 || url.length > PROJECT_LIMITS.url) {
     return false;
   }
+  // Непроверенная загрузка — ещё не наша картинка, см. PENDING_PREFIX.
+  if (isPendingObject(url)) return false;
   // «//evil.com» — протокол-относительный адрес наружу, не наш файл.
   if (url.startsWith("/") && !url.startsWith("//")) return true;
   if (!supabaseUrl) return false;

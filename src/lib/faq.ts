@@ -20,6 +20,9 @@ import { BASE_RATE } from "@/lib/pricing";
 // ⚠️ Ставка и порог приходят из pricing.ts, как и в вики: ответ,
 // разошедшийся с калькулятором, хуже отсутствующего.
 
+/** Дата последней правки текста FAQ — показывается под вкладками. Правишь ответ — меняй. */
+export const FAQ_UPDATED = "17 November 2026";
+
 export type FaqItem = {
   question: string;
   /** Абзацы ответа. Обычный текст: HTML здесь не печатается. */
@@ -42,7 +45,8 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "Who actually builds the maps?",
         answer: [
-          "I do. SouCampus is one builder, not a team: every map is planned and built by me, and the person you talk to in Discord is the person placing the blocks.",
+          "I do. Right now SouCampus is one builder, not a team: every map is planned and built by me, and the person you talk to in Discord is the person placing the blocks.",
+          "If there are ever more orders than I can build myself, I may invite other builders to help under the SouCampus name. Their work would stay in my style, I would check it before it reaches you, and I would personally vouch for its quality.",
         ],
         link: { href: "/about", label: "About me" },
       },
@@ -51,7 +55,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
         answer: [
           "WorldEdit, VoxelSniper, Axiom, Arceon, GoBrush, GoPaint and EzEdit — terrain brushes for landscapes, selection tools for architecture, and a lot of hand placement for the detail. The tools only speed up the building: the finished map is ordinary Minecraft blocks.",
         ],
-        link: { href: "/about", label: "Skills and toolkit" },
+        link: { href: "/about", label: "What I build with" },
       },
       {
         question: "How does a commission start?",
@@ -104,36 +108,103 @@ export const FAQ_SECTIONS: FaqSection[] = [
         ],
       },
       {
+        // 150×150 — неделя (владелец 17.11). До этого FAQ на /contact
+        // обещал «от 2–3 дней», а Terms и вики — неделю.
         question: "How long does a build take?",
         answer: [
-          "It depends on the size and on how much detail goes in — a small map full of interiors can take longer than a large plain one. The estimate on the Contact page gives a range, and the real date is agreed before the build starts.",
+          "A 150×150 map takes about a week, 400×400 at least two weeks, 600×600 three to four. Detail matters as much as size — a small map full of interiors can take longer than a large plain one. The estimate on the Contact page gives a range, and the real date is agreed before the build starts.",
         ],
         link: { href: "/wiki/how-long-a-build-takes", label: "Timeline reference points" },
       },
       {
+        // «1–2 бесплатные правки, но абсолютно небольшие» (владелец 17.11).
         question: "Can I ask for changes after delivery?",
         answer: [
-          "A number of revisions is included and agreed in advance — for example, one or two free rounds within a week of delivery. Changes beyond that are priced separately.",
+          "Yes — one or two free rounds of small changes within a week of delivery: adjusting details, swapping blocks, moving a small element. Reworking whole areas or changing the idea is not a small change; that is priced separately and agreed first.",
         ],
       },
       {
-        question: "What if the build is not working out?",
+        // ⚠️ Возвраты за заказ — со слов владельца 17.11, «очень серьёзно»:
+        // после готовой работы возврата нет; возврат только если в ходе
+        // стройки не получается и заказчик говорил об этом В ПРОЦЕССЕ.
+        // Проценты 45/95 (прежний текст /contact) убраны 17.11 — владелец их
+        // не узнал. Сумма — 85% от оплаченного (владелец 17.11: «почти весь,
+        // чтобы я не остался ни с чем — время и комиссии переводов»).
+        // Меняется только с его слов; тот же текст — на /contact (CONTACT_FAQ)
+        // и коротко в /terms#refunds.
+        question: "Can I get a refund for a commission?",
         answer: [
-          "You see the progress the whole way through, so problems surface early. If a couple of early rounds of rebuilding still do not get it right, part of the payment is refunded. Being unhappy only at the very end, after approving everything along the way, is not grounds for a refund.",
+          "Once the build is finished, no. You see the progress the whole way through, and that is the time to say if something is wrong — I would much rather fix it then.",
+          "A refund is possible only at the start of the build: if we try the direction several times and it still does not work for you at all — and you said so at the time. Then you get 85% of what you paid back; the rest covers the time already spent and transfer fees.",
+          "Not liking the finished map — after approving the progress along the way, or without saying anything during the build — is not grounds for a refund or a rebuild.",
         ],
-        link: { href: "/contact#faq", label: "Refund details" },
+      },
+      {
+        question: "Is a commissioned map fully mine?",
+        answer: [
+          "Yes. Once it is paid for and delivered, the map is yours to use, change and publish as you like.",
+        ],
       },
     ],
   },
   {
-    id: "shop-vs-commission",
-    title: "Shop maps and commissions",
+    // Раздел магазина (17.11, владелец: «один FAQ, отдельная секция под
+    // магазин»). Сверено с кодом и документами на 17.11: покупка только с
+    // аккаунтом (checkout → 401), оплата через Stripe в евро, возвраты —
+    // lib/legal.ts и /terms#refunds, скачивание — wiki purchases-and-downloads,
+    // форматы — upload-limits.ts, креаторы 18+ — CreatorApplicationForm.
+    // ⚠️ «Каждую карту смотрят до витрины» — правда, пока владелец сам
+    // проверяет очередь (CLAUDE.md, «Креаторство открыто до сканера»).
+    id: "marketplace",
+    title: "Marketplace",
     items: [
+      {
+        question: "What is the marketplace?",
+        answer: [
+          "A shop of ready-made Minecraft maps — lobbies, spawns, arenas, builds — that you buy and download straight away, instead of commissioning one and waiting for it.",
+        ],
+        link: { href: "/marketplace", label: "Browse the marketplace" },
+      },
       {
         question: "What is the difference between a shop map and a commission?",
         answer: [
-          "A commissioned map is made for you and belongs to you completely. A map from the shop is a licence to use it: you can play it and host it, but not resell it or pass the files on.",
+          "A commissioned map is made for you and belongs to you completely. A map from the shop is ready now and comes with a licence to use it: you can play it, host it and change it for yourself, but not resell it or pass the files on.",
         ],
+      },
+      {
+        question: "Who makes the maps in the shop?",
+        answer: [
+          "SouCampus and independent creators. Every map page names its creator, and the creator keeps the rights to the map.",
+        ],
+      },
+      {
+        question: "Do I need an account to buy?",
+        answer: [
+          "Yes. A purchase belongs to your account, which is what keeps it in My purchases so you can download it again at any time.",
+        ],
+      },
+      {
+        question: "How do I pay for a shop map?",
+        answer: [
+          "By card, on Stripe's checkout page. Prices are in euros. Your card details go to Stripe and never reach this site.",
+        ],
+      },
+      {
+        question: "When do I get the map?",
+        answer: [
+          "Right after the payment goes through. The download is waiting in My purchases.",
+        ],
+        link: { href: "/wiki/purchases-and-downloads", label: "Purchases and downloads" },
+      },
+      {
+        // Текст согласия — WAIVER_TEXT из lib/legal.ts; здесь пересказ,
+        // точная формулировка и права — на /terms#refunds.
+        question: "Can I get a refund for a shop map?",
+        answer: [
+          "Not because you changed your mind. A map is a digital download that is yours the moment you pay, and before paying you agree to instant delivery and give up the usual 14-day right to cancel.",
+          "If the file is broken, will not open, or is not what the listing describes, write to us: we first try to fix it or send a working file, and if we cannot, you get a full refund.",
+        ],
+        link: { href: "/terms#refunds", label: "Refunds in the Terms of Service" },
       },
       {
         question: "What can I do with a map I bought in the shop?",
@@ -143,17 +214,37 @@ export const FAQ_SECTIONS: FaqSection[] = [
         link: { href: "/wiki/using-a-map-you-bought", label: "Using a map you bought" },
       },
       {
-        question: "Is a commissioned map fully mine?",
-        answer: [
-          "Yes. Once it is paid for and delivered, the map is yours to use, change and publish as you like.",
-        ],
-      },
-      {
         question: "Can I download a shop map again later?",
         answer: [
           "Yes. Every purchase stays in My purchases, and you can download it as many times as you need.",
         ],
         link: { href: "/wiki/purchases-and-downloads", label: "Purchases and downloads" },
+      },
+      {
+        question: "What if a map I bought is taken off the shop?",
+        answer: [
+          "It stays in My purchases and you can still download it. Taking a map off the shop removes it from the catalogue, not from the people who bought it.",
+        ],
+      },
+      {
+        question: "Which versions and formats does a shop map come in?",
+        answer: [
+          "Each map page lists the Minecraft versions the map was made for and the formats it ships in, in the specs beside the description. The download is one file: a .zip with the world, or a schematic (.schem, .schematic or .litematic).",
+        ],
+        link: { href: "/wiki/whats-in-the-download", label: "What is inside the download" },
+      },
+      {
+        question: "Are the files safe?",
+        answer: [
+          "Every map is reviewed before it appears in the shop, and uploaded pictures are rebuilt from their pixels, so nothing but the image itself reaches you.",
+        ],
+      },
+      {
+        question: "Can I sell my own maps here?",
+        answer: [
+          "Yes, if you are 18 or older. Apply as a creator from your account; once you are approved, you upload maps and each one goes live after it has been reviewed.",
+        ],
+        link: { href: "/resources", label: "Become a creator" },
       },
     ],
   },
@@ -229,3 +320,22 @@ export const FAQ_SECTIONS: FaqSection[] = [
 
 /** Все вопросы подряд — для JSON-LD и тестов. */
 export const FAQ_ITEMS: FaqItem[] = FAQ_SECTIONS.flatMap((section) => section.items);
+
+// Вопросы для /contact (17.11, владелец: «самые важные, тематические, и
+// ответы одинаковые»). Не своя копия, а выборка из FAQ_SECTIONS по тексту
+// вопроса: правишь ответ здесь — он меняется и на /contact. Тест проверяет,
+// что каждый вопрос из списка существует.
+export const CONTACT_FAQ_QUESTIONS = [
+  "How much does a custom map cost?",
+  "How long does a build take?",
+  "How do I pay?",
+  "Can I see the progress while you build?",
+  "Can I ask for changes after delivery?",
+  "Can I get a refund for a commission?",
+  "Which Minecraft versions do you build for?",
+  "Can you work on a map I already have?",
+] as const;
+
+export const CONTACT_FAQ: FaqItem[] = CONTACT_FAQ_QUESTIONS.flatMap((question) =>
+  FAQ_ITEMS.filter((item) => item.question === question)
+);

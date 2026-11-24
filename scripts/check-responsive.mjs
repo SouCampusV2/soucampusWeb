@@ -57,8 +57,10 @@
 // 1) Собранный сайт на localhost:3123:  npm run build && npx next start -p 3123
 // 2) Playwright с браузером. В зависимости проекта он НЕ добавлен
 //    намеренно — это 122 МБ браузера ради проверки, которую гоняют
-//    вручную и не в CI (как check:views и check:guards). Ставится разово:
-//        npm i -D playwright && npx playwright install firefox
+//    вручную и не в CI (как check:views и check:guards). Решение
+//    подтверждено 2026-11-14: так и оставить. Ставится разово, --no-save —
+//    чтобы не попасть в package.json случайно:
+//        npm i --no-save playwright && npx playwright install firefox
 
 const BASE = process.env.CHECK_URL ?? "http://localhost:3123";
 
@@ -97,7 +99,7 @@ try {
 } catch {
   console.error(
     "\nPlaywright не установлен. Разово:\n" +
-      "  npm i -D playwright && npx playwright install firefox\n" +
+      "  npm i --no-save playwright && npx playwright install firefox\n" +
       "Почему его нет в зависимостях — в шапке этого файла.\n"
   );
   process.exit(1);

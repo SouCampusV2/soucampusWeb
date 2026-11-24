@@ -15,6 +15,8 @@ import {
   List,
   Megaphone,
   PlusCircle,
+  ShieldCheck,
+  GearSix,
   Storefront,
   Tray,
   UserPlus,
@@ -111,6 +113,12 @@ const GROUPS: Group[] = [
       {
         items: [
           { href: "/admin/downloads", label: "Downloads", hint: "Proof for payment disputes", icon: DownloadSimple },
+          // Двухшаговый вход (аудит 2026-11, S-25). В «Records», а не
+          // отдельной группой: один пункт группу не оправдывает, а по
+          // смыслу это тоже служебное, не про карты и не про Discord.
+          { href: "/admin/security", label: "Two-step sign-in", hint: "A code from your phone for this admin", icon: ShieldCheck },
+          // Пароль, почта, другие устройства (просьба владельца 17.11).
+          { href: "/admin/account", label: "Settings", hint: "Password, email, other devices", icon: GearSix },
         ],
       },
     ],

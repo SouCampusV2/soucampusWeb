@@ -35,6 +35,14 @@ export type CatalogRow = {
   creator: { id: string; username: string } | null;
   /** Сколько раз купили — по оплаченным заказам. */
   sales: number;
+  /**
+   * Есть ли у карты одобренный файл — то, что получают купившие
+   * (products.approved_file_path). Без него блокировать нечего.
+   */
+  hasApprovedFile: boolean;
+  /** Рубильник: файл не отдаётся никому (products.file_blocked). */
+  fileBlocked: boolean;
+  fileBlockReason: string | null;
 };
 
 export type CatalogFilters = {
@@ -57,6 +65,10 @@ type Row = {
   deleted_by: "creator" | "moderator" | null;
   created_at: string;
   creator_id: string | null;
+  /** Из 20261110130000_approved_file. */
+  approved_file_path: string | null;
+  file_blocked: boolean | null;
+  file_block_reason: string | null;
 };
 
 /**
@@ -71,7 +83,7 @@ export async function getCatalog(filters: CatalogFilters = {}): Promise<CatalogR
   let query = db
     .from("products")
     .select(
-      "id, slug, title, image_url, price_label, state, creator_active, category, suspension_reason, deleted_by, created_at, creator_id"
+      "id, slug, title, image_url, price_label, state, creator_active, category, suspension_reason, deleted_by, created_at, creator_id, approved_file_path, file_blocked, file_block_reason"
     )
     .order("created_at", { ascending: false });
 
@@ -134,6 +146,9 @@ export async function getCatalog(filters: CatalogFilters = {}): Promise<CatalogR
       ? { id: row.creator_id, username: names.get(row.creator_id) ?? "—" }
       : null,
     sales: sales.get(row.id) ?? 0,
+    hasApprovedFile: Boolean(row.approved_file_path),
+    fileBlocked: row.file_blocked === true,
+    fileBlockReason: row.file_block_reason,
   }));
 
   // Поиск фильтруем ЗДЕСЬ, а не в запросе: искать надо и по имени автора,

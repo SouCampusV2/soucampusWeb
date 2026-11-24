@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getStripe } from "@/lib/stripe";
 import { notify } from "@/lib/notifications";
+import { DELIVERY_FIELDS, deliverablePath, type DeliveryRow } from "@/lib/downloads";
 import {
   PRODUCT_FILES_BUCKET,
   FRESH_PURCHASE_MS,
@@ -141,6 +142,15 @@ export function orderInputFromLineItems(
  * туда мы кладём наш product_id при создании сессии, а здесь читаем его
  * обратно через expand: "data.price.product".
  */
+/**
+ * Имя среды, в которой создана оплата: production / preview / local.
+ * Vercel называет её сам (VERCEL_ENV); вне Vercel это локальная машина.
+ * Одна функция на запись метки (/api/checkout) и на её сверку (ниже).
+ */
+export function checkoutEnv(): string {
+  return process.env.VERCEL_ENV ?? "local";
+}
+
 export async function buildPaidOrderFromSession(
   sessionId: string
 ): Promise<PaidOrderInput | null> {
@@ -148,6 +158,18 @@ export async function buildPaidOrderFromSession(
 
   const session = await stripe.checkout.sessions.retrieve(sessionId);
   if (session.payment_status !== "paid") return null;
+
+  // Сессия ЧУЖОЙ среды — не наш заказ (аудит 2026-11, S-11).
+  //
+  // В тестовом режиме у прода и preview один аккаунт Stripe. Если у него
+  // зарегистрированы оба адреса вебхука, каждое событие приходит обоим,
+  // и preview пытался бы записать прод-заказ в свою базу (и наоборот):
+  // карты и человека с такими id там нет, запись падает, вебхук отвечает
+  // 500, Stripe повторяет трое суток, а после череды отказов отключает
+  // адрес целиком. Среду кладёт в метаданные /api/checkout; у сессий,
+  // созданных до 12.11, метки нет — их принимаем как раньше.
+  const madeIn = session.metadata?.env;
+  if (madeIn && madeIn !== checkoutEnv()) return null;
 
   const { data: rawLineItems } = await stripe.checkout.sessions.listLineItems(sessionId, {
     expand: ["data.price.product"],
@@ -222,6 +244,44 @@ export async function recordPaidOrder(input: PaidOrderInput): Promise<void> {
   // против страницы успеха) получает null. Без этой проверки покупатель
   // получал бы «спасибо за покупку» дважды за один платёж.
   if (data) await notifyAboutPurchase(input);
+}
+
+/**
+ * Деньги за заказ вернулись — заказ перестаёт быть покупкой (аудит
+ * 2026-11, S-03).
+ *
+ * Статус `refunded` в схеме был с первого дня, и весь код его уважает:
+ * скачивание, право на отзыв, роль Client, счётчик продаж считают только
+ * `paid`. Не было одного — того, кто этот статус ПОСТАВИТ. Возврат в
+ * панели Stripe и спор о списании в банке проходили мимо сайта: деньги
+ * уходили обратно, а файл, отзывы и «продажа» оставались.
+ *
+ * Stripe в этих событиях называет платёж (payment_intent), а заказ у
+ * нас найден по сессии Checkout. Мост между ними — сам Stripe: спросить
+ * у него сессию этого платежа. Отдельной колонки под id платежа не
+ * нужно, а значит и миграции.
+ *
+ * Возвращает true, если заказ действительно сменил статус. Повтор
+ * события ничего не меняет: условие `status = 'paid'` стоит в запросе.
+ */
+export async function markOrderRefunded(paymentIntentId: string): Promise<boolean> {
+  const sessions = await getStripe().checkout.sessions.list({
+    payment_intent: paymentIntentId,
+    limit: 1,
+  });
+  const sessionId = sessions.data[0]?.id;
+  // Платёж не из нашего Checkout (например, счёт, выставленный руками).
+  if (!sessionId) return false;
+
+  const { data, error } = await getSupabaseAdmin()
+    .from("orders")
+    .update({ status: "refunded" })
+    .eq("stripe_session_id", sessionId)
+    .eq("status", "paid")
+    .select("id");
+
+  if (error) throw new Error(`Не удалось отметить возврат: ${error.message}`);
+  return (data ?? []).length > 0;
 }
 
 /**
@@ -361,6 +421,8 @@ export type PaidOrderItem = {
 };
 
 export type PaidOrder = {
+  /** Чей заказ. null — старый гостевой (до 24.07), тогда хозяина знает только почта. */
+  userId: string | null;
   customerEmail: string;
   totalCents: number;
   currency: string;
@@ -392,6 +454,27 @@ export type PaidOrder = {
  * аккаунта тоже не тайна. Поэтому он не должен работать как пропуск —
  * см. getPaidOrder ниже, она принимает только настоящие сессии Stripe.
  */
+/**
+ * «Этот заказ — этого человека» (аудит 2026-11, S-04).
+ *
+ * Id сессии Stripe раньше был пропуском сам по себе: адрес страницы
+ * успеха и кнопки Download работали без входа и бессрочно — у любого, к
+ * кому попала ссылка (история браузера, пересланный адрес), вместе с
+ * почтой покупателя на экране. Путь задумывался для гостей, а гостевой
+ * покупки нет с 24.07: у каждого заказа есть хозяин, и спрашивать надо
+ * его, а не ссылку.
+ *
+ * Правило то же, что у списка покупок, и оно одно: заказ принадлежит
+ * АККАУНТУ. Заказ без аккаунта не принадлежит никому — см. разбор у
+ * getPurchasesForUser.
+ */
+export function ownsOrder(
+  order: { userId: string | null },
+  viewer: { id: string }
+): boolean {
+  return order.userId !== null && order.userId === viewer.id;
+}
+
 export function freeOrderKey(productId: string, userId: string): string {
   return `free:${productId}:${userId}`;
 }
@@ -417,7 +500,7 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
   const { data, error } = await db
     .from("orders")
     .select(
-      "customer_email, total_cents, currency, order_items(product_id, title, price_cents, quantity, products(file_path))"
+      `user_id, customer_email, total_cents, currency, order_items(product_id, title, price_cents, quantity, products(${DELIVERY_FIELDS}))`
     )
     .eq("stripe_session_id", sessionId)
     .eq("status", "paid")
@@ -431,10 +514,11 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
     title: string;
     price_cents: number;
     quantity: number;
-    products: { file_path: string | null } | { file_path: string | null }[] | null;
+    products: DeliveryRow | DeliveryRow[] | null;
   };
 
   return {
+    userId: (data.user_id as string | null) ?? null,
     customerEmail: data.customer_email,
     totalCents: Number(data.total_cents),
     currency: data.currency,
@@ -445,7 +529,8 @@ export async function getPaidOrder(sessionId: string): Promise<PaidOrder | null>
         title: item.title,
         priceCents: Number(item.price_cents),
         quantity: Number(item.quantity),
-        filePath: product?.file_path ?? null,
+        // Одобренный файл, а не «тот, что лежит сейчас» — см. deliverablePath.
+        filePath: deliverablePath(product),
       };
     }),
   };
@@ -461,41 +546,49 @@ export type PurchasedItem = {
   title: string;
   slug: string | null;
   filePath: string | null;
+  /**
+   * Файл заблокирован админом (products.file_blocked). Отдельно от
+   * «файла ещё нет»: человеку надо сказать, что это решение площадки,
+   * а не обещать «скоро будет».
+   */
+  fileBlocked: boolean;
   purchasedAt: string;
 };
 
 /**
- * Все купленные пользователем карты — для страницы профиля. Берём
- * заказы двумя способами и объединяем:
- *   1) по user_id — заказы, сделанные уже под аккаунтом;
- *   2) по email среди ГОСТЕВЫХ заказов (user_id null) — покупки до
- *      регистрации на ту же почту «подтягиваются» в профиль (решение
- *      2026-07-24: связывать гостевые заказы по email).
+ * Все купленные пользователем карты — для страницы профиля.
+ *
+ * ⚠️ ТОЛЬКО ПО АККАУНТУ (аудит 2026-11, S-08; решение владельца 12.11).
+ * До этого путей было два: заказ под аккаунтом и «гостевой» заказ без
+ * аккаунта, который считался принадлежащим любому, кто войдёт с той же
+ * почтой. Второй путь остался с июля, когда покупать можно было без
+ * входа. С 24.07 без аккаунта не купить, новых таких заказов нет, а
+ * правило продолжало жить в четырёх местах — здесь, в скачивании и в
+ * двух функциях базы. Опасно оно стало бы в день, когда появится
+ * удаление аккаунта: у заказа обнуляется user_id, он превращается в
+ * «гостевой», и следующий человек на этой почте получает чужие покупки.
+ *
+ * Старые заказы без аккаунта не потеряны: миграция 20261112160000 один
+ * раз привязала их к аккаунтам с той же почтой и только после этого
+ * убрала правило из базы.
+ *
  * Дубли по товару схлопываем: карта покупается один раз, в списке она
  * одна, даже если попала в несколько заказов.
  *
  * Только сервер: orders/order_items закрыты RLS, читает service_role.
  */
-export async function getPurchasesForUser(
-  userId: string,
-  email: string
-): Promise<PurchasedItem[]> {
+export async function getPurchasesForUser(userId: string): Promise<PurchasedItem[]> {
   const db = getSupabaseAdmin();
   const select =
-    "created_at, order_items(product_id, title, products(slug, file_path))";
+    `created_at, order_items(product_id, title, products(slug, ${DELIVERY_FIELDS}))`;
 
-  const [byUser, byEmail] = await Promise.all([
-    db.from("orders").select(select).eq("status", "paid").eq("user_id", userId),
-    db
-      .from("orders")
-      .select(select)
-      .eq("status", "paid")
-      .is("user_id", null)
-      .eq("customer_email", email),
-  ]);
+  const byUser = await db
+    .from("orders")
+    .select(select)
+    .eq("status", "paid")
+    .eq("user_id", userId);
 
   if (byUser.error) throw new Error(`Не удалось загрузить покупки: ${byUser.error.message}`);
-  if (byEmail.error) throw new Error(`Не удалось загрузить покупки: ${byEmail.error.message}`);
 
   type OrderRow = {
     created_at: string;
@@ -504,19 +597,19 @@ export async function getPurchasesForUser(
           product_id: string;
           title: string;
           products:
-            | { slug: string | null; file_path: string | null }
-            | { slug: string | null; file_path: string | null }[]
+            | ({ slug: string | null } & DeliveryRow)
+            | ({ slug: string | null } & DeliveryRow)[]
             | null;
         }[]
       | null;
   };
 
   const byProduct = new Map<string, PurchasedItem>();
-  for (const order of [...(byUser.data ?? []), ...(byEmail.data ?? [])] as OrderRow[]) {
+  for (const order of (byUser.data ?? []) as unknown as OrderRow[]) {
     for (const item of order.order_items ?? []) {
       // ⚠️ У дубля берём БОЛЕЕ СВЕЖУЮ дату, а не первую попавшуюся.
-      // Одна карта приходит сюда дважды, когда гостевой заказ на ту же
-      // почту встречается с заказом под аккаунтом; порядок строк при
+      // Одна карта приходит сюда дважды, когда человек взял её в двух
+      // заказах (бесплатно, а потом в платной корзине); порядок строк при
       // этом задаёт база, то есть он произвольный. Раньше выигрывала
       // случайная из двух — для списка это было незаметно, а для «NEW»
       // означало бы, что бейдж иногда не появляется на свежей покупке.
@@ -529,7 +622,8 @@ export async function getPurchasesForUser(
         productId: item.product_id,
         title: item.title,
         slug: product?.slug ?? null,
-        filePath: product?.file_path ?? null,
+        filePath: deliverablePath(product),
+        fileBlocked: Boolean(product?.file_blocked),
         purchasedAt: order.created_at,
       });
     }

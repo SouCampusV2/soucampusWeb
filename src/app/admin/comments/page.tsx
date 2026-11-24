@@ -5,6 +5,7 @@ import { AdminCommentActions } from "@/components/AdminCommentActions";
 import { INLINE_LINK, NEW_TAB } from "@/components/Button";
 import { RefreshButton } from "@/components/RefreshButton";
 import { LocalTime } from "@/components/LocalTime";
+import { nameColorStyle } from "@/lib/name-colors";
 
 // Комментарии всего сайта — одним списком.
 //
@@ -83,9 +84,7 @@ export default async function AdminCommentsPage() {
                     className="font-semibold text-zinc-950 dark:text-zinc-50"
                     // Цвет ника — как он виден покупателю под картой.
                     // Владелец должен видеть комментарий так же, как все.
-                    style={
-                      comment.nameColor ? { color: comment.nameColor } : undefined
-                    }
+                    style={nameColorStyle(comment.nameColor)}
                   >
                     {comment.username}
                   </span>

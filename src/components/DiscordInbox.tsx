@@ -7,6 +7,7 @@ import { Star } from "@phosphor-icons/react";
 import { Button, BUTTON_COLORS, BUTTON_PILL, DANGER_COLORS, TOGGLE_PILL_COLORS } from "@/components/Button";
 import { TextField } from "@/components/MapFormParts";
 import { LocalTime } from "@/components/LocalTime";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { problemFromGateway } from "@/lib/upload-client";
 import {
   checkReviewInput,
@@ -232,9 +233,11 @@ function DismissButton({ itemKey }: { itemKey: string }) {
   const router = useRouter();
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [asking, setAsking] = useState(false);
 
+  // ConfirmDialog, а не confirm() браузера — шапка ConfirmDialog.tsx.
   async function dismiss() {
-    if (!window.confirm("Dismiss this? It won't be published.")) return;
+    setAsking(false);
     setPending(true);
     const failure = await decide({ action: "dismiss", key: itemKey });
     setPending(false);
@@ -244,9 +247,19 @@ function DismissButton({ itemKey }: { itemKey: string }) {
 
   return (
     <>
+      <ConfirmDialog
+        open={asking}
+        title="Dismiss this?"
+        description="It won't be published."
+        confirmLabel="Dismiss"
+        danger
+        pending={pending}
+        onConfirm={dismiss}
+        onCancel={() => setAsking(false)}
+      />
       <button
         type="button"
-        onClick={dismiss}
+        onClick={() => setAsking(true)}
         disabled={pending}
         className={`rounded-full px-3 py-1.5 text-sm font-medium disabled:opacity-50 ${DANGER_COLORS.quiet}`}
       >

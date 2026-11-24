@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
-import { Unbounded } from "next/font/google";
-import { FileText } from "@phosphor-icons/react/dist/ssr";
+import { ChatsCircle, FileText } from "@phosphor-icons/react/dist/ssr";
 import Link from "next/link";
 import { BASE_RATE } from "@/lib/pricing";
-import { PageGlow } from "@/components/PageGlow";
+import { HELP_BODY, HELP_CARD, HELP_CARDS, HELP_CARD_TITLE, HELP_DOT, HELP_H2, HELP_ICON, HELP_LINK, HelpPageHeader } from "@/components/HelpTabs";
 import { ArticleBody } from "@/components/ArticleBody";
 import { getWikiArticle } from "@/lib/wiki";
 import { SUPPORT_EMAIL } from "@/lib/site";
@@ -45,11 +44,6 @@ const PRICING_FAQ = [
   },
 ];
 
-// Same display font as every other page hero — rhymes with Hero.tsx/contact/about.
-const displayFont = Unbounded({
-  weight: "800",
-  subsets: ["latin"],
-});
 
 // Индексируется с 2026-09-26. До этого стоял noindex: живым был один
 // раздел цен. Теперь здесь условия покупки, возвраты и продавец — то, что
@@ -71,6 +65,9 @@ export const metadata: Metadata = {
 // «Payment & refunds» сузился до заказов 26.09: возвраты за карты
 // магазина теперь живой раздел #refunds, а условия заказных построек
 // по-прежнему согласуются в Discord.
+/** Дата последней правки текста этой страницы — показывается под вкладками. */
+const TERMS_UPDATED = "17 November 2026";
+
 const SECTIONS = [
   "Scope of services",
   "Ordering & pricing",
@@ -81,40 +78,28 @@ const SECTIONS = [
 
 export default function TermsPage() {
   return (
-    // Клип — на полноширинном <main>, ограничение ширины уехало на секции
-    // внутри: иначе max-w-6xl отрезал бы свечение по бокам (см. PageGlow).
-    // ⚠️ Ширина у /terms и /privacy ОДНА (24.09, просьба владельца): вся
-    // страница — колонка max-w-3xl по центру, от заголовка до карточки.
-    // До этого у /terms заголовок и разделы стояли слева на 6xl, а карточка
-    // по центру на 2xl, у /privacy — заголовок слева, текст по центру.
-    // Меняешь ширину здесь — меняй и в соседнем файле.
-    <main className="relative w-full overflow-x-clip px-6">
-      {/* Hero — общее свечение сайта (orange, основной акцент: страница не
-          привязана к одной секции). */}
-      <section className="relative mx-auto max-w-3xl pb-8 pt-20 sm:pb-16">
-        <PageGlow color="rgba(251,146,60,0.35)" />
-        <span className="text-sm font-semibold text-orange-500">Legal</span>
-        <h1
-          className={`${displayFont.className} mt-3 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
-        >
-          Terms of Service
-        </h1>
-        <p className="mt-4 text-zinc-600 dark:text-zinc-400">
-          Pricing, licensing, refunds for marketplace maps and the seller
-          details below are final. Terms for custom commissions are still
-          being written — the outline is at the bottom.
-        </p>
-      </section>
+    // Клип — на полноширинном <main>, ширина и px — на контейнерах внутри
+    // (требование PageGlow). Шапка и тело — общие для четырёх справочных
+    // страниц (HelpTabs.tsx: HelpPageHeader, HELP_BODY, HELP_H2), так что
+    // ширина, отступы и заголовки разделов совпадают с /faq и /wiki.
+    // 17.11 убраны плашки над разделами (Pricing, Licensing, Refunds,
+    // Seller — владелец: заголовок и так говорит то же) и разные зазоры.
+    <main className="relative w-full overflow-x-clip">
+      <HelpPageHeader active="terms" title="Terms of Service" updated={TERMS_UPDATED}>
+        Pricing, licensing, refunds for marketplace maps and the seller
+        details below are final. Terms for custom commissions are still
+        being written — the outline is at the bottom.
+      </HelpPageHeader>
 
+      <div className={HELP_BODY}>
       {/* Real content, not a placeholder like the section below — linked
           directly from the "How the price is calculated" badge on the
           Contact page's instant estimator (BuildEstimator.tsx). */}
-      <section id="pricing" className="mx-auto max-w-3xl scroll-mt-24 py-10 sm:py-16">
-        <span className="text-sm font-semibold text-orange-500">Pricing</span>
-        <h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
+      <section id="pricing" className="scroll-mt-24">
+        <h2 className={HELP_H2}>
           How pricing works
         </h2>
-        <p className="mt-3 text-zinc-600 dark:text-zinc-400">
+        <p className="mt-4 text-zinc-600 dark:text-zinc-400">
           The same formula behind the instant estimate on the{" "}
           <span className="font-medium text-zinc-950 dark:text-zinc-50">
             Contact
@@ -122,7 +107,7 @@ export default function TermsPage() {
           page, spelled out in full.
         </p>
 
-        <div className="mt-8 divide-y divide-zinc-200 border-t border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+        <div className="mt-6 divide-y divide-zinc-200 border-t border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
           {PRICING_FAQ.map((item) => (
             <div key={item.q} className="py-6">
               <h3 className="font-semibold text-zinc-950 dark:text-zinc-50">
@@ -140,19 +125,18 @@ export default function TermsPage() {
           «скоро»: на него ссылается статья вики, и он же — ответ на самый
           частый вопрос покупателя. */}
       {LICENCE && (
-        <section id="licensing" className="mx-auto max-w-3xl scroll-mt-24 py-10 sm:py-16">
-          <span className="text-sm font-semibold text-orange-500">Licensing</span>
-          <h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
-            {LICENCE.title}
+        <section id="licensing" className="scroll-mt-24">
+          {/* «Licence» в самом заголовке вместо плашки над ним (17.11). */}
+          <h2 className={HELP_H2}>
+            Licence: {LICENCE.title.toLowerCase()}
           </h2>
           <div>
-            <ArticleBody sections={LICENCE.body} />
-            <p className="mt-8 text-sm text-zinc-500 dark:text-zinc-400">
+            <ArticleBody sections={LICENCE.body} nested />
+            <p className="mt-6 text-sm text-zinc-500 dark:text-zinc-400">
               The same text lives in the{" "}
               <Link
                 href="/wiki/using-a-map-you-bought"
-                className="font-medium text-orange-500 transition-colors hover:text-orange-600"
-                data-page-transition="true"
+                className={HELP_LINK}
               >
                 wiki
               </Link>
@@ -167,18 +151,17 @@ export default function TermsPage() {
           согласия берётся из lib/legal.ts — тот же, что у галочки при
           оплате: человек должен найти здесь ровно то, под чем
           подписался. Обещания про деньги — только со слов владельца. */}
-      <section id="refunds" className="mx-auto max-w-3xl scroll-mt-24 py-10 sm:py-16">
-        <span className="text-sm font-semibold text-orange-500">Refunds</span>
-        <h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
+      <section id="refunds" className="scroll-mt-24">
+        <h2 className={HELP_H2}>
           Refunds for marketplace maps
         </h2>
-        <div className="mt-6 space-y-4 leading-7 text-zinc-600 dark:text-zinc-400">
+        <div className="mt-4 space-y-4 leading-7 text-zinc-600 dark:text-zinc-400">
           <p>
             Maps in the marketplace are digital downloads, available the
             moment your payment goes through. Before paying, you tick a box
             that reads:
           </p>
-          <blockquote className="border-l-4 border-orange-400 pl-4 text-zinc-950 dark:text-zinc-50">
+          <blockquote className="border-l-4 border-blue-400 pl-4 text-zinc-950 dark:text-zinc-50">
             {WAIVER_TEXT}
           </blockquote>
           <p>
@@ -195,7 +178,7 @@ export default function TermsPage() {
             listing describes, write to{" "}
             <a
               href={`mailto:${SUPPORT_EMAIL}`}
-              className="font-medium text-orange-500 transition-colors hover:text-orange-600"
+              className={HELP_LINK}
             >
               {SUPPORT_EMAIL}
             </a>
@@ -208,13 +191,15 @@ export default function TermsPage() {
           </p>
           <p>
             Custom commissions work differently: they are paid separately,
-            and their refund rules are on the{" "}
+            and there is no refund once the build is finished — only at the
+            start of the build, if several attempts still do not work for
+            you at all and you said so at the time; then 85% of what you paid
+            comes back. The details are in the{" "}
             <Link
-              href="/contact#faq"
-              className="font-medium text-orange-500 transition-colors hover:text-orange-600"
-              data-page-transition="true"
+              href="/faq#ordering"
+              className={HELP_LINK}
             >
-              Contact page
+              FAQ
             </Link>
             .
           </p>
@@ -225,12 +210,11 @@ export default function TermsPage() {
           легкодоступном месте. Дескриптор выписки — из решений по
           аккаунту Stripe (docs/STRIPE.md): узнанное списание — не
           оспоренное списание. */}
-      <section id="seller" className="mx-auto max-w-3xl scroll-mt-24 py-10 sm:py-16">
-        <span className="text-sm font-semibold text-orange-500">Seller</span>
-        <h2 className="mt-2 text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
+      <section id="seller" className="scroll-mt-24">
+        <h2 className={HELP_H2}>
           Who you&apos;re buying from
         </h2>
-        <dl className="mt-6 divide-y divide-zinc-200 border-y border-zinc-200 text-sm dark:divide-zinc-800 dark:border-zinc-800">
+        <dl className="mt-4 divide-y divide-zinc-200 border-y border-zinc-200 text-sm dark:divide-zinc-800 dark:border-zinc-800">
           {[
             ["Seller", `${SELLER.name}, an individual based in Estonia`],
             ["Address", SELLER.address],
@@ -245,42 +229,43 @@ export default function TermsPage() {
         </dl>
       </section>
 
-      <section className="mx-auto max-w-3xl py-16 sm:py-28">
-        <div className="rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-900 sm:p-12">
-          <FileText size={32} className="text-orange-400" weight="duotone" />
-          <h2 className="mt-4 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
-            Coming soon
-          </h2>
+      {/* Две карточки в ряд (17.11): что ещё пишется — и что уже есть. */}
+      <section className={HELP_CARDS}>
+        <div className={HELP_CARD}>
+          <FileText size={32} className={HELP_ICON} weight="duotone" />
+          <h2 className={HELP_CARD_TITLE}>Commission terms — coming soon</h2>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            Full terms for custom commissions — orders, payment, revisions
-            and liability — are being written. Until then, order terms are
-            agreed directly in Discord for every commission.
+            Full terms for custom commissions are being written. Until then,
+            order terms are agreed directly in Discord for every commission.
           </p>
-          {/* Как устроен сам заказ через тикет — уже написано (26.10):
-              отдельная страница, на неё ссылается и панель бота. */}
-          <p className="mt-3 text-zinc-600 dark:text-zinc-400">
-            How ordering through our Discord tickets works — quotes,
-            payment, delivery, closing — is on{" "}
-            <Link
-              href="/terms/discord"
-              className="font-medium text-orange-500 transition-colors hover:text-orange-600"
-              data-page-transition="true"
-            >
-              Ordering through Discord
-            </Link>
-            .
-          </p>
-
           <ul className="mt-6 space-y-2 border-t border-zinc-200 pt-6 text-sm text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
             {SECTIONS.map((section) => (
               <li key={section} className="flex items-center gap-2">
-                <span className="h-1.5 w-1.5 rounded-full bg-orange-400" />
+                <span className={`h-1.5 w-1.5 rounded-full ${HELP_DOT}`} />
                 {section}
               </li>
             ))}
           </ul>
         </div>
+
+        {/* Как устроен сам заказ через тикет — уже написано (26.10):
+            отдельная страница, на неё ссылается и панель бота. */}
+        <div className={HELP_CARD}>
+          <ChatsCircle size={32} className={HELP_ICON} weight="duotone" />
+          <h2 className={HELP_CARD_TITLE}>Ordering through Discord</h2>
+          <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+            How our Discord tickets work — quotes, payment, delivery and
+            closing a ticket — is written up on its own page.
+          </p>
+          <Link
+            href="/terms/discord"
+            className={`mt-6 inline-block ${HELP_LINK}`}
+          >
+            Ordering through Discord →
+          </Link>
+        </div>
       </section>
+      </div>
     </main>
   );
 }

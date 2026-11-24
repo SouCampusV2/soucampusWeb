@@ -31,7 +31,10 @@ const CONTENT_SECURITY_POLICY = [
   "style-src 'self' 'unsafe-inline'",
   // Картинки карт и аватары — Supabase Storage; data: и blob: — превью
   // в формах загрузки до отправки.
-  "img-src 'self' data: blob: https://*.supabase.co",
+  // cdn.discordapp.com — аватар бота и эмодзи в предпросмотре постов на
+  // /admin/discord (DiscordPreview.tsx). Добавлен 12.11 по аудиту (S-26):
+  // без него перевод CSP в боевой режим погасил бы эти картинки.
+  "img-src 'self' data: blob: https://*.supabase.co https://cdn.discordapp.com",
   "font-src 'self' data:",
   // Supabase по HTTP и Realtime по WebSocket; курсы валют в
   // калькуляторе (BuildEstimator) браузер спрашивает сам.
@@ -105,13 +108,20 @@ const nextConfig: NextConfig = {
     // pathname оставляет от этого лишь публичные объекты Storage;
     // приватный бакет product-files через оптимизатор недостижим в
     // любом случае.
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "*.supabase.co",
-        pathname: "/storage/v1/object/public/**",
-      },
-    ],
+    //
+    // ⚠️ С 2026-11-10 звёздочки нет (аудит, S-24): эта цена оказалась
+    // настоящей — адрес /_next/image?url=https://<чужой>.supabase.co/…
+    // заставлял сайт качать и обрабатывать чужие картинки под нашим
+    // доменом и за наш счёт. Обе базы названы ПОИМЁННО — теми же двумя
+    // id, что стоят в ограничении profiles_avatar_url_own (миграция
+    // 20260915120000). От порядка загрузки .env это по-прежнему не
+    // зависит: значения вписаны, а не читаются из переменной. Появится
+    // третий проект — дописать сюда и в то ограничение.
+    remotePatterns: ["pogwmoyrpaxxwkwhzjcv", "gmspmvnrzavxcbiqlhob"].map((project) => ({
+      protocol: "https" as const,
+      hostname: `${project}.supabase.co`,
+      pathname: "/storage/v1/object/public/**",
+    })),
   },
 
   // Магазин переехал с /shop на /marketplace (2026-08-13, переименование

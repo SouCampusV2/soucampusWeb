@@ -43,11 +43,12 @@ export async function POST(request: Request) {
   if (!body || typeof body !== "object") {
     return NextResponse.json({ error: "bad body" }, { status: 400 });
   }
-  const { productId, action, reason, flags } = body as {
+  const { productId, action, reason, flags, version } = body as {
     productId?: unknown;
     action?: unknown;
     reason?: unknown;
     flags?: unknown;
+    version?: unknown;
   };
 
   if (typeof productId !== "string" || productId.length === 0) {
@@ -105,11 +106,33 @@ export async function POST(request: Request) {
           rejection_flags: rejectionFlags,
         };
 
-  const { data, error } = await db
+  // ⚠️ Одобряется ВЕРСИЯ, а не карта (аудит 2026-11, S-17).
+  //
+  // Пока карта в очереди, автор может её править: состояние остаётся
+  // pending, а файл, описание и картинки меняются на месте. Раньше
+  // условие было одно — «всё ещё в очереди», и Approve публиковал то,
+  // что лежало в строке в эту секунду, а не то, что модератор скачал и
+  // посмотрел. Подменить файл между просмотром и кнопкой было нечем
+  // помешать.
+  //
+  // version — это products.updated_at, каким его показала страница
+  // очереди (база сама двигает его при любой правке строки). Условие
+  // стоит В ЗАПРОСЕ, а не проверкой перед ним: «прочитал, сравнил,
+  // записал» оставляет между чтением и записью ту же щель, только уже.
+  //
+  // Отказу версия не нужна: отклонить изменившуюся карту безвредно.
+  if (action === "approve" && (typeof version !== "string" || version.length === 0)) {
+    return NextResponse.json({ error: "bad version" }, { status: 400 });
+  }
+
+  let query = db
     .from("products")
     .update(update)
     .eq("id", productId)
-    .eq("state", "pending")
+    .eq("state", "pending");
+  if (action === "approve") query = query.eq("updated_at", version as string);
+
+  const { data, error } = await query
     .select("id, slug, title, creator_id")
     .maybeSingle();
 
@@ -118,7 +141,20 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "update failed" }, { status: 500 });
   }
   if (!data) {
-    return NextResponse.json({ error: "already handled" }, { status: 409 });
+    // Ноль строк — по одной из двух причин, и модератору важно, по какой
+    // (инвариант 10: отказ по двум причинам не доказывает ни одну).
+    // Спрашиваем, стоит ли карта в очереди до сих пор: да — значит, её
+    // правили после того, как страница была открыта.
+    const { data: still } = await db
+      .from("products")
+      .select("id")
+      .eq("id", productId)
+      .eq("state", "pending")
+      .maybeSingle();
+    return NextResponse.json(
+      { error: still ? "changed" : "already handled" },
+      { status: 409 }
+    );
   }
 
   // Пауза перед следующей заявкой — если отказ был по тяжёлой причине.
@@ -194,11 +230,14 @@ You can submit a new map again after ${new Date(
             // На правку, а не на витрину: исправил — карта сама
             // возвращается в очередь.
             //
-            // Адрес админский с 2026-09-06 (форма правки переехала).
-            // Старые уведомления по-прежнему держат «/resources/<карта>/edit»
-            // — их спасает редирект в next.config.ts, и он поэтому
-            // остаётся навсегда.
-            href: `/admin/products/${data.slug}/edit`,
+            // ⚠️ Адрес КРЕАТОРСКИЙ, а не админский (аудит 2026-11, S-27).
+            // С 06.09 по 10.11 здесь стоял /admin/products/<карта>/edit:
+            // тогда автор был один — владелец, и форма жила в админке.
+            // С 27.10 креаторство открыто, а /admin постороннему отвечает
+            // 404, то есть человек с отказом кликал «исправить» и попадал
+            // в тупик. /resources/<карта>/edit открывается любому автору
+            // своей карты, владельцу в том числе.
+            href: `/resources/${data.slug}/edit`,
           }
     );
   }

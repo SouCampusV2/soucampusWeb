@@ -12,7 +12,18 @@ import { readApiError } from "@/lib/api-error";
 // (/api/admin/moderation), который заново проверяет права. Отсюда нельзя
 // опубликовать карту, даже подделав запрос: публикация идёт служебным
 // ключом только внутри обработчика.
-export function ModerationActions({ productId }: { productId: string }) {
+//
+// version — products.updated_at на момент, когда страница очереди была
+// отрисована, то есть версия, которую модератор СМОТРЕЛ. Уходит вместе с
+// Approve: если автор успел поправить карту (подменить файл), сервер
+// отвечает 409 и ничего не публикует (аудит 2026-11, S-17).
+export function ModerationActions({
+  productId,
+  version,
+}: {
+  productId: string;
+  version: string;
+}) {
   const refresh = useRefresh();
   const [pending, setPending] = useState(false);
   const [rejecting, setRejecting] = useState(false);
@@ -40,18 +51,23 @@ export function ModerationActions({ productId }: { productId: string }) {
     const response = await fetch("/api/admin/moderation", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ productId, action, reason, flags }),
+      body: JSON.stringify({ productId, action, reason, flags, version }),
     });
 
     setPending(false);
 
     if (!response.ok) {
       const { code, message } = await readApiError(response);
-      // 409 — карту уже разобрали в другой вкладке. Это не ошибка
-      // пользователя, а гонка; обновляем список, чтобы он показал правду.
+      // 409 — карту уже разобрали в другой вкладке ИЛИ автор поправил её,
+      // пока она была открыта здесь. В обоих случаях на экране устаревшая
+      // заявка; обновляем список, чтобы он показал правду.
       if (response.status === 409) {
         refresh();
-        setError("This map was already handled — refreshing the queue.");
+        setError(
+          code === "changed"
+            ? "The creator edited this map after you opened it — check the new version before approving."
+            : "This map was already handled — refreshing the queue."
+        );
         return;
       }
       setError(message ?? code ?? "Something went wrong.");

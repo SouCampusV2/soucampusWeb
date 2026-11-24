@@ -14,6 +14,7 @@
 // сети.
 
 import type { DiscordIdentity } from "@/lib/discord-identity";
+import { callWebhook, webhookError, withParams } from "@/lib/discord-webhook";
 
 export type AnnouncePing = "none" | "here" | "everyone";
 
@@ -72,11 +73,6 @@ export async function sendDiscordAnnouncement(
   payload: ReturnType<typeof announcementPayload>,
   fetchFn: typeof fetch = fetch
 ): Promise<string | null> {
-  const res = await fetchFn(`${webhookUrl}${webhookUrl.includes("?") ? "&" : "?"}wait=true`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (res.ok) return null;
-  return `Discord answered ${res.status}: ${(await res.text()).slice(0, 200)}`;
+  const res = await callWebhook(withParams(webhookUrl, "wait=true"), "POST", payload, fetchFn);
+  return res.ok ? null : webhookError(res);
 }

@@ -5,6 +5,20 @@ import {
   NAME_CLAIMED_COOKIE_OPTIONS,
 } from "@/lib/name-claimed-cookie";
 
+// Методы, которые по смыслу ничего не меняют: их источник не проверяем.
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
+
+/** Origin запроса указывает на тот же хост, на который запрос пришёл. */
+function sameHost(origin: string, host: string | null): boolean {
+  if (!host) return false;
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    // "null" (песочница, file://) и мусор — не наши страницы.
+    return false;
+  }
+}
+
 // Proxy — в Next 16 это бывший middleware (переименован, поведение то же;
 // см. node_modules/next/dist/docs/.../16-proxy.md). Файл один на проект,
 // лежит рядом с app/, функция называется proxy.
@@ -15,6 +29,27 @@ import {
 // (её делают страницы/route handlers через createSupabaseServer), а
 // только поддержание cookie сессии свежей.
 export async function proxy(request: NextRequest) {
+  // ── Запись в /api — только со своих страниц (аудит 2026-11, S-27) ────
+  //
+  // До 12.11 от подделки запроса с чужого сайта (CSRF) защищало одно:
+  // cookie сессии помечены SameSite=Lax, и браузер не прикладывает их к
+  // POST с другого сайта. Этого хватает — пока сайт один. Поддомены
+  // считаются ТЕМ ЖЕ сайтом: как только появится shop.soucampus.online
+  // (план в IDEAS.md), страница на нём сможет слать POST сюда вместе с
+  // cookie. Поэтому второй слой ставится заранее и здесь, в одном месте
+  // на все обработчики: браузер сам называет, с какого адреса ушёл
+  // запрос (Origin), и чужой адрес получает отказ.
+  //
+  // Заголовка нет — пропускаем: его не шлют серверы (Stripe, Discord-бот),
+  // а у них своя защита — подпись. Сравниваем с Host, а не с SITE_URL:
+  // preview и localhost обязаны работать без списка адресов.
+  if (request.nextUrl.pathname.startsWith("/api/") && !SAFE_METHODS.has(request.method)) {
+    const origin = request.headers.get("origin");
+    if (origin && !sameHost(origin, request.headers.get("host"))) {
+      return NextResponse.json({ error: "cross-site request" }, { status: 403 });
+    }
+  }
+
   // Ответ, который поедет дальше. Может быть пересоздан ниже, если
   // Supabase решит записать обновлённые cookie.
   let response = NextResponse.next({ request });

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { PERIOD_PRESETS, type Range } from "@/lib/analytics";
+import { PERIOD_PRESETS, type Range } from "@/lib/analytics-shape";
 
 // Переключатель периода над графиком продаж.
 //

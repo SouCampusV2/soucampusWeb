@@ -22,6 +22,9 @@ import { DISCORD_INVITE, SUPPORT_EMAIL } from "@/lib/site";
 // адреса — из site.ts. Справка, разошедшаяся с тем, что считает
 // калькулятор, хуже отсутствующей: человек ей поверит.
 
+/** Дата последней правки статей вики — показывается под вкладками. Правишь статью — меняй. */
+export const WIKI_UPDATED = "17 November 2026";
+
 /** Раздел оглавления. Порядок здесь = порядок на странице. */
 export const WIKI_SECTIONS = [
   {
@@ -102,16 +105,14 @@ export const WIKI_ARTICLES: WikiArticle[] = [
         ],
       },
       {
+        // До 17.11 здесь были свои четыре шага — короткая копия статьи
+        // upload-a-world-to-a-server. Две копии инструкции однажды
+        // разойдутся, поэтому здесь только указатель.
         heading: "Putting a map on a server",
         blocks: [
           {
-            kind: "steps",
-            items: [
-              "Stop the server first. Copying a world into a running server corrupts it.",
-              "Rename or remove the existing world folder. Its name comes from level-name in server.properties, and it is world by default.",
-              "Upload the map folder and give it that same name.",
-              "Start the server and check the console for the version it loaded.",
-            ],
+            kind: "text",
+            text: "A server needs a few more steps — stopping it first, matching the folder name in server.properties, bringing the nether and the end across. They are in the article on uploading a world to a server.",
           },
         ],
       },
@@ -343,14 +344,14 @@ export const WIKI_ARTICLES: WikiArticle[] = [
     title: "What is inside the download",
     section: "maps",
     summary:
-      "One .zip per map: the world folder, plus whatever extras that particular build needs.",
+      "One file per map: a .zip with the world and any extras, or a single schematic.",
     body: [
       {
         heading: "One archive per map",
         blocks: [
           {
             kind: "text",
-            text: "Every map is delivered as a single .zip file. If a build ships in more than one form — a world folder plus a schematic, say — both sit inside that one archive, and the map's own page says so.",
+            text: "Every map is delivered as one file: usually a .zip, or a single schematic (.schem, .schematic or .litematic) when the build is only a structure. If a build ships in more than one form — a world folder plus a schematic, say — both sit inside that one .zip, and the map's own page says so.",
           },
           {
             kind: "list",
@@ -402,27 +403,43 @@ export const WIKI_ARTICLES: WikiArticle[] = [
     slug: "using-a-map-you-bought",
     title: "Using a map you bought",
     section: "maps",
+    // Это и есть лицензия: /terms#licensing рисует эту же статью. Текст
+    // утверждён владельцем 2026-11-14 — узкая лицензия «пользоваться, а не
+    // распоряжаться»; права на карту остаются у её автора. Меняется только
+    // с его согласия.
     summary:
-      "Play it, host it, build on it. Do not resell it or pass the files on.",
+      "Play it, host it, change it for yourself. Do not resell it or pass the files on.",
     body: [
       {
-        heading: "The short version",
+        heading: "You can",
         blocks: [
           {
             kind: "list",
             items: [
-              "Play the map alone, with friends, or on a server you run — public servers included.",
-              "Edit it, build on top of it, use it as the base of your own project.",
-              "Show it off: streams, videos, screenshots. A credit and a link back are appreciated, never demanded.",
+              "Play the map alone or with friends, and run it on servers you operate, public ones included.",
+              "Change it for your own use: edit, extend, rebuild parts of it.",
+              "Show it in streams, videos and screenshots. Credit is appreciated, never required.",
+            ],
+          },
+        ],
+      },
+      {
+        heading: "You can't",
+        blocks: [
+          {
+            kind: "list",
+            items: [
+              "Resell it, give it away, or upload the files anywhere they can be downloaded. This applies to the original and to edited versions, whole or in recognisable parts.",
+              "Present the build as your own work.",
             ],
           },
           {
             kind: "text",
-            text: "What is not on that list: reselling the map, giving the files away, or publishing them anywhere they can be downloaded from — whole or in recognisable pieces. Buying a map buys the use of it, not the right to hand it on.",
+            text: "The map's creator keeps the rights to it. Buying a map gets you a licence to use it, not ownership.",
           },
           {
             kind: "note",
-            text: `This is the plain-language summary, not the contract. Anything unusual — a paid server network, a commercial project, a build you want to redistribute — is worth asking about first: ${SUPPORT_EMAIL}.`,
+            text: `Anything unusual — a paid server network, a commercial project, a build you want to redistribute — is worth asking about first: ${SUPPORT_EMAIL}.`,
           },
         ],
       },
@@ -433,7 +450,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
     title: "Ordering a custom build",
     section: "commissions",
     summary:
-      "Describe the build, get an estimate the same day, agree the scope, then work starts.",
+      "Describe the build, get a price and a timeframe, agree the scope, then work starts.",
     body: [
       {
         heading: "How it goes",
@@ -441,10 +458,10 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "steps",
             items: [
-              "Send the idea, through the Contact page or straight into Discord. Reference images and a rough size help more than a long description.",
+              "Open a ticket in Discord and describe the idea — the invite is on the Contact page. Reference images and a rough size help more than a long description.",
               "You get a price and a timeframe back. The estimator on the Contact page gives you the same number instantly if you would rather check first.",
               "Scope and payment are agreed before anything is built.",
-              "The build gets made, with progress shots along the way and a round of changes at the end.",
+              "The build gets made, with progress updates along the way. After delivery, one or two free rounds of small changes are included.",
               "You get the world as a .zip — the same way maps from the shop are delivered.",
             ],
           },
@@ -505,21 +522,29 @@ export const WIKI_ARTICLES: WikiArticle[] = [
     section: "account",
     summary:
       "Everything you buy stays in My purchases, and you can download it again whenever you need.",
+    // Сверено с кодом 2026-11-14: покупка только с аккаунтом (checkout
+    // отвечает 401 без входа, гостевые заказы привязаны миграцией
+    // orders_account_only); доступ снимают полный возврат и спор по оплате
+    // (вебхук Stripe) и блокировка файла админом (File withdrawn в
+    // /purchases). Меняется что-то из этого — меняется и текст ниже.
     body: [
       {
         heading: "Where your files live",
         blocks: [
           {
             kind: "text",
-            text: "Buying a map ties it to your account, and it stays in My purchases from then on. Download it as many times as you need, on as many machines as you like.",
+            text: "You buy maps from your account, and each one stays in My purchases from then on. Download it as many times as you need, on as many machines as you like.",
           },
           {
             kind: "list",
             items: [
-              "Bought as a guest, before making an account? Sign up with the same email address and the purchase attaches itself to the new account.",
               "A map taken off the shop stays in your purchases. Delisting removes it from the catalogue, not from you.",
               "Download links themselves are short-lived on purpose. Open the page again and it hands you a fresh one.",
             ],
+          },
+          {
+            kind: "note",
+            text: `Access ends in two cases. A payment that is refunded in full or disputed with your bank removes the map from My purchases. And if a file ever has to be withdrawn — for safety or legal reasons — My purchases says so in place of the download button; write to ${SUPPORT_EMAIL} and we will sort it out.`,
           },
         ],
       },
@@ -642,7 +667,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
             items: [
               "Press F3+A. That forces every loaded chunk to redraw and fixes it most of the time, instantly and with no side effects.",
               "Walk far enough away that the chunks unload, then come back. This forces a full reload rather than a redraw.",
-              "On a server, run /reload or restart it — some lighting is only recalculated on load.",
+              "On a server, restart it — some lighting is only recalculated on load. Not /reload: it reloads plugins, not the world, and breaks many of them.",
               "Turn off any resource pack and look again. If the blocks appear, the pack is the problem, not the map.",
             ],
           },
@@ -911,7 +936,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "steps",
             items: [
-              "Install a mod loader — Fabric or Forge — for the version you want to build in.",
+              "Install a mod loader — Fabric or NeoForge — for the version you want to build in. Forge works only on older game versions.",
               "Install the WorldEdit mod for that loader. It is the same tool as the server plugin, in mod form — the article on getting WorldEdit says where to download it safely.",
               "Put the .schem file in the schematics folder inside your Minecraft directory. WorldEdit creates that folder the first time it runs.",
               "Open the world you want to build in, run //schem load with the file name, stand where you want it and run //paste.",

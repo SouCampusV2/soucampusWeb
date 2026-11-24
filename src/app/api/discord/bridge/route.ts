@@ -9,6 +9,7 @@ import {
   type BridgeKind,
   type PortfolioDraft,
 } from "@/lib/discord-bridge";
+import { cleanImage } from "@/lib/image-clean";
 
 // Вход для Discord-бота BoCampus (фаза 4 бота, 2026-10-27).
 //
@@ -69,10 +70,17 @@ export async function POST(request: Request) {
         console.warn(`[discord-bridge] фото ${i} пропущено: ${image.error}`);
         continue;
       }
-      const path = `discord/${draft.ticketId}/${i}.${image.ext}`;
+      // Клиент прислал файл в Discord, бот лишь передал его: собираем заново,
+      // как любую другую загрузку.
+      const clean = await cleanImage(image.bytes);
+      if (typeof clean === "string") {
+        console.warn(`[discord-bridge] фото ${i} пропущено: ${clean}`);
+        continue;
+      }
+      const path = `discord/${draft.ticketId}/${i}.${clean.ext}`;
       const { error } = await db.storage
         .from("portfolio-images")
-        .upload(path, image.bytes, { contentType: image.contentType, upsert: true });
+        .upload(path, clean.bytes, { contentType: clean.contentType, upsert: true });
       if (error) {
         console.warn(`[discord-bridge] фото ${i} не загрузилось: ${error.message}`);
         continue;

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Package, Plus } from "@phosphor-icons/react/dist/ssr";
 import { getCatalog, summarize, type CatalogRow } from "@/lib/catalog";
 import { CatalogActions } from "@/components/CatalogActions";
+import { FileBlockControl } from "@/components/FileBlockControl";
 import { CatalogFilterBar } from "@/components/CatalogFilterBar";
 import { RefreshButton } from "@/components/RefreshButton";
 import {
@@ -211,6 +212,23 @@ function CatalogRowItem({
               </span>
               {product.suspensionReason}
             </p>
+          )}
+
+          {/* Блокировка файла — отдельной плашкой и красным: это не
+              «почему карты нет на витрине» (оранжевая плашка выше), а
+              «купившие не могут скачать». Красный здесь по назначению —
+              отказ, который касается уже заплативших (DESIGN.md → Red). */}
+          {product.fileBlocked && (
+            <p className="mt-2 whitespace-pre-line rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800 dark:bg-red-950/40 dark:text-red-200">
+              <span className="font-semibold">File blocked: </span>
+              {product.fileBlockReason ?? "no reason recorded"}
+            </p>
+          )}
+
+          {/* Рубильник есть только там, где есть что блокировать: у карты
+              без одобренного файла купившим и так нечего скачивать. */}
+          {(product.hasApprovedFile || product.fileBlocked) && (
+            <FileBlockControl productId={product.id} blocked={product.fileBlocked} />
           )}
         </div>
 

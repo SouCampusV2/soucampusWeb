@@ -23,6 +23,7 @@ import {
 } from "@/lib/profile-media";
 import { checkProfileLink, profileLinkLabel, type ProfileLink } from "@/lib/profile-links";
 import { ProfileLinksDialog } from "@/components/ProfileLinksDialog";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 // GIF уходит в шлюз как есть — обрезка через <canvas> убила бы анимацию.
 // Поэтому у него прежние потолки: настоящий предел (IMAGE_MAX_BYTES)
@@ -327,6 +328,9 @@ export function ProfileEditForm({
         // профиль», не ходя за ними в базу на каждой странице.
         username: nextUsername,
         avatar_url: nextAvatarUrl,
+        // Цвет ника для навбара. Пишем только у купивших — тот же отбор,
+        // что у записи в profiles выше; у остальных null снимает старый.
+        name_color: initial.isClient ? nameColor || null : null,
       },
     });
 
@@ -498,7 +502,7 @@ export function ProfileEditForm({
           )}
         {/* Две колонки — только с sm. На телефоне это были два поля по
             ~150px: имя влезает, фамилия обрезается на вводе, и набирать
-            в них неудобно обеими руками. Правило из RESPONSIVE_PLAN:
+            в них неудобно обеими руками. Правило из DESIGN.md → «Адаптив»:
             сетка, которая идёт в две колонки без sm-шага, подозрительна
             по умолчанию. */}
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
@@ -617,6 +621,20 @@ export function ProfileEditForm({
           <Key size={16} weight="bold" />
           Change password
         </Link>
+      </div>
+
+      {/* Тема (17.11, владелец: «под паролем — light/dark mode»). Та же
+          кнопка, что в футере: тема общая (ThemeProvider), здесь просто
+          ещё одно место, где её ищут. type="button" внутри — форма не
+          отправляется. */}
+      <div className="mt-6 border-t border-zinc-200 pt-6 dark:border-zinc-800">
+        <h2 className="text-sm font-semibold text-zinc-950 dark:text-zinc-50">
+          Appearance
+        </h2>
+        <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          Light or dark — remembered in this browser.
+        </p>
+        <ThemeToggle className="mt-3" />
       </div>
     </form>
 

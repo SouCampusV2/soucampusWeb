@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { getAllReviews, getReview } from "@/lib/reviews";
 import Link from "next/link";
 import { ArrowLeft, ArrowRight, Quotes } from "@phosphor-icons/react/dist/ssr";
-import { BackLink } from "@/components/BackLink";
+import { BackArrow } from "@/components/BackArrow";
 import { Flag } from "@/components/Flag";
 import { ReviewAvatar } from "@/components/ReviewAvatar";
 import { ACCENT_CARD, ACCENT_RING, ACCENT_TEXT } from "@/lib/review-accent";
@@ -56,62 +56,66 @@ export default async function ReviewPage({
   const next = reviews.length > 1 ? reviews[(at + 1) % reviews.length] : null;
 
   return (
-    <main className={`w-full mx-auto max-w-6xl flex-1 px-6 pb-16 sm:pb-28 ${PAGE_TOP}`}>
-      <div className="mx-auto max-w-3xl">
-        {/* Назад — к ЭТОЙ карточке в карусели на главной, а не к началу
-            страницы: якорь #review-<slug> разбирает сама ClientReviews
-            (почему не обычный id — в её шапке). До 24.09 ссылка вела на
-            /#reviews с подписью Home и из-за PageTransition приводила на
-            самый верх главной. */}
-        <BackLink href={`/#review-${review.slug}`}>All reviews</BackLink>
+    // Раскладка — в ряд со страницей работы /portfolio/[slug] (владелец
+    // 17.11: «отличается от портфолио, и ширина другая»): колонка max-w-5xl,
+    // стрелка «назад» слева, внизу «Keep exploring» под линией. До этого —
+    // колонка 3xl, ссылка «All reviews» строкой над карточкой, соседи без
+    // заголовка.
+    <main className={`w-full mx-auto max-w-6xl flex-1 px-6 pb-16 sm:pb-24 ${PAGE_TOP}`}>
+      <div className="mx-auto max-w-5xl">
+        {/* Стрелка «назад» слева, карточка отзыва справа от неё (владелец
+            17.11): внутри карточки — как было до этого, аватар, имя с
+            флагом, роль и цитата. Copy link убран. Назад — к ЭТОЙ карточке
+            в карусели на главной (якорь #review-<slug> разбирает
+            ClientReviews). */}
+        <div className="flex items-start gap-4">
+          <div className="shrink-0 pt-2">
+            <BackArrow href={`/#review-${review.slug}`} label="All reviews" />
+          </div>
 
-        <article
-          className={`mt-6 rounded-3xl p-6 sm:p-12 ${ACCENT_CARD[review.accent]}`}
-        >
-          <header className="flex items-center gap-4 sm:gap-5">
-            <ReviewAvatar
-              avatars={review.avatars}
-              name={review.name}
-              size="lg"
-              ringClassName={ACCENT_RING[review.accent]}
-              priority
-            />
-            <div className="min-w-0">
-              {/* Имя переносится, а не обрезается: «Luke & Sven» на
-                  телефоне не влезает в строку рядом с двумя аватарами, а
-                  многоточие в заголовке прячет половину клиентов. */}
-              <h1 className="text-2xl font-extrabold tracking-tight sm:text-3xl">
-                {review.name}
-                {review.flag && <Flag emoji={review.flag} className="ml-2 align-middle" />}
-              </h1>
-              <p
-                className={`mt-1 text-sm font-medium uppercase tracking-wide ${ACCENT_TEXT[review.accent]}`}
-              >
-                {review.role}
+          <article className={`min-w-0 flex-1 rounded-3xl p-6 sm:p-12 ${ACCENT_CARD[review.accent]}`}>
+            <header className="flex items-center gap-4 sm:gap-5">
+              <ReviewAvatar
+                avatars={review.avatars}
+                name={review.name}
+                size="lg"
+                ringClassName={ACCENT_RING[review.accent]}
+                priority
+              />
+              <div className="min-w-0">
+                {/* Имя переносится, а не обрезается: «Luke & Sven» на
+                    телефоне не влезает в строку рядом с двумя аватарами. */}
+                <h1 className="text-2xl font-extrabold tracking-tight sm:text-4xl">
+                  {review.name}
+                  {review.flag && <Flag emoji={review.flag} className="ml-2 align-middle" />}
+                </h1>
+                <p className={`mt-1 text-sm font-medium uppercase tracking-wide ${ACCENT_TEXT[review.accent]}`}>
+                  {review.role}
+                </p>
+              </div>
+            </header>
+
+            <blockquote className="mt-8 sm:mt-10">
+              <Quotes size={40} weight="fill" aria-hidden className={ACCENT_TEXT[review.accent]} />
+              <p className="mt-4 text-xl font-medium leading-8 sm:text-2xl sm:leading-10">
+                {review.text}
               </p>
-            </div>
-          </header>
-
-          <blockquote className="mt-8 sm:mt-10">
-            <Quotes
-              size={40}
-              weight="fill"
-              aria-hidden
-              className={ACCENT_TEXT[review.accent]}
-            />
-            <p className="mt-4 text-xl font-medium leading-8 sm:text-2xl sm:leading-10">
-              {review.text}
-            </p>
-          </blockquote>
-        </article>
+            </blockquote>
+          </article>
+        </div>
 
         {prev && next && (
           <nav
             aria-label="More reviews"
-            className="mt-10 grid gap-4 sm:grid-cols-2"
+            className="mt-20 border-t border-zinc-200 pt-10 dark:border-zinc-800"
           >
-            <NeighborLink review={prev} direction="prev" />
-            <NeighborLink review={next} direction="next" />
+            <h2 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
+              Keep exploring
+            </h2>
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 sm:gap-6">
+              <NeighborLink review={prev} direction="prev" />
+              <NeighborLink review={next} direction="next" />
+            </div>
           </nav>
         )}
       </div>

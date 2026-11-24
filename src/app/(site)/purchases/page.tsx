@@ -43,7 +43,7 @@ export default async function PurchasesPage() {
   // Storage (с 2026-09-26): он пишет журнал скачиваний и подписывает
   // файл в момент клика. Раньше здесь подписывался каждый файл на
   // каждый показ страницы, и факт скачивания не видел никто.
-  const purchases = await getPurchasesForUser(user.id, user.email ?? "");
+  const purchases = await getPurchasesForUser(user.id);
   const downloads = purchases.map((p) => ({
     ...p,
     url: p.filePath ? downloadHref(p.productId) : null,
@@ -56,7 +56,9 @@ export default async function PurchasesPage() {
     <main className="relative w-full overflow-x-clip px-6">
       <PageGlow color="rgba(249,115,22,0.28)" />
       <section className="relative pb-28 pt-20">
-        <div className="mx-auto max-w-2xl">
+        {/* max-w-3xl — одна колонка с /resources (17.11, владелец: «как
+            Your resources»); до этого 2xl. */}
+        <div className="mx-auto max-w-3xl">
           <h1
             className={`${displayFont.className} text-center text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
           >
@@ -134,7 +136,19 @@ export default async function PurchasesPage() {
                     </a>
                   ) : (
                     <span className="shrink-0 text-xs text-zinc-400 dark:text-zinc-500">
-                      File coming soon
+                      {/* Заблокированный файл — решение площадки, а не
+                          «ещё не загрузили»: обещать «скоро» здесь значило
+                          бы соврать. */}
+                      {item.fileBlocked ? (
+                        <>
+                          File withdrawn —{" "}
+                          <Link href="/support" className="underline underline-offset-2">
+                            contact support
+                          </Link>
+                        </>
+                      ) : (
+                        "File coming soon"
+                      )}
                     </span>
                   )}
                 </li>

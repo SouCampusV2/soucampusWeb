@@ -8,6 +8,11 @@
 // TBT главной вырос с 20–60 до 110–130 мс (замер Lighthouse на проде).
 // Не возвращать генерацию в компонент.
 
+// Штамп цветка SouCampus — тот же файл, что лежит среди знаков бренда.
+import flowerStamps from "../../public/brand/pixel/flower-stamps.json";
+// Контуры гладкого цветка — для маленьких цветов (scripts/flower-shape.mjs).
+import flowerShape from "./flower-shape.json";
+
 /** Детерминированный генератор (mulberry32): одно зерно — один мир. */
 function rng(seed: number) {
   let a = seed >>> 0;
@@ -266,14 +271,13 @@ const CLIMATE_SCALE = 0.008; // частота климата: вдвое реж
 const WARP = 18; // на сколько клеток искривлены границы климата
 const WARP_SCALE = 0.012; // частота искривления: плавные изгибы, а не рябь
 
-export function terrain(seed: number, cols: number, rows: number) {
+/**
+ * Высота каждой клетки 0..1. Отдельно от terrain(), потому что по ней же
+ * цветы ищут сушу (placeFlowers) — считать дважды незачем.
+ */
+export function heights(seed: number, cols: number, rows: number) {
   // Каждый шум — бесшовный по X с периодом ровно в ширину мира (tiled).
   const height = tiled(valueNoise, seed, SCALE, cols);
-  const temp = tiled(perlinNoise, seed ^ 0x7f4a7c15, CLIMATE_SCALE, cols);
-  const moist = tiled(perlinNoise, seed ^ 0x9e3779b9, CLIMATE_SCALE, cols);
-  const warpX = tiled(perlinNoise, seed ^ 0x3c6ef372, WARP_SCALE, cols);
-  const warpY = tiled(perlinNoise, seed ^ 0xa54ff53a, WARP_SCALE, cols);
-  const detail = tiled(valueNoise, seed ^ 0x1f83d9ab, 0.15, cols);
   const hmap = new Float32Array(cols * rows);
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
@@ -284,6 +288,15 @@ export function terrain(seed: number, cols: number, rows: number) {
       hmap[y * cols + x] = height(x, y, 5) + 0.12 - d * 0.25;
     }
   }
+  return hmap;
+}
+
+export function terrain(seed: number, cols: number, rows: number, hmap = heights(seed, cols, rows)) {
+  const temp = tiled(perlinNoise, seed ^ 0x7f4a7c15, CLIMATE_SCALE, cols);
+  const moist = tiled(perlinNoise, seed ^ 0x9e3779b9, CLIMATE_SCALE, cols);
+  const warpX = tiled(perlinNoise, seed ^ 0x3c6ef372, WARP_SCALE, cols);
+  const warpY = tiled(perlinNoise, seed ^ 0xa54ff53a, WARP_SCALE, cols);
+  const detail = tiled(valueNoise, seed ^ 0x1f83d9ab, 0.15, cols);
   const img = new Uint8ClampedArray(cols * rows * 4);
   for (let y = 0; y < rows; y++) {
     for (let x = 0; x < cols; x++) {
@@ -374,3 +387,295 @@ export function paintClouds(img: Uint8ClampedArray, appearAt: Float32Array, elap
 
 /** Что отдаёт clouds(): белые пиксели неба, момент появления каждой клетки и конец набегания. */
 export type CloudField = ReturnType<typeof clouds>;
+
+// ── Цветы SouCampus (бренд, 15.11) ───────────────────────────────────────
+// В мире растут цветы двух видов:
+//   · БОЛЬШИЕ — знак студии как есть: штамп-сетка из public/brand/pixel/
+//     flower-stamps.json (рисовал владелец), 2–3 на мир. Не крутятся и не
+//     отражаются — решение владельца 15.11;
+//   · МАЛЕНЬКИЕ — тот же цветок, уменьшенный: контуры гладкого знака
+//     (src/lib/flower-shape.json, из flower-parts.svg скриптом
+//     scripts/flower-shape.mjs) растрируются под нужный размер. Где
+//     лепестки уже не помещаются, часть убирается равномерно. Цвета — все
+//     красители Minecraft, не только палитра сайта (решение владельца).
+// Идея и требования — docs/BRAND-IDEAS.md, раздел 1. Ручки для
+// экспериментов собраны в FLOWER_TUNING.
+//
+// Всё выбирается тем же зерном, что и мир: то же зерно — те же цветы.
+//
+// ⚠️ Мир ПЛЫВЁТ (HeroWorld → drift). Запретные зоны (карточка с текстом,
+// плашка зерна, шапка) — это зоны ПЕРВОГО кадра: там цветы не растут, а
+// уехать под карточку позже может любой, как и весь мир.
+
+export type FlowerStamp = keyof typeof flowerStamps.stamps;
+
+/** Прямоугольник в клетках мира: x, y — левый верхний угол. */
+export type CellRect = { x: number; y: number; w: number; h: number };
+
+/** Цвета клеток цветка: P/p — лепесток и его тень, C/c — серединка и её тень. */
+export type FlowerColors = Record<"P" | "p" | "C" | "c", string>;
+
+/** Цветок на карте: где стоит, его сетка (символы как в штампах, «.» — мир) и цвета. */
+export type Flower = CellRect & { grid: string[]; colors: FlowerColors; big: boolean };
+
+/**
+ * Цвет лепестков и серединки → полная палитра с тенями. Тень — тот же
+ * цвет на 22% темнее, как нижняя грань блока в игре.
+ */
+function palette(petal: string, center: string): FlowerColors {
+  const dark = (hex: string) =>
+    "#" +
+    [1, 3, 5]
+      .map((i) => Math.round(parseInt(hex.slice(i, i + 2), 16) * 0.78).toString(16).padStart(2, "0"))
+      .join("");
+  return { P: petal, p: dark(petal), C: center, c: dark(center) };
+}
+
+// Красители Minecraft (Java Edition) — цвета, которые игрок узнаёт.
+const DYE = {
+  white: "#f9fffe",
+  orange: "#f9801d",
+  magenta: "#c74ebd",
+  lightBlue: "#3ab3da",
+  yellow: "#fed83d",
+  lime: "#80c71f",
+  pink: "#f38baa",
+  cyan: "#169c9c",
+  purple: "#8932b8",
+  blue: "#3c44aa",
+  brown: "#835432",
+  red: "#b02e26",
+};
+
+/** Ручки для экспериментов владельца. Меняются по одной и смотрятся на живой странице. */
+export const FLOWER_TUNING = {
+  bigCount: [2, 3], // больших на мир, от и до
+  smallCount: [8, 12], // маленьких на мир
+  smallSize: [11, 19], // поперечник маленького в клетках (клетка = 7 px): ~75–135 px
+  // Сколько лепестков из 11 оставить при поперечнике меньше N клеток:
+  // мелкий цветок со всеми лепестками слипается в кляксу.
+  petalsBySize: [
+    [13, 5],
+    [16, 7],
+    [20, 9],
+  ],
+  // Во сколько раз сузить лепесток против знака. У знака щели между
+  // лепестками тоньше клетки, и без сужения соседи слипаются.
+  petalScale: 0.75,
+  // Большие — исходные цвета сайта (решение владельца): оранжевый с
+  // лаймовой серединкой и наоборот. Палитры — из штампов знака.
+  bigColors: [
+    flowerStamps.palettes.orange,
+    flowerStamps.palettes.lime,
+  ] as FlowerColors[],
+  // Маленькие — все красители игры. Серединка жёлтая, у жёлтого и белого
+  // цветка — оранжевая и коричневая, чтобы не сливалась.
+  smallColors: [
+    palette(DYE.red, DYE.yellow),
+    palette(DYE.orange, DYE.yellow),
+    palette(DYE.yellow, DYE.orange),
+    palette(DYE.lime, DYE.yellow),
+    palette(DYE.pink, DYE.yellow),
+    palette(DYE.magenta, DYE.yellow),
+    palette(DYE.purple, DYE.yellow),
+    palette(DYE.blue, DYE.yellow),
+    palette(DYE.lightBlue, DYE.yellow),
+    palette(DYE.cyan, DYE.yellow),
+    palette(DYE.white, DYE.orange),
+    palette(DYE.brown, DYE.yellow),
+  ],
+};
+
+// Суша для цветка — выше пляжа (см. biome(): до 0.48 вода и берег).
+const FLOWER_GROUND = 0.48;
+
+const intBetween = (random: () => number, [lo, hi]: number[]) => lo + Math.floor(random() * (hi - lo + 1));
+
+/**
+ * Тень как у блока в игре: нижний край темнее. Клетка становится тенью,
+ * если под ней уже не та же часть цветка, а над ней — та же: так
+ * лепесток толщиной в клетку остаётся светлым, а не темнеет целиком
+ * (на превью 15.11 тень и справа, и снизу съедала мелкие цветы).
+ */
+function shade(grid: string[]): string[] {
+  return grid.map((row, y) =>
+    [...row]
+      .map((c, x) => (c !== "." && grid[y + 1]?.[x] !== c && grid[y - 1]?.[x] === c ? c.toLowerCase() : c))
+      .join(""),
+  );
+}
+
+// Лепесток знака как «капля»: из контура в flower-shape.json берутся
+// направление, где начинается и где кончается (от центра серединки) и
+// ширина. Рисуется не сам контур, а чистая капля с этими числами: у знака
+// края лепестков нарисованы от руки, и в 15 клетках эта неровность читалась
+// шумом (превью 15.11). Узнаваемость — число, направления и разная длина
+// лепестков — остаётся от знака.
+const PETALS = flowerShape.petals.map((poly) => {
+  const { cx, cy } = flowerShape.center;
+  const dist = (p: number[]) => Math.hypot(p[0] - cx, p[1] - cy);
+  const tip = poly.reduce((best, p) => (dist(p) > dist(best) ? p : best));
+  const angle = Math.atan2(tip[1] - cy, tip[0] - cx);
+  const along = (p: number[]) => (p[0] - cx) * Math.cos(angle) + (p[1] - cy) * Math.sin(angle);
+  const across = (p: number[]) => -(p[0] - cx) * Math.sin(angle) + (p[1] - cy) * Math.cos(angle);
+  const inner = Math.min(...poly.map(along));
+  const outer = along(tip);
+  const half = (Math.max(...poly.map(across)) - Math.min(...poly.map(across))) / 2;
+  return { angle, inner, outer, half: half * FLOWER_TUNING.petalScale };
+});
+
+/** Точка (u, v) в лепестке-капле: узко у серединки, шире всего на 60% длины, кончик круглый. */
+function inPetal(petal: (typeof PETALS)[number], u: number, v: number) {
+  const dx = u - flowerShape.center.cx;
+  const dy = v - flowerShape.center.cy;
+  const a = dx * Math.cos(petal.angle) + dy * Math.sin(petal.angle);
+  const t = (a - petal.inner) / (petal.outer - petal.inner);
+  if (t < 0 || t > 1) return false;
+  const c = -dx * Math.sin(petal.angle) + dy * Math.cos(petal.angle);
+  const profile = t < 0.6 ? Math.sin(((t / 0.6) * Math.PI) / 2) : Math.cos((((t - 0.6) / 0.4) * Math.PI) / 2) ** 0.5;
+  return Math.abs(c) <= petal.half * (0.25 + 0.75 * profile);
+}
+
+// Готовые формы: размер и первый лепесток — это всего ~100 сочетаний,
+// и каждое растрируется один раз за жизнь воркера.
+const smallShapes = new Map<string, string[]>();
+
+/**
+ * Маленький цветок — знак, растрированный в `size` × `size` клеток. Каждая
+ * клетка проверяется в 4×4 точках: лепесток, если в него попало не меньше
+ * 35% клетки. Так края лепестков ровнее, чем по одной точке в центре.
+ */
+// Экспорт — для теста «не клякса» (world-gen.test.ts).
+export function smallFlower(random: () => number): string[] {
+  const size = intBetween(random, FLOWER_TUNING.smallSize);
+  const total = flowerShape.petals.length;
+  const keep = FLOWER_TUNING.petalsBySize.find(([below]) => size < below)?.[1] ?? total;
+  // Оставляем лепестки через равный шаг, по кругу со случайного.
+  const start = Math.floor(random() * total);
+  const key = `${size}:${keep}:${keep === total ? 0 : start}`;
+  const cached = smallShapes.get(key);
+  if (cached) return cached;
+  const petals = Array.from({ length: keep }, (_, k) => (start + Math.round((k * total) / keep)) % total);
+  // Серединка не меньше клетки: у знака она маленькая и на мелком цветке пропала бы.
+  const { cx, cy } = flowerShape.center;
+  const r = Math.max(flowerShape.center.r, 0.75 / size);
+  const SUB = 4;
+  const rows: string[] = [];
+  for (let y = 0; y < size; y++) {
+    let row = "";
+    for (let x = 0; x < size; x++) {
+      let petal = 0;
+      let core = 0;
+      for (let sy = 0; sy < SUB; sy++) {
+        for (let sx = 0; sx < SUB; sx++) {
+          const u = (x + (sx + 0.5) / SUB) / size;
+          const v = (y + (sy + 0.5) / SUB) / size;
+          if (Math.hypot(u - cx, v - cy) <= r) core++;
+          else if (
+            petals.some((i) => inPetal(PETALS[i], u, v))
+          )
+            petal++;
+        }
+      }
+      const n = SUB * SUB;
+      row += core / n >= 0.4 ? "C" : petal / n >= 0.35 ? "P" : ".";
+    }
+    rows.push(row);
+  }
+  const shape = shade(rows);
+  smallShapes.set(key, shape);
+  return shape;
+}
+
+const overlaps = (a: CellRect, b: CellRect, margin = 0) =>
+  a.x - margin < b.x + b.w && b.x - margin < a.x + a.w && a.y - margin < b.y + b.h && b.y - margin < a.y + a.h;
+
+/**
+ * Где растут цветы. `screenCols` — сколько клеток мира видно в первом
+ * кадре (столбцы с нулевого, см. HeroWorld), `keepOut` — запретные зоны
+ * этого кадра, `stamp` — большой знак (на узком экране меньше). Может
+ * вернуть меньше цветов, чем загадано: в мире-океане им негде расти.
+ */
+export function placeFlowers(
+  seed: number,
+  hmap: Float32Array,
+  cols: number,
+  rows: number,
+  stamp: FlowerStamp,
+  screenCols: number,
+  keepOut: CellRect[] = [],
+): Flower[] {
+  const random = rng(seed ^ 0x2f1b7a3d);
+  const flowers: Flower[] = [];
+
+  const fits = (grid: string[], x: number, y: number) => {
+    for (let sy = 0; sy < grid.length; sy++) {
+      for (let sx = 0; sx < grid[0].length; sx++) {
+        if (grid[sy][sx] !== "." && hmap[(y + sy) * cols + x + sx] < FLOWER_GROUND) return false;
+      }
+    }
+    return true;
+  };
+
+  /** Пробует поставить цветок; `firstFrame` — только в видимой части первого кадра. */
+  const plant = (grid: string[], colors: FlowerColors, big: boolean, firstFrame: boolean, attempts: number) => {
+    const w = grid[0].length;
+    const h = grid.length;
+    // Рядом с большим — полштампа зазора (на превью 15.11 два больших
+    // вплотную читались пятном); маленьким между собой хватает двух клеток.
+    const margin = big ? Math.round(Math.max(w, h) / 2) : 2;
+    const maxX = (firstFrame ? Math.min(cols, screenCols) : cols) - w;
+    if (maxX < 0 || rows < h) return false;
+    for (let a = 0; a < attempts; a++) {
+      // Целиком внутри ширины мира: через шов (x + w > cols) не ставим.
+      const box = { x: Math.floor(random() * (maxX + 1)), y: Math.floor(random() * (rows - h + 1)), w, h };
+      if (box.x < screenCols && keepOut.some((zone) => overlaps(box, zone))) continue;
+      if (flowers.some((f) => overlaps(box, f, f.big ? Math.max(margin, Math.round(Math.max(f.w, f.h) / 2)) : margin))) continue;
+      if (!fits(grid, box.x, box.y)) continue;
+      flowers.push({ ...box, grid, colors, big });
+      return true;
+    }
+    return false;
+  };
+
+  const pick = <T,>(list: T[]) => list[Math.floor(random() * list.length)];
+
+  // Большие. Первый — в первом кадре, чтобы его увидели сразу; не нашлось
+  // места за 200 попыток (узкий экран, суши мало) — ищем по всему миру.
+  const bigs = intBetween(random, FLOWER_TUNING.bigCount);
+  const bigGrid = flowerStamps.stamps[stamp].rows;
+  for (let n = 0; n < bigs; n++) {
+    const colors = pick(FLOWER_TUNING.bigColors);
+    if (n === 0 && plant(bigGrid, colors, true, true, 200)) continue;
+    plant(bigGrid, colors, true, false, 200);
+  }
+  // Маленькие — россыпью по всему миру.
+  const smalls = intBetween(random, FLOWER_TUNING.smallCount);
+  for (let n = 0; n < smalls; n++) {
+    plant(smallFlower(random), pick(FLOWER_TUNING.smallColors), false, false, 60);
+  }
+  return flowers;
+}
+
+const hexToRgb = (hex: string): RGB => [
+  parseInt(hex.slice(1, 3), 16),
+  parseInt(hex.slice(3, 5), 16),
+  parseInt(hex.slice(5, 7), 16),
+];
+
+/** Рисует цветы поверх мира. Клетки «.» мир не трогают. */
+export function stampFlowers(img: Uint8ClampedArray, cols: number, flowers: Flower[]) {
+  for (const flower of flowers) {
+    for (let sy = 0; sy < flower.h; sy++) {
+      for (let sx = 0; sx < flower.w; sx++) {
+        const cell = flower.grid[sy][sx] as keyof FlowerColors | ".";
+        if (cell === ".") continue;
+        const [r, g, b] = hexToRgb(flower.colors[cell]);
+        const i = ((flower.y + sy) * cols + flower.x + sx) * 4;
+        img[i] = r;
+        img[i + 1] = g;
+        img[i + 2] = b;
+      }
+    }
+  }
+}

@@ -3,6 +3,7 @@ import { Avatar } from "@/components/Avatar";
 import { StarRating } from "@/components/StarRating";
 import { LocalTime } from "@/components/LocalTime";
 import type { MapReview } from "@/lib/map-review-shape";
+import { nameColorStyle } from "@/lib/name-colors";
 
 // Отзывы на карты (2026-10-26): кто, сколько звёзд, за что.
 //
@@ -40,7 +41,7 @@ export function MapReviewList({
                   <Avatar avatarUrl={review.avatarUrl} size={28} />
                   <span
                     className="truncate"
-                    style={review.nameColor ? { color: review.nameColor } : undefined}
+                    style={nameColorStyle(review.nameColor)}
                   >
                     {review.username}
                   </span>

@@ -96,5 +96,20 @@ describe("NAME_COLORS", () => {
       expect(ratio(colour.value, "#fbfbff")).toBeGreaterThanOrEqual(3);
       expect(ratio(colour.value, "#09090b")).toBeGreaterThanOrEqual(3);
     }
+
+    // Мелкий текст (карточки, комментарии, навбар): порог 4.5 на всех
+    // фонах, где ник встречается. Светлая тема — страница, белая
+    // карточка, чередование комментариев lime-50/blue-50, zinc-100;
+    // тёмная — страница, zinc-900, zinc-800.
+    const lightBackgrounds = ["#fbfbff", "#ffffff", "#f7fee7", "#eff6ff", "#f4f4f5"];
+    const darkBackgrounds = ["#09090b", "#18181b", "#27272a"];
+    for (const colour of NAME_COLORS) {
+      for (const bg of lightBackgrounds) {
+        expect(ratio(colour.light, bg)).toBeGreaterThanOrEqual(4.5);
+      }
+      for (const bg of darkBackgrounds) {
+        expect(ratio(colour.dark, bg)).toBeGreaterThanOrEqual(4.5);
+      }
+    }
   });
 });

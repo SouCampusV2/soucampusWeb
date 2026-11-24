@@ -49,12 +49,15 @@ export default async function SettingsPage() {
 
   // max-w-6xl — рамка страницы по DESIGN.md: с 26.10 рядом с формой стоит
   // превью профиля. Колонки (5:7) держит сетка в ProfileEditForm.
+  // px-6 — ВНУТРИ рамки, на её контейнере, а не на <main> (17.11, владелец:
+  // «Settings шире Portfolio и About»): снаружи отступ выносил контент за
+  // рамку на 48px. Та же ошибка, что 16.11 у FAQ и Wiki (DESIGN.md).
   return (
-    <main className="relative w-full overflow-x-clip px-6">
+    <main className="relative w-full overflow-x-clip">
       <PageGlow color="rgba(249,115,22,0.28)" />
       <section className="relative pb-28 pt-20">
 
-        <div className="mx-auto max-w-6xl">
+        <div className="mx-auto max-w-6xl px-6">
           <h1
             className={`${displayFont.className} text-center text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
           >

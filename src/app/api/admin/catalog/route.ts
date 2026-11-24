@@ -27,7 +27,9 @@ type Action =
   | "hide"
   | "unhide"
   | "delete"
-  | "restore";
+  | "restore"
+  | "block_file"
+  | "unblock_file";
 const ACTIONS: Action[] = [
   "suspend",
   "unsuspend",
@@ -35,7 +37,14 @@ const ACTIONS: Action[] = [
   "unhide",
   "delete",
   "restore",
+  "block_file",
+  "unblock_file",
 ];
+
+// Действия, меняющие СОСТОЯНИЕ карты. Блокировка файла к ним не
+// относится: у неё своя ветка, которая выходит раньше, и до кода ниже
+// (переходы, уведомления автору) она не доходит.
+type StateAction = Exclude<Action, "block_file" | "unblock_file">;
 
 // ⚠️ HIDE И SUSPEND — РАЗНЫЕ СОБЫТИЯ, А НЕ ДВА НАЗВАНИЯ ОДНОГО.
 //
@@ -139,6 +148,55 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
+  // ── Рубильник файла (аудит 2026-11, S-02) ────────────────────────────
+  //
+  // ⚠️ Это НЕ состояние карты, и поэтому ветка стоит отдельно и выходит
+  // раньше всего остального. Снятие и удаление убирают карту с витрины,
+  // но купившие продолжают скачивать — так велит инвариант 13, и для
+  // обычного снятия он верен. Блокировка — единственное исключение: в
+  // файле нашли вредное, и раздавать его нельзя НИКОМУ, включая тех, кто
+  // заплатил. Состояние карты при этом не меняется: заблокировать файл
+  // можно у живой, снятой и удалённой одинаково.
+  //
+  // Причина обязательна — как у снятия: купивший увидит «File withdrawn»
+  // и придёт в поддержку, и отвечать ему надо будет по записи, а не по
+  // памяти. Автору уведомление не шлём: о блокировке за вредоносный файл
+  // с ним говорят лично, а не карточкой в колокольчике.
+  if (action === "block_file" || action === "unblock_file") {
+    const blocking = action === "block_file";
+    let blockReason: string | null = null;
+    if (blocking) {
+      if (typeof reason !== "string" || reason.trim().length === 0) {
+        return NextResponse.json({ error: "reason required" }, { status: 400 });
+      }
+      blockReason = reason.trim().slice(0, MAX_REASON_LENGTH);
+    }
+
+    const { error: blockError } = await db
+      .from("products")
+      .update({ file_blocked: blocking, file_block_reason: blockReason })
+      .eq("id", productId);
+    if (blockError) {
+      console.error("Каталог: блокировка файла не удалась:", blockError.message);
+      return NextResponse.json(
+        { error: `update failed: ${blockError.message}` },
+        { status: 500 }
+      );
+    }
+
+    const { error: blockLogError } = await db.from("moderation_log").insert({
+      product_id: productId,
+      actor_id: admin.id,
+      action,
+      reason: blockReason,
+    });
+    // Журнал знает эти действия с миграции 20261112150000; до неё вставку
+    // отклонит ограничение, а сама блокировка уже записана.
+    if (blockLogError) console.error("Журнал модерации:", blockLogError.message);
+
+    return NextResponse.json({ ok: true });
+  }
+
   // Спрятать и вернуть можно ТОЛЬКО СВОЮ карту — разбор выше,
   // рядом с ACTIONS. Коротко: состояние hidden база подписывает
   // «убрал автор», и применить его к чужой карте значило бы записать
@@ -169,7 +227,7 @@ export async function POST(request: Request) {
   }
 
   const update: Record<string, unknown> = (() => {
-    switch (action as Action) {
+    switch (action as StateAction) {
       case "suspend":
         // Состояние 'suspended' и означает «сняла площадка»: вернуть
         // такую карту автор не может, переход suspended → hidden базой
@@ -302,7 +360,7 @@ export async function POST(request: Request) {
       // что сделал сам, — шум, а не сообщение.
       hide: null,
       unhide: null,
-    }[action as Action];
+    }[action as StateAction];
 
     if (message) await notify(product.creator_id as string, message);
   }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/Button";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 import { GalleryPicker, useImagePicker, type GalleryImage } from "@/components/GalleryPicker";
 import { TextField } from "@/components/MapFormParts";
 import { uploadImage, problemFromGateway } from "@/lib/upload-client";
@@ -80,6 +81,7 @@ export function PortfolioForm({
 
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [askingDelete, setAskingDelete] = useState(false);
 
   // ⚠️ Объявлен ДО галереи: useImagePicker получает setError сразу
   // (тот же порядок, что в формах карты).
@@ -182,11 +184,11 @@ export function PortfolioForm({
     }
   }
 
+  // Спрашивает ConfirmDialog, а не confirm() браузера: тот можно заглушить
+  // навсегда, и кнопка молча перестаёт работать (шапка ConfirmDialog.tsx).
   async function handleDelete() {
     if (!project) return;
-    if (!window.confirm(`Delete “${project.title}” from the portfolio? This can't be undone.`)) {
-      return;
-    }
+    setAskingDelete(false);
     setPending(true);
     setError(null);
     const response = await fetch("/api/admin/portfolio", {
@@ -317,9 +319,19 @@ export function PortfolioForm({
 
       {editing && (
         <div className="border-t border-zinc-200 pt-6 dark:border-zinc-800">
+          <ConfirmDialog
+            open={askingDelete}
+            title={`Delete “${project.title}” from the portfolio?`}
+            description="This can't be undone."
+            confirmLabel="Delete"
+            danger
+            pending={pending}
+            onConfirm={handleDelete}
+            onCancel={() => setAskingDelete(false)}
+          />
           <button
             type="button"
-            onClick={handleDelete}
+            onClick={() => setAskingDelete(true)}
             disabled={pending}
             className="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50 dark:text-red-400 dark:hover:text-red-300"
           >

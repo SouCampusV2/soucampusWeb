@@ -11,6 +11,7 @@
     "check:views": "node scripts/check-views.mjs",
     "check:limits": "node scripts/check-rate-limits.mjs",
     "check:guards": "node scripts/check-guards.mjs",
+    "check:uploads": "node scripts/check-uploads.mjs",
     "check:responsive": "node scripts/check-responsive.mjs",
     "clear:storage": "node scripts/clear-product-storage.mjs"
   },
@@ -27,10 +28,11 @@
     "@vercel/analytics": "^2.0.1",
     "@vercel/speed-insights": "^2.0.0",
     "motion": "^12.42.2",
-    "next": "16.3.6",
+    "next": "16.4.4",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "sanitize-html": "^2.17.6",
+    "sanitize-html": "^2.18.1",
+    "sharp": "0.35.5",
     "stripe": "^22.3.2"
   },
   "devDependencies": {
@@ -40,7 +42,7 @@
     "@types/react-dom": "^19",
     "@types/sanitize-html": "^2.16.1",
     "eslint": "^9",
-    "eslint-config-next": "16.3.6",
+    "eslint-config-next": "16.4.4",
     "tailwindcss": "^4",
     "typescript": "^5",
     "vitest": "^4.1.10"

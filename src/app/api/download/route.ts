@@ -3,7 +3,7 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { getCurrentUser } from "@/lib/current-user";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { clientIp, hashIp } from "@/lib/ip-hash";
-import { signedDownloadUrl, downloadFileName } from "@/lib/orders";
+import { signedDownloadUrl, downloadFileName, ownsOrder } from "@/lib/orders";
 import {
   grantBySession,
   grantForUser,
@@ -29,11 +29,11 @@ import {
 // ⚠️ Ссылку сюда рисует обычный <a>, не next/link: тот заранее
 // подгружает видимые ссылки и записал бы скачивание, которого не было.
 //
-// Пропуск — одно из двух:
-//   ?session=cs_…  страница успеха, человек может быть гостем. Id сессии
-//                  Stripe работает пропуском так же, как для самой
-//                  страницы (разбор — getPaidOrder в orders.ts).
-//   без session    список покупок, человек обязан быть вошедшим.
+// Человек обязан быть вошедшим — всегда (с 2026-11-10, аудит S-04).
+// Какой заказ имеется в виду, называется одним из двух способов:
+//   ?session=cs_…  кнопка со страницы успеха — заказ этой сессии Stripe,
+//                  и он обязан принадлежать вошедшему (ownsOrder);
+//   без session    кнопка из списка покупок — любой его заказ с картой.
 // ============================================================
 
 export const dynamic = "force-dynamic";
@@ -51,23 +51,41 @@ export async function GET(request: Request) {
 
   if (!isUuid(productId)) return notFound();
 
+  // Скачивание начинает ЧЕЛОВЕК, а не страница (аудит 2026-11, S-21).
+  //
+  // Это GET, и он пишет в журнал, по которому решаются споры о списании.
+  // Значит, любой тег на чужой странице, который сам ходит по адресу —
+  // <img>, <script>, <iframe>, — «скачивал» бы карту от имени смотрящего.
+  // Браузер честно сообщает, ради чего делает запрос (Sec-Fetch-Dest):
+  // переход по ссылке и кнопка Download — это document, всё остальное
+  // сюда не относится. Заголовка нет (старый браузер, curl) — пропускаем:
+  // вход и право на файл проверяются ниже в любом случае.
+  const dest = request.headers.get("sec-fetch-dest");
+  if (dest && dest !== "document" && dest !== "empty") return notFound();
+
   let grant: DownloadGrant | null;
   let actor: string;
 
   try {
+    // ⚠️ Вход нужен ВСЕГДА, и с id сессии тоже (аудит 2026-11, S-04).
+    // Раньше `?session=cs_…` был пропуском сам по себе: ссылка работала
+    // без входа и бессрочно у любого, к кому попала. Гостевой покупки
+    // нет с 24.07 — у заказа есть хозяин, и файл отдаётся ему. Id сессии
+    // теперь лишь называет, КАКОЙ заказ; право даёт аккаунт (ownsOrder).
+    const supabase = await createSupabaseServer();
+    const user = await getCurrentUser(supabase);
+    if (!user) {
+      // Сессия истекла, пока вкладка была открыта, — вернуть человека к
+      // покупкам после входа, а не показывать голый отказ.
+      return NextResponse.redirect(new URL("/login?next=/purchases", url), 303);
+    }
+    actor = user.id;
+
     if (sessionId) {
-      grant = await grantBySession(sessionId, productId);
-      actor = `session:${sessionId}`;
+      const bySession = await grantBySession(sessionId, productId);
+      grant = bySession && ownsOrder(bySession, user) ? bySession : null;
     } else {
-      const supabase = await createSupabaseServer();
-      const user = await getCurrentUser(supabase);
-      if (!user) {
-        // Сессия истекла, пока вкладка была открыта, — вернуть человека к
-        // покупкам после входа, а не показывать голый отказ.
-        return NextResponse.redirect(new URL("/login?next=/purchases", url), 303);
-      }
-      grant = await grantForUser(user.id, user.email, productId);
-      actor = user.id;
+      grant = await grantForUser(user.id, productId);
     }
   } catch (err) {
     console.error("[download] проверка права упала:", err instanceof Error ? err.message : err);

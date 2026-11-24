@@ -2,6 +2,7 @@ import Link from "next/link";
 import { SealCheck } from "@phosphor-icons/react/dist/ssr";
 import { Avatar } from "@/components/Avatar";
 import { creatorHref, creatorRole, type Creator } from "@/lib/creators";
+import { nameColorStyle } from "@/lib/name-colors";
 
 // Кто сделал карту — карточкой в правой колонке страницы товара.
 //
@@ -42,9 +43,9 @@ export function CreatorCard({ creator }: { creator: Creator }) {
         <span className="min-w-0">
           <span
             className="flex items-center gap-1 truncate font-semibold text-zinc-950 dark:text-zinc-50"
-            // Цвет ника — привилегия купивших. style, а не класс:
-            // значение произвольное, в Tailwind его не выразить.
-            style={creator.nameColor ? { color: creator.nameColor } : undefined}
+            // Цвет ника — привилегия купивших. Мелкий текст, поэтому
+            // оттенок под тему из nameColorStyle (lib/name-colors.ts).
+            style={nameColorStyle(creator.nameColor)}
           >
             {creator.username}
             {creator.isVerified && (

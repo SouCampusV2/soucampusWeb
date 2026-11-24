@@ -107,11 +107,60 @@ describe("sanitizeDescription — что должно выжить", () => {
     expect(clean(`<img src="${data}">`)).toContain(data);
   });
 
-  it("оставляет обычную ссылку и сам дописывает rel", () => {
-    const out = sanitizeDescription('<a href="https://example.test" target="_blank">link</a>');
-    expect(out).toContain('href="https://example.test"');
+  it("оставляет ссылку на разрешённую площадку и сам дописывает rel", () => {
+    const out = sanitizeDescription('<a href="https://discord.gg/abc" target="_blank">link</a>');
+    expect(out).toContain('href="https://discord.gg/abc"');
     // noopener обязателен: без него открытая вкладка получает доступ к
     // window.opener нашей страницы.
     expect(out).toContain("noopener");
+    expect(out).toContain("nofollow");
+  });
+
+  it("оставляет ссылку внутрь сайта", () => {
+    expect(clean('<a href="/@someone">my profile</a>')).toContain('href="/@someone"');
+    expect(clean('<a href="https://soucampus.online/marketplace">shop</a>')).toContain(
+      'href="https://soucampus.online/marketplace"'
+    );
+  });
+});
+
+// Аудит 2026-11, S-18: описание правится без модерации, поэтому вести
+// оно может только на сайт и три площадки.
+describe("sanitizeDescription — ссылки наружу", () => {
+  it("чужую ссылку превращает в текст, слова остаются", () => {
+    const out = clean('<p>Get it <a href="https://evil.test/file.exe">here</a>!</p>');
+    expect(out).not.toContain("evil.test");
+    expect(out).not.toContain("<a");
+    expect(out).toContain("Get it here!");
+  });
+
+  it("пускает три площадки вместе с поддоменами", () => {
+    for (const href of [
+      "https://discord.com/invite/abc",
+      "https://www.planetminecraft.com/member/x",
+      "https://builtbybit.com/creators/x",
+    ]) {
+      expect(clean(`<a href="${href}">x</a>`), href).toContain(`href="${href}"`);
+    }
+  });
+
+  it("не пускает хост, лишь похожий на площадку", () => {
+    for (const href of [
+      "https://discord.com.evil.test/x",
+      "https://notdiscord.com/x",
+      "https://discord.com@evil.test/x",
+      "https://evil.test/discord.com",
+      "http://discord.com/x",
+      "//discord.com/x",
+      "/\\evil.test",
+      "mailto:someone@discord.com",
+    ]) {
+      expect(clean(`<a href="${href}">x</a>`), href).not.toContain("<a");
+    }
+  });
+
+  it("ловит адрес, записанный сущностями HTML", () => {
+    const out = clean('<a href="https&#58;//evil.test">x</a>');
+    expect(out).not.toContain("<a");
   });
 });

@@ -3,11 +3,14 @@ import { enforceRateLimit } from "@/lib/rate-limit";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
+import { scanMapFile } from "@/lib/map-scan";
+import { checkStoredFile } from "@/lib/scanner-client";
 import {
   HEAD_BYTES,
   MAP_FILE_EXTENSIONS,
   MAP_FILE_TYPES_LABEL,
   MAP_FILE_MAX_BYTES,
+  PENDING_PREFIX,
   checkMapBytes,
   formatBytes,
   safeExtension,
@@ -139,6 +142,10 @@ export async function POST(request: Request) {
     return sign(user.id, body);
   }
 
+  // У confirm свой счёт — см. "upload-confirm" в rate-limit.ts.
+  const confirmLimited = await enforceRateLimit("upload-confirm", user.id);
+  if (confirmLimited) return confirmLimited;
+
   return confirm(user.id, body);
 }
 
@@ -187,7 +194,9 @@ async function sign(
   // экономия, а раздача прав: строка, которую пишет клиент, становилась
   // ключом объекта. Форма папки прежняя (<user_id>/<stamp>-map.<ext>) —
   // её знает уборка Storage и на неё же смотрела снятая политика.
-  const path = `${userId}/${Date.now()}-map.${ext}`;
+  // Токен — на временный путь: на постоянный файл перенесёт confirm, проверив
+  // содержимое. Без этого confirm можно было просто не вызывать.
+  const path = `${userId}/${PENDING_PREFIX}${Date.now()}-map.${ext}`;
 
   const { data, error } = await getSupabaseAdmin()
     .storage.from(PRODUCT_FILES_BUCKET)
@@ -217,7 +226,9 @@ async function confirm(
   // Проверка владения путём — не формальность. Путь приходит от
   // клиента, и без этой строки креатор просил бы проверить (а при
   // отказе — УДАЛИТЬ) чужой файл, зная только его ключ.
-  if (!path.startsWith(`${userId}/`) || path.includes("..")) {
+  // Только pending-: иначе человек проверял бы (и при отказе удалял) файл,
+  // на который уже ссылается его живая карта.
+  if (!path.startsWith(`${userId}/${PENDING_PREFIX}`) || path.includes("..")) {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
@@ -270,7 +281,41 @@ async function confirm(
   const problem = checkMapBytes(head, size, fileName || path);
   if (problem) return reject(problem);
 
-  return NextResponse.json({ ok: true, path, size });
+  // Содержимое целиком. Файл не больше 15 МБ: размер проверен строками выше.
+  // Не скачался или проверка упала — ОТКАЗ, а не пропуск: файл остаётся под
+  // pending-, сослаться на него нельзя, и человек просто загрузит заново.
+  const { data: blob, error: downloadError } = await storage.download(path);
+  if (downloadError || !blob) {
+    console.error("Шлюз загрузки: файл не скачался для проверки:", downloadError?.message);
+    return NextResponse.json({ error: "upload unavailable" }, { status: 500 });
+  }
+  let contentProblem: string | null;
+  try {
+    contentProblem = await scanMapFile(new Uint8Array(await blob.arrayBuffer()), path);
+  } catch (err) {
+    console.error("Шлюз загрузки: проверка содержимого упала:", err);
+    return NextResponse.json({ error: "upload unavailable" }, { status: 500 });
+  }
+  if (contentProblem) return reject(contentProblem);
+
+  // Антивирус: общий шаг для карт и картинок (lib/scanner-client.ts).
+  const scan = await checkStoredFile(storage, path, "map");
+  if (!scan.ok) {
+    if ("problem" in scan) {
+      if (scan.infected) console.warn("Шлюз загрузки: антивирус нашёл файл у", userId);
+      return reject(scan.problem);
+    }
+    return NextResponse.json({ error: scan.unavailable }, { status: scan.status });
+  }
+
+  const finalPath = path.replace(`/${PENDING_PREFIX}`, "/");
+  const { error: moveError } = await storage.move(path, finalPath);
+  if (moveError) {
+    console.error("Шлюз загрузки: файл не переехал:", moveError.message);
+    return NextResponse.json({ error: "upload unavailable" }, { status: 500 });
+  }
+
+  return NextResponse.json({ ok: true, path: finalPath, size });
 }
 
 /**

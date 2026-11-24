@@ -39,10 +39,11 @@ const CARD = "rounded-3xl bg-zinc-100 dark:bg-zinc-900";
 
 export function WhoIsSouCampus() {
   return (
-    // Без нижнего отступа (10.10): за секцией сразу Recent projects, и
-    // два полных py-28 подряд давали 224px пустоты — блоки читались как
-    // чужие друг другу. Зазор между ними теперь задаёт одна Recent projects.
-    <section className="mx-auto max-w-6xl px-6 pt-16 sm:pt-28">
+    // С 17.11 секция ПОСЛЕ Recent projects (владелец). Пара читается одним
+    // блоком: верх короткий (64px — чуть больше, чем от заголовка до
+    // карточек), низ полный. Два полных py-28 подряд давали 224px пустоты
+    // (10.10), поэтому зазор между ними задаёт одна эта секция.
+    <section className="mx-auto max-w-6xl px-6 pb-16 pt-12 sm:pb-28 sm:pt-16">
       <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
         Who is SouCampus
       </h2>
@@ -52,8 +53,8 @@ export function WhoIsSouCampus() {
             рядами, а бока, не влезшие по ширине, обрезает overflow-hidden.
             В поток не входит намеренно — иначе картинка сама раздувала бы
             высоту рядов. 75% высоты — подобрано владельцем (94 было много).
-            Исходник 276×368 меньше места под него, отсюда мягкость — тот
-            же TODO, что в AuthorCta: нужен рендер шире ~800px. */}
+            Исходник 276×368 меньше места под него, отсюда мягкость —
+            TODO: нужен рендер скина шире ~800px. */}
         <div className={`${CARD} pixel-texture relative min-h-[28rem] overflow-hidden md:row-span-2`}>
           <Image
             src="/aboutme/soucampusModel.png"
@@ -77,7 +78,8 @@ export function WhoIsSouCampus() {
             medieval fortresses to light fantasy cities.
           </p>
           <div>
-            <Button href="/about" variant="tertiary">
+            {/* tertiary, как «See the whole portfolio» выше (17.11). */}
+            <Button href="/about" variant="tertiary" pageTransition>
               Read my story
             </Button>
           </div>

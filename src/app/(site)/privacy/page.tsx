@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Unbounded } from "next/font/google";
-import { ShieldCheck } from "@phosphor-icons/react/dist/ssr";
-import { PageGlow } from "@/components/PageGlow";
-import { INLINE_LINK } from "@/components/Button";
+import { FileText, ShieldCheck } from "@phosphor-icons/react/dist/ssr";
+import { HELP_BODY, HELP_CARD, HELP_CARDS, HELP_CARD_TITLE, HELP_DOT, HELP_H2, HELP_ICON, HELP_LINK, HelpPageHeader } from "@/components/HelpTabs";
 import { SITE_NAME, SITE_URL, SUPPORT_EMAIL } from "@/lib/site";
 
 // Политика конфиденциальности.
@@ -49,9 +47,8 @@ const CONTROLLER = {
   detail: "an individual based in Estonia",
 };
 
-const LAST_UPDATED = "26 October 2026";
+const LAST_UPDATED = "17 November 2026";
 
-const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "Privacy Policy",
@@ -109,6 +106,16 @@ const SECTIONS: Section[] = [
       {
         term: "Things you post",
         text: "Comments and reactions on maps, and any application you send us. Comments are public and carry your username.",
+      },
+      {
+        // С 17.11 (владелец: «упомяни файлы креаторов»). Сверено с кодом:
+        // заявка — portfolio_url, discord, about (creator-applications.ts);
+        // галочка 18+ не хранится. Файлы: разбор zip (map-scan.ts), сканер
+        // на своём сервере, если он подключён (scanner-client.ts), картинки
+        // пересобираются (image-clean.ts), непроверенное — в закрытом
+        // бакете (upload-limits.ts, IMAGE_PENDING_BUCKET).
+        term: "If you sell maps here",
+        text: "Your creator application — a portfolio link, your Discord name and a few words about yourself — and the maps you upload: the file, its pictures, description and price. Everything is checked before it goes public. A map file is unpacked and inspected and may be scanned for malware on our own server; each picture is rebuilt from its pixels, which also strips hidden data such as the location a phone camera writes into a photo. Until a map is approved, its files stay private.",
       },
       {
         term: "Visits",
@@ -222,7 +229,7 @@ const SECTIONS: Section[] = [
       { term: "Stripe", text: "Payments." },
       {
         term: "Hostinger",
-        text: "Outgoing email, such as confirmation and password-reset messages, and the server our Discord bot runs on.",
+        text: "Outgoing email, such as confirmation and password-reset messages, and our own server, which runs the Discord bot and the checks on uploaded files.",
       },
       { term: "Google", text: "Only if you choose to sign in with it." },
     ],
@@ -290,90 +297,78 @@ export default function PrivacyPage() {
     // Клип на полноширинном <main>, ограничение ширины — на секциях внутри
     // (см. PageGlow: max-w-* на одном элементе с overflow-x-clip отрезает
     // то самое свечение, которое должен вмещать).
-    // ⚠️ Ширина у /privacy и /terms ОДНА: колонка max-w-3xl по центру для
-    // всей страницы (24.09). Меняешь здесь — меняй и в terms/page.tsx.
-    <main className="relative w-full overflow-x-clip px-6">
-      <section className="relative mx-auto max-w-3xl pb-8 pt-20 sm:pb-16">
-        <PageGlow color="rgba(251,146,60,0.35)" />
-        <span className="text-sm font-semibold text-orange-500">Legal</span>
-        <h1
-          className={`${displayFont.className} mt-3 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
-        >
-          Privacy Policy
-        </h1>
-        <p className="mt-4 text-zinc-600 dark:text-zinc-400">
-          What this site collects, why, and what you can do about it. Written
-          to describe what the code actually does — not to be long.
-        </p>
-        <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
-          Last updated: {LAST_UPDATED}
-        </p>
-      </section>
+    // ⚠️ Ширина — max-w-6xl, одна на /faq, /wiki, /terms и /privacy
+    // (17.11, владелец; до этого — колонка 3xl по центру, см. terms/page.tsx).
+    // Шапка, тело и заголовки разделов — общие для четырёх справочных
+    // страниц (HelpTabs.tsx), отступы заданы там (17.11: у каждой страницы
+    // был свой зазор между абзацем, датой и первым разделом).
+    <main className="relative w-full overflow-x-clip">
+      <HelpPageHeader active="privacy" title="Privacy Policy" updated={LAST_UPDATED}>
+        What this site collects, why, and what you can do about it. Written
+        to describe what the code actually does — not to be long.
+      </HelpPageHeader>
 
-      <section className="mx-auto max-w-3xl pb-10">
-        <div>
-          {SECTIONS.map((section) => (
-            <div key={section.id} id={section.id} className="scroll-mt-24 py-8">
-              <h2 className="text-2xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50">
-                {section.title}
-              </h2>
+      <div className={HELP_BODY}>
+        {SECTIONS.map((section) => (
+          <section key={section.id} id={section.id} className="scroll-mt-24">
+            <h2 className={HELP_H2}>{section.title}</h2>
 
+            <div className="mt-4 space-y-3">
               {section.paragraphs.map((text) => (
-                <p
-                  key={text}
-                  className="mt-3 leading-7 text-zinc-600 dark:text-zinc-400"
-                >
+                <p key={text} className="leading-7 text-zinc-600 dark:text-zinc-400">
                   {text}
                 </p>
               ))}
-
-              {section.bullets && (
-                <ul className="mt-5 space-y-3 border-t border-zinc-200 pt-5 dark:border-zinc-800">
-                  {section.bullets.map((item) => (
-                    <li key={item.term} className="flex gap-3">
-                      <span className="mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full bg-orange-400" />
-                      <span className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
-                        <span className="font-semibold text-zinc-950 dark:text-zinc-50">
-                          {item.term}.
-                        </span>{" "}
-                        {item.text}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
             </div>
-          ))}
-        </div>
-      </section>
 
-      <section className="mx-auto max-w-3xl pb-16 sm:pb-28">
-        <div className="rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-900 sm:p-12">
-          <ShieldCheck size={32} className="text-orange-400" weight="duotone" />
-          <h2 className="mt-4 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
-            Get in touch
-          </h2>
+            {section.bullets && (
+              <ul className="mt-4 space-y-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
+                {section.bullets.map((item) => (
+                  <li key={item.term} className="flex gap-3">
+                    <span className={`mt-2.5 h-1.5 w-1.5 shrink-0 rounded-full ${HELP_DOT}`} />
+                    <span className="text-sm leading-6 text-zinc-600 dark:text-zinc-400">
+                      <span className="font-semibold text-zinc-950 dark:text-zinc-50">
+                        {item.term}.
+                      </span>{" "}
+                      {item.text}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        ))}
+
+      {/* Две карточки в ряд (17.11): своя почта по данным — и куда за
+          условиями покупки. */}
+      <section className={HELP_CARDS}>
+        <div className={HELP_CARD}>
+          <ShieldCheck size={32} className={HELP_ICON} weight="duotone" />
+          <h2 className={HELP_CARD_TITLE}>Get in touch</h2>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
             Questions about your data, or a request to see or delete it — write
             to{" "}
-            <a href={`mailto:${SUPPORT_EMAIL}`} className={INLINE_LINK}>
+            <a href={`mailto:${SUPPORT_EMAIL}`} className={HELP_LINK}>
               {SUPPORT_EMAIL}
             </a>
             .
           </p>
-          <p className="mt-4 text-sm text-zinc-500 dark:text-zinc-400">
-            Commission terms and pricing live on the{" "}
-            <Link
-              href="/terms"
-              className={INLINE_LINK}
-              data-page-transition="true"
-            >
+        </div>
+
+        <div className={HELP_CARD}>
+          <FileText size={32} className={HELP_ICON} weight="duotone" />
+          <h2 className={HELP_CARD_TITLE}>Terms of Service</h2>
+          <p className="mt-2 text-zinc-600 dark:text-zinc-400">
+            Pricing, the licence for shop maps, refunds and who you are buying
+            from live on the{" "}
+            <Link href="/terms" className={HELP_LINK}>
               Terms of Service
             </Link>{" "}
             page.
           </p>
         </div>
       </section>
+      </div>
     </main>
   );
 }

@@ -33,9 +33,9 @@ export default function SupportPage() {
     // (DESIGN.md → «Отступ от навбара»).
     <main className="w-full mx-auto grid max-w-6xl flex-1 items-start gap-10 px-6 pb-16 pt-20 sm:grid-cols-2 sm:pb-28">
       <div>
-        <span className="text-sm font-semibold text-orange-500">Marketplace</span>
+        {/* Заголовок — имя страницы, без плашки (16.11, одна схема на весь сайт). */}
         <h1
-          className={`${displayFont.className} mt-3 text-4xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
+          className={`${displayFont.className} text-4xl tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
         >
           Support
         </h1>

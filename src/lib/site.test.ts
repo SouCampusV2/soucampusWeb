@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readdirSync } from "fs";
 import { join } from "path";
-import { NAV_LINKS, DISCORD_INVITE } from "./site";
+import { NAV_LINKS, DISCORD_INVITE, isLocalPath, safeNextPath } from "./site";
 
 // NAV_LINKS feeds both Navbar.tsx and ContactFooter.tsx — every entry here
 // is a promise that a matching page actually exists. This test would have
@@ -48,5 +48,33 @@ describe("NAV_LINKS", () => {
 describe("DISCORD_INVITE", () => {
   it("is a real https Discord invite URL", () => {
     expect(DISCORD_INVITE).toMatch(/^https:\/\/discord\.com\/invite\//);
+  });
+});
+
+// Audit 2026-11, S-22: the check used to be "starts with one slash", and
+// "/\\evil.com" (slash, backslash) passed it while the browser opened it as "//evil.com".
+describe("isLocalPath / safeNextPath", () => {
+  it("lets ordinary site paths through", () => {
+    expect(isLocalPath("/cart")).toBe(true);
+    expect(isLocalPath("/marketplace/some-map?tab=reviews#top")).toBe(true);
+    expect(safeNextPath("/purchases")).toBe("/purchases");
+  });
+
+  it("rejects absolute and protocol-relative addresses", () => {
+    expect(isLocalPath("https://evil.com")).toBe(false);
+    expect(isLocalPath("//evil.com")).toBe(false);
+    expect(isLocalPath("")).toBe(false);
+    expect(isLocalPath(null)).toBe(false);
+  });
+
+  it("rejects a backslash anywhere: browsers read it as a slash", () => {
+    expect(isLocalPath("/\\evil.com")).toBe(false);
+    expect(isLocalPath("/ok/\\evil.com")).toBe(false);
+    expect(safeNextPath("/\\evil.com")).toBe("/marketplace");
+  });
+
+  it("rejects tabs and newlines: browsers drop them from a URL", () => {
+    expect(isLocalPath("/\t/evil.com")).toBe(false);
+    expect(isLocalPath("/\n/evil.com")).toBe(false);
   });
 });

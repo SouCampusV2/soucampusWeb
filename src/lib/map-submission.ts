@@ -1,5 +1,12 @@
 import type { EditableSpecs, ProductCategory, ProductState } from "@/lib/products";
 import { SHOP_CATEGORIES } from "@/lib/products";
+import { isPendingObject } from "@/lib/upload-limits";
+import { isLocalPath } from "@/lib/site";
+import { DESCRIPTION_LINK_SITES, disallowedDescriptionLinks } from "@/lib/description-links";
+
+// Свои адреса, которые картинками не бывают: обработчики и служебные
+// маршруты. Запрос к ним из <img> — это действие от имени смотрящего.
+const LOCAL_NOT_IMAGES = ["/api/", "/auth/", "/admin", "/_next/"];
 
 // ============================================================
 // Форма того, что браузер присылает шлюзу записи карты, и правила, по
@@ -64,6 +71,8 @@ export const GALLERY_MAX = 15;
  * уходит на витрину ценой в две с половиной тысячи евро.
  */
 export const PRICE_MAX_CENTS = 100_000;
+/** Минимальный платёж Stripe в евро — €0.50. Меньше он не проводит. */
+export const PRICE_MIN_PAID_CENTS = 50;
 
 const CATEGORY_SLUGS = new Set<string>(SHOP_CATEGORIES.map((c) => c.slug));
 
@@ -87,10 +96,22 @@ const CATEGORY_SLUGS = new Set<string>(SHOP_CATEGORIES.map((c) => c.slug));
  */
 export function isOwnImageUrl(url: string, supabaseUrl: string): boolean {
   if (typeof url !== "string" || url.length === 0 || url.length > 2048) return false;
+  // Непроверенная загрузка — ещё не наша картинка, см. PENDING_PREFIX.
+  if (isPendingObject(url)) return false;
   // Свой статический файл. «//evil.com» сюда НЕ попадает: это
   // протокол-относительный адрес, ведущий наружу — ровно та ловушка,
   // которую ловит safeHref в уведомлениях.
-  if (url.startsWith("/") && !url.startsWith("//")) return true;
+  //
+  // ⚠️ Двух условий сверх этого (аудит 2026-11, S-21):
+  //   1) isLocalPath, а не «один слэш в начале»: `/\evil.com` браузер
+  //      открывает как `//evil.com` — картинка с чужого сервера, который
+  //      видит IP каждого посетителя страницы;
+  //   2) не обработчик. Картинка `/api/download?product=…` заставляла бы
+  //      браузер каждого покупателя «скачивать» карту при открытии
+  //      страницы — и писать строку в журнал, по которому решаются споры.
+  if (url.startsWith("/")) {
+    return isLocalPath(url) && !LOCAL_NOT_IMAGES.some((prefix) => url.startsWith(prefix));
+  }
   if (!supabaseUrl) return false;
   const base = supabaseUrl.replace(/\/+$/, "");
   return url.startsWith(`${base}/storage/v1/object/public/product-images/`);
@@ -121,6 +142,15 @@ export function checkMapSubmission(
   if (badText(input.description, DESCRIPTION_MAX)) {
     return "Write a description.";
   }
+  // Ссылки описания — только на сайт и три площадки (аудит 2026-11,
+  // S-18). Отказ здесь — чтобы автор увидел, какая ссылка не подошла, а
+  // не обнаружил после сохранения, что она стала обычным текстом.
+  // Защищает не эта строка, а санитайзер при показе: см. шапку
+  // description-links.ts.
+  const badLink = disallowedDescriptionLinks(input.description)[0];
+  if (badLink !== undefined) {
+    return `Links in the description can only lead to ${DESCRIPTION_LINK_SITES}. Remove the link to “${badLink.slice(0, 80)}”.`;
+  }
   // «free» — не категория, а цена 0 (см. filterByCategory в products.ts).
   // Пришла она сюда — значит запрос собран мимо формы.
   if (!CATEGORY_SLUGS.has(input.category) || input.category === "free") {
@@ -132,6 +162,12 @@ export function checkMapSubmission(
     input.priceCents > PRICE_MAX_CENTS
   ) {
     return `Enter a price between €0 and €${PRICE_MAX_CENTS / 100}.`;
+  }
+  // Платная цена ниже минимума Stripe не покупается вовсе: Stripe
+  // отказывает в создании оплаты, и покупатель видит сбой (аудит
+  // 2026-11, S-09). Ноль — бесплатная карта, она идёт мимо Stripe.
+  if (input.priceCents > 0 && input.priceCents < PRICE_MIN_PAID_CENTS) {
+    return `A paid map costs at least €${(PRICE_MIN_PAID_CENTS / 100).toFixed(2)} — or make it free.`;
   }
   if (!Array.isArray(input.galleryUrls) || input.galleryUrls.length + 1 > GALLERY_MAX) {
     return `You can have up to ${GALLERY_MAX} images.`;
@@ -230,7 +266,15 @@ export function outcomeOfAuthorEdit(
   }
   // Без этого можно было бы провести безобидную карту через модерацию, а
   // потом подложить покупателям что угодно под нашим брендом.
-  if (state === "live" && fileChanged) {
+  //
+  // ⚠️ И спрятанную тоже (аудит 2026-11, S-13). До этого условие было
+  // только про `live`, и защита обходилась в три нажатия: спрятать карту
+  // → заменить файл (состояние hidden, очередь не срабатывает) → вернуть
+  // на витрину. Спрятанная карта — это ОДОБРЕННАЯ карта, которую автор
+  // вправе вернуть сам; значит, файл в ней обязан быть тем, что одобрен.
+  // Триггер guard_product_author_edit повторяет это же условие — миграция
+  // 20261110120000.
+  if ((state === "live" || state === "hidden") && fileChanged) {
     return { state: "pending", submissionKind: "file_changed" };
   }
   return null;

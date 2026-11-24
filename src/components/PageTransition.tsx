@@ -42,6 +42,18 @@ const ACCENT_SHADES_DARK = [
 
 type Phase = "idle" | "appearing" | "revealing";
 
+// Волна играет ТОЛЬКО по пути на страницы студии: главная, Contact, About,
+// Portfolio (решение владельца 17.11). На FAQ, Wiki, Terms, Privacy и всё
+// остальное переход мгновенный, даже если у ссылки стоит
+// data-page-transition: проверка здесь, в одном месте, а не снятием
+// атрибута с каждой ссылки по сайту — так новая ссылка не вернёт волну.
+const STUDIO_PAGES = ["/contact", "/about", "/portfolio"];
+
+function isStudioPage(href: string): boolean {
+  const path = href.split(/[?#]/)[0];
+  return path === "/" || STUDIO_PAGES.some((p) => path === p || path.startsWith(`${p}/`));
+}
+
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -99,7 +111,8 @@ export function PageTransition({ children }: { children: React.ReactNode }) {
         href.startsWith("/") &&
         anchor.target !== "_blank" &&
         !anchor.hasAttribute("download") &&
-        anchor.hasAttribute("data-page-transition");
+        anchor.hasAttribute("data-page-transition") &&
+        isStudioPage(href);
 
       if (!isInternal || href === pathname) return;
 
