@@ -75,7 +75,12 @@ export function ProductCardImage({
         src={images[index]}
         alt={alt}
         fill
-        sizes="(min-width: 640px) 20rem, 85vw"
+        // Шире, чем карточка в узкой сетке: на широком мониторе витрина
+        // (max-w-[120rem]) растягивает карточку больше 20rem, и браузер
+        // брал файл меньше, чем рисовал. Качество 90 — та же причина, что
+        // у галереи: фактура построек на 75 мылится (24.11).
+        sizes="(min-width: 1536px) 28rem, (min-width: 640px) 24rem, 90vw"
+        quality={90}
         priority={priority}
         className="object-cover transition-transform duration-300 group-hover:scale-105"
       />
