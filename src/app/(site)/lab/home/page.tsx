@@ -1,16 +1,17 @@
-// ⚠️ ЛАБОРАТОРИЯ главной (24.11): варианты Recent projects и того, чем
-// заменить «Choose your plan» внизу страниц. Владелец называет номера —
-// выбранное переносится в настоящие компоненты, папка lab/home удаляется.
+// ⚠️ ЛАБОРАТОРИЯ главной, круг 2 (24.11). Круг 1: владелец выбрал Р2
+// (бенто) и П1 (призыв к заказу, но «слишком просто и бездушно»). Здесь:
+// статистика плашкой по скрину legko.company, бенто с иконками при
+// наведении и три новых финала. Владелец называет номера — выбранное
+// переносится в настоящие компоненты, папка lab/home удаляется.
 // На проде страницы нет (notFound), поиску закрыта.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getAllProjects } from "@/lib/projects";
-import { getAllProducts } from "@/lib/products";
-import { getAllUpdates } from "@/lib/updates";
-import { PortfolioHero } from "@/components/PortfolioHero";
-import { RecentProjects } from "@/components/RecentProjects";
-import { RecentBento, RecentLift, RecentPolaroids, RecentShowcase } from "./RecentVariants";
-import { EndDiscord, EndFresh, EndOrder, EndPrice, type FreshItem } from "./EndVariants";
+import { getStats } from "@/lib/stats";
+import { Stats } from "@/components/Stats";
+import { RecentBentoPlus } from "./RecentVariants";
+import { StatsLime, StatsNight, StatsOrange } from "./StatsVariants";
+import { FinaleMeadow, FinaleOrbit, FinaleSunset } from "./FinaleVariants";
 
 export const metadata: Metadata = { title: "Home lab", robots: { index: false, follow: false } };
 
@@ -38,52 +39,41 @@ function Label({ n, name, note }: { n: string; name: string; note?: string }) {
 export default async function HomeLab() {
   if (process.env.VERCEL_ENV === "production") notFound();
 
-  const [projects, products] = await Promise.all([getAllProjects(), getAllProducts()]);
+  const [projects, stats] = await Promise.all([getAllProjects(), getStats()]);
   const newest = [...projects].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-  const post = getAllUpdates()[0];
-  const map = [...products].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1))[0];
-  const fresh: FreshItem[] = [
-    ...(post ? [{ label: "What's new", title: post.title, href: `/updates/${post.slug}`, image: post.cover.src }] : []),
-    ...(map ? [{ label: "New on the marketplace", title: map.title, href: `/marketplace/${map.slug}`, image: map.image }] : []),
-    ...(newest[0] ? [{ label: "Latest work", title: newest[0].title, href: `/portfolio/${newest[0].slug}`, image: newest[0].image }] : []),
-  ];
 
   return (
     <main className="flex-1 pb-32">
       <Chapter
-        title="Recent projects"
-        text="Как сейчас — для сравнения, потом варианты. Наведение без увеличения картинки: у каждого варианта свой эффект — наведите на карточки."
+        title="Статистика"
+        text="Плашкой, как на legko.company: категория в таблетке, крупное число (набегает при прокрутке), подпись, тонкие разделители, мерцающие искры."
       />
-      <Label n="Р0" name="Как сейчас" note="Три карточки, при наведении картинка увеличивается" />
-      <RecentProjects projects={projects} />
-
-      <Label n="Р1" name="Как на странице портфолио" note="Тот же блок, что на /portfolio: наведение показывает работу крупно" />
-      <PortfolioHero projects={newest.slice(0, 8)} />
-
-      <Label n="Р2" name="Бенто: одна большая, две рядом" note="Наведение: оранжевая рамка, фото светлеет, выезжает описание" />
-      <RecentBento projects={newest} />
-
-      <Label n="Р3" name="Витрина с лентой" note="Листается сама; наведите на миниатюру — она встанет крупно" />
-      <RecentShowcase projects={newest} />
-
-      <Label n="Р4" name="Карточки поднимаются" note="Высокие фото, плашка поверх; наведение: карточка подпрыгивает, выезжает описание" />
-      <RecentLift projects={newest} />
-
-      <Label n="Р5" name="Фото на столе" note="Полароиды внахлёст под углом; наведение выпрямляет и кладёт сверху" />
-      <RecentPolaroids projects={newest} />
+      <Label n="С0" name="Как сейчас" />
+      <Stats stats={stats} />
+      <Label n="С1" name="Оранжевая" note="Ближе всего к скрину" />
+      <StatsOrange stats={stats} />
+      <Label n="С2" name="Ночная" note="Тёмная, оранжевое и лаймовое свечение по углам" />
+      <StatsNight stats={stats} />
+      <Label n="С3" name="Лаймовая" note="Тёмный текст на лайме" />
+      <StatsLime stats={stats} />
 
       <Chapter
-        title="Вместо «Choose your plan»"
-        text="Секция в самом низу страниц, перед футером. Тарифы обещали подписку, которой нет; здесь — то, что куда-то ведёт."
+        title="Recent projects — Р2, выбранный"
+        text="Бенто плюс приём со второго скрина: внизу карточки плашки и кружок со стрелкой; наведите — кружок станет оранжевым, вокруг вспыхнут искры. Кнопка «See the whole portfolio» на месте."
       />
-      <Label n="П1" name="Призыв к заказу" note="Тёмный блок, пиксельные цветы, две кнопки" />
-      <EndOrder />
-      <Label n="П2" name="Discord" note="Лаймовая карточка: что там происходит и кнопка" />
-      <EndDiscord />
-      <Label n="П3" name="Свежее со студии" note="Последний пост What's new, новая карта, новая работа — меняется само" />
-      <EndFresh items={fresh} />
-      <Label n="П4" name="Сколько стоила бы твоя карта" note="Ползунок размера, цена и срок сразу" />
-      <EndPrice />
+      <Label n="Р2+" name="Бенто с иконками при наведении" />
+      <RecentBentoPlus projects={newest} />
+
+      <Chapter
+        title="Финал страниц — круг 2"
+        text="Вместо «Choose your plan». Везде призыв к заказу и Discord, кнопки-таблетки как на всём сайте."
+      />
+      <Label n="Ф1" name="Луг под звёздами" note="Ночное небо с искрами, земля из блоков, на ней растут цветы-знаки" />
+      <FinaleMeadow />
+      <Label n="Ф2" name="Орбита" note="Как на третьем скрине: цветок в свечении, вокруг вращаются места студии, снизу четыре карточки" />
+      <FinaleOrbit />
+      <Label n="Ф3" name="Закат" note="Тёплое небо, цветок вместо солнца, силуэт островов" />
+      <FinaleSunset />
     </main>
   );
 }

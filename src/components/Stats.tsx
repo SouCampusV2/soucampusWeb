@@ -29,7 +29,7 @@ function easeOutCubic(t: number) {
   return 1 - Math.pow(1 - t, 3);
 }
 
-function Counter({ to, suffix }: { to: number; suffix: string }) {
+export function Counter({ to, suffix }: { to: number; suffix: string }) {
   const ref = useRef<HTMLSpanElement>(null);
   const [value, setValue] = useState(0);
 

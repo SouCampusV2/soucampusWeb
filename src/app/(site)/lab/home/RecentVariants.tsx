@@ -8,6 +8,9 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import type { Project } from "@/lib/projects";
+import { ArrowRight } from "@phosphor-icons/react";
+import { Button } from "@/components/Button";
+import { SparkleStar } from "./Sparkles";
 
 const href = (p: Project) => `/portfolio/${p.slug}?from=home`;
 
@@ -121,6 +124,61 @@ export function RecentPolaroids({ projects }: { projects: Project[] }) {
           <p className="mt-1 text-center text-xs uppercase tracking-wide text-zinc-500">{p.tag}</p>
         </Link>
       ))}
+    </div>
+  );
+}
+
+/** Р2+. Бенто, выбранное владельцем, плюс приём со скрина legko: внизу
+ *  карточки — плашки (тип, размер, срок) и кружок со стрелкой; при
+ *  наведении кружок становится оранжевым и вокруг вспыхивают искры. */
+function BentoPlusTile({ p, big }: { p: Project; big?: boolean }) {
+  const chips = [p.tag, p.size, p.deadline].filter((c) => c && c !== "—").slice(0, 3);
+  return (
+    <Link
+      href={href(p)}
+      className={`group relative block overflow-hidden rounded-3xl ring-orange-500 transition-[box-shadow] duration-300 hover:ring-4 ${big ? "aspect-[4/3] lg:row-span-2 lg:aspect-auto" : "aspect-[16/10]"}`}
+    >
+      <Image src={p.image} alt={p.title} fill quality={90} sizes={big ? "(min-width:1024px) 60vw, 100vw" : "(min-width:1024px) 35vw, 100vw"} className="object-cover brightness-[0.85] transition-[filter] duration-300 group-hover:brightness-100" />
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 via-black/45 to-transparent p-5 pt-20 sm:p-6 sm:pt-24">
+        <h3 className={`font-bold text-white ${big ? "text-2xl sm:text-3xl" : "text-lg"}`}>{p.title}</h3>
+        <p className="grid grid-rows-[0fr] text-sm text-white/80 transition-[grid-template-rows] duration-300 group-hover:grid-rows-[1fr]">
+          <span className="overflow-hidden"><span className="block pt-2">{p.summary}</span></span>
+        </p>
+        <div className="mt-4 flex items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
+            {chips.map((c) => (
+              <span key={c} className="rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur-sm">{c}</span>
+            ))}
+          </div>
+          <span className="relative shrink-0">
+            <SparkleStar size={14} className="absolute -left-4 -top-3 scale-0 text-white transition-transform delay-75 duration-300 group-hover:scale-100" />
+            <SparkleStar size={20} className="absolute -top-6 left-3 scale-0 text-orange-200 transition-transform delay-150 duration-300 group-hover:scale-100" />
+            <SparkleStar size={10} className="absolute -right-3 top-1 scale-0 text-white transition-transform delay-200 duration-300 group-hover:scale-100" />
+            <span className="flex size-12 items-center justify-center rounded-full bg-white/15 text-white backdrop-blur-sm transition-colors duration-300 group-hover:bg-orange-500 group-hover:text-zinc-950">
+              <ArrowRight size={20} weight="bold" />
+            </span>
+          </span>
+        </div>
+      </div>
+    </Link>
+  );
+}
+
+export function RecentBentoPlus({ projects }: { projects: Project[] }) {
+  const [a, b, c] = projects;
+  if (!a) return null;
+  return (
+    <div className="mx-auto max-w-6xl px-6">
+      <div className="grid gap-4 lg:grid-cols-[3fr_2fr] lg:grid-rows-2">
+        <BentoPlusTile p={a} big />
+        {b && <BentoPlusTile p={b} />}
+        {c && <BentoPlusTile p={c} />}
+      </div>
+      <div className="mt-8 flex justify-center">
+        <Button href="/portfolio" variant="tertiary" size="lg" pageTransition>
+          See the whole portfolio
+        </Button>
+      </div>
     </div>
   );
 }
