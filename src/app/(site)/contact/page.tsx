@@ -188,7 +188,7 @@ export default function ContactPage() {
       </section>
 
       {/* FAQ — last section on the page, so no bottom padding here: the gap
-          before the footer comes from StudioPageEnd in the layout. */}
+          before the footer comes from SiteFinale in the layout. */}
       <section id="faq" className="scroll-mt-24 border-t border-zinc-200 pt-10 dark:border-zinc-800 sm:pt-20">
         <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
           Frequently asked questions

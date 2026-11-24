@@ -1,7 +1,8 @@
 import { Navbar } from "@/components/Navbar";
 import { PageTransition } from "@/components/PageTransition";
 import { ContactFooter } from "@/components/ContactFooter";
-import { StudioPageEnd } from "@/components/StudioPageEnd";
+import { StudioOnly } from "@/components/StudioOnly";
+import { SiteFinale } from "@/components/SiteFinale";
 import { ViewTracker } from "@/components/ViewTracker";
 import { CartProvider } from "@/lib/cart-context";
 
@@ -38,10 +39,12 @@ export default function SiteLayout({
         <ViewTracker />
         <Navbar />
         {children}
-        {/* Тарифов «Choose your plan» больше нет (24.11, решение владельца):
-            обещали подписку, которой не существует. На их месте — только
-            их прежний отступ (StudioPageEnd). */}
-        <StudioPageEnd />
+        {/* На месте бывших тарифов «Choose your plan» — финал страниц
+            студии: рендер работы и карточка Discord (24.11, SiteFinale). В
+            магазине его нет, как не было и тарифов. */}
+        <StudioOnly>
+          <SiteFinale />
+        </StudioOnly>
         <ContactFooter />
       </PageTransition>
     </CartProvider>
