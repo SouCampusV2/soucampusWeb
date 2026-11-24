@@ -6,6 +6,7 @@ import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { PageGlow } from "@/components/PageGlow";
 import { UpdateMeta } from "@/components/UpdateMeta";
 import { getAllUpdates, type UpdatePost } from "@/lib/updates";
+import { SiteFinale } from "@/components/SiteFinale";
 
 // Тот же дисплейный шрифт, что у остальных заголовков сайта.
 const displayFont = Unbounded({
@@ -52,6 +53,9 @@ export default function UpdatesPage() {
           ))}
         </div>
       </div>
+      {/* Финал страниц студии и здесь (24.11, просьба владельца): What's
+          new живёт в магазинной части, где общий финал не стоит. */}
+      <SiteFinale />
     </main>
   );
 }

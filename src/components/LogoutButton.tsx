@@ -13,7 +13,12 @@ export function LogoutButton() {
   const handleLogout = useLogout();
 
   return (
-    <Button variant="secondary" onClick={handleLogout} className="gap-2">
+    <Button
+      variant="secondary"
+      onClick={handleLogout}
+      className="gap-2"
+      colorClassName="border-2 border-red-500 text-red-600 hover:bg-red-500 hover:text-white dark:border-red-400 dark:text-red-400 dark:hover:bg-red-400 dark:hover:text-zinc-950"
+    >
       Log out
       <SignOut size={18} />
     </Button>

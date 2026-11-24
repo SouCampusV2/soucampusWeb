@@ -12,6 +12,7 @@ import { UpdateMeta } from "@/components/UpdateMeta";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
 import { SHARE_COLOR, shareMetadata } from "@/lib/share";
 import { UPDATES, getAllUpdates, getUpdate } from "@/lib/updates";
+import { SiteFinale } from "@/components/SiteFinale";
 
 const displayFont = Unbounded({
   weight: "800",
@@ -175,6 +176,9 @@ export default async function UpdatePage({
           </nav>
         </article>
       </div>
+      {/* Финал страниц студии и здесь (24.11, просьба владельца): What's
+          new живёт в магазинной части, где общий финал не стоит. */}
+      <SiteFinale />
     </main>
   );
 }

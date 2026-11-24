@@ -666,10 +666,11 @@ function AccountMenu({
           <button
             type="button"
             onClick={onLogout}
-            className={`${MENU_ITEM} w-full cursor-pointer text-left`}
+            // Красный (24.11, просьба владельца): выход — не обычный пункт.
+            className="flex w-full cursor-pointer items-center justify-between gap-6 px-4 py-2.5 text-left text-sm font-semibold text-red-600 transition-colors hover:bg-red-500/10 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-500/15 dark:hover:text-red-300"
           >
             Log out
-            <SignOut size={18} aria-hidden className={MENU_ICON} />
+            <SignOut size={18} weight="bold" aria-hidden className="shrink-0" />
           </button>
         </div>
       </div>
@@ -734,7 +735,7 @@ function AccountLinks({
           <button
             type="button"
             onClick={onLogout}
-            className={`${MOBILE_ITEM} w-full cursor-pointer text-left`}
+            className={`${MOBILE_ITEM} w-full cursor-pointer text-left !text-red-600 dark:!text-red-400`}
           >
             Log out
           </button>

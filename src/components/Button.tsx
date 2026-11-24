@@ -231,7 +231,14 @@ export function Button({
   // Discord на тёмном фоне и т. п.) становилась квадратной — владелец
   // заметил это в лаборатории главной.
   const shape = variant === "tertiary" ? "" : "rounded-full";
-  const classes = `${base} ${shape} ${color} ${padding} ${textBySize[size]} ${className}`;
+  // Отступ между текстом и иконкой — тоже у формы кнопки (24.11, владелец:
+  // «у новых кнопок иконка прилипает к тексту»). Раньше gap в base не было,
+  // и каждое место дописывало его руками или забывало. gap-2 — то, что
+  // ставили руками чаще всего. Место со своим gap (gap-3 у кнопок со
+  // стрелкой в кружке) его сохраняет: два gap-* в одной строке классов —
+  // это спор, который решает порядок CSS, а не порядок в строке.
+  const gap = /(^|\s)gap-/.test(className) ? "" : "gap-2";
+  const classes = `${base} ${shape} ${gap} ${color} ${padding} ${textBySize[size]} ${className}`;
 
   if (href && native) {
     return (
