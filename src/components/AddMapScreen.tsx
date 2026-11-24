@@ -21,10 +21,13 @@ export async function AddMapScreen({
   userId,
   submittedHref,
   cancelHref,
+  freeOnly = false,
 }: {
   userId: string;
   submittedHref: string;
   cancelHref: string;
+  /** Платная цена закрыта (paid-maps.ts). */
+  freeOnly?: boolean;
 }) {
   const supabase = await createSupabaseServer();
 
@@ -109,6 +112,7 @@ export async function AddMapScreen({
           reactionOptions={reactionOptions}
           submittedHref={submittedHref}
           cancelHref={cancelHref}
+          freeOnly={freeOnly}
         />
       </div>
     </>

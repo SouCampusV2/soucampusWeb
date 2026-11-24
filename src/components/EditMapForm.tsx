@@ -61,6 +61,7 @@ export function EditMapForm({
   product,
   reactionOptions,
   doneHref,
+  freeOnly = false,
 }: {
   product: EditableProduct;
   /** Список реакций из базы — читает его страница, форма клиентская. */
@@ -70,6 +71,8 @@ export function EditMapForm({
    * админки и кабинет автора, — и вернуть надо туда, откуда пришли.
    */
   doneHref: string;
+  /** Платная цена закрыта (paid-maps.ts): сохранится цена 0. */
+  freeOnly?: boolean;
 }) {
   const router = useRouter();
   const refresh = useRefresh();
@@ -168,7 +171,7 @@ export function EditMapForm({
         return;
       }
     }
-    const priceEuros = Number(priceInput.replace(",", "."));
+    const priceEuros = freeOnly ? 0 : Number(priceInput.replace(",", "."));
     if (!Number.isFinite(priceEuros) || priceEuros < 0) {
       setError("Enter a valid price (0 for a free map).");
       return;
@@ -316,7 +319,7 @@ export function EditMapForm({
           onChange={(v) => setCategory(v as ProductCategory)}
           options={FORM_CATEGORIES.map((c) => ({ value: c.slug, label: c.label }))}
         />
-        <PriceField value={priceInput} onChange={setPriceInput} />
+        <PriceField value={priceInput} onChange={setPriceInput} freeOnly={freeOnly} />
       </div>
 
       {/* Характеристики — на том же месте и в том же порядке, что в

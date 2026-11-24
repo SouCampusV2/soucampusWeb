@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { enforceRateLimit } from "@/lib/rate-limit";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { checkPriceRight } from "@/lib/paid-maps";
 import { PRODUCT_FILES_BUCKET } from "@/lib/orders";
 import { isPendingObject } from "@/lib/upload-limits";
 import { createProduct, specsToColumns } from "@/lib/products";
@@ -124,6 +125,13 @@ export async function POST(request: Request) {
   );
   if (problem) {
     return NextResponse.json({ error: problem }, { status: 400 });
+  }
+
+  // И при создании, и при правке: иначе бесплатную карту подняли бы до
+  // платной второй же отправкой (см. checkPriceRight).
+  const priceProblem = checkPriceRight(map.priceCents, Boolean(profile.is_admin));
+  if (priceProblem) {
+    return NextResponse.json({ error: priceProblem }, { status: 403 });
   }
 
   return action === "create"

@@ -68,6 +68,7 @@ export function UploadMapForm({
   reactionOptions,
   submittedHref,
   cancelHref,
+  freeOnly = false,
 }: {
   /** Список реакций из базы — читает его страница, форма клиентская. */
   reactionOptions: ReactionOption[];
@@ -75,6 +76,8 @@ export function UploadMapForm({
   submittedHref: string;
   /** Куда ведёт Cancel — туда, откуда пришли (см. комментарий у кнопки). */
   cancelHref: string;
+  /** Платная цена закрыта (paid-maps.ts): цена всегда 0. */
+  freeOnly?: boolean;
 }) {
   const router = useRouter();
 
@@ -178,7 +181,7 @@ export function UploadMapForm({
       setError("Attach the map file.");
       return;
     }
-    const priceEuros = Number(priceInput.replace(",", "."));
+    const priceEuros = freeOnly ? 0 : Number(priceInput.replace(",", "."));
     if (!Number.isFinite(priceEuros) || priceEuros < 0) {
       setError("Enter a valid price (0 for a free map).");
       return;
@@ -272,7 +275,7 @@ export function UploadMapForm({
           options={FORM_CATEGORIES.map((c) => ({ value: c.slug, label: c.label }))}
         />
 
-        <PriceField value={priceInput} onChange={setPriceInput} />
+        <PriceField value={priceInput} onChange={setPriceInput} freeOnly={freeOnly} />
       </div>
 
       {/* Характеристики. Стоят ДО описания намеренно: пока автор их

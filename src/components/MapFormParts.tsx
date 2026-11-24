@@ -13,6 +13,7 @@ import {
   LinkSimple,
 } from "@phosphor-icons/react";
 import { RICH_TEXT_CLASS } from "@/lib/rich-text";
+import { FREE_ONLY_MESSAGE } from "@/lib/paid-maps";
 
 // Общие части форм карты — их две (создание UploadMapForm и правка
 // EditMapForm), и панель редактора с текстовым полем в них обязаны быть
@@ -153,11 +154,33 @@ export function PriceField({
   id = "price",
   value,
   onChange,
+  freeOnly = false,
 }: {
   id?: string;
   value: string;
   onChange: (v: string) => void;
+  /**
+   * Креатор без права на платную цену (checkPriceRight в
+   * map-submission.ts): поле стоит на нуле и объясняет почему. Решает
+   * шлюз — это только чтобы не узнавать о запрете после сохранения.
+   */
+  freeOnly?: boolean;
 }) {
+  if (freeOnly) {
+    return (
+      <div>
+        <p className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+          Price (EUR)
+        </p>
+        <p className="rounded-2xl border border-zinc-950/[0.08] px-4 py-3 text-sm text-zinc-950 dark:border-zinc-50/[0.08] dark:text-zinc-50">
+          Free
+        </p>
+        <p className="mt-1.5 text-xs leading-5 text-zinc-500 dark:text-zinc-400">
+          {FREE_ONLY_MESSAGE}
+        </p>
+      </div>
+    );
+  }
   return (
     <div>
       <label

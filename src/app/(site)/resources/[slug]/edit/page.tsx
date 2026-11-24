@@ -5,7 +5,7 @@ import { Unbounded } from "next/font/google";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getCurrentUser } from "@/lib/current-user";
 import { getOwnProduct } from "@/lib/moderation";
-import { isCreator } from "@/lib/creator-applications";
+import { isAdminProfile, isCreator } from "@/lib/creator-applications";
 import { getReactionOptions } from "@/lib/reactions";
 import { EditMapForm, RejectionNote } from "@/components/EditMapForm";
 import { PageGlow } from "@/components/PageGlow";
@@ -73,6 +73,7 @@ export default async function EditOwnMapPage({
               product={product}
               reactionOptions={reactionOptions}
               doneHref="/resources"
+              freeOnly={!(await isAdminProfile(supabase, user.id))}
             />
           </div>
         </div>

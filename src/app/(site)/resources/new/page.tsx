@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getCurrentUser } from "@/lib/current-user";
-import { isCreator, getSubmissionBlock } from "@/lib/creator-applications";
+import { isCreator, isAdminProfile, getSubmissionBlock } from "@/lib/creator-applications";
 import { PageGlow } from "@/components/PageGlow";
 import { AddMapScreen } from "@/components/AddMapScreen";
 
@@ -58,6 +58,7 @@ export default async function AddMapForCreatorPage() {
             userId={user.id}
             submittedHref="/resources/new/submitted"
             cancelHref="/resources"
+            freeOnly={!(await isAdminProfile(supabase, user.id))}
           />
         </div>
       </section>

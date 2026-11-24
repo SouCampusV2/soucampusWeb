@@ -103,6 +103,24 @@ export async function isCreator(
 }
 
 /**
+ * Админ ли человек — для формы карты: платную цену ставит только он
+ * (paid-maps.ts). Своя строка profiles читается под RLS. Ошибка —
+ * «не админ»: форма тогда честно скажет «только бесплатно», а решает
+ * всё равно шлюз.
+ */
+export async function isAdminProfile(
+  supabase: SupabaseClient,
+  userId: string
+): Promise<boolean> {
+  const { data } = await supabase
+    .from("profiles")
+    .select("is_admin")
+    .eq("id", userId)
+    .maybeSingle();
+  return Boolean(data?.is_admin);
+}
+
+/**
  * До какого момента человеку закрыта отправка новых карт, или null.
  *
  * Настоящий запрет стоит в RLS-политике вставки (миграция
