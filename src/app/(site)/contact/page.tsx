@@ -187,9 +187,8 @@ export default function ContactPage() {
         </div>
       </section>
 
-      {/* FAQ — last section on the page, so no bottom padding/divider here;
-          PricingSection (global, right after this <main>) skips its own
-          top divider/padding on this route too, see PricingSection.tsx. */}
+      {/* FAQ — last section on the page, so no bottom padding here: the gap
+          before the footer comes from StudioPageEnd in the layout. */}
       <section id="faq" className="scroll-mt-24 border-t border-zinc-200 pt-10 dark:border-zinc-800 sm:pt-20">
         <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
           Frequently asked questions

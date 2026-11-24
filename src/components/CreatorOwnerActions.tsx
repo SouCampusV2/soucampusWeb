@@ -102,7 +102,7 @@ export function CreatorOwnerActions({
           карандашом у ника (24.11, просьба владельца). Есть всегда: свой
           профиль правит и тот, кто не автор. */}
       <Button href="/settings" size="sm" variant="secondary">
-        <GearSix size={18} weight="bold" aria-hidden /> Settings
+        Settings <GearSix size={18} weight="bold" aria-hidden />
       </Button>
       {/* Кнопка есть только у автора. Предлагать «стать автором», когда
           приём закрыт, значит вести на страницу, которая ответит отказом. */}

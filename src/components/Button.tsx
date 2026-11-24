@@ -266,10 +266,11 @@ export function Button({
       disabled={disabled || loading}
       aria-busy={loading || undefined}
     >
+      {children}
+      {/* Справа от текста, как все иконки в кнопках сайта (24.11). */}
       {loading && (
         <CircleNotch size={18} weight="bold" aria-hidden className="shrink-0 animate-spin" />
       )}
-      {children}
     </button>
   );
 }

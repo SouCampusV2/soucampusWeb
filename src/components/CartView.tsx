@@ -446,8 +446,13 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
                     пунктиром до цены, итог за пунктирной чертой, зубчатый
                     низ. Галочка, кнопка оплаты и сообщения — под чеком,
                     логика прежняя. */}
+                {/* Тень — фильтром на обёртке: clip-path режет box-shadow и
+                    ring у самого чека, и в тёмной теме оставались обрубки
+                    рамки (владелец 24.11). drop-shadow повторяет зубцы.
+                    Бумага тёплая: кремовая днём, графитовая ночью. */}
+                <div className="drop-shadow-[0_8px_18px_rgba(0,0,0,0.12)] dark:drop-shadow-[0_10px_24px_rgba(0,0,0,0.55)]">
                 <div
-                  className="bg-[#fbfbff] px-6 pb-9 pt-6 shadow-lg ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"
+                  className="bg-[#fffaf0] px-6 pb-9 pt-6 dark:bg-zinc-800"
                   style={{ clipPath: RECEIPT_EDGE }}
                 >
                   <div className="flex items-center gap-2">
@@ -459,23 +464,24 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
                     {available.map((item) => (
                       <li key={item.slug} className="flex items-baseline gap-2 text-zinc-900 dark:text-zinc-100">
                         <span className="truncate">{item.title}</span>
-                        <span aria-hidden className="min-w-4 flex-1 border-b border-dotted border-zinc-400 dark:border-zinc-600" />
+                        <span aria-hidden className="min-w-4 flex-1 border-b border-dotted border-zinc-400 dark:border-zinc-500" />
                         <span className="shrink-0">{item.priceCents === 0 ? "FREE" : formatCents(item.priceCents)}</span>
                       </li>
                     ))}
                     <li className="flex items-baseline gap-2 text-zinc-700 dark:text-zinc-300">
                       <span>Taxes</span>
-                      <span aria-hidden className="min-w-4 flex-1 border-b border-dotted border-zinc-400 dark:border-zinc-600" />
+                      <span aria-hidden className="min-w-4 flex-1 border-b border-dotted border-zinc-400 dark:border-zinc-500" />
                       <span className="shrink-0">at checkout</span>
                     </li>
                   </ul>
 
-                  <div className="mt-5 flex items-baseline justify-between border-t-2 border-dashed border-zinc-300 pt-4 font-mono dark:border-zinc-700">
+                  <div className="mt-5 flex items-baseline justify-between border-t-2 border-dashed border-zinc-300 pt-4 font-mono dark:border-zinc-600">
                     <span className="font-bold text-zinc-950 dark:text-zinc-50">TOTAL</span>
                     <span className="text-2xl font-extrabold text-zinc-950 dark:text-zinc-50">
                       {formatCents(totalCents)}
                     </span>
                   </div>
+                </div>
                 </div>
 
                 {/* Галочка — прямо над кнопкой: согласие даётся в момент

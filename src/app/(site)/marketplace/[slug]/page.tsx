@@ -1,5 +1,6 @@
 import { cache } from "react";
 import Link from "next/link";
+import { Archive, DownloadSimple, Lifebuoy, ShieldCheck } from "@phosphor-icons/react/dist/ssr";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { sanitizeDescription } from "@/lib/sanitize";
@@ -324,11 +325,25 @@ export default async function ProductPage({
         {/* top-24: чуть ниже навбара (sticky top-4 + его высота), не
             вплотную к нему при скролле. */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
-          <div className="rounded-2xl border border-zinc-200 p-6 dark:border-zinc-800">
-            {/* Цена и кнопка — с lg: на телефоне они стоят под фото. */}
-            <p className="hidden text-3xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 lg:block">
-              {product.price}
-            </p>
+          {/* Карточка покупки (24.11, владелец: «справа слишком сыро и
+              пусто»): плашка вида покупки, крупная цена, тёплый градиент
+              под тему, внизу — что человек получает, только правда. Цена
+              и кнопки с lg: на телефоне они стоят под фото. */}
+          <div className="rounded-3xl border border-orange-200/70 bg-gradient-to-b from-orange-50 to-[#fbfbff] p-6 dark:border-zinc-800 dark:from-zinc-900 dark:to-zinc-950">
+            <div className="hidden lg:block">
+              <span
+                className={`inline-block rounded-full px-3 py-1 text-xs font-semibold ${
+                  product.priceCents === 0
+                    ? "bg-lime-100 text-lime-800 dark:bg-lime-950 dark:text-lime-300"
+                    : "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300"
+                }`}
+              >
+                {product.priceCents === 0 ? "Free map" : "One-time purchase"}
+              </span>
+              <p className="mt-3 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
+                {product.price}
+              </p>
+            </div>
 
             <div className="mt-6 hidden lg:block">
               <AddToCartButton
@@ -359,25 +374,27 @@ export default async function ProductPage({
               </div>
             )}
 
-            <dl className="mt-6 space-y-3 border-t border-zinc-200 pt-6 text-sm dark:border-zinc-800">
-              <div className="flex items-center justify-between">
-                <dt className="text-zinc-500 dark:text-zinc-400">Delivery</dt>
-                <dd className="font-medium text-zinc-950 dark:text-zinc-50">
-                  Instant download
-                </dd>
-              </div>
-              <div className="flex items-center justify-between">
-                <dt className="text-zinc-500 dark:text-zinc-400">Need help?</dt>
-                <dd>
-                  <Link
-                    href="/support"
-                    className={`font-medium ${INLINE_LINK}`}
-                  >
+            <ul className="mt-6 space-y-3 border-t border-zinc-950/[0.06] pt-5 text-sm dark:border-white/10">
+              {[
+                { text: "Instant .zip download", Icon: DownloadSimple },
+                { text: "Stays in My purchases", Icon: Archive },
+                { text: "Checked for viruses on upload", Icon: ShieldCheck },
+              ].map(({ text, Icon }) => (
+                <li key={text} className="flex items-center justify-between gap-3 text-zinc-800 dark:text-zinc-200">
+                  {text}
+                  <Icon size={18} weight="duotone" aria-hidden className="shrink-0 text-orange-500 dark:text-orange-400" />
+                </li>
+              ))}
+              <li className="flex items-center justify-between gap-3 text-zinc-800 dark:text-zinc-200">
+                <span>
+                  Need help?{" "}
+                  <Link href="/support" className={`font-medium ${INLINE_LINK}`}>
                     Support
                   </Link>
-                </dd>
-              </div>
-            </dl>
+                </span>
+                <Lifebuoy size={18} weight="duotone" aria-hidden className="shrink-0 text-orange-500 dark:text-orange-400" />
+              </li>
+            </ul>
           </div>
 
           {/* Характеристики — ПОД карточкой покупки, а не над ней.

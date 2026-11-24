@@ -1,7 +1,7 @@
 import { Navbar } from "@/components/Navbar";
 import { PageTransition } from "@/components/PageTransition";
-import { PricingSection } from "@/components/PricingSection";
 import { ContactFooter } from "@/components/ContactFooter";
+import { StudioPageEnd } from "@/components/StudioPageEnd";
 import { ViewTracker } from "@/components/ViewTracker";
 import { CartProvider } from "@/lib/cart-context";
 
@@ -38,7 +38,10 @@ export default function SiteLayout({
         <ViewTracker />
         <Navbar />
         {children}
-        <PricingSection />
+        {/* Тарифов «Choose your plan» больше нет (24.11, решение владельца):
+            обещали подписку, которой не существует. На их месте — только
+            их прежний отступ (StudioPageEnd). */}
+        <StudioPageEnd />
         <ContactFooter />
       </PageTransition>
     </CartProvider>

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle, Info, ArrowRight, ShoppingCartSimple, Lightning, DownloadSimple } from "@phosphor-icons/react";
+import { CheckCircle, Info, ShoppingCartSimple, Lightning, DownloadSimple } from "@phosphor-icons/react";
 import { Button, TERTIARY_UNDERLINE } from "@/components/Button";
 import { useCart, type CartItem } from "@/lib/cart-context";
 import { readApiError } from "@/lib/api-error";
@@ -284,7 +284,7 @@ export function AddToCartButton({
   const isFree = product.priceCents === 0;
 
   return (
-    <div>
+    <div className="relative">
       {/* Цена из подписи убрана (решение владельца 2026-08-21): она стоит
           крупным шрифтом прямо над кнопкой, и повторять её значит
           удлинять кнопку ради того, что человек и так видит. */}
@@ -301,8 +301,8 @@ export function AddToCartButton({
             loading={buying} disabled={buying}
             className="group w-full"
           >
-            {!buying && <DownloadSimple size={20} weight="bold" aria-hidden className="transition-transform group-hover:translate-y-0.5" />}
             {buying ? "Getting it…" : "Get it for free"}
+            {!buying && <DownloadSimple size={20} weight="bold" aria-hidden className="transition-transform group-hover:translate-y-0.5" />}
           </Button>
           <Button
             size="lg"
@@ -310,15 +310,15 @@ export function AddToCartButton({
             onClick={handleClick}
             className="group mt-3 w-full"
           >
-            <CartIcon bump={bump} />
             Add to cart
+            <CartIcon bump={bump} />
           </Button>
         </>
       ) : (
         <>
           <Button size="lg" onClick={handleClick} className="group w-full">
-            <CartIcon bump={bump} />
             Add to cart
+            <CartIcon bump={bump} />
           </Button>
 
           {/* Покупка одной кнопкой — вторичная намеренно. Основной путь у
@@ -332,8 +332,8 @@ export function AddToCartButton({
             loading={buying} disabled={buying}
             className="group mt-3 w-full"
           >
-            {!buying && <Lightning size={20} weight="fill" aria-hidden className="transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />}
             {buying ? "Redirecting…" : "Buy now"}
+            {!buying && <Lightning size={20} weight="fill" aria-hidden className="transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />}
           </Button>
 
           <div className="mt-3">
@@ -349,12 +349,14 @@ export function AddToCartButton({
         </>
       )}
 
-      {/* min-h резервирует место под сообщение, чтобы его появление не
-          сдвигало карточку с ценой и характеристиками. */}
-      <div className="mt-3 min-h-[2.5rem]" aria-live="polite">
+      {/* Сообщение всплывает ПОВЕРХ того, что ниже, а не держит под себя
+          место (24.11, владелец: «между реакцией и соглашением слишком
+          большой спейсинг» — это и был зарезервированный пустой слот).
+          Появление по-прежнему ничего не сдвигает: блок вне потока. */}
+      <div className="absolute inset-x-0 top-full z-20 mt-2" aria-live="polite">
         {notice && (
           <div
-            className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm ${
+            className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm shadow-lg ${
               notice.tone === "success"
                 ? "bg-lime-100 text-zinc-800 dark:bg-lime-900 dark:text-zinc-100"
                 : "bg-orange-100 text-zinc-800 dark:bg-orange-900 dark:text-zinc-100"
@@ -380,12 +382,6 @@ export function AddToCartButton({
                 className="group ml-auto flex shrink-0 items-center gap-1.5 font-semibold text-orange-700 dark:text-orange-300"
               >
                 <span className={TERTIARY_UNDERLINE}>{notice.linkLabel}</span>
-                <ArrowRight
-                  size={14}
-                  weight="bold"
-                  className="transition-transform group-hover:translate-x-1"
-                  aria-hidden
-                />
               </Link>
             )}
           </div>
