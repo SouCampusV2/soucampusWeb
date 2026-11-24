@@ -13,6 +13,13 @@ import { getCurrentUser } from "@/lib/current-user";
 import { downloadHref, SESSION_ID_PATTERN } from "@/lib/downloads";
 import { Button, INLINE_LINK } from "@/components/Button";
 import { ClearCartOnSuccess } from "@/components/ClearCartOnSuccess";
+import { RefreshWhilePending } from "@/components/RefreshWhilePending";
+import { CircleNotch } from "@phosphor-icons/react/dist/ssr";
+
+// Ожидание заказа после возврата со Stripe: 8 попыток по 2 секунды —
+// около 16 секунд сверх первого рендера. Вебхук обычно успевает за 1–3.
+const CONFIRM_ATTEMPTS = 8;
+const CONFIRM_INTERVAL_MS = 2000;
 import { DISCORD_INVITE } from "@/lib/site";
 import { WAIVER_TEXT } from "@/lib/legal";
 
@@ -47,12 +54,22 @@ async function findOrRecordOrder(sessionId: string): Promise<PaidOrder | null> {
   let input;
   try {
     input = await buildPaidOrderFromSession(sessionId);
-  } catch {
+  } catch (err) {
     // Несуществующий session_id — Stripe отвечает ошибкой при retrieve.
-    // Для нас это просто "заказа нет", а не авария.
+    // Для нас это просто "заказа нет", а не авария. В лог — всё равно:
+    // 24.11 на preview страница раз за разом говорила «не нашли» сразу
+    // после оплаты, и по логу нельзя было понять, на каком шаге.
+    console.warn(
+      "[success] Stripe не отдал сессию:",
+      sessionId,
+      err instanceof Error ? err.message : err
+    );
     return null;
   }
-  if (!input) return null;
+  if (!input) {
+    console.warn("[success] сессия не оплачена, чужой среды или пуста:", sessionId);
+    return null;
+  }
 
   // Запись заказа обёрнута намеренно: на этой странице покупатель уже
   // ЗАПЛАТИЛ, и она не имеет права отдать 500 — что бы ни случилось
@@ -84,9 +101,9 @@ async function findOrRecordOrder(sessionId: string): Promise<PaidOrder | null> {
 export default async function SuccessPage({
   searchParams,
 }: {
-  searchParams: Promise<{ session_id?: string }>;
+  searchParams: Promise<{ session_id?: string; attempt?: string }>;
 }) {
-  const { session_id: sessionId } = await searchParams;
+  const { session_id: sessionId, attempt: attemptParam } = await searchParams;
   const validId = Boolean(sessionId && SESSION_ID_PATTERN.test(sessionId));
 
   // ⚠️ Страница — только хозяину заказа (аудит 2026-11, S-04 и S-07).
@@ -112,6 +129,39 @@ export default async function SuccessPage({
   // Чужой заказ выглядит ровно как несуществующий: по разнице ответов
   // нельзя проверять, настоящий ли id.
   const order = found && viewer && ownsOrder(found, viewer) ? found : null;
+  if (found && !order) {
+    console.warn("[success] заказ найден, но не этого аккаунта:", sessionId);
+  }
+
+  // Заказа ещё нет, но id настоящий по виду — скорее всего, вебхук и
+  // эта страница разминулись на секунду. Не пугаем «Order not found»,
+  // а показываем ожидание и сами переспрашиваем сервер несколько раз.
+  // Лимит в адресе (?attempt) — номер попытки; после последней страница
+  // честно говорит «не нашли». Чужой и несуществующий id проходят те же
+  // попытки, поэтому по ответу их по-прежнему не различить.
+  const attempt = Number.parseInt(attemptParam ?? "0", 10) || 0;
+  if (!order && viewer && validId && attempt < CONFIRM_ATTEMPTS) {
+    return (
+      <main className="w-full mx-auto max-w-6xl flex-1 px-6 py-16 sm:py-28">
+        <div className="mx-auto max-w-2xl">
+          <h1 className="flex items-center gap-4 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
+            <CircleNotch
+              size={36}
+              weight="bold"
+              aria-hidden
+              className="shrink-0 animate-spin text-orange-500"
+            />
+            Confirming your payment…
+          </h1>
+          <p className="mt-4 leading-7 text-zinc-600 dark:text-zinc-400">
+            This usually takes a few seconds. Keep this page open — it
+            updates on its own.
+          </p>
+        </div>
+        <RefreshWhilePending intervalMs={CONFIRM_INTERVAL_MS} />
+      </main>
+    );
+  }
 
   if (!order) {
     return (
