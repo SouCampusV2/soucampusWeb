@@ -239,6 +239,31 @@ export default async function ProductPage({
             title={product.title}
           />
 
+          {/* Покупка под фото — только на узком экране (24.11, замечание
+              владельца). Колонки там встают одна под другой, и карточка
+              покупки справа уезжала в самый низ — под описание, отзывы и
+              комментарии: «Buy now» приходилось искать. Здесь та же кнопка
+              с ценой, компактно; в правой карточке на телефоне цена и
+              кнопка спрятаны, чтобы не было двух. На lg и шире всё как
+              было — липкая карточка справа. */}
+          <div className="mt-6 rounded-2xl border border-zinc-200 p-4 dark:border-zinc-800 lg:hidden">
+            <p className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
+              {product.price}
+            </p>
+            <div className="mt-3">
+              <AddToCartButton
+                productId={product.id}
+                product={{
+                  slug: product.slug,
+                  title: product.title,
+                  price: product.price,
+                  priceCents: product.priceCents,
+                  image: product.image,
+                }}
+              />
+            </div>
+          </div>
+
           {/* Подзаголовок секции, а не заголовок страницы — стандартный H3
               из DESIGN.md (был придуманный на глаз text-xl). */}
           <h2 className="mt-10 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
@@ -299,11 +324,12 @@ export default async function ProductPage({
             вплотную к нему при скролле. */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <div className="rounded-2xl border border-zinc-200 p-6 dark:border-zinc-800">
-            <p className="text-3xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
+            {/* Цена и кнопка — с lg: на телефоне они стоят под фото. */}
+            <p className="hidden text-3xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 lg:block">
               {product.price}
             </p>
 
-            <div className="mt-6">
+            <div className="mt-6 hidden lg:block">
               <AddToCartButton
                 productId={product.id}
                 product={{
