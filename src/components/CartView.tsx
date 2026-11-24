@@ -224,7 +224,7 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
         {/* Подпись — только когда есть что считать. У пустой корзины
             заголовок уже всё сказал. */}
         {items.length > 0 && (
-          <p className="mt-3 text-center text-sm text-zinc-600 dark:text-zinc-400">
+          <p className="mt-3 text-center text-sm text-zinc-700 dark:text-zinc-300">
             {`${available.length} ${available.length === 1 ? "map" : "maps"} ready to download.`}
             {unavailableCount > 0 &&
               ` ${unavailableCount} ${unavailableCount === 1 ? "is" : "are"} no longer available.`}
@@ -233,7 +233,7 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
 
         {undo && (
           <div className="mx-auto mt-6 flex max-w-md items-center justify-between gap-3 rounded-full border border-zinc-200 bg-[#fbfbff] py-2 pl-5 pr-2 text-sm dark:border-zinc-800 dark:bg-zinc-950">
-            <span className="min-w-0 truncate text-zinc-600 dark:text-zinc-400">{undo.label}</span>
+            <span className="min-w-0 truncate text-zinc-700 dark:text-zinc-300">{undo.label}</span>
             <span className="flex shrink-0 items-center gap-1">
               <button
                 type="button"
@@ -247,7 +247,7 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
                 type="button"
                 onClick={() => setUndo(null)}
                 aria-label="Dismiss"
-                className="cursor-pointer rounded-full p-1.5 text-zinc-400 hover:text-zinc-600 dark:hover:text-zinc-200"
+                className="cursor-pointer rounded-full p-1.5 text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
               >
                 <X size={14} weight="bold" />
               </button>
@@ -264,7 +264,7 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
             {/* Иконка и заголовок «Your cart is empty» переехали В
                 <h1> выше — см. разбор там. Здесь остались только ответ
                 на «и что теперь» и кнопки. */}
-            <p className="mx-auto max-w-sm text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
+            <p className="mx-auto max-w-sm text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
               Pick a map from the marketplace, or start with the free ones. They download exactly the
               same way.
             </p>
@@ -295,14 +295,14 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
                     weight="bold"
                     className="shrink-0 text-orange-500 dark:text-orange-400"
                   />
-                  <span className="text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                  <span className="text-xs leading-relaxed text-zinc-700 dark:text-zinc-300">
                     {text}
                   </span>
                 </li>
               ))}
             </ul>
 
-            <p className="mt-8 text-xs text-zinc-500 dark:text-zinc-400">
+            <p className="mt-8 text-xs text-zinc-600 dark:text-zinc-300">
               Bought something already?{" "}
               <Link
                 href="/purchases"
@@ -370,14 +370,14 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
                         </Link>
                       )}
                       {unavailable ? (
-                        <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-zinc-500 dark:text-zinc-400">
+                        <p className="mt-1 flex flex-wrap items-center gap-2 text-xs text-zinc-600 dark:text-zinc-300">
                           <span className="rounded-full bg-zinc-200 px-2 py-0.5 font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-300">
                             Unavailable
                           </span>
                           This map was taken down. It won&apos;t be included in your order.
                         </p>
                       ) : (
-                        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-300">
                           Digital download · one-time purchase
                         </p>
                       )}
@@ -402,7 +402,7 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
                          промах по соседней строке убирает из корзины не
                          тот товар, и заметить это можно уже на оплате.
                          На тач-экране кнопка 44px, на вид прежняя. */
-                      className="flex shrink-0 cursor-pointer items-center justify-center text-zinc-400 hover:text-red-600 pointer-coarse:h-11 pointer-coarse:w-11 dark:hover:text-red-400"
+                      className="flex shrink-0 cursor-pointer items-center justify-center text-zinc-500 hover:text-red-600 dark:text-zinc-400 pointer-coarse:h-11 pointer-coarse:w-11 dark:hover:text-red-400"
                     >
                       <Trash size={18} />
                     </button>
@@ -430,20 +430,20 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
                 а кнопка оплаты должна оставаться на виду. */}
             <aside className="lg:sticky lg:top-28">
               <div className="rounded-3xl border border-zinc-200 bg-[#fbfbff] p-6 dark:border-zinc-800 dark:bg-zinc-950">
-                <h2 className="text-sm font-bold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                <h2 className="text-sm font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">
                   Order summary
                 </h2>
 
                 <dl className="mt-5 space-y-2 text-sm">
                   <div className="flex items-center justify-between">
-                    <dt className="text-zinc-600 dark:text-zinc-400">
+                    <dt className="text-zinc-700 dark:text-zinc-300">
                       {available.length} {available.length === 1 ? "map" : "maps"}
                     </dt>
                     <dd className="text-zinc-950 dark:text-zinc-50">{formatCents(totalCents)}</dd>
                   </div>
                   <div className="flex items-center justify-between">
-                    <dt className="text-zinc-600 dark:text-zinc-400">Taxes</dt>
-                    <dd className="text-zinc-500 dark:text-zinc-400">Calculated at checkout</dd>
+                    <dt className="text-zinc-700 dark:text-zinc-300">Taxes</dt>
+                    <dd className="text-zinc-600 dark:text-zinc-300">Calculated at checkout</dd>
                   </div>
                 </dl>
 
@@ -498,7 +498,7 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
                     (аудит 25.09, docs/STRIPE.md → Legal). Человек должен
                     видеть, на что соглашается, в момент согласия. Отказ
                     от права на отзыв — отдельной галочкой выше (26.09). */}
-                <p className="mt-3 text-center text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                <p className="mt-3 text-center text-xs leading-relaxed text-zinc-600 dark:text-zinc-300">
                   By continuing you agree to our{" "}
                   <Link href="/terms" className="underline underline-offset-2 hover:text-zinc-950 dark:hover:text-zinc-50">
                     Terms of Service
@@ -537,7 +537,7 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
                         weight="bold"
                         className="mt-0.5 shrink-0 text-orange-500 dark:text-orange-400"
                       />
-                      <span className="text-zinc-600 dark:text-zinc-400">{text}</span>
+                      <span className="text-zinc-700 dark:text-zinc-300">{text}</span>
                     </li>
                   ))}
                   <li className="flex gap-2.5 text-xs leading-relaxed">
@@ -546,7 +546,7 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
                       weight="bold"
                       className="mt-0.5 shrink-0 text-orange-500 dark:text-orange-400"
                     />
-                    <span className="text-zinc-600 dark:text-zinc-400">
+                    <span className="text-zinc-700 dark:text-zinc-300">
                       Something wrong with a file?{" "}
                       <Link
                         href="/support"

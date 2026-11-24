@@ -12,6 +12,10 @@ import { CartView } from "@/components/CartView";
 // Vercel — нужен редеплой, как и для любой переменной окружения.
 // Нет ключа вовсе — считаем тестом: честнее лишний раз предупредить.
 export default function CartPage() {
-  const stripeTestMode = !process.env.STRIPE_SECRET_KEY?.startsWith("sk_live_");
+  // Боевой ключ бывает двух видов: полный sk_live_ и ограниченный
+  // rk_live_ (у прода с 24.11 — он: только нужные сайту права). Проверка
+  // одного sk_live_ держала на проде плашку «Demo marketplace» при живых
+  // платежах — владелец заметил в тот же день.
+  const stripeTestMode = !/^(sk|rk)_live_/.test(process.env.STRIPE_SECRET_KEY ?? "");
   return <CartView stripeTestMode={stripeTestMode} />;
 }

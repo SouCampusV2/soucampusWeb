@@ -6,7 +6,7 @@
 
 import type { Stat } from "@/lib/stats";
 import { Counter } from "@/components/Stats";
-import { Sparkles } from "./Sparkles";
+import { Sparkles } from "@/components/Sparkles";
 
 const CHIP: Record<string, string> = { orders: "Builds", reach: "Reach", clients: "Clients" };
 

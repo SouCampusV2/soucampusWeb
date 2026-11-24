@@ -9,7 +9,7 @@ import Link from "next/link";
 import { Button } from "@/components/Button";
 import { PixelFlower } from "@/components/brand/PixelArt";
 import { DISCORD_INVITE } from "@/lib/site";
-import { Sparkles } from "./Sparkles";
+import { Sparkles } from "@/components/Sparkles";
 
 const ORDER_TEXT = "Tell me the size, the style and the deadline. I'll come back with a price and a plan, usually the same day.";
 

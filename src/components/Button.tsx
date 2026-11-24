@@ -226,7 +226,12 @@ export function Button({
   // это текст-ссылка, ей паддинг не нужен.
   const padding = variant === "tertiary" ? "" : paddingBySize[size];
   const color = colorClassName ?? BUTTON_COLORS[variant];
-  const classes = `${base} ${color} ${padding} ${textBySize[size]} ${className}`;
+  // Скругление — у формы кнопки, а не у цвета (24.11). Раньше rounded-full
+  // жил только в BUTTON_COLORS, и кнопка со своим colorClassName (Join
+  // Discord на тёмном фоне и т. п.) становилась квадратной — владелец
+  // заметил это в лаборатории главной.
+  const shape = variant === "tertiary" ? "" : "rounded-full";
+  const classes = `${base} ${shape} ${color} ${padding} ${textBySize[size]} ${className}`;
 
   if (href && native) {
     return (

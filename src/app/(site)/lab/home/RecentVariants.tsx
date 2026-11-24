@@ -10,7 +10,7 @@ import Link from "next/link";
 import type { Project } from "@/lib/projects";
 import { ArrowRight } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
-import { SparkleStar } from "./Sparkles";
+import { SparkleStar } from "@/components/Sparkles";
 
 const href = (p: Project) => `/portfolio/${p.slug}?from=home`;
 
