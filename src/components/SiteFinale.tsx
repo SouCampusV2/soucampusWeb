@@ -50,7 +50,10 @@ export async function SiteFinale() {
           </div>
         )}
 
-        <div className="relative flex flex-col overflow-hidden rounded-[2.5rem] bg-[#5865f2] p-8 text-white">
+        {/* Нижний отступ как у рендера слева (sm:pb-12), а кнопка прижата
+            к низу (mt-auto): «Order a map» и «Join the server» стоят на одной
+            линии (24.11, просьба владельца). */}
+        <div className="relative flex flex-col overflow-hidden rounded-[2.5rem] bg-[#5865f2] p-8 text-white sm:pb-12">
           <DiscordLogo size={180} weight="fill" className="absolute -right-10 top-[58%] -translate-y-1/2 text-white/10" aria-hidden />
           <h2 className="relative text-3xl font-extrabold tracking-tight">Join the Discord</h2>
           <p className="relative mt-2 text-white/85">

@@ -43,10 +43,13 @@ import { BASE_RATE } from "@/lib/pricing";
 //    пойдёт проверять в этот день.
 // ============================================================
 //
-// Обложки — фото построек из public/portfolio, пока нет скриншотов самого
-// сайта (решение владельца 15.09). Только кадры 16:9: карточка ленты
-// держит рамку 16:9, и широкий кадр 2.4:1 в ней потерял бы бока. Широкие
-// снимки живут внутри постов блоком image — там рамка берётся из файла.
+// Обложки. Посты про постройки — фото построек из public/portfolio с
+// подписью «на фото — X» (pictured). Посты про сам сайт (вход, поиск,
+// уведомления, тема…) с 24.11 — свои иллюстрации из public/updates: тот же
+// строитель в оранжевом худи, что на /contact, сгенерированы в Figma (файл
+// «SouCampus — Contact day scenes»). Раньше у них стояли случайные фото
+// построек, не связанные со смыслом поста. Только кадры 16:9: карточка
+// ленты держит рамку 16:9. Широкие снимки живут внутри постов блоком image.
 
 /** Где на сайте произошло изменение — подпись над заголовком. */
 export const UPDATE_AREAS = {
@@ -319,9 +322,8 @@ export const UPDATES: UpdatePost[] = [
     summary:
       "Share a work or a post in Discord and it unfolds into a card with the screenshots, and every such page has a Copy link button.",
     cover: {
-      src: "/portfolio/yuletide-isle.png",
-      alt: "A floating snow island holding a festive village of red-roofed cabins",
-      pictured: { name: "Yuletide Isle", slug: "yuletide-isle" },
+      src: "/updates/links-that-show-the-build.webp",
+      alt: "A blocky builder on a hill tossing a picture of a castle that unfolds into a big floating card",
     },
     body: [
       {
@@ -353,9 +355,8 @@ export const UPDATES: UpdatePost[] = [
     summary:
       "Twenty-five answers about commissions, shop maps and Minecraft in one place, and a lighter home page.",
     cover: {
-      src: "/portfolio/ironholt.png",
-      alt: "A sprawling RPG city of stone walls, towers and red roofs",
-      pictured: { name: "Ironholt", slug: "ironholt" },
+      src: "/updates/an-faq-and-a-lighter-home-page.webp",
+      alt: "A blocky builder by a village notice board covered with question notes and answered notes",
     },
     body: [
       {
@@ -485,9 +486,8 @@ export const UPDATES: UpdatePost[] = [
     summary:
       "Maps now arrive together with the page, so nothing jumps around while you read.",
     cover: {
-      src: "/portfolio/skyward-armada.jpg",
-      alt: "Lush sky islands crowned with a red-roofed keep, circled by a fleet of airships",
-      pictured: { name: "Skyward Armada", slug: "skyward-armada" },
+      src: "/updates/a-faster-storefront.webp",
+      alt: "A blocky builder racing in a minecart along rails through a tidy shop of framed builds",
     },
     body: [
       {
@@ -535,9 +535,8 @@ export const UPDATES: UpdatePost[] = [
     summary:
       "Nineteen articles on installing maps, running them on a server, fixing what looks wrong, and how commissions work.",
     cover: {
-      src: "/portfolio/pink-village.png",
-      alt: "A pastel medieval-fantasy village wrapped in cherry blossoms on a small island",
-      pictured: { name: "Pink Village", slug: "pink-village" },
+      src: "/updates/the-wiki.webp",
+      alt: "A blocky builder in an orange hoodie reading a glowing guidebook at a lectern, small build diagrams floating above it",
     },
     body: [
       {
@@ -583,9 +582,8 @@ export const UPDATES: UpdatePost[] = [
     summary:
       "Collections up front, one panel with every filter, and your account menu back on phones.",
     cover: {
-      src: "/portfolio/mistgrove-fairground.png",
-      alt: "A fog-wrapped amusement park with a ferris wheel and a grand entrance gate",
-      pictured: { name: "Mistgrove Fairground", slug: "mistgrove-fairground" },
+      src: "/updates/a-storefront-you-can-search.webp",
+      alt: "A blocky builder with a magnifying glass at a market stall of maps and framed builds sorted by coloured tags",
     },
     body: [
       {
@@ -648,9 +646,8 @@ export const UPDATES: UpdatePost[] = [
     summary:
       "One click to an account, and a privacy policy that says plainly what the site keeps.",
     cover: {
-      src: "/portfolio/prismport.png",
-      alt: "A rainbow-coloured island city with glowing towers and a small harbour",
-      pictured: { name: "Prismport", slug: "prismport" },
+      src: "/updates/sign-in-with-google.webp",
+      alt: "A blocky builder walking through a castle gate that opens by itself, a glowing keycard beside him",
     },
     body: [
       {
@@ -757,9 +754,8 @@ export const UPDATES: UpdatePost[] = [
     summary:
       "The bell updates the moment something happens, no refresh, and nothing lost while the tab was closed.",
     cover: {
-      src: "/portfolio/voidframe-enclave.jpg",
-      alt: "A compact futuristic city sealed inside a glowing wireframe dome",
-      pictured: { name: "Voidframe Enclave", slug: "voidframe-enclave" },
+      src: "/updates/notifications-arrive-on-their-own.webp",
+      alt: "A blocky builder at a desk as a golden bell rings and letters fly in toward him",
     },
     body: [
       {
@@ -794,9 +790,8 @@ export const UPDATES: UpdatePost[] = [
     summary:
       "Password reset by email, and account pages that are named after what's actually on them.",
     cover: {
-      src: "/portfolio/pinecliff-haven.png",
-      alt: "A sunlit island town of terracotta roofs and pinewoods, linked to lookout towers by rope bridges",
-      pictured: { name: "Pinecliff Haven", slug: "pinecliff-haven" },
+      src: "/updates/forgot-your-password.webp",
+      alt: "A blocky builder kneeling by a locked chest as a golden key floats down to him from an open letter",
     },
     body: [
       {
@@ -945,9 +940,8 @@ export const UPDATES: UpdatePost[] = [
     summary:
       "A calculator on the Contact page turns a map's size into a price and a timeline, in your currency.",
     cover: {
-      src: "/portfolio/duskspire-quarter.png",
-      alt: "An ornate fantasy palace above a winding river, in soft pink dusk light",
-      pictured: { name: "Duskspire Quarter", slug: "duskspire-quarter" },
+      src: "/updates/price-your-map.webp",
+      alt: "A blocky builder studying a blueprint map of an island with a measuring grid, coins and gems on a scale beside it",
     },
     body: [
       {
@@ -987,9 +981,8 @@ export const UPDATES: UpdatePost[] = [
     summary:
       "A switch in the footer, remembered on your next visit, without a flash of white on the way in.",
     cover: {
-      src: "/portfolio/nova-ringport.png",
-      alt: "A neon space station ringed by a glowing pink planetary ring",
-      pictured: { name: "Nova Ringport", slug: "nova-ringport" },
+      src: "/updates/dark-theme.webp",
+      alt: "A blocky village split in half, sunny day on the left and starry night on the right, a builder with a lantern pulling a lever",
     },
     body: [
       {
