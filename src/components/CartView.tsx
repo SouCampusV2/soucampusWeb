@@ -11,7 +11,6 @@ import {
   Lightning,
   Lifebuoy,
   ShieldCheck,
-  ShoppingCartSimple,
   Trash,
   X,
 } from "@phosphor-icons/react";
@@ -26,6 +25,9 @@ import {
 } from "@/components/Button";
 import { PageGlow } from "@/components/PageGlow";
 import { CartRecommendations } from "@/components/CartRecommendations";
+import { PixelChest } from "@/components/PixelChest";
+import { PixelFlower } from "@/components/brand/PixelArt";
+import { Sparkles } from "@/components/Sparkles";
 import { WaiverCheckbox } from "@/components/WaiverCheckbox";
 import { readApiError } from "@/lib/api-error";
 
@@ -49,6 +51,12 @@ function formatCents(cents: number, currency = "EUR") {
 // когда». Текст обязан совпадать с реальностью (см. /api/stripe/webhook и
 // /purchases): доступ появляется сразу после оплаты, файл — zip из бакета
 // product-files, карту мы не видим вообще (Stripe Checkout — их домен).
+// Зубчатый низ чека: 20 зубцов по 10px (clip-path, без картинки).
+const RECEIPT_EDGE = `polygon(0 0,100% 0,100% calc(100% - 10px),${Array.from(
+  { length: 20 },
+  (_, i) => `${100 - i * 5 - 2.5}% 100%,${100 - (i + 1) * 5}% calc(100% - 10px)`
+).join(",")})`;
+
 const FACTS = [
   {
     Icon: Lightning,
@@ -201,24 +209,27 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
             строки, отвечающие на один вопрос, читаются не как забота, а
             как заикание. Иконка переехала сюда же, из блока ниже: она
             часть этого утверждения, а не отдельная иллюстрация к нему. */}
+        {/* Пустая корзина — открытый пустой сундук с искрами над
+            заголовком (24.11, лаборатория, вариант КП1). Иконку тележки
+            в заголовке владелец забраковал. */}
+        {items.length === 0 && (
+          <div className="relative mx-auto mb-6 size-32 sm:size-36">
+            <Sparkles
+              className="text-orange-400"
+              sparks={[
+                { top: "0%", left: "6%", size: 16, delay: 0 },
+                { top: "8%", left: "84%", size: 12, delay: 1 },
+                { top: "58%", left: "-6%", size: 10, delay: 2 },
+                { top: "64%", left: "96%", size: 9, delay: 1.6 },
+              ]}
+            />
+            <PixelChest className="size-full" />
+          </div>
+        )}
         <h1
-          className={`${displayFont.className} flex items-center justify-center gap-3 text-center text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
+          className={`${displayFont.className} text-center text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
         >
-          {items.length === 0 ? (
-            <>
-              Your cart is empty
-              <ShoppingCartSimple
-                size={40}
-                weight="duotone"
-                // Размер через классы, а не только через size: у него
-                // нет отзывчивого варианта, а иконка обязана расти
-                // вместе с заголовком (text-4xl → sm:text-5xl).
-                className="h-9 w-9 shrink-0 text-orange-500 dark:text-orange-400 sm:h-12 sm:w-12"
-              />
-            </>
-          ) : (
-            "Your cart"
-          )}
+          {items.length === 0 ? "Your cart is empty" : "Your cart"}
         </h1>
 
         {/* Подпись — только когда есть что считать. У пустой корзины
@@ -429,29 +440,42 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
             {/* Итог — липкий на широких экранах: список может быть длинным,
                 а кнопка оплаты должна оставаться на виду. */}
             <aside className="lg:sticky lg:top-28">
-              <div className="rounded-3xl border border-zinc-200 bg-[#fbfbff] p-6 dark:border-zinc-800 dark:bg-zinc-950">
-                <h2 className="text-sm font-bold uppercase tracking-wide text-zinc-600 dark:text-zinc-300">
-                  Order summary
-                </h2>
-
-                <dl className="mt-5 space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <dt className="text-zinc-700 dark:text-zinc-300">
-                      {available.length} {available.length === 1 ? "map" : "maps"}
-                    </dt>
-                    <dd className="text-zinc-950 dark:text-zinc-50">{formatCents(totalCents)}</dd>
+              <div>
+                {/* Сводка — чеком (24.11, лаборатория, варианты КЗ1+КЗ2:
+                    строки с крупными фото слева, чек справа). Позиции с
+                    пунктиром до цены, итог за пунктирной чертой, зубчатый
+                    низ. Галочка, кнопка оплаты и сообщения — под чеком,
+                    логика прежняя. */}
+                <div
+                  className="bg-[#fbfbff] px-6 pb-9 pt-6 shadow-lg ring-1 ring-zinc-200 dark:bg-zinc-900 dark:ring-zinc-800"
+                  style={{ clipPath: RECEIPT_EDGE }}
+                >
+                  <div className="flex items-center gap-2">
+                    <PixelFlower palette="orange" className="size-7" />
+                    <h2 className="font-extrabold text-zinc-950 dark:text-zinc-50">Order summary</h2>
                   </div>
-                  <div className="flex items-center justify-between">
-                    <dt className="text-zinc-700 dark:text-zinc-300">Taxes</dt>
-                    <dd className="text-zinc-600 dark:text-zinc-300">Calculated at checkout</dd>
-                  </div>
-                </dl>
 
-                <div className="mt-5 flex items-baseline justify-between border-t border-zinc-200 pt-5 dark:border-zinc-800">
-                  <span className="font-semibold text-zinc-950 dark:text-zinc-50">Total</span>
-                  <span className="text-2xl font-extrabold text-zinc-950 dark:text-zinc-50">
-                    {formatCents(totalCents)}
-                  </span>
+                  <ul className="mt-5 space-y-2.5 font-mono text-sm">
+                    {available.map((item) => (
+                      <li key={item.slug} className="flex items-baseline gap-2 text-zinc-900 dark:text-zinc-100">
+                        <span className="truncate">{item.title}</span>
+                        <span aria-hidden className="min-w-4 flex-1 border-b border-dotted border-zinc-400 dark:border-zinc-600" />
+                        <span className="shrink-0">{item.priceCents === 0 ? "FREE" : formatCents(item.priceCents)}</span>
+                      </li>
+                    ))}
+                    <li className="flex items-baseline gap-2 text-zinc-700 dark:text-zinc-300">
+                      <span>Taxes</span>
+                      <span aria-hidden className="min-w-4 flex-1 border-b border-dotted border-zinc-400 dark:border-zinc-600" />
+                      <span className="shrink-0">at checkout</span>
+                    </li>
+                  </ul>
+
+                  <div className="mt-5 flex items-baseline justify-between border-t-2 border-dashed border-zinc-300 pt-4 font-mono dark:border-zinc-700">
+                    <span className="font-bold text-zinc-950 dark:text-zinc-50">TOTAL</span>
+                    <span className="text-2xl font-extrabold text-zinc-950 dark:text-zinc-50">
+                      {formatCents(totalCents)}
+                    </span>
+                  </div>
                 </div>
 
                 {/* Галочка — прямо над кнопкой: согласие даётся в момент
