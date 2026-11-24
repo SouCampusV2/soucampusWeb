@@ -21,16 +21,15 @@ import { BASE_RATE } from "@/lib/pricing";
 // 2. Писать только о том, что работает на проде СЕЙЧАС. Пост — обещание,
 //    и читатель пойдёт проверять.
 //
-// 3. Магазин — без «покупай» (решение владельца 15.09): Stripe в тестовом
-//    режиме, а у карт на витрине нет файлов. Поэтому о бесплатных картах,
-//    которые «скачиваются в один клик», поста НЕТ — щёлкнувший получил бы
-//    покупку, в которой нечего скачать. Пост «теперь можно покупать»
-//    пишется в день живых платежей и никак не раньше.
+// 3. Магазин. До 24.11 — без «покупай»: Stripe был в тесте, у карт не было
+//    файлов. С 24.11 живые платежи и первая настоящая карта (Hollow
+//    Wharf) — звать покупать можно, но только то, что реально лежит на
+//    витрине и скачивается.
 //
-// 4. Замороженное не анонсируется. Про приём чужих авторов здесь ни
-//    слова — по той же причине, по которой с сайта убрана кнопка
-//    «Become a creator» (CLAUDE.md, 20.08): объяснение «пока закрыто» —
-//    тот же анонс.
+// 4. Замороженное не анонсируется: объяснение «пока закрыто» — тот же
+//    анонс. Креаторство было заморожено с 20.08 и открыто снова 27.10 —
+//    с 24.11 о нём пишем, честно и с тем, что закрыто (платные цены —
+//    только у студии, paid-maps.ts).
 //
 // 5. Внутренняя кухня — не новость. Шлюзы записи, журнал миграций, тесты
 //    — это наша защита, а не то, что человек увидит на экране.
@@ -89,12 +88,71 @@ export type UpdatePost = {
 // getAllUpdates() по дате. Пишем новые сверху — так удобнее читать файл.
 export const UPDATES: UpdatePost[] = [
   {
+    slug: "the-marketplace-is-open",
+    date: "2026-11-24",
+    area: "marketplace",
+    title: "The marketplace is open: the first real map is here",
+    summary:
+      "Payments are live, Hollow Wharf is the first map you can buy and download, and creators are back with their own maps.",
+    cover: {
+      src: "/updates/hollow-wharf.jpg",
+      alt: "A sunken duel arena: wooden boardwalks on chains over shallow clear water, a golden centre deck, timber walls and a grassy rim with trees above",
+    },
+    body: [
+      {
+        heading: "Real payments, real files",
+        blocks: [
+          {
+            kind: "text",
+            text: "Since July the marketplace was a working shop with sample maps and test payments. As of today it takes real money: pay by card, Apple Pay or Google Pay on a secure Stripe page, and the map lands in My purchases the moment the payment goes through, ready to download.",
+          },
+          {
+            kind: "list",
+            items: [
+              "Buying needs an account, so your purchases never get lost: they live in My purchases, and you can download them again whenever you need.",
+              "Before you pay, you agree to get the file straight away, which is why maps are not returned for a change of mind. If a file is broken or not what the page describes, write to us: we fix it, and if we cannot, you get your money back.",
+              "The sample maps are coming down, so everything left on the shelf is something you can actually download.",
+            ],
+          },
+        ],
+      },
+      {
+        heading: "Hollow Wharf, the first map",
+        blocks: [
+          {
+            kind: "text",
+            text: "The first real map is Hollow Wharf, a 50 by 50 duel arena sunk into a hillside: boardwalks hung on chains over shallow, clear water, a golden deck in the middle to fight for, and a wild, overgrown rim around it all. It is small on purpose. A shop has to start somewhere, and I would rather start with one finished map than ten promises.",
+          },
+        ],
+      },
+      {
+        heading: "Creators are back",
+        blocks: [
+          {
+            kind: "text",
+            text: "Other builders can publish their own maps here again, and I keep working on everything around it.",
+          },
+          {
+            kind: "list",
+            items: [
+              "Apply to become a creator from your account, then upload maps with a cover, a gallery, versions, size and type.",
+              "Every map is reviewed by hand before it reaches the marketplace, and every change to its file sends it back for another look.",
+              "For now, creators publish their maps for free. Selling through the site comes once I can pay authors their share; until then, a creator can sell the paid version on BuiltByBit and link it in the description.",
+              "Every creator has a profile with a banner, links and the reviews buyers left on their maps.",
+            ],
+          },
+        ],
+      },
+    ],
+    link: { href: "/marketplace/hollow-wharf", label: "See Hollow Wharf" },
+  },
+  {
     slug: "a-flower-of-its-own",
     date: "2026-11-24",
     area: "studio",
-    title: "A flower of its own, and a site that is easier to find your way around",
+    title: "A new look: SouCampus gets its own brand",
     summary:
-      "SouCampus has its own mark now, the navbar splits into Studio and Marketplace, help lives under one set of tabs, and the Wiki learned schematics.",
+      "A logo, a new navbar, a fresh look on every page, help under one set of tabs and new scenes on the contact page.",
     cover: {
       src: "/portfolio/dragon-shrine.png",
       alt: "A blue and gold dragon coiled above a temple complex of red pagoda roofs in a misty jungle",
@@ -102,11 +160,21 @@ export const UPDATES: UpdatePost[] = [
     },
     body: [
       {
-        heading: "The pixel flower",
+        heading: "A logo, and a brand around it",
         blocks: [
           {
             kind: "text",
-            text: "The site finally has a mark: a pixel flower, with a fan of petals as its second form. Flowers grow in the generated world on the home page, the fan fills step by step in How an order works as you scroll past it, the About page opens with a big green one, and the tab in your browser shows it too. Even the 404 page got one.",
+            text: "SouCampus finally has a logo: a pixel flower, with a fan of petals as its second form. It is not a sticker in the corner. The whole site was redrawn around it, so the same flower and the same colours follow you from the home page to the footer.",
+          },
+          {
+            kind: "list",
+            items: [
+              "Flowers grow in the generated world on the home page, a little different every time it loads.",
+              "In How an order works, the fan fills petal by petal as you scroll past the steps.",
+              "The About page opens with a big green flower and the teams I build with.",
+              "The browser tab, the footer and even the 404 page carry the mark now.",
+              "The light and dark switch became a pixel sun and moon.",
+            ],
           },
         ],
       },
@@ -115,7 +183,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "The top bar is the same on every page and splits the site in two: Studio, for the builds I make to order, and Marketplace, for maps you can download. Each opens a panel with everything on that side, and on a phone the same groups sit behind one menu button.",
+            text: "The top bar is the same on every page and splits the site in two: Studio, for the builds I make to order, and Marketplace, for maps you can download. Each opens a panel with everything on that side, and on a phone the same groups sit behind one menu button. Your account, messages, notifications and cart are always one click away.",
           },
         ],
       },
@@ -133,20 +201,21 @@ export const UPDATES: UpdatePost[] = [
         ],
       },
       {
-        heading: "Smaller things",
+        heading: "Contact, home and reviews",
         blocks: [
           {
             kind: "list",
             items: [
+              "The contact page got new scenes, and How an order works now sits there too, ending with a sixth step that brings you straight back to the form.",
               "Recent projects on the home page are now simply the three newest works.",
-              "How an order works ends with a sixth step that leads straight to the contact page.",
+              "Each review opens on its own page, laid out like a portfolio work.",
               "Two new reviews, from Jorge of Keystone Games and from Zhyrr.",
             ],
           },
         ],
       },
     ],
-    link: { href: "/wiki", label: "Open the Wiki" },
+    link: { href: "/contact", label: "See the new contact page" },
   },
   {
     slug: "real-maps-are-coming",

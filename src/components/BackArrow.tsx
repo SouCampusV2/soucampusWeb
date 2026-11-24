@@ -15,19 +15,46 @@ import { ArrowCircle } from "@/components/ArrowCircle";
 /** Место под кружок: соседний текст выравнивается по нему. */
 export const BACK_ARROW_SIZE = "h-11 w-11";
 
-export function BackArrow({ href, label }: { href: string; label: string }) {
+export function BackArrow({
+  href,
+  label,
+  showLabel = false,
+}: {
+  href: string;
+  label: string;
+  /**
+   * Подпись словами рядом с кружком. Там, где кружок стоит отдельной
+   * строкой над статьёй (пост What's new, 24.11), а не в ряду с
+   * заголовком: одинокий кружок над текстом читается загадкой.
+   */
+  showLabel?: boolean;
+}) {
+  const circle = (
+    <ArrowCircle
+      direction="left"
+      className={BACK_ARROW_SIZE}
+      colorClassName="bg-orange-500 group-hover:bg-orange-600 dark:bg-orange-400 dark:group-hover:bg-orange-500 text-white"
+    />
+  );
+  if (showLabel) {
+    return (
+      <Link
+        href={href}
+        className="group inline-flex shrink-0 items-center gap-3 text-sm font-semibold text-zinc-700 transition-colors hover:text-orange-600 dark:text-zinc-300 dark:hover:text-orange-400"
+      >
+        <span className="transition-transform group-active:scale-90">{circle}</span>
+        {label}
+      </Link>
+    );
+  }
   return (
     <Link
       href={href}
       aria-label={label}
       title={label}
-      className="shrink-0 transition-transform active:scale-90"
+      className="group shrink-0 transition-transform active:scale-90"
     >
-      <ArrowCircle
-        direction="left"
-        className={BACK_ARROW_SIZE}
-        colorClassName="bg-orange-500 hover:bg-orange-600 dark:bg-orange-400 dark:hover:bg-orange-500 text-white"
-      />
+      {circle}
     </Link>
   );
 }

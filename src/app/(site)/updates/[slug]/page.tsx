@@ -6,7 +6,7 @@ import { Unbounded } from "next/font/google";
 import { ArrowLeft, ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { PageGlow } from "@/components/PageGlow";
 import { ArticleBody } from "@/components/ArticleBody";
-import { BackLink } from "@/components/BackLink";
+import { BackArrow } from "@/components/BackArrow";
 import { Button, INLINE_LINK } from "@/components/Button";
 import { UpdateMeta } from "@/components/UpdateMeta";
 import { CopyLinkButton } from "@/components/CopyLinkButton";
@@ -85,7 +85,7 @@ export default async function UpdatePage({
         <PageGlow color="rgba(251,146,60,0.35)" />
 
         <article className="mx-auto max-w-3xl">
-          <BackLink href="/updates">All updates</BackLink>
+          <BackArrow href="/updates" label="All updates" showLabel />
 
           <div className="mt-8">
             <UpdateMeta post={post} />
