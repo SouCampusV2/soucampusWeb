@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { CheckCircle, Info, ArrowRight } from "@phosphor-icons/react";
+import { CheckCircle, Info, ArrowRight, ShoppingCartSimple, Lightning, DownloadSimple } from "@phosphor-icons/react";
 import { Button, TERTIARY_UNDERLINE } from "@/components/Button";
 import { useCart, type CartItem } from "@/lib/cart-context";
 import { readApiError } from "@/lib/api-error";
@@ -26,7 +26,9 @@ import { WaiverCheckbox } from "@/components/WaiverCheckbox";
 // РЕЗУЛЬТАТ клика — всплывающее сообщение под кнопкой. Первый кадр
 // статики сразу верен, менять его нечему, и нажать «не то» невозможно:
 // на момент клика ответ уже есть (а если ещё нет — клик его дожидается).
-type Ownership = "unknown" | "no" | "yes";
+// "own" — смотрит сам автор карты (24.11): купить своё нельзя, сервер
+// откажет на оплате, но и в корзину класть незачем.
+type Ownership = "unknown" | "no" | "yes" | "own";
 
 type Notice = {
   tone: "success" | "info";
@@ -42,11 +44,17 @@ const NOTICE_MS = 6000;
 export function AddToCartButton({
   product,
   productId,
+  creatorId = null,
 }: {
   product: CartItem;
   productId: string;
+  /** Автор карты: ему «Add to cart» и «Buy now» отвечают, что карта своя. */
+  creatorId?: string | null;
 }) {
   const { items, addItem } = useCart();
+  // Счётчик добавлений: новый key у иконки корзины перезапускает её
+  // анимацию «подпрыгнуть и покачаться» на каждое добавление (24.11).
+  const [bump, setBump] = useState(0);
   const [notice, setNotice] = useState<Notice | null>(null);
   // «Покупаю прямо сейчас» — пока идёт создание сессии Stripe и переход
   // на неё. Своё состояние, а не общее с корзиной: добавление в корзину
@@ -91,7 +99,9 @@ export function AddToCartButton({
         data: { session },
       } = await supabase.auth.getSession();
       let result: Ownership = "no";
-      if (session) {
+      if (session && creatorId && session.user.id === creatorId) {
+        result = "own";
+      } else if (session) {
         const { data, error } = await supabase.rpc("has_purchased", {
           p_product_id: productId,
         });
@@ -125,6 +135,11 @@ export function AddToCartButton({
   const handleClick = async () => {
     const owned = await checkOwnership();
 
+    if (owned === "own") {
+      setNotice({ tone: "info", text: "This is your own map, so it can't go in the cart." });
+      return;
+    }
+
     if (owned === "yes") {
       setNotice({
         tone: "info",
@@ -149,6 +164,7 @@ export function AddToCartButton({
     }
 
     addItem(product);
+    setBump((n) => n + 1);
     setNotice({
       tone: "success",
       text: "Added to cart.",
@@ -180,6 +196,11 @@ export function AddToCartButton({
     // Уже купленную не даём купить второй раз — та же проверка, что у
     // добавления в корзину, и по той же причине.
     const owned = await checkOwnership();
+    if (owned === "own") {
+      setBuying(false);
+      setNotice({ tone: "info", text: "This is your own map, so you can't buy it." });
+      return;
+    }
     if (owned === "yes") {
       setBuying(false);
       setNotice({
@@ -278,22 +299,25 @@ export function AddToCartButton({
             size="lg"
             onClick={buyNow}
             loading={buying} disabled={buying}
-            className="w-full"
+            className="group w-full"
           >
+            {!buying && <DownloadSimple size={20} weight="bold" aria-hidden className="transition-transform group-hover:translate-y-0.5" />}
             {buying ? "Getting it…" : "Get it for free"}
           </Button>
           <Button
             size="lg"
             variant="secondary"
             onClick={handleClick}
-            className="mt-3 w-full"
+            className="group mt-3 w-full"
           >
+            <CartIcon bump={bump} />
             Add to cart
           </Button>
         </>
       ) : (
         <>
-          <Button size="lg" onClick={handleClick} className="w-full">
+          <Button size="lg" onClick={handleClick} className="group w-full">
+            <CartIcon bump={bump} />
             Add to cart
           </Button>
 
@@ -306,8 +330,9 @@ export function AddToCartButton({
             variant="secondary"
             onClick={buyNow}
             loading={buying} disabled={buying}
-            className="mt-3 w-full"
+            className="group mt-3 w-full"
           >
+            {!buying && <Lightning size={20} weight="fill" aria-hidden className="transition-transform duration-300 group-hover:-rotate-12 group-hover:scale-110" />}
             {buying ? "Redirecting…" : "Buy now"}
           </Button>
 
@@ -375,5 +400,34 @@ export function AddToCartButton({
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * Иконка корзины на «Add to cart» (24.11). При каждом добавлении (bump
+ * растёт) — новый key, и анимация cart-pop играет заново: иконка
+ * подпрыгивает и покачивается, над ней вспыхивает «+1». Первый рендер
+ * (bump 0) — без анимации.
+ */
+function CartIcon({ bump }: { bump: number }) {
+  return (
+    <span className="relative inline-flex">
+      <ShoppingCartSimple
+        key={bump}
+        size={20}
+        weight="bold"
+        aria-hidden
+        className={bump > 0 ? "motion-safe:animate-[cart-pop_0.6s_ease-out]" : "transition-transform group-hover:-translate-y-0.5"}
+      />
+      {bump > 0 && (
+        <span
+          key={`plus-${bump}`}
+          aria-hidden
+          className="pointer-events-none absolute -right-3 -top-3 text-xs font-bold motion-safe:animate-[cart-plus_0.9s_ease-out_forwards] motion-reduce:hidden"
+        >
+          +1
+        </span>
+      )}
+    </span>
   );
 }

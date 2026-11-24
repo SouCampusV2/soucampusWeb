@@ -125,6 +125,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "bad version" }, { status: 400 });
   }
 
+  // Повторная ли это проверка: у карты уже был одобренный файл — значит,
+  // автор заменил его у живой карты, и сказать «is live», как в первый
+  // раз, неправда (24.11, просьба владельца). Читаем ДО обновления: при
+  // одобрении триггер перепишет approved_file_path на новый.
+  const { data: before } = await db
+    .from("products")
+    .select("approved_file_path")
+    .eq("id", productId)
+    .maybeSingle();
+  const reReview = Boolean(before?.approved_file_path);
+
   let query = db
     .from("products")
     .update(update)
@@ -204,12 +215,19 @@ export async function POST(request: Request) {
     await notify(
       data.creator_id as string,
       (action as Action) === "approve"
-        ? {
-            kind: "map_approved",
-            title: `“${data.title}” is live`,
-            body: "Your map passed the review and is on the marketplace now.",
-            href: `/marketplace/${data.slug}`,
-          }
+        ? reReview
+          ? {
+              kind: "map_approved",
+              title: `“${data.title}” passed review again`,
+              body: "The new version is checked and the map is on the marketplace. You can keep selling it.",
+              href: `/marketplace/${data.slug}`,
+            }
+          : {
+              kind: "map_approved",
+              title: `“${data.title}” is live`,
+              body: "Your map passed the review and is on the marketplace now.",
+              href: `/marketplace/${data.slug}`,
+            }
         : {
             kind: "map_rejected",
             title: `“${data.title}” wasn't approved`,

@@ -437,6 +437,15 @@ export function EditMapForm({
               onChange={pickMapFile}
               className="hidden"
             />
+            {/* Предупреждение — как только выбран новый файл у живой
+                карты, до сохранения (24.11). Плашка сверху говорит об
+                этом заранее; здесь — в момент решения. */}
+            {mapFile && product.state === "live" && (
+              <p className="mt-2 flex gap-2 rounded-xl bg-orange-50 px-3 py-2 text-sm text-orange-800 dark:bg-orange-950/40 dark:text-orange-200">
+                <Warning size={18} weight="fill" className="mt-0.5 shrink-0" />
+                Saving sends the map back to review: it leaves the marketplace until the new file is checked.
+              </p>
+            )}
           </div>
         </div>
       </div>

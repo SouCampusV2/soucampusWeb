@@ -6,11 +6,6 @@
 // На проде страницы нет (notFound), поиску закрыта.
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { getAllProjects } from "@/lib/projects";
-import { getStats } from "@/lib/stats";
-import { Stats } from "@/components/Stats";
-import { RecentBentoPlus } from "./RecentVariants";
-import { StatsLime, StatsNight, StatsOrange } from "./StatsVariants";
 import { FinaleMeadow, FinaleOrbit, FinaleSunset } from "./FinaleVariants";
 
 export const metadata: Metadata = { title: "Home lab", robots: { index: false, follow: false } };
@@ -39,31 +34,8 @@ function Label({ n, name, note }: { n: string; name: string; note?: string }) {
 export default async function HomeLab() {
   if (process.env.VERCEL_ENV === "production") notFound();
 
-  const [projects, stats] = await Promise.all([getAllProjects(), getStats()]);
-  const newest = [...projects].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-
   return (
     <main className="flex-1 pb-32">
-      <Chapter
-        title="Статистика"
-        text="Плашкой, как на legko.company: категория в таблетке, крупное число (набегает при прокрутке), подпись, тонкие разделители, мерцающие искры."
-      />
-      <Label n="С0" name="Как сейчас" />
-      <Stats stats={stats} />
-      <Label n="С1" name="Оранжевая" note="Ближе всего к скрину" />
-      <StatsOrange stats={stats} />
-      <Label n="С2" name="Ночная" note="Тёмная, оранжевое и лаймовое свечение по углам" />
-      <StatsNight stats={stats} />
-      <Label n="С3" name="Лаймовая" note="Тёмный текст на лайме" />
-      <StatsLime stats={stats} />
-
-      <Chapter
-        title="Recent projects — Р2, выбранный"
-        text="Бенто плюс приём со второго скрина: внизу карточки плашки и кружок со стрелкой; наведите — кружок станет оранжевым, вокруг вспыхнут искры. Кнопка «See the whole portfolio» на месте."
-      />
-      <Label n="Р2+" name="Бенто с иконками при наведении" />
-      <RecentBentoPlus projects={newest} />
-
       <Chapter
         title="Финал страниц — круг 2"
         text="Вместо «Choose your plan». Везде призыв к заказу и Discord, кнопки-таблетки как на всём сайте."

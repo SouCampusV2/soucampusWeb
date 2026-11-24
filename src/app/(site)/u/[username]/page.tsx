@@ -24,7 +24,8 @@ import {
 import { ProductCard } from "@/components/ProductCard";
 import { Button } from "@/components/Button";
 import { PageGlow } from "@/components/PageGlow";
-import { CreatorOwnerActions, OwnerEditLink } from "@/components/CreatorOwnerActions";
+import { CreatorOwnerActions } from "@/components/CreatorOwnerActions";
+import { SortableMapGrid } from "@/components/SortableMapGrid";
 import { LocalTime } from "@/components/LocalTime";
 import { getRecentCommentsByUser } from "@/lib/comments";
 import { getProfileStats } from "@/lib/profile-stats";
@@ -181,20 +182,27 @@ export default async function CreatorPage({
           count: mapsCount,
           content:
             products.length > 0 ? (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {products.map((product) => (
-                  <ProductCard
-                    key={product.slug}
-                    product={product}
-                    creator={{
-                      name: creator.username,
-                      href: creatorHref(creator.handle),
-                      isVerified: creator.isVerified,
-                    }}
-                    className="h-full"
-                  />
-                ))}
-              </div>
+              <SortableMapGrid
+                maps={products.map((product) => ({
+                  slug: product.slug,
+                  createdAt: product.createdAt,
+                  sales: product.salesCount ?? 0,
+                  rating: product.rating ?? 0,
+                  ratingCount: product.ratingCount ?? 0,
+                  priceCents: product.priceCents,
+                  node: (
+                    <ProductCard
+                      product={product}
+                      creator={{
+                        name: creator.username,
+                        href: creatorHref(creator.handle),
+                        isVerified: creator.isVerified,
+                      }}
+                      className="h-full"
+                    />
+                  ),
+                }))}
+              />
             ) : (
               <p className="text-zinc-600 dark:text-zinc-400">No maps published yet.</p>
             ),
@@ -389,7 +397,6 @@ export default async function CreatorPage({
                   />
                 )}
               </h1>
-              <OwnerEditLink creatorId={creator.id} />
             </div>
 
             {/* Кто это и чем отметился — одним рядом фактов (вариант 9):

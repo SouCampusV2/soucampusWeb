@@ -253,6 +253,7 @@ export default async function ProductPage({
             <div className="mt-3">
               <AddToCartButton
                 productId={product.id}
+                creatorId={product.creatorId}
                 product={{
                   slug: product.slug,
                   title: product.title,
@@ -332,6 +333,7 @@ export default async function ProductPage({
             <div className="mt-6 hidden lg:block">
               <AddToCartButton
                 productId={product.id}
+                creatorId={product.creatorId}
                 product={{
                   slug: product.slug,
                   title: product.title,

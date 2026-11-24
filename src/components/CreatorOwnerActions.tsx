@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { PencilSimple } from "@phosphor-icons/react";
+import { GearSix, PencilSimple } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { CREATOR_SIGNUPS_OPEN } from "@/lib/flags";
@@ -95,11 +95,15 @@ export function CreatorOwnerActions({
   const { isOwner, isCreator } = useOwner(creatorId, true);
 
   if (!isOwner || isCreator === null) return null;
-  // Без кнопок — без обёртки: пустой div с отступом сдвигал бы вёрстку.
-  if (!isCreator && !CREATOR_SIGNUPS_OPEN) return null;
 
   return (
     <div className="mt-4 flex flex-wrap justify-center gap-3 sm:justify-start">
+      {/* Настройки — кнопкой рядом с остальными действиями владельца, а не
+          карандашом у ника (24.11, просьба владельца). Есть всегда: свой
+          профиль правит и тот, кто не автор. */}
+      <Button href="/settings" size="sm" variant="secondary">
+        <GearSix size={18} weight="bold" aria-hidden /> Settings
+      </Button>
       {/* Кнопка есть только у автора. Предлагать «стать автором», когда
           приём закрыт, значит вести на страницу, которая ответит отказом. */}
       {isCreator ? (

@@ -70,7 +70,11 @@ export function ProductCardImage({
     // pointer-events-none: сама картинка кликов не ловит — они проходят
     // насквозь на ссылку-оверлей карточки (см. ProductCard). Обратно
     // включены только стрелки.
-    <div className="pointer-events-none relative aspect-video w-full overflow-hidden">
+    // Фон-заглушка под фото (24.11): пока картинка едет — а после смены
+    // формата на WebP первые заходы идут через холодный кэш оптимизатора —
+    // на её месте ровный серый под тему, а не пустота, которая потом
+    // «вспыхивает» фото. Владелец видел это как мигание карточки.
+    <div className="pointer-events-none relative aspect-video w-full overflow-hidden bg-zinc-200 dark:bg-zinc-800">
       <Image
         src={images[index]}
         alt={alt}
