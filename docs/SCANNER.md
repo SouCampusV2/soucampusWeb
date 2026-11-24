@@ -19,7 +19,11 @@
 
 🟡 **Тем же днём владелец решил: нужен отдельный сервис. Он написан — репозиторий
 `Claude/soucampus-scanner`, Java 21 + Spring Boot 4, 35 тестов, инструкция в его
-`README.md`. Не запущен на сервере.** Что важно:
+`README.md`. На VPS с 24.11: `https://scanner.soucampus.online`, за Traefik из
+compose n8n (файл `docker-compose.override.yml` только на сервере, в git не
+идёт — открыты `POST /scan` и `GET /actuator/health`, тело до 4 КБ). Проверено
+сквозь подписанную ссылку preview: чистая картинка — `clean`, EICAR —
+`infected`.** Что важно:
 
 - **Сервис решает вердикт, сайт — запись.** `POST /scan`: скачать по подписанной
   ссылке → правила → ClamAV. На сайте его зовёт `src/lib/scanner-client.ts` из
