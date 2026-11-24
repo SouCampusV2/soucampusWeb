@@ -111,13 +111,24 @@ export default function ContactPage() {
             персонаж свой, не Стив; фигурок мобов и логотипов на ней нет
             намеренно — первый вариант с Крипером и значками Discord
             отброшен. WebP 1536×864, ~65 КБ; ночная сцена одна на обе темы. */}
-        <div className="relative aspect-video overflow-hidden rounded-2xl bg-zinc-900">
+        {/* День в светлой теме, ночь в тёмной (24.11): дневные версии
+            сгенерированы в Figma по описанию ночных («SouCampus — Contact day
+            scenes»). Две картинки, видна одна — тема у нас классом .dark,
+            а не prefers-color-scheme, поэтому <picture> не подходит. */}
+        <div className="relative aspect-video overflow-hidden rounded-2xl bg-sky-100 dark:bg-zinc-900">
+          <Image
+            src="/contact/chat-room-day.webp"
+            alt="A blocky builder in a sunny room typing a message on a chat screen"
+            fill
+            sizes="(min-width: 640px) 50vw, 100vw"
+            className="object-cover dark:hidden"
+          />
           <Image
             src="/contact/chat-room.webp"
             alt="A blocky builder in a dark room typing a message on a glowing chat screen"
             fill
             sizes="(min-width: 640px) 50vw, 100vw"
-            className="object-cover"
+            className="hidden object-cover dark:block"
           />
         </div>
         <div>
@@ -176,13 +187,20 @@ export default function ContactPage() {
         {/* Пара к сцене выше (17.11): тот же персонаж ночью в библиотеке
             читает светящуюся книгу — «ответы уже написаны». Figma, файл
             «SouCampus — Contact illustrations»; WebP 1536×864. */}
-        <div className="relative order-first aspect-video overflow-hidden rounded-2xl bg-zinc-900 sm:order-2">
+        <div className="relative order-first aspect-video overflow-hidden rounded-2xl bg-sky-100 dark:bg-zinc-900 sm:order-2">
+          <Image
+            src="/contact/answers-library-day.webp"
+            alt="The same blocky builder reading a book in a sunlit library"
+            fill
+            sizes="(min-width: 640px) 50vw, 100vw"
+            className="object-cover dark:hidden"
+          />
           <Image
             src="/contact/answers-library.webp"
             alt="The same blocky builder reading a glowing book in a cozy library at night"
             fill
             sizes="(min-width: 640px) 50vw, 100vw"
-            className="object-cover"
+            className="hidden object-cover dark:block"
           />
         </div>
       </section>
