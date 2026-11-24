@@ -68,11 +68,14 @@ export function HelpTabs({ active }: { active: HelpTabId }) {
         {TABS.map((tab) => {
           const on = tab.id === active;
           return (
-            <li key={tab.id} className="-ml-px">
+            // flex + h-full у ссылки: ячейки ряда одной высоты, даже когда
+            // «Terms of Service» переносится, а «Privacy Policy» нет — иначе
+            // фон активной вкладки обрывался (владелец 24.11).
+            <li key={tab.id} className="-ml-px flex">
               <Link
                 href={tab.href}
                 aria-current={on ? "page" : undefined}
-                className={`relative block border-x px-4 py-6 text-center text-lg font-extrabold tracking-tight text-zinc-900 transition-colors sm:py-8 sm:text-xl lg:text-2xl ${
+                className={`relative flex w-full items-center justify-center border-x px-4 py-6 text-center text-lg font-extrabold tracking-tight text-zinc-900 transition-colors sm:py-8 sm:text-xl lg:text-2xl ${
                   on
                     ? "z-10 border-blue-400 bg-blue-300 dark:border-blue-700 dark:bg-blue-800 dark:text-blue-50"
                     : "border-zinc-500 hover:bg-blue-100 dark:border-zinc-500 dark:text-zinc-100 dark:hover:bg-blue-950"

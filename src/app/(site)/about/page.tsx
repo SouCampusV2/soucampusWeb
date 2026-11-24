@@ -211,7 +211,12 @@ export default function AboutPage() {
                     />
                   )}
                   <span
-                    className={`${displayFont.className} relative z-10 grid size-14 place-items-center border-2 border-zinc-950 px-1 text-center text-[11px] leading-tight text-zinc-950 sm:size-16 sm:text-xs ${
+                    // Длинная подпись («Before 15») мельче: в широком шрифте
+                    // «Before» не влезало в 56px и вылезало за край, выглядя
+                    // смещённым (владелец 24.11).
+                    className={`${displayFont.className} relative z-10 grid size-14 place-items-center border-2 border-zinc-950 px-0.5 text-center leading-tight text-zinc-950 sm:size-16 ${
+                      item.age.replace("Age ", "").length > 6 ? "text-[8px] sm:text-[10px]" : "text-[11px] sm:text-xs"
+                    } ${
                       last
                         ? "bg-orange-400 shadow-[inset_3px_3px_0_var(--color-orange-200),inset_-3px_-3px_0_var(--color-orange-700)]"
                         : "bg-lime-400 shadow-[inset_3px_3px_0_var(--color-lime-200),inset_-3px_-3px_0_var(--color-lime-700)]"

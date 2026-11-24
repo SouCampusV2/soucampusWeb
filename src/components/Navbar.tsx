@@ -9,7 +9,6 @@ import type { User } from "@supabase/supabase-js";
 import { Unbounded } from "next/font/google";
 import {
   ShoppingCart,
-  ChatCircleDots,
   UserCircle,
   Bell,
   CaretDown,
@@ -312,14 +311,6 @@ export function Navbar() {
               у меню аккаунта значил низ пилюли, а не низ ряда иконок —
               иначе меню вылезало поверх нижнего края навбара (17.11). */}
           <div className="hidden shrink-0 items-center gap-1 self-stretch text-zinc-800 dark:text-zinc-200 min-[760px]:flex">
-            <button
-              type="button"
-              disabled
-              title="Messages are coming soon"
-              className="flex cursor-not-allowed items-center justify-center rounded-full p-2"
-            >
-              <ChatCircleDots size={22} />
-            </button>
             {/* Колокол стоит всегда — иконка, которая то появляется, то
                 нет, дёргала бы соседей. Пока аккаунт не подгружен — просто
                 иконка того же размера. */}
@@ -463,12 +454,16 @@ function GroupItems({
     <div>
       <p className="flex items-center gap-2 px-3 pb-2 pt-1 text-sm text-zinc-600 dark:text-zinc-400">
         <span className={`size-1.5 shrink-0 rounded-full ${group.dot}`} aria-hidden />
-        {withLabel && (
+        {/* В мобильном меню — только имя группы, без описания и без
+            подсказок у пунктов (24.11, владелец: «просто Marketplace и
+            Studio»). На десктопе панель одной группы — там описание. */}
+        {withLabel ? (
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-zinc-500 dark:text-zinc-400">
-            {group.label} ·
+            {group.label}
           </span>
+        ) : (
+          group.about
         )}
-        {group.about}
       </p>
       <ul className="space-y-1">
         {group.items.map((item) => {
@@ -490,7 +485,9 @@ function GroupItems({
               >
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-semibold text-zinc-950 dark:text-zinc-50">{item.label}</span>
-                  <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">{item.hint}</span>
+                  {!withLabel && (
+                    <span className="block truncate text-xs text-zinc-500 dark:text-zinc-400">{item.hint}</span>
+                  )}
                 </span>
                 <item.icon size={20} className={`shrink-0 ${group.icon}`} aria-hidden />
               </Link>
@@ -756,7 +753,10 @@ function HamburgerIcon({ open }: { open: boolean }) {
   return (
     <>
       <motion.span
-        animate={{ rotate: open ? 45 : 0, y: open ? 6 : 0 }}
+        // y = 8: полоска 2px + зазор gap-1.5 (6px) — ровно до средней.
+        // Было 6, крайние пересекались не в одной точке, и крестик выходил
+        // кривым (владелец 24.11).
+        animate={{ rotate: open ? 45 : 0, y: open ? 8 : 0 }}
         className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
       />
       <motion.span
@@ -764,7 +764,7 @@ function HamburgerIcon({ open }: { open: boolean }) {
         className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
       />
       <motion.span
-        animate={{ rotate: open ? -45 : 0, y: open ? -6 : 0 }}
+        animate={{ rotate: open ? -45 : 0, y: open ? -8 : 0 }}
         className="h-0.5 w-6 bg-zinc-900 dark:bg-zinc-100"
       />
     </>
