@@ -95,7 +95,7 @@ const SECTIONS: Section[] = [
       },
       {
         term: "Purchases",
-        text: "Which maps you bought, when, and for how much. We need this to give you the download and to keep proper accounts.",
+        text: "Which maps you bought, when, and for how much. We need this to give you the download and to keep proper accounts. The creator of a map you bought or got for free sees your username and the date in their dashboard, never your email.",
       },
       {
         // С 2026-09-26: журнал скачиваний (download_events). Хэш, а не

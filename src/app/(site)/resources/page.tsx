@@ -6,6 +6,9 @@ import { PencilSimple, Plus, Eye } from "@phosphor-icons/react/dist/ssr";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getCurrentUser } from "@/lib/current-user";
 import { getOwnProducts, type OwnProduct } from "@/lib/moderation";
+import { getCreatorSales, type MapSales } from "@/lib/creator-sales";
+import { formatMoney } from "@/lib/purchase-email";
+import { LocalTime } from "@/components/LocalTime";
 import { PageGlow } from "@/components/PageGlow";
 import { Button, BUTTON_COLORS, BUTTON_PILL } from "@/components/Button";
 import { ResourceActions } from "@/components/ResourceActions";
@@ -72,6 +75,9 @@ export default async function ResourcesPage() {
   if (!creator && !CREATOR_SIGNUPS_OPEN) {
     redirect("/marketplace");
   }
+
+  // Продажи — только по своим картам (список выше пришёл под сессией).
+  const sales = await getCreatorSales(products.map((p) => p.id));
 
   return (
     <main className="relative w-full overflow-x-clip px-6">
@@ -154,7 +160,7 @@ export default async function ResourcesPage() {
           ) : (
             <ul className="mt-10 space-y-3">
               {products.map((product) => (
-                <ResourceRow key={product.id} product={product} />
+                <ResourceRow key={product.id} product={product} sales={sales[product.id]} />
               ))}
             </ul>
           )}
@@ -164,7 +170,8 @@ export default async function ResourcesPage() {
   );
 }
 
-function ResourceRow({ product }: { product: OwnProduct }) {
+function ResourceRow({ product, sales }: { product: OwnProduct; sales?: MapSales }) {
+  const free = sales ? sales.revenueCents === 0 : false;
   return (
     <li className="rounded-2xl border border-zinc-200 bg-[#fbfbff] p-4 dark:border-zinc-800 dark:bg-zinc-950">
       <div className="flex flex-wrap items-center gap-4">
@@ -182,8 +189,16 @@ function ResourceRow({ product }: { product: OwnProduct }) {
             </span>
             <StatusBadge product={product} />
           </div>
-          <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
+          <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
             {product.price}
+            {/* Продажи (24.11): сколько и на сколько; у бесплатной —
+                сколько раз получили. */}
+            {sales && sales.count > 0 && (
+              <span className="ml-2 font-semibold text-zinc-950 dark:text-zinc-50">
+                · {sales.count} {free ? (sales.count === 1 ? "download" : "downloads") : "sold"}
+                {!free && ` · ${formatMoney(sales.revenueCents, "eur")} in sales`}
+              </span>
+            )}
           </p>
         </div>
 
@@ -197,8 +212,8 @@ function ResourceRow({ product }: { product: OwnProduct }) {
               href={`/marketplace/${product.slug}`}
               className={`${BUTTON_PILL} text-zinc-600 hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-400 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50`}
             >
-              <Eye size={16} />
               View
+              <Eye size={16} />
             </Link>
           )}
           {/* Правку удалённой карты не предлагаем: форма всё равно её не
@@ -208,8 +223,8 @@ function ResourceRow({ product }: { product: OwnProduct }) {
               href={`/resources/${product.slug}/edit`}
               className={`${BUTTON_PILL} ${BUTTON_COLORS.secondary}`}
             >
-              <PencilSimple size={16} weight="bold" />
               Edit
+              <PencilSimple size={16} weight="bold" />
             </Link>
           )}
           <ResourceActions
@@ -227,6 +242,30 @@ function ResourceRow({ product }: { product: OwnProduct }) {
           без единого слова, за что. Переносы строк сохраняем
           (whitespace-pre-line) — текст собран списком пунктов. */}
       <ReasonNote product={product} />
+
+      {/* Кто купил — ник и дата, новые сверху (24.11). Почту автор не
+          видит; это записано в /privacy. */}
+      {sales && sales.count > 0 && (
+        <details className="group mt-3 rounded-xl bg-zinc-950/[0.03] px-4 py-2 text-sm dark:bg-white/[0.04]">
+          <summary className="cursor-pointer list-none font-semibold text-zinc-800 dark:text-zinc-200">
+            {free ? "Who got it" : "Who bought it"} ({sales.buyers.length})
+          </summary>
+          <ul className="mt-2 space-y-1 pb-1">
+            {sales.buyers.slice(0, 50).map((b, i) => (
+              <li key={i} className="flex justify-between gap-4 text-zinc-700 dark:text-zinc-300">
+                {b.username ? (
+                  <Link href={`/@${b.username}`} className="font-medium hover:underline">
+                    @{b.username}
+                  </Link>
+                ) : (
+                  <span className="italic">deleted account</span>
+                )}
+                <LocalTime value={b.at} shape="date" />
+              </li>
+            ))}
+          </ul>
+        </details>
+      )}
     </li>
   );
 }
