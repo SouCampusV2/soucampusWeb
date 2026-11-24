@@ -270,7 +270,7 @@ function FunnelPanel({ funnel }: { funnel: Funnel | null }) {
       </div>
 
       <p className="text-xs leading-5 text-zinc-500 dark:text-zinc-400">
-        Counted per browser, not per person — a phone and a laptop are two.
+        Counted per browser, not per person: a phone and a laptop are two.
         The first three lines follow the same browser through the site.
         Orders are counted differently and are not a percentage of the
         lines above: an order carries no visitor id, so it cannot be tied

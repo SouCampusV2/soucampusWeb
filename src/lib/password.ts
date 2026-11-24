@@ -26,7 +26,7 @@ export function friendlyAuthError(message?: string): string {
     m.includes("already exists") ||
     m.includes("user already")
   ) {
-    return "This email is already registered — try signing in instead.";
+    return "This email is already registered. Try signing in instead.";
   }
   if (m.includes("invalid login") || m.includes("invalid credentials")) {
     return "Wrong email or password.";
@@ -37,7 +37,7 @@ export function friendlyAuthError(message?: string): string {
   }
   // Supabase запрещает ставить пароль, совпадающий с текущим.
   if (m.includes("should be different") || m.includes("same as the old")) {
-    return "That's your current password — pick a different one.";
+    return "That's your current password. Pick a different one.";
   }
   return message && message !== "{}"
     ? message

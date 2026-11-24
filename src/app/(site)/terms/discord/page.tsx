@@ -55,7 +55,7 @@ const SECTIONS: Section[] = [
     points: [
       "Answer the order form: what you need, deadline, map size, theme, Minecraft version and budget. References and extra details are optional.",
       <>
-        You get a <strong>price guide</strong> based on the map size — about
+        You get a <strong>price guide</strong> based on the map size, about
         €{BASE_RATE} per block of map side (for example, {EXAMPLE_SIDE}×
         {EXAMPLE_SIDE} ≈ €{EXAMPLE_SIDE * BASE_RATE}). It is a guide, not a
         price: the final price is the quote you accept.
@@ -76,7 +76,7 @@ const SECTIONS: Section[] = [
         (price, deadline, message) or ask questions.
       </>,
       "You can accept one quote, decline any quote with a reason, or start a private discussion with a builder.",
-      "You can edit your order until you accept a quote. After that, changes are agreed with your builder or a manager — the builder priced what they saw.",
+      "You can edit your order until you accept a quote. After that, changes are agreed with your builder or a manager: the builder priced what they saw.",
     ],
   },
   {
@@ -120,7 +120,7 @@ const SECTIONS: Section[] = [
     points: [
       <>
         You can cancel an order yourself <strong>before</strong> you accept a
-        quote — free of charge.
+        quote, free of charge.
       </>,
       <>
         After you accept a quote, cancelling goes through a manager. Refunds

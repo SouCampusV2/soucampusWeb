@@ -63,7 +63,7 @@ export function ProductGallery({
         <Image
           src={images[index]}
           alt={
-            index === 0 ? title : `${title} — screenshot ${index + 1}`
+            index === 0 ? title : `${title}, screenshot ${index + 1}`
           }
           fill
           // sizes — это ОБЕЩАНИЕ браузеру, какой ширины будет кадр; по нему

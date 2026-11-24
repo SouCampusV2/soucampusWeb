@@ -32,15 +32,15 @@ const PRICING_FAQ = [
   },
   {
     q: "What about really large builds?",
-    a: `The rate stays the same at every size — there is no surcharge per block for large maps. A 400×400 map is 400 × ${BASE_RATE} = ${400 * BASE_RATE}€; a 1000×1000 map is 1000 × ${BASE_RATE} = ${1000 * BASE_RATE}€.`,
+    a: `The rate stays the same at every size. There is no surcharge per block for large maps. A 400×400 map is 400 × ${BASE_RATE} = ${400 * BASE_RATE}€; a 1000×1000 map is 1000 × ${BASE_RATE} = ${1000 * BASE_RATE}€.`,
   },
   {
-    q: "My map isn't square — how does that get priced?",
-    a: "Non-square maps are priced off an \"equivalent side\" — the square root of width × height. A 100×100 map still comes out to exactly 100 (no change from the simple case), while a 150×100 map is treated as roughly a 122-unit square. It's a fair stand-in for \"how big does this feel\" that doesn't over- or under-charge depending on which side happens to be longer.",
+    q: "My map isn't square, how does that get priced?",
+    a: "Non-square maps are priced off an \"equivalent side\": the square root of width × height. A 100×100 map still comes out to exactly 100 (no change from the simple case), while a 150×100 map is treated as roughly a 122-unit square. It's a fair stand-in for \"how big does this feel\" that doesn't over- or under-charge depending on which side happens to be longer.",
   },
   {
     q: "How is the timeline estimated?",
-    a: "Rough reference points: a 150×150 map is about a week, a 400×400 map is a minimum of 2 weeks, and a 600×600 map runs 3-4 weeks. Actual timelines depend on detail and my schedule at the time, not size alone — the instant estimate on the Contact page shows a range for exactly that reason.",
+    a: "Rough reference points: a 150×150 map is about a week, a 400×400 map is a minimum of 2 weeks, and a 600×600 map runs 3-4 weeks. Actual timelines depend on detail and my schedule at the time, not size alone. The instant estimate on the Contact page shows a range for exactly that reason.",
   },
 ];
 
@@ -88,7 +88,7 @@ export default function TermsPage() {
       <HelpPageHeader active="terms" title="Terms of Service" updated={TERMS_UPDATED}>
         Pricing, licensing, refunds for marketplace maps and the seller
         details below are final. Terms for custom commissions are still
-        being written — the outline is at the bottom.
+        being written. The outline is at the bottom.
       </HelpPageHeader>
 
       <div className={HELP_BODY}>
@@ -167,7 +167,7 @@ export default function TermsPage() {
           <p>
             EU law normally gives you 14 days to cancel an online purchase.
             For digital content that starts right away, that right ends once
-            you agree to immediate delivery — so a purchase can&apos;t be
+            you agree to immediate delivery, so a purchase can&apos;t be
             cancelled or refunded because you changed your mind.
           </p>
           <p>
@@ -191,7 +191,7 @@ export default function TermsPage() {
           </p>
           <p>
             Custom commissions work differently: they are paid separately,
-            and there is no refund once the build is finished — only at the
+            and there is no refund once the build is finished, only at the
             start of the build, if several attempts still do not work for
             you at all and you said so at the time; then 85% of what you paid
             comes back. The details are in the{" "}
@@ -233,7 +233,7 @@ export default function TermsPage() {
       <section className={HELP_CARDS}>
         <div className={HELP_CARD}>
           <FileText size={32} className={HELP_ICON} weight="duotone" />
-          <h2 className={HELP_CARD_TITLE}>Commission terms — coming soon</h2>
+          <h2 className={HELP_CARD_TITLE}>Commission terms: coming soon</h2>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
             Full terms for custom commissions are being written. Until then,
             order terms are agreed directly in Discord for every commission.
@@ -254,8 +254,8 @@ export default function TermsPage() {
           <ChatsCircle size={32} className={HELP_ICON} weight="duotone" />
           <h2 className={HELP_CARD_TITLE}>Ordering through Discord</h2>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            How our Discord tickets work — quotes, payment, delivery and
-            closing a ticket — is written up on its own page.
+            How our Discord tickets work (quotes, payment, delivery and
+            closing a ticket) is written up on its own page.
           </p>
           <Link
             href="/terms/discord"

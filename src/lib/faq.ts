@@ -53,14 +53,14 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "What tools do you build with?",
         answer: [
-          "WorldEdit, VoxelSniper, Axiom, Arceon, GoBrush, GoPaint and EzEdit — terrain brushes for landscapes, selection tools for architecture, and a lot of hand placement for the detail. The tools only speed up the building: the finished map is ordinary Minecraft blocks.",
+          "WorldEdit, VoxelSniper, Axiom, Arceon, GoBrush, GoPaint and EzEdit: terrain brushes for landscapes, selection tools for architecture, and a lot of hand placement for the detail. The tools only speed up the building: the finished map is ordinary Minecraft blocks.",
         ],
         link: { href: "/about", label: "What I build with" },
       },
       {
         question: "How does a commission start?",
         answer: [
-          "With the details. I ask about the size, your budget, the deadline, the theme, reference images, and any special spots the map needs — a spawn, an arena, a boss room, a place for a shop. The clearer this part is, the fewer surprises later.",
+          "With the details. I ask about the size, your budget, the deadline, the theme, reference images, and any special spots the map needs: a spawn, an arena, a boss room, a place for a shop. The clearer this part is, the fewer surprises later.",
         ],
       },
       {
@@ -72,13 +72,13 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "Can I see the progress while you build?",
         answer: [
-          "Yes. With 50% paid upfront you get progress updates as screenshots. With 100% paid upfront you can also join me on my build server whenever I am online and walk around the map as it grows — plus the same screenshot updates.",
+          "Yes. With 50% paid upfront you get progress updates as screenshots. With 100% paid upfront you can also join me on my build server whenever I am online and walk around the map as it grows, plus the same screenshot updates.",
         ],
       },
       {
         question: "Can you work on a map I already have?",
         answer: [
-          "Yes — send the world or the map file along with the rest of the details, and describe what should change. Expanding, reworking or detailing an existing map is priced by the work involved.",
+          "Yes, send the world or the map file along with the rest of the details, and describe what should change. Expanding, reworking or detailing an existing map is priced by the work involved.",
         ],
       },
     ],
@@ -104,7 +104,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "How do I pay?",
         answer: [
-          "Upfront, one of two ways: 50% before the build starts and 50% before the files are delivered, or 100% before the build starts — which also gets you access to the build server while I work.",
+          "Upfront, one of two ways: 50% before the build starts and 50% before the files are delivered, or 100% before the build starts, which also gets you access to the build server while I work.",
         ],
       },
       {
@@ -112,7 +112,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
         // обещал «от 2–3 дней», а Terms и вики — неделю.
         question: "How long does a build take?",
         answer: [
-          "A 150×150 map takes about a week, 400×400 at least two weeks, 600×600 three to four. Detail matters as much as size — a small map full of interiors can take longer than a large plain one. The estimate on the Contact page gives a range, and the real date is agreed before the build starts.",
+          "A 150×150 map takes about a week, 400×400 at least two weeks, 600×600 three to four. Detail matters as much as size: a small map full of interiors can take longer than a large plain one. The estimate on the Contact page gives a range, and the real date is agreed before the build starts.",
         ],
         link: { href: "/wiki/how-long-a-build-takes", label: "Timeline reference points" },
       },
@@ -120,7 +120,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
         // «1–2 бесплатные правки, но абсолютно небольшие» (владелец 17.11).
         question: "Can I ask for changes after delivery?",
         answer: [
-          "Yes — one or two free rounds of small changes within a week of delivery: adjusting details, swapping blocks, moving a small element. Reworking whole areas or changing the idea is not a small change; that is priced separately and agreed first.",
+          "Yes, one or two free rounds of small changes within a week of delivery: adjusting details, swapping blocks, moving a small element. Reworking whole areas or changing the idea is not a small change; that is priced separately and agreed first.",
         ],
       },
       {
@@ -134,9 +134,9 @@ export const FAQ_SECTIONS: FaqSection[] = [
         // и коротко в /terms#refunds.
         question: "Can I get a refund for a commission?",
         answer: [
-          "Once the build is finished, no. You see the progress the whole way through, and that is the time to say if something is wrong — I would much rather fix it then.",
-          "A refund is possible only at the start of the build: if we try the direction several times and it still does not work for you at all — and you said so at the time. Then you get 85% of what you paid back; the rest covers the time already spent and transfer fees.",
-          "Not liking the finished map — after approving the progress along the way, or without saying anything during the build — is not grounds for a refund or a rebuild.",
+          "Once the build is finished, no. You see the progress the whole way through, and that is the time to say if something is wrong. I would much rather fix it then.",
+          "A refund is possible only at the start of the build: if we try the direction several times and it still does not work for you at all, and you said so at the time. Then you get 85% of what you paid back; the rest covers the time already spent and transfer fees.",
+          "Not liking the finished map, after approving the progress along the way, or without saying anything during the build, is not grounds for a refund or a rebuild.",
         ],
       },
       {
@@ -161,7 +161,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "What is the marketplace?",
         answer: [
-          "A shop of ready-made Minecraft maps — lobbies, spawns, arenas, builds — that you buy and download straight away, instead of commissioning one and waiting for it.",
+          "A shop of ready-made Minecraft maps (lobbies, spawns, arenas, builds) that you buy and download straight away, instead of commissioning one and waiting for it.",
         ],
         link: { href: "/marketplace", label: "Browse the marketplace" },
       },
@@ -268,7 +268,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "What is a schematic?",
         answer: [
-          "A file that holds one structure — just the blocks, without terrain, spawn point or player data. You cannot open it as a world; it is pasted into a world you already have, usually with WorldEdit.",
+          "A file that holds one structure: just the blocks, without terrain, spawn point or player data. You cannot open it as a world; it is pasted into a world you already have, usually with WorldEdit.",
           "The common formats: .schem is what WorldEdit uses from 1.13 on, .schematic is the older format from before 1.13, and .litematic belongs to the Litematica mod.",
         ],
         link: { href: "/wiki/upload-a-schematic-to-a-server", label: "Pasting a schematic" },
@@ -276,7 +276,7 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "Should I get a world or a schematic?",
         answer: [
-          "A world if the map stands on its own — a lobby, a spawn, an arena you load as it is. A schematic if the build has to go into a world you already run, next to things that are there.",
+          "A world if the map stands on its own: a lobby, a spawn, an arena you load as it is. A schematic if the build has to go into a world you already run, next to things that are there.",
         ],
       },
       {
@@ -303,14 +303,14 @@ export const FAQ_SECTIONS: FaqSection[] = [
       {
         question: "Do the maps need mods?",
         answer: [
-          "No. The building tools are only for building — what you receive is made of ordinary blocks. If a particular map needs anything extra, such as a resource pack, its read-me says so.",
+          "No. The building tools are only for building: what you receive is made of ordinary blocks. If a particular map needs anything extra, such as a resource pack, its read-me says so.",
         ],
         link: { href: "/wiki/whats-in-the-download", label: "What is inside the download" },
       },
       {
-        question: "Blocks are missing after pasting — why?",
+        question: "Blocks are missing after pasting, why?",
         answer: [
-          "Almost always because the file and the game disagree about what a block is — typically a build from a newer version pasted into an older one. The game leaves air where it does not recognise a block. The download is not broken.",
+          "Almost always because the file and the game disagree about what a block is, typically a build from a newer version pasted into an older one. The game leaves air where it does not recognise a block. The download is not broken.",
         ],
         link: { href: "/wiki/missing-blocks", label: "Missing blocks after pasting" },
       },

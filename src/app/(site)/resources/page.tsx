@@ -122,7 +122,7 @@ export default async function ResourcesPage() {
                 })}
               </p>
               <p className="mt-1 text-sm text-red-700 dark:text-red-300">
-                This came from a rejected submission — the reason is on the
+                This came from a rejected submission, the reason is on the
                 map below. You can still edit and resubmit the maps you have
                 already uploaded.
               </p>
@@ -142,7 +142,7 @@ export default async function ResourcesPage() {
                 No maps yet
               </h2>
               <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-600 dark:text-zinc-400">
-                Upload your first map — screenshots, description and the file
+                Upload your first map: screenshots, description and the file
                 itself. It goes live on the marketplace once it&apos;s reviewed.
               </p>
               <div className="mt-6 flex justify-center">
@@ -257,7 +257,7 @@ function ReasonNote({ product }: { product: OwnProduct }) {
       if (product.deletedBy === "creator") {
         return {
           label: "You deleted this map:",
-          text: "It is off the marketplace. The file is still kept — write to support if you need it back.",
+          text: "It is off the marketplace. The file is still kept. Write to support if you need it back.",
         };
       }
       return {
@@ -284,7 +284,7 @@ function ReasonNote({ product }: { product: OwnProduct }) {
     if (!product.creatorActive) {
       return {
         label: "Off the marketplace while your creator access is closed:",
-        text: "Nothing is wrong with this map — it comes back with your creator status.",
+        text: "Nothing is wrong with this map. It comes back with your creator status.",
       };
     }
     return null;

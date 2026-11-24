@@ -20,7 +20,7 @@ export const metadata: Metadata = {
   // " — SouCampus builds".
   title: "Portfolio",
   description:
-    "A portfolio of custom Minecraft builds by SouCampus — spawns, castles, cities and RPG maps, with sizes and delivery times.",
+    "A portfolio of custom Minecraft builds by SouCampus: spawns, castles, cities and RPG maps, with sizes and delivery times.",
   alternates: { canonical: "/portfolio" },
 };
 

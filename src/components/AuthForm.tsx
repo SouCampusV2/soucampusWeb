@@ -127,7 +127,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
           <span className="font-medium text-zinc-950 dark:text-zinc-50">
             {email}
           </span>
-          . Click it to activate your account — you&apos;ll be signed in
+          . Click it to activate your account. You&apos;ll be signed in
           automatically.
         </p>
         <div className="mt-6">

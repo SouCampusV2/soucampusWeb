@@ -189,7 +189,7 @@ export function PriceField({
       >
         Price (EUR)
         <RequiredMark />{" "}
-        <span className="font-normal text-zinc-500 dark:text-zinc-400">— 0 for free</span>
+        <span className="font-normal text-zinc-500 dark:text-zinc-400">· 0 for free</span>
       </label>
       <input
         id={id}

@@ -207,7 +207,7 @@ async function create(
     return NextResponse.json(
       {
         error:
-          "You can't submit a new map right now — the pause after the last review is still on. The date is on your resources page.",
+          "You can't submit a new map right now: the pause after the last review is still on. The date is on your resources page.",
       },
       { status: 403 }
     );
@@ -347,7 +347,7 @@ async function update(
         return NextResponse.json(
           {
             error:
-              "You were asked to re-upload the map file — pick a new file before resubmitting.",
+              "You were asked to re-upload the map file. Pick a new file before resubmitting.",
           },
           { status: 409 }
         );
@@ -356,7 +356,7 @@ async function update(
         return NextResponse.json(
           {
             error:
-              "You were asked to replace the screenshots — add at least one new image before resubmitting.",
+              "You were asked to replace the screenshots. Add at least one new image before resubmitting.",
           },
           { status: 409 }
         );

@@ -188,7 +188,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: "file blocked",
-        message: `“${blockedRows[0].title}” can't be bought right now — remove it from the order.`,
+        message: `“${blockedRows[0].title}” can't be bought right now. Remove it from the order.`,
       },
       { status: 409 }
     );
@@ -199,7 +199,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error: "own map",
-        message: `“${own.title}” is your own map — remove it from the order.`,
+        message: `“${own.title}” is your own map. Remove it from the order.`,
       },
       { status: 409 }
     );
@@ -213,7 +213,7 @@ export async function POST(request: Request) {
       return NextResponse.json(
         {
           error: "already owned",
-          message: `You already own “${product.title}” — it's in My purchases. Remove it from the order.`,
+          message: `You already own “${product.title}”. It's in My purchases. Remove it from the order.`,
         },
         { status: 409 }
       );

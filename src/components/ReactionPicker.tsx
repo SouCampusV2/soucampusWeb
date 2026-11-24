@@ -33,7 +33,7 @@ export function ReactionPicker({
         Reaction
       </span>
       <span className="mt-0.5 block text-xs text-zinc-500 dark:text-zinc-400">
-        One per map — visitors tap it like a like. Optional.
+        One per map, visitors tap it like a like. Optional.
       </span>
 
       {/* radiogroup: выбор ОДИН из списка, и клавиатура со средством

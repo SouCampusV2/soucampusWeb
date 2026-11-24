@@ -74,8 +74,8 @@ const SECTIONS: Section[] = [
     id: "who-we-are",
     title: "Who is responsible for your data",
     paragraphs: [
-      `${SITE_NAME} (${SITE_URL}) is run by ${CONTROLLER.name}, ${CONTROLLER.detail}. He decides why and how the personal data described below is used — in the language of the GDPR, he is the data controller.`,
-      `For anything on this page — a question, a request, or a complaint — write to ${SUPPORT_EMAIL}. A person reads that inbox, not a robot.`,
+      `${SITE_NAME} (${SITE_URL}) is run by ${CONTROLLER.name}, ${CONTROLLER.detail}. He decides why and how the personal data described below is used, in the language of the GDPR, he is the data controller.`,
+      `For anything on this page, a question, a request, or a complaint, write to ${SUPPORT_EMAIL}. A person reads that inbox, not a robot.`,
     ],
   },
   {
@@ -87,11 +87,11 @@ const SECTIONS: Section[] = [
     bullets: [
       {
         term: "Account",
-        text: "Your email address and a password, held by our authentication provider. We never see the password itself — only a hash kept by that provider. If you sign in with Google instead, see the section below.",
+        text: "Your email address and a password, held by our authentication provider. We never see the password itself, only a hash kept by that provider. If you sign in with Google instead, see the section below.",
       },
       {
         term: "Profile",
-        text: "The username you choose, and anything you add yourself: avatar, short bio, name colour. All of it is public by design — a profile page exists to be looked at.",
+        text: "The username you choose, and anything you add yourself: avatar, short bio, name colour. All of it is public by design, a profile page exists to be looked at.",
       },
       {
         term: "Purchases",
@@ -115,7 +115,7 @@ const SECTIONS: Section[] = [
         // пересобираются (image-clean.ts), непроверенное — в закрытом
         // бакете (upload-limits.ts, IMAGE_PENDING_BUCKET).
         term: "If you sell maps here",
-        text: "Your creator application — a portfolio link, your Discord name and a few words about yourself — and the maps you upload: the file, its pictures, description and price. Everything is checked before it goes public. A map file is unpacked and inspected and may be scanned for malware on our own server; each picture is rebuilt from its pixels, which also strips hidden data such as the location a phone camera writes into a photo. Until a map is approved, its files stay private.",
+        text: "Your creator application, a portfolio link, your Discord name and a few words about yourself, and the maps you upload: the file, its pictures, description and price. Everything is checked before it goes public. A map file is unpacked and inspected and may be scanned for malware on our own server; each picture is rebuilt from its pixels, which also strips hidden data such as the location a phone camera writes into a photo. Until a map is approved, its files stay private.",
       },
       {
         term: "Visits",
@@ -123,7 +123,7 @@ const SECTIONS: Section[] = [
       },
       {
         term: "Limits against abuse",
-        text: "When you do something that can be repeated to cause harm — post a comment, react, start a checkout, upload a file — we note which account did it and when, so one account cannot flood the site. These records are deleted after a day.",
+        text: "When you do something that can be repeated to cause harm (post a comment, react, start a checkout, upload a file), we note which account did it and when, so one account cannot flood the site. These records are deleted after a day.",
       },
     ],
   },
@@ -131,8 +131,8 @@ const SECTIONS: Section[] = [
     id: "google-sign-in",
     title: "If you sign in with Google",
     paragraphs: [
-      "Signing in with Google is optional — an email and password work just as well. If you use it, Google tells us your email address and whether it is verified. That is all we ask for and all we receive: we get no access to your Google account, your contacts, your files, or anything else.",
-      "Google does not give us a username. So the first time you sign in this way, we ask you to choose one. Until you do, the site suggests a name derived from your email address — you are not stuck with it, and choosing your own name at that point costs you nothing.",
+      "Signing in with Google is optional. An email and password work just as well. If you use it, Google tells us your email address and whether it is verified. That is all we ask for and all we receive: we get no access to your Google account, your contacts, your files, or anything else.",
+      "Google does not give us a username. So the first time you sign in this way, we ask you to choose one. Until you do, the site suggests a name derived from your email address. You are not stuck with it, and choosing your own name at that point costs you nothing.",
       "If the email address from Google already belongs to an account here, the two are joined into one account rather than creating a second. Your purchases, profile and history stay where they are.",
     ],
   },
@@ -149,7 +149,7 @@ const SECTIONS: Section[] = [
       },
       {
         term: "One small cookie",
-        text: "A signed visitor number, set by us and read only by us. It lives 13 months and tells us that two page views came from the same browser — nothing else about you.",
+        text: "A signed visitor number, set by us and read only by us. It lives 13 months and tells us that two page views came from the same browser, nothing else about you.",
       },
       {
         term: "No cross-site tracking",
@@ -165,7 +165,7 @@ const SECTIONS: Section[] = [
     id: "payments",
     title: "Payments",
     paragraphs: [
-      "Payments are handled by Stripe. Your card number never reaches this site — you type it on Stripe's own checkout page, and Stripe tells us only whether the payment succeeded and which items it covered.",
+      "Payments are handled by Stripe. Your card number never reaches this site. You type it on Stripe's own checkout page, and Stripe tells us only whether the payment succeeded and which items it covered.",
       "That means we cannot lose your card details, because we do not hold them. What Stripe does with them is governed by Stripe's own privacy policy.",
     ],
   },
@@ -180,7 +180,7 @@ const SECTIONS: Section[] = [
     id: "discord",
     title: "Our Discord bot",
     paragraphs: [
-      "When you use tickets on our Discord server, our bot (BoCampus) processes the data below. We use it to run your order — show it to builders, keep the conversation, confirm payment and delivery, and resolve disputes.",
+      "When you use tickets on our Discord server, our bot (BoCampus) processes the data below. We use it to run your order, show it to builders, keep the conversation, confirm payment and delivery, and resolve disputes.",
     ],
     bullets: [
       { term: "Who you are on Discord", text: "Your Discord user ID and display name." },
@@ -273,7 +273,7 @@ const SECTIONS: Section[] = [
     title: "What you can ask us to do",
     paragraphs: [
       "Under the GDPR you can ask to see the data we hold about you, correct it, delete it, receive a copy in a portable form, or object to a particular use. Write to the address below and we will answer within one month.",
-      "If you think we have handled your data badly, you can complain to the data protection authority in your country. You may do that whether or not you talk to us first — though we would rather fix it than have you go there.",
+      "If you think we have handled your data badly, you can complain to the data protection authority in your country. You may do that whether or not you talk to us first, though we would rather fix it than have you go there.",
     ],
   },
   {
@@ -305,7 +305,7 @@ export default function PrivacyPage() {
     <main className="relative w-full overflow-x-clip">
       <HelpPageHeader active="privacy" title="Privacy Policy" updated={LAST_UPDATED}>
         What this site collects, why, and what you can do about it. Written
-        to describe what the code actually does — not to be long.
+        to describe what the code actually does, not to be long.
       </HelpPageHeader>
 
       <div className={HELP_BODY}>
@@ -346,7 +346,7 @@ export default function PrivacyPage() {
           <ShieldCheck size={32} className={HELP_ICON} weight="duotone" />
           <h2 className={HELP_CARD_TITLE}>Get in touch</h2>
           <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            Questions about your data, or a request to see or delete it — write
+            Questions about your data, or a request to see or delete it, write
             to{" "}
             <a href={`mailto:${SUPPORT_EMAIL}`} className={HELP_LINK}>
               {SUPPORT_EMAIL}

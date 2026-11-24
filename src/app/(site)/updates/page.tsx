@@ -37,7 +37,7 @@ export default function UpdatesPage() {
           What&apos;s new
         </h1>
         <p className="mt-4 max-w-2xl text-zinc-600 dark:text-zinc-400">
-          Everything that changed on the site, newest first — new builds, new
+          Everything that changed on the site, newest first: new builds, new
           corners of the marketplace, and the fixes you&apos;d only notice if
           they weren&apos;t there.
         </p>

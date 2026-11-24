@@ -232,10 +232,10 @@ export async function POST(request: Request) {
       title: "You're a creator now",
       body:
         restored.length > 0
-          ? `Your application was approved — you can upload maps to the marketplace again. ${restored.length} ${
+          ? `Your application was approved. You can upload maps to the marketplace again. ${restored.length} ${
               restored.length === 1 ? "map is" : "maps are"
             } back on sale.`
-          : "Your application was approved — you can upload maps to the marketplace.",
+          : "Your application was approved. You can upload maps to the marketplace.",
       // ⚠️ НЕ на форму загрузки. С 2026-08-28 она живёт в админке
       // (/admin/products/new — разбор там же), и одобренный автор,
       // админом не будучи, получил бы 404 вместо приглашения.

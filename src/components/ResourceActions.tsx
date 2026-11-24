@@ -152,7 +152,7 @@ export function ResourceActions({
             <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
               It goes off the marketplace and out of your resources, and you
               can&apos;t undo it yourself. The site keeps the file, so support
-              can bring it back — but if you only want it off the marketplace,
+              can bring it back, but if you only want it off the marketplace,
               hide it instead. Anyone who already bought it keeps their
               download.
             </p>

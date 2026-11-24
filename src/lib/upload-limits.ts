@@ -203,7 +203,7 @@ export function checkMapBytes(
 ): string | null {
   if (size === 0) return "That file is empty.";
   if (size > MAP_FILE_MAX_BYTES) {
-    return `The map file must be ${formatBytes(MAP_FILE_MAX_BYTES)} or smaller — yours is ${formatBytes(size)}.`;
+    return `The map file must be ${formatBytes(MAP_FILE_MAX_BYTES)} or smaller, yours is ${formatBytes(size)}.`;
   }
 
   const name = fileName.toLowerCase();
@@ -218,7 +218,7 @@ export function checkMapBytes(
   if (looksZip || looksGzip || looksNbt) return null;
 
   return isSchematic
-    ? `“${fileName}” doesn't look like a valid schematic — the file may be corrupted.`
+    ? `“${fileName}” doesn't look like a valid schematic, the file may be corrupted.`
     : `That doesn't look like a ${MAP_FILE_TYPES_LABEL} file. Pack a world folder into a zip archive first.`;
 }
 
@@ -230,7 +230,7 @@ export function checkImageBytes(
 ): string | null {
   if (size === 0) return "That image is empty.";
   if (size > IMAGE_MAX_BYTES) {
-    return `Each image must be ${formatBytes(IMAGE_MAX_BYTES)} or smaller — “${fileName}” is ${formatBytes(size)}.`;
+    return `Each image must be ${formatBytes(IMAGE_MAX_BYTES)} or smaller, “${fileName}” is ${formatBytes(size)}.`;
   }
 
   const match = IMAGE_SIGNATURES.find((sig) => startsWith(head, sig.bytes));

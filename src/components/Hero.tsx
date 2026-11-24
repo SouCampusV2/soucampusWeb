@@ -69,7 +69,7 @@ export function Hero() {
           </h1>
 
           <p className="mt-6 text-lg text-zinc-600 dark:text-zinc-400">
-            I create custom maps, structures and entire worlds in Minecraft —
+            I create custom maps, structures and entire worlds in Minecraft,
             from scratch to a breathtaking masterpiece
           </p>
 

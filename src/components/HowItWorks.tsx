@@ -94,7 +94,7 @@ export function HowItWorks({ showContact = false }: { showContact?: boolean }) {
             How an order works
           </h2>
           <p className="mt-2 max-w-xl text-zinc-700 dark:text-zinc-300">
-            From the first message to a finished map — a transparent process in
+            From the first message to a finished map: a transparent process in
             5 steps.
           </p>
           {/* Сетка — на обёртке, список внутри «contents»: пять шагов в две

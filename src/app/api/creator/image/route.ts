@@ -232,7 +232,7 @@ async function sign(
   if (size > IMAGE_MAX_BYTES) {
     return NextResponse.json(
       {
-        error: `Each image must be ${formatBytes(IMAGE_MAX_BYTES)} or smaller — yours is ${formatBytes(size)}.`,
+        error: `Each image must be ${formatBytes(IMAGE_MAX_BYTES)} or smaller, yours is ${formatBytes(size)}.`,
       },
       { status: 400 }
     );
@@ -340,7 +340,7 @@ async function confirm(
   if (size === 0) return reject("That image is empty.");
   if (size > IMAGE_MAX_BYTES) {
     return reject(
-      `Each image must be ${formatBytes(IMAGE_MAX_BYTES)} or smaller — yours is ${formatBytes(size)}.`
+      `Each image must be ${formatBytes(IMAGE_MAX_BYTES)} or smaller, yours is ${formatBytes(size)}.`
     );
   }
 

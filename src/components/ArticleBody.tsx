@@ -118,7 +118,7 @@ export function ArticleBody({ sections, nested = false }: { sections: ArticleSec
                           >
                             {link.label}
                           </a>
-                          {link.detail && <> — {link.detail}</>}
+                          {link.detail && <>: {link.detail}</>}
                         </span>
                       </li>
                     ))}

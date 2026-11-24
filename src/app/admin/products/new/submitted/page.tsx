@@ -41,7 +41,7 @@ export default async function AddMapSubmittedPage({
       )}
       <p className="mx-auto mt-3 max-w-md text-sm text-zinc-500 dark:text-zinc-400">
         The map is in the queue. It reaches the marketplace once it&apos;s
-        approved — your own maps go through the same review as anyone
+        approved, your own maps go through the same review as anyone
         else&apos;s.
       </p>
       <div className="mt-8 flex justify-center gap-3">

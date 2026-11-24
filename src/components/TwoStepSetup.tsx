@@ -157,7 +157,7 @@ export function TwoStepSetup() {
           Scan this in your authenticator app
         </h2>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-          Google Authenticator, 1Password, Authy — any of them. Then type the
+          Google Authenticator, 1Password, Authy, any of them. Then type the
           six digits it shows.
         </p>
 

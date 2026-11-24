@@ -67,8 +67,8 @@ export function AnnounceForm({
         const { message } = await readApiError(res);
         setError(
           message
-            ? `${message} Nothing was delivered — the text above is still here.`
-            : "Could not send it — nothing was delivered. Check the connection and try again; the text above is still here.",
+            ? `${message} Nothing was delivered. The text above is still here.`
+            : "Could not send it. Nothing was delivered. Check the connection and try again; the text above is still here.",
         );
         return;
       }
@@ -84,12 +84,12 @@ export function AnnounceForm({
       const where =
         effectiveTarget === "discord"
           ? "Posted in the Discord announcements channel."
-          : `Sent to ${sent} ${sent === 1 ? "account" : "accounts"} — everyone registered${
+          : `Sent to ${sent} ${sent === 1 ? "account" : "accounts"}, everyone registered${
               effectiveTarget === "both" ? ", and posted in Discord" : ""
             }. There's no way to take it back.`;
       setResult(
         userId
-          ? `Sent to ${recipient?.username ?? "the account"}. It's in their notifications now — they'll see the bell marked next time they open the site.`
+          ? `Sent to ${recipient?.username ?? "the account"}. It's in their notifications now. They'll see the bell marked next time they open the site.`
           : where,
       );
       setTitle("");
@@ -171,7 +171,7 @@ export function AnnounceForm({
       <TextField
         id="announce-title"
         label="Headline"
-        hint="What they see first — “Summer sale: 30% off”, “Updated terms”."
+        hint="What they see first: “Summer sale: 30% off”, “Updated terms”."
         value={title}
         onChange={setTitle}
       />

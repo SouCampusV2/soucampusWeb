@@ -71,7 +71,7 @@ export async function generateMetadata({
   const product = await getProductOnce(slug);
   if (!product) return { title: "Not found" };
 
-  const description = `${product.summary} ${product.price} — instant download.`;
+  const description = `${product.summary} ${product.price}, instant download.`;
 
   // og:image — фото самого товара, как у страниц работ: ссылка в Discord
   // показывает реальный билд, а не брендовую заглушку.

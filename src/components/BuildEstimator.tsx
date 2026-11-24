@@ -242,7 +242,7 @@ export function BuildEstimator() {
       </p>
       {currency !== "EUR" && (
         <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-          ≈ €{priceEur.toLocaleString()} EUR — the currency actually billed
+          ≈ €{priceEur.toLocaleString()} EUR, the currency actually billed
         </p>
       )}
 
@@ -274,7 +274,7 @@ export function BuildEstimator() {
       </div>
 
       <div className="mt-4 rounded-2xl bg-blue-100 p-4 text-sm leading-6 text-zinc-700 dark:bg-blue-950 dark:text-zinc-300">
-        A rough estimate based on size alone — the exact price and timeline
+        A rough estimate based on size alone. The exact price and timeline
         depend on detail and style too, and are confirmed once we talk
         through your idea on Discord.
       </div>

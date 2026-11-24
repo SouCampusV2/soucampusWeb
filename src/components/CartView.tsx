@@ -52,7 +52,7 @@ function formatCents(cents: number, currency = "EUR") {
 const FACTS = [
   {
     Icon: Lightning,
-    text: "Instant access — your maps appear in My purchases right after payment.",
+    text: "Instant access: your maps appear in My purchases right after payment.",
   },
   { Icon: FileZip, text: "Downloads are .zip files, ready to drop into your saves folder." },
   { Icon: ShieldCheck, text: "Payment is handled by Stripe. Your card details never reach us." },
@@ -265,7 +265,7 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
                 <h1> выше — см. разбор там. Здесь остались только ответ
                 на «и что теперь» и кнопки. */}
             <p className="mx-auto max-w-sm text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-              Pick a map from the marketplace — or start with the free ones, they download exactly the
+              Pick a map from the marketplace, or start with the free ones. They download exactly the
               same way.
             </p>
             <div className="mt-7 flex flex-wrap items-center justify-center gap-3">
@@ -512,7 +512,7 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
 
                 {state === "error" && (
                   <p className="mt-2 text-sm text-red-600 dark:text-red-400" role="alert">
-                    Something went wrong — please try again.
+                    Something went wrong, please try again.
                   </p>
                 )}
 
@@ -524,7 +524,7 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
 
                 {stripeTestMode && (
                   <p className="mt-4 rounded-xl bg-orange-50 px-4 py-3 text-xs leading-relaxed text-orange-700 dark:bg-orange-950/40 dark:text-orange-300">
-                    Demo marketplace — Stripe is in test mode. Use card 4242 4242 4242 4242 with any future
+                    Demo marketplace: Stripe is in test mode. Use card 4242 4242 4242 4242 with any future
                     date and CVC. No real money moves.
                   </p>
                 )}

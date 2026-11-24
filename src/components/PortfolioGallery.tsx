@@ -67,7 +67,7 @@ export function PortfolioGallery({
             >
               <Image
                 src={src}
-                alt={`${title} — photo ${i + 2}`}
+                alt={`${title}, photo ${i + 2}`}
                 fill
                 sizes="(min-width: 1024px) 512px, (min-width: 640px) 50vw, 100vw"
                 className="cursor-zoom-in object-cover"

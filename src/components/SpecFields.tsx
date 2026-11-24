@@ -139,7 +139,7 @@ export function SpecFields({
           в него до отправки, а не после отказа. */}
       <Group
         label="Type"
-        hint={`Up to ${MAX_MAP_TYPES} — pick what it actually is.`}
+        hint={`Up to ${MAX_MAP_TYPES}, pick what it actually is.`}
       >
         {MAP_TYPES.map((t) => {
           const active = value.mapTypes.includes(t);

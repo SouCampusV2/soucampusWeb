@@ -129,7 +129,7 @@ export function PortfolioForm({
     setError(null);
 
     if (images.length === 0) {
-      setError("Add at least one image — it becomes the cover.");
+      setError("Add at least one image. It becomes the cover.");
       return;
     }
 
@@ -218,7 +218,7 @@ export function PortfolioForm({
           <label htmlFor="slug" className={LABEL}>
             Address{" "}
             <span className="font-normal text-zinc-500 dark:text-zinc-400">
-              — soucampus.online/portfolio/{slug || "…"}
+              · soucampus.online/portfolio/{slug || "…"}
             </span>
           </label>
           <input
@@ -241,17 +241,17 @@ export function PortfolioForm({
         <TextField
           id="tag"
           label="Tag"
-          hint={tags.length > 0 ? `— used so far: ${tags.join(", ")}` : undefined}
+          hint={tags.length > 0 ? `· used so far: ${tags.join(", ")}` : undefined}
           value={tag}
           onChange={setTag}
           required
           maxLength={PROJECT_LIMITS.tag}
         />
-        <TextField id="summary" label="Short summary" hint="— on the card" value={summary} onChange={setSummary} required maxLength={PROJECT_LIMITS.summary} />
+        <TextField id="summary" label="Short summary" hint="· on the card" value={summary} onChange={setSummary} required maxLength={PROJECT_LIMITS.summary} />
         <div>
           <label htmlFor="description" className={LABEL}>
             Description{" "}
-            <span className="font-normal text-zinc-500 dark:text-zinc-400">— on the work page</span>
+            <span className="font-normal text-zinc-500 dark:text-zinc-400">· on the work page</span>
           </label>
           <textarea
             id="description"
@@ -269,22 +269,22 @@ export function PortfolioForm({
           — для сортировки и площади в футбольных полях; его можно не
           заполнять. */}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <TextField id="priceLabel" label="Price label" hint="— €150, trial, —" value={priceLabel} onChange={setPriceLabel} required maxLength={PROJECT_LIMITS.label} />
-        <TextField id="priceAmount" label="Price, number" hint="— optional" value={priceAmount} onChange={setPriceAmount} />
-        <TextField id="sizeLabel" label="Size label" hint="— 250×250" value={sizeLabel} onChange={setSizeLabel} required maxLength={PROJECT_LIMITS.label} />
+        <TextField id="priceLabel" label="Price label" hint="· €150, trial, —" value={priceLabel} onChange={setPriceLabel} required maxLength={PROJECT_LIMITS.label} />
+        <TextField id="priceAmount" label="Price, number" hint="· optional" value={priceAmount} onChange={setPriceAmount} />
+        <TextField id="sizeLabel" label="Size label" hint="· 250×250" value={sizeLabel} onChange={setSizeLabel} required maxLength={PROJECT_LIMITS.label} />
         <div className="grid grid-cols-2 gap-4">
           <TextField id="sizeX" label="X, blocks" value={sizeX} onChange={setSizeX} />
           <TextField id="sizeZ" label="Z, blocks" value={sizeZ} onChange={setSizeZ} />
         </div>
-        <TextField id="deadlineLabel" label="Deadline" hint="— 1 week" value={deadlineLabel} onChange={setDeadlineLabel} required maxLength={PROJECT_LIMITS.label} />
-        <TextField id="sortOrder" label="Order" hint="— smaller is earlier; empty = last" value={sortOrder} onChange={setSortOrder} />
+        <TextField id="deadlineLabel" label="Deadline" hint="· 1 week" value={deadlineLabel} onChange={setDeadlineLabel} required maxLength={PROJECT_LIMITS.label} />
+        <TextField id="sortOrder" label="Order" hint="· smaller is earlier; empty = last" value={sortOrder} onChange={setSortOrder} />
       </div>
 
       <div className="space-y-3">
         <TextField
           id="listingUrl"
           label="Store link"
-          hint="— optional, e.g. the BuiltByBit page of a premade"
+          hint="· optional, e.g. the BuiltByBit page of a premade"
           value={listingUrl}
           onChange={setListingUrl}
           maxLength={PROJECT_LIMITS.url}
@@ -293,7 +293,7 @@ export function PortfolioForm({
           checked={listingIsFree}
           onChange={setListingIsFree}
           disabled={listingUrl.trim() === ""}
-          label="It's free there — the button says “Download free” instead of “Buy”"
+          label="It's free there: the button says “Download free” instead of “Buy”"
         />
         <Checkbox
           checked={isFeatured}

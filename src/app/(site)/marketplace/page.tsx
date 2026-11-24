@@ -27,7 +27,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: "Marketplace",
     description:
-      "Ready-made Minecraft maps and builds by SouCampus — download instantly after purchase.",
+      "Ready-made Minecraft maps and builds by SouCampus, download instantly after purchase.",
     alternates: { canonical: "/marketplace" },
     robots: products.length === 0 ? { index: false, follow: true } : undefined,
   };
@@ -59,7 +59,7 @@ export default async function MarketplacePage() {
         </h1>
         <p className="mt-4 max-w-2xl text-zinc-600 dark:text-zinc-400">
           Ready-made maps and builds. Pick one, and it&apos;s yours to download
-          — no waiting for a custom order.
+         , no waiting for a custom order.
         </p>
       </section>
 

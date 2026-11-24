@@ -103,7 +103,7 @@ async function create(
     return NextResponse.json(
       {
         error: "rate limited",
-        message: "Slow down a little — one comment every 20 seconds.",
+        message: "Slow down a little: one comment every 20 seconds.",
       },
       { status: 429 }
     );

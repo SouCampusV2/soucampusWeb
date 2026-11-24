@@ -105,7 +105,7 @@ export function CreatorApplicationForm() {
         <TextField
           id="portfolio"
           label="Portfolio link"
-          hint="PlanetMinecraft, YouTube, ArtStation — wherever your work lives."
+          hint="PlanetMinecraft, YouTube, ArtStation, wherever your work lives."
           value={portfolio}
           onChange={(value) => {
             setPortfolio(value);

@@ -203,7 +203,7 @@ export default async function ProjectPage({
                 Want something like this?
               </p>
               <p className="mt-2 text-sm leading-6 text-zinc-700 dark:text-zinc-300">
-                Tell me the size, the style and the deadline — I&apos;ll come
+                Tell me the size, the style and the deadline. I&apos;ll come
                 back with a price and a plan.
               </p>
               <Button

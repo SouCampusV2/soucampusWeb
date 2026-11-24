@@ -74,7 +74,7 @@ export async function generateMetadata({
   const description =
     creator.bio ?? `${creator.username} on SouCampus builds.`;
   return {
-    title: `${creator.username} — creator`,
+    title: `${creator.username}, creator`,
     description,
     alternates: { canonical: creatorHref(creator.handle) },
   };

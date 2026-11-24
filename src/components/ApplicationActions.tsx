@@ -43,7 +43,7 @@ export function ApplicationActions({ applicationId }: { applicationId: string })
               // прямо, что дело не в заявке и не в сбое: иначе владелец
               // будет жать ещё раз и искать поломку.
               code === "creator signups are frozen"
-              ? "Creator signups are frozen — this one has to wait."
+              ? "Creator signups are frozen. This one has to wait."
               : (message ?? "Could not save the decision.")
         );
         return;

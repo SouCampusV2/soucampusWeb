@@ -204,7 +204,7 @@ function findEocd(view: DataView): number {
       return at;
     }
   }
-  throw new ZipProblem(`the archive is damaged — ${REPACK}`);
+  throw new ZipProblem(`the archive is damaged, ${REPACK}`);
 }
 
 /** Размеры и смещение, которые не влезли в 32 бита, лежат в поле zip64. */
@@ -220,7 +220,7 @@ function readZip64(
     if (id === 0x0001) {
       let cursor = at + 4;
       const next = () => {
-        if (cursor + 8 > at + 4 + length) throw new ZipProblem(`the archive is damaged — ${REPACK}`);
+        if (cursor + 8 > at + 4 + length) throw new ZipProblem(`the archive is damaged, ${REPACK}`);
         const value = Number(view.getBigUint64(cursor, true));
         cursor += 8;
         return value;
@@ -245,7 +245,7 @@ function readZip64(
  */
 function readEntries(bytes: Uint8Array): Entry[] {
   const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-  if (bytes.length < 22) throw new ZipProblem(`the archive is damaged — ${REPACK}`);
+  if (bytes.length < 22) throw new ZipProblem(`the archive is damaged, ${REPACK}`);
 
   const eocd = findEocd(view);
   const count = view.getUint16(eocd + 10, true);
@@ -253,15 +253,15 @@ function readEntries(bytes: Uint8Array): Entry[] {
   const directoryStart = view.getUint32(eocd + 16, true);
 
   if (view.getUint16(eocd + 4, true) !== 0 || view.getUint16(eocd + 6, true) !== 0) {
-    throw new ZipProblem("multi-part archives aren't supported — pack it into one zip.");
+    throw new ZipProblem("multi-part archives aren't supported, pack it into one zip.");
   }
   // Настоящий zip64 у файла до 15 МБ бывает только от экзотики: не разбираем.
   if (count === 0xffff || directoryStart === UINT32_MAX || directorySize === UINT32_MAX) {
-    throw new ZipProblem(`this zip format isn't supported — ${REPACK}`);
+    throw new ZipProblem(`this zip format isn't supported, ${REPACK}`);
   }
   if (count === 0) throw new ZipProblem("the archive is empty.");
   if (directoryStart + directorySize !== eocd) {
-    throw new ZipProblem(`the archive is damaged — ${REPACK}`);
+    throw new ZipProblem(`the archive is damaged, ${REPACK}`);
   }
 
   const decoder = new TextDecoder();
@@ -269,7 +269,7 @@ function readEntries(bytes: Uint8Array): Entry[] {
   let at = directoryStart;
   for (let i = 0; i < count; i++) {
     if (at + 46 > eocd || view.getUint32(at, true) !== CENTRAL_SIGNATURE) {
-      throw new ZipProblem(`the archive is damaged — ${REPACK}`);
+      throw new ZipProblem(`the archive is damaged, ${REPACK}`);
     }
     const nameLength = view.getUint16(at + 28, true);
     const extraLength = view.getUint16(at + 30, true);
@@ -282,7 +282,7 @@ function readEntries(bytes: Uint8Array): Entry[] {
     const nameStart = at + 46;
     const extraStart = nameStart + nameLength;
     const end = extraStart + extraLength + commentLength;
-    if (end > eocd) throw new ZipProblem(`the archive is damaged — ${REPACK}`);
+    if (end > eocd) throw new ZipProblem(`the archive is damaged, ${REPACK}`);
     readZip64(view, extraStart, extraStart + extraLength, fields);
 
     entries.push({
@@ -295,17 +295,17 @@ function readEntries(bytes: Uint8Array): Entry[] {
     });
     at = end;
   }
-  if (at !== eocd) throw new ZipProblem(`the archive is damaged — ${REPACK}`);
+  if (at !== eocd) throw new ZipProblem(`the archive is damaged, ${REPACK}`);
 
   // Локальные заголовки: имя и метод обязаны совпасть с каталогом.
   const ordered = [...entries].sort((a, b) => a.offset - b.offset);
   let expected = 0;
   for (const [index, entry] of ordered.entries()) {
     if (entry.offset !== expected) {
-      throw new ZipProblem(`the archive has hidden data — ${REPACK}`);
+      throw new ZipProblem(`the archive has hidden data, ${REPACK}`);
     }
     if (entry.offset + 30 > directoryStart || view.getUint32(entry.offset, true) !== LOCAL_SIGNATURE) {
-      throw new ZipProblem(`the archive is damaged — ${REPACK}`);
+      throw new ZipProblem(`the archive is damaged, ${REPACK}`);
     }
     const localNameLength = view.getUint16(entry.offset + 26, true);
     const localExtraLength = view.getUint16(entry.offset + 28, true);
@@ -313,7 +313,7 @@ function readEntries(bytes: Uint8Array): Entry[] {
       bytes.subarray(entry.offset + 30, entry.offset + 30 + localNameLength)
     );
     if (localName !== entry.name || view.getUint16(entry.offset + 8, true) !== entry.method) {
-      throw new ZipProblem(`the archive has hidden data — ${REPACK}`);
+      throw new ZipProblem(`the archive has hidden data, ${REPACK}`);
     }
     // Потоковый распаковщик верит локальному размеру: он обязан совпасть.
     const localCompressed = view.getUint32(entry.offset + 18, true);
@@ -322,24 +322,24 @@ function readEntries(bytes: Uint8Array): Entry[] {
       localCompressed !== UINT32_MAX &&
       localCompressed !== entry.compressedSize
     ) {
-      throw new ZipProblem(`the archive has hidden data — ${REPACK}`);
+      throw new ZipProblem(`the archive has hidden data, ${REPACK}`);
     }
     entry.dataStart = entry.offset + 30 + localNameLength + localExtraLength;
     const dataEnd = entry.dataStart + entry.compressedSize;
-    if (dataEnd > directoryStart) throw new ZipProblem(`the archive is damaged — ${REPACK}`);
+    if (dataEnd > directoryStart) throw new ZipProblem(`the archive is damaged, ${REPACK}`);
 
     expected = dataEnd;
     // Размеры после данных: 12–24 байта, только если флаг об этом говорит.
     if (entry.flags & 0x08) {
       const next = ordered[index + 1]?.offset ?? directoryStart;
       if (next < dataEnd || next - dataEnd > 24) {
-        throw new ZipProblem(`the archive has hidden data — ${REPACK}`);
+        throw new ZipProblem(`the archive has hidden data, ${REPACK}`);
       }
       expected = next;
     }
   }
   if (expected !== directoryStart) {
-    throw new ZipProblem(`the archive has hidden data — ${REPACK}`);
+    throw new ZipProblem(`the archive has hidden data, ${REPACK}`);
   }
   return entries;
 }
@@ -367,7 +367,7 @@ async function scanZip(bytes: Uint8Array, budget: Budget, depth: number): Promis
       throw new ZipProblem("the archive is password-protected, so it can't be checked.");
     }
     if (entry.method !== 0 && entry.method !== 8) {
-      throw new ZipProblem(`this compression method isn't supported — ${REPACK}`);
+      throw new ZipProblem(`this compression method isn't supported, ${REPACK}`);
     }
     if (entry.name.endsWith("/") && entry.size === 0) continue;
 
@@ -386,7 +386,7 @@ async function scanZip(bytes: Uint8Array, budget: Budget, depth: number): Promis
       ({ size, head, whole } = await drain(createInflateRaw(), data, budget, keepUpTo));
     }
     // Заголовок соврал о размере: честный упаковщик так не делает.
-    if (size !== entry.size) throw new ZipProblem(`the archive is damaged — ${REPACK}`);
+    if (size !== entry.size) throw new ZipProblem(`the archive is damaged, ${REPACK}`);
 
     await checkContent(entry.name, head, whole, budget, depth);
   }

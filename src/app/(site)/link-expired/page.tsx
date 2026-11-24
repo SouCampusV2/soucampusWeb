@@ -52,7 +52,7 @@ export default async function LinkExpiredPage({
         </h1>
         <p className="mx-auto mt-4 max-w-md text-zinc-600 dark:text-zinc-400">
           {isExpired
-            ? "Links from our emails expire within the hour and can only be used once. Yours has run out — request a fresh one and it'll work."
+            ? "Links from our emails expire within the hour and can only be used once. Yours has run out. Request a fresh one and it'll work."
             : "The link was already used, or it wasn't complete. Request a fresh one and it'll work."}
         </p>
         <div className="mt-8 flex flex-wrap justify-center gap-3">

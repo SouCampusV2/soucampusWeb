@@ -213,7 +213,7 @@ export async function POST(request: Request) {
               // в базе (notifications_kind_check); свой вид = миграция.
               kind: "map_suspended",
               title: `The file of “${blocked.title}” was blocked`,
-              body: `${blockReason} Buyers can't download it and the map can't be bought until this is resolved. Questions — write to support.`,
+              body: `${blockReason} Buyers can't download it and the map can't be bought until this is resolved. Questions? Write to support.`,
               href: "/resources",
             }
           : {
@@ -383,7 +383,7 @@ export async function POST(request: Request) {
       restore: {
         kind: "map_approved" as const,
         title: `“${product.title}” is back in your resources`,
-        body: "It is off the marketplace for now — publish it again whenever you are ready.",
+        body: "It is off the marketplace for now. Publish it again whenever you are ready.",
         href: "/resources",
       },
       // Ничего не шлём: эти два разрешены только на СВОЕЙ карте

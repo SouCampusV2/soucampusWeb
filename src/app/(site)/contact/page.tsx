@@ -66,7 +66,7 @@ export default function ContactPage() {
               </span>
             </h1>
             <p className="mt-6 max-w-md text-zinc-700 dark:text-zinc-300">
-              Orders, questions and support — all in one place. We reply on
+              Orders, questions and support, all in one place. We reply on
               weekdays and weekends alike.
             </p>
             <div className="mt-8">
@@ -125,7 +125,7 @@ export default function ContactPage() {
             Chat to us directly
           </h2>
           <p className="mt-3 text-zinc-600 dark:text-zinc-400">
-            Describe your map idea in a Discord ticket — I&apos;ll reply
+            Describe your map idea in a Discord ticket. I&apos;ll reply
             personally and we&apos;ll work out the details and timeline.
           </p>
           <div className="mt-6">
@@ -159,7 +159,7 @@ export default function ContactPage() {
             Ready-to-go answers
           </h2>
           <p className="mt-3 text-zinc-600 dark:text-zinc-400">
-            Common questions about ordering, timelines and payment — below,
+            Common questions about ordering, timelines and payment are below,
             no need to message on Discord.
           </p>
           <div className="mt-6">
@@ -198,7 +198,7 @@ export default function ContactPage() {
         <FaqAccordion items={FAQ} />
 
         <p className="mt-8 text-sm text-zinc-600 dark:text-zinc-400">
-          More about how I work, shop maps and Minecraft versions —{" "}
+          More about how I work, shop maps and Minecraft versions:{" "}
           <Link href="/faq" className={INLINE_LINK} data-page-transition="true">
             the full FAQ
           </Link>

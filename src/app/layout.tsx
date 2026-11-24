@@ -37,8 +37,8 @@ export const metadata: Metadata = {
   // а к нему автоматически добавится " — SouCampus builds". default — для
   // главной и всего, что свой title не задаёт.
   title: {
-    default: `${SITE_NAME} — Minecraft builds on order`,
-    template: `%s — ${SITE_NAME}`,
+    default: `${SITE_NAME} · Minecraft builds on order`,
+    template: `%s · ${SITE_NAME}`,
   },
   description:
     "Custom Minecraft builds on order: castles, spawns, cities and entire worlds, crafted from scratch by SouCampus.",
@@ -52,12 +52,12 @@ export const metadata: Metadata = {
     siteName: SITE_NAME,
     locale: "en_US",
     url: "/",
-    title: `${SITE_NAME} — Minecraft builds on order`,
+    title: `${SITE_NAME} · Minecraft builds on order`,
     description: SITE_TAGLINE,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${SITE_NAME} — Minecraft builds on order`,
+    title: `${SITE_NAME} · Minecraft builds on order`,
     description: SITE_TAGLINE,
   },
 

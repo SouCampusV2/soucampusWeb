@@ -174,7 +174,7 @@ async function sign(
   if (size > MAP_FILE_MAX_BYTES) {
     return NextResponse.json(
       {
-        error: `The map file must be ${formatBytes(MAP_FILE_MAX_BYTES)} or smaller — yours is ${formatBytes(size)}.`,
+        error: `The map file must be ${formatBytes(MAP_FILE_MAX_BYTES)} or smaller, yours is ${formatBytes(size)}.`,
       },
       { status: 400 }
     );
@@ -264,7 +264,7 @@ async function confirm(
   }
   if (size > MAP_FILE_MAX_BYTES) {
     return reject(
-      `The map file must be ${formatBytes(MAP_FILE_MAX_BYTES)} or smaller — yours is ${formatBytes(size)}.`
+      `The map file must be ${formatBytes(MAP_FILE_MAX_BYTES)} or smaller, yours is ${formatBytes(size)}.`
     );
   }
 

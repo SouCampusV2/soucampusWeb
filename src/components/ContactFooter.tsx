@@ -110,7 +110,7 @@ export function ContactFooter() {
               <ThemeToggle />
             </div>
             <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
-              Custom Minecraft builds on order — castles, spawns, cities, and
+              Custom Minecraft builds on order: castles, spawns, cities, and
               everything in between.
             </p>
           </div>

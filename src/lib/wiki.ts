@@ -92,9 +92,9 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "steps",
             items: [
-              "Download the .zip from My purchases and unpack it. You should end up with a folder containing a level.dat file — that folder is the world.",
+              "Download the .zip from My purchases and unpack it. You should end up with a folder containing a level.dat file. That folder is the world.",
               "Open your saves folder. On Windows press Win+R and enter %appdata%/.minecraft/saves; on macOS use Finder → Go → Go to Folder → ~/Library/Application Support/minecraft/saves; on Linux it is ~/.minecraft/saves.",
-              "Move the world folder into saves. Keep it as one folder — if level.dat ends up sitting directly in saves, you unpacked one level too deep.",
+              "Move the world folder into saves. Keep it as one folder: if level.dat ends up sitting directly in saves, you unpacked one level too deep.",
               "Start Minecraft on the version the map was made for and open Singleplayer. The world is in the list under its own name.",
             ],
           },
@@ -112,7 +112,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
         blocks: [
           {
             kind: "text",
-            text: "A server needs a few more steps — stopping it first, matching the folder name in server.properties, bringing the nether and the end across. They are in the article on uploading a world to a server.",
+            text: "A server needs a few more steps: stopping it first, matching the folder name in server.properties, bringing the nether and the end across. They are in the article on uploading a world to a server.",
           },
         ],
       },
@@ -135,7 +135,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "steps",
             items: [
-              "Stop the server properly — the stop command in the console, or the Stop button in your host's panel. Not a kill or a force restart: those skip the final save.",
+              "Stop the server properly: the stop command in the console, or the Stop button in your host's panel. Not a kill or a force restart: those skip the final save.",
               "Take a backup of the world that is there now, even if you are sure you no longer want it. A copy costs nothing today and answers every question you might have tomorrow.",
               "Check which version the server runs. A world made in a newer version will not open on an older server, and there is no way round that.",
             ],
@@ -148,16 +148,16 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "steps",
             items: [
-              "Unpack the .zip on your own computer first. You want the folder that directly contains level.dat — that folder is the world.",
+              "Unpack the .zip on your own computer first. You want the folder that directly contains level.dat. That folder is the world.",
               "Open server.properties and read the level-name line. Whatever it says is the folder name the server will look for; on a fresh server it says world.",
               "Delete or rename the old folder of that name, then upload the new one and give it exactly that name. Names are case sensitive on Linux hosts, which is where most servers live.",
-              "Upload over SFTP or your panel's file manager. If the panel offers a zip upload with unpack-on-server, use it — uploading thousands of small region files one by one is slow and drops connections.",
+              "Upload over SFTP or your panel's file manager. If the panel offers a zip upload with unpack-on-server, use it: uploading thousands of small region files one by one is slow and drops connections.",
               "Start the server and watch the console as it boots. It prints the world it loaded and complains loudly if it could not.",
             ],
           },
           {
             kind: "note",
-            text: "On Spigot, Paper and most forks the nether and the end live in separate folders next to the main one — world_nether and world_the_end. If the map uses them, they have to come across too, with matching names.",
+            text: "On Spigot, Paper and most forks the nether and the end live in separate folders next to the main one: world_nether and world_the_end. If the map uses them, they have to come across too, with matching names.",
           },
         ],
       },
@@ -185,8 +185,8 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "list",
             items: [
-              "WorldEdit — the original. It comes as a server plugin for Spigot and Paper, and as a mod for Fabric, Forge and NeoForge. For singleplayer, this is the one.",
-              "FastAsyncWorldEdit, FAWE for short — a faster fork of WorldEdit, for servers only. Same commands, but it spreads a large paste over many ticks instead of freezing the server on one. It runs on Paper and its forks; there is no singleplayer version.",
+              "WorldEdit, the original. It comes as a server plugin for Spigot and Paper, and as a mod for Fabric, Forge and NeoForge. For singleplayer, this is the one.",
+              "FastAsyncWorldEdit, FAWE for short, a faster fork of WorldEdit, for servers only. Same commands, but it spreads a large paste over many ticks instead of freezing the server on one. It runs on Paper and its forks; there is no singleplayer version.",
             ],
           },
           {
@@ -252,7 +252,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
               "Stop the server. Plugins are only picked up on start.",
               "Put the jar into the plugins folder next to the server jar. If you are switching to FAWE, take the old WorldEdit jar out in the same go.",
               "Start the server and run /plugins. WorldEdit or FastAsyncWorldEdit should be in the list, in green.",
-              "Give yourself the rights to use it — op, or the worldedit permissions in whatever permission plugin the server uses. Without them every command answers that you are not allowed.",
+              "Give yourself the rights to use it: op, or the worldedit permissions in whatever permission plugin the server uses. Without them every command answers that you are not allowed.",
             ],
           },
         ],
@@ -263,7 +263,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "steps",
             items: [
-              "Install a mod loader for the version you play — Fabric is the simplest. Its installer adds a new profile to the launcher.",
+              "Install a mod loader for the version you play. Fabric is the simplest. Its installer adds a new profile to the launcher.",
               "Download the WorldEdit build for that loader. On Fabric, also download Fabric API: WorldEdit needs it and will not start without it.",
               "Put both jars into the mods folder inside your Minecraft directory. On Windows that is %appdata%/.minecraft/mods; launchers with separate instances keep a mods folder per instance.",
               "Start the game on the loader's profile and open a world with cheats allowed. WorldEdit asks for the same permission as /gamemode; a world made without cheats can be opened to LAN with them switched on.",
@@ -287,7 +287,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           },
           {
             kind: "note",
-            text: "Commands start with two slashes — //paste, //undo, //wand. With one slash the game looks for an ordinary command of that name, finds none, and it looks as though WorldEdit is broken. It is the most common first-day mistake.",
+            text: "Commands start with two slashes: //paste, //undo, //wand. With one slash the game looks for an ordinary command of that name, finds none, and it looks as though WorldEdit is broken. It is the most common first-day mistake.",
           },
         ],
       },
@@ -298,7 +298,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
     title: "Upload a schematic to a server",
     section: "schematics",
     summary:
-      "A schematic is a building, not a world — it needs WorldEdit and a place to paste it.",
+      "A schematic is a building, not a world. It needs WorldEdit and a place to paste it.",
     body: [
       {
         heading: "What a schematic actually is",
@@ -315,7 +315,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "steps",
             items: [
-              "Install WorldEdit on the server — FastAsyncWorldEdit is the usual choice on Paper, and it handles large pastes far better. Where to get either is in the article on getting WorldEdit.",
+              "Install WorldEdit on the server. FastAsyncWorldEdit is the usual choice on Paper, and it handles large pastes far better. Where to get either is in the article on getting WorldEdit.",
               "Put the file in the plugins/WorldEdit/schematics folder. Some setups use plugins/FastAsyncWorldEdit/schematics instead; the plugin's own config says which.",
               "In game, run //schem load followed by the file name, without the extension.",
               "Stand where you want the build and run //paste. The structure appears relative to where you are standing, which is why the next step matters.",
@@ -351,12 +351,12 @@ export const WIKI_ARTICLES: WikiArticle[] = [
         blocks: [
           {
             kind: "text",
-            text: "Every map is delivered as one file: usually a .zip, or a single schematic (.schem, .schematic or .litematic) when the build is only a structure. If a build ships in more than one form — a world folder plus a schematic, say — both sit inside that one .zip, and the map's own page says so.",
+            text: "Every map is delivered as one file: usually a .zip, or a single schematic (.schem, .schematic or .litematic) when the build is only a structure. If a build ships in more than one form (a world folder plus a schematic, say), both sit inside that one .zip, and the map's own page says so.",
           },
           {
             kind: "list",
             items: [
-              "The world folder — the thing you copy into saves.",
+              "The world folder: the thing you copy into saves.",
               "Schematic or structure files, when the build is meant to be pasted into a world you already have.",
               "A short read-me, when the build needs anything beyond copying: a required game version, a resource pack, or where the spawn point is.",
             ],
@@ -381,7 +381,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
         blocks: [
           {
             kind: "text",
-            text: "Each map page lists the Minecraft versions it was made for, and the catalogue can be filtered by them. That list is the versions the build was actually opened and checked in — not a guess.",
+            text: "Each map page lists the Minecraft versions it was made for, and the catalogue can be filtered by them. That list is the versions the build was actually opened and checked in, not a guess.",
           },
           {
             kind: "list",
@@ -439,7 +439,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           },
           {
             kind: "note",
-            text: `Anything unusual — a paid server network, a commercial project, a build you want to redistribute — is worth asking about first: ${SUPPORT_EMAIL}.`,
+            text: `Anything unusual (a paid server network, a commercial project, a build you want to redistribute) is worth asking about first: ${SUPPORT_EMAIL}.`,
           },
         ],
       },
@@ -458,11 +458,11 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "steps",
             items: [
-              "Open a ticket in Discord and describe the idea — the invite is on the Contact page. Reference images and a rough size help more than a long description.",
+              "Open a ticket in Discord and describe the idea. The invite is on the Contact page. Reference images and a rough size help more than a long description.",
               "You get a price and a timeframe back. The estimator on the Contact page gives you the same number instantly if you would rather check first.",
               "Scope and payment are agreed before anything is built.",
               "The build gets made, with progress updates along the way. After delivery, one or two free rounds of small changes are included.",
-              "You get the world as a .zip — the same way maps from the shop are delivered.",
+              "You get the world as a .zip, the same way maps from the shop are delivered.",
             ],
           },
         ],
@@ -476,7 +476,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           },
           {
             kind: "text",
-            text: "Maps that are not square are priced off an equivalent side — the square root of width times height — so a long thin build is not charged as though it were a square of its longest side.",
+            text: "Maps that are not square are priced off an equivalent side (the square root of width times height), so a long thin build is not charged as though it were a square of its longest side.",
           },
           {
             kind: "note",
@@ -499,14 +499,14 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "list",
             items: [
-              "150×150 — about a week.",
-              "400×400 — two weeks at the very least.",
-              "600×600 — three to four weeks.",
+              "150×150, about a week.",
+              "400×400, two weeks at the very least.",
+              "600×600, three to four weeks.",
             ],
           },
           {
             kind: "text",
-            text: "These are the anchors the estimator works between, and they assume a normal amount of detail. A small build packed with interiors can take longer than a large plain one — which is why the instant estimate shows a range rather than a date.",
+            text: "These are the anchors the estimator works between, and they assume a normal amount of detail. A small build packed with interiors can take longer than a large plain one, which is why the instant estimate shows a range rather than a date.",
           },
           {
             kind: "note",
@@ -544,7 +544,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           },
           {
             kind: "note",
-            text: `Access ends in two cases. A payment that is refunded in full or disputed with your bank removes the map from My purchases. And if a file ever has to be withdrawn — for safety or legal reasons — My purchases says so in place of the download button; write to ${SUPPORT_EMAIL} and we will sort it out.`,
+            text: `Access ends in two cases. A payment that is refunded in full or disputed with your bank removes the map from My purchases. And if a file ever has to be withdrawn for safety or legal reasons, My purchases says so in place of the download button; write to ${SUPPORT_EMAIL} and we will sort it out.`,
           },
         ],
       },
@@ -563,8 +563,8 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "list",
             items: [
-              "Discord — questions about builds, commissions and maps. Fastest by a distance.",
-              `Email, ${SUPPORT_EMAIL} — payments, invoices, account trouble, and anything you would rather not post in a server.`,
+              "Discord: questions about builds, commissions and maps. Fastest by a distance.",
+              `Email, ${SUPPORT_EMAIL}: payments, invoices, account trouble, and anything you would rather not post in a server.`,
             ],
           },
           {
@@ -573,7 +573,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           },
           {
             kind: "note",
-            text: `The Discord invite is ${DISCORD_INVITE} — it is the same one linked from the footer of every page.`,
+            text: `The Discord invite is ${DISCORD_INVITE}. It is the same one linked from the footer of every page.`,
           },
         ],
       },
@@ -591,7 +591,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
         blocks: [
           {
             kind: "text",
-            text: "Parts of the build are simply not there — a wall with gaps in it, missing stairs, a roof with holes. The rest of the structure is fine. This is not a corrupted download; it is the game deciding it does not know what those blocks are and leaving air instead.",
+            text: "Parts of the build are simply not there: a wall with gaps in it, missing stairs, a roof with holes. The rest of the structure is fine. This is not a corrupted download; it is the game deciding it does not know what those blocks are and leaving air instead.",
           },
         ],
       },
@@ -618,12 +618,12 @@ export const WIKI_ARTICLES: WikiArticle[] = [
               "Check the map's page for the versions it lists, and open the world on one of them. Matching the version fixes this outright in most cases.",
               "If you are pasting a schematic, make sure WorldEdit is current. Old conversion code is a common source of gaps.",
               "Paste at a lower Y level if the build is tall and you were near the ceiling.",
-              "Still missing blocks on the right version? Write to us with the map name and a screenshot — that is a problem with the file, and we will fix or replace it.",
+              "Still missing blocks on the right version? Write to us with the map name and a screenshot. That is a problem with the file, and we will fix or replace it.",
             ],
           },
           {
             kind: "note",
-            text: "Going the other way — opening a build in a version older than it was made for — cannot be fixed by any tool. Minecraft converts worlds forwards only.",
+            text: "Going the other way (opening a build in a version older than it was made for) cannot be fixed by any tool. Minecraft converts worlds forwards only.",
           },
         ],
       },
@@ -634,14 +634,14 @@ export const WIKI_ARTICLES: WikiArticle[] = [
     title: "Invisible or black blocks",
     section: "troubleshooting",
     summary:
-      "The blocks are there — you can walk into them. It is lighting or chunk rendering, not the build.",
+      "The blocks are there. You can walk into them. It is lighting or chunk rendering, not the build.",
     body: [
       {
         heading: "How to tell it apart from missing blocks",
         blocks: [
           {
             kind: "text",
-            text: "Walk into the gap. If something solid stops you, the block exists and is simply not being drawn — that is this article. If you walk straight through, the block is genuinely gone and you want the article on missing blocks instead.",
+            text: "Walk into the gap. If something solid stops you, the block exists and is simply not being drawn. That is this article. If you walk straight through, the block is genuinely gone and you want the article on missing blocks instead.",
           },
         ],
       },
@@ -667,7 +667,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
             items: [
               "Press F3+A. That forces every loaded chunk to redraw and fixes it most of the time, instantly and with no side effects.",
               "Walk far enough away that the chunks unload, then come back. This forces a full reload rather than a redraw.",
-              "On a server, restart it — some lighting is only recalculated on load. Not /reload: it reloads plugins, not the world, and breaks many of them.",
+              "On a server, restart it: some lighting is only recalculated on load. Not /reload: it reloads plugins, not the world, and breaks many of them.",
               "Turn off any resource pack and look again. If the blocks appear, the pack is the problem, not the map.",
             ],
           },
@@ -691,7 +691,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
         blocks: [
           {
             kind: "text",
-            text: "The build pastes correctly, and then plants start disappearing — flowers pop off, saplings break, grass turns to dirt, leaves decay away over the next few minutes. Sometimes the greenery is all there but the wrong colour: grey, brown, or a green that does not match the screenshots.",
+            text: "The build pastes correctly, and then plants start disappearing: flowers pop off, saplings break, grass turns to dirt, leaves decay away over the next few minutes. Sometimes the greenery is all there but the wrong colour: grey, brown, or a green that does not match the screenshots.",
           },
         ],
       },
@@ -703,7 +703,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
             items: [
               "Plants check what is under them the moment they get a block update, and break if it is wrong. A flower that arrived on grass but landed on stone removes itself.",
               "Leaves that are not connected to a log within six blocks decay on their own. Pasting can separate a canopy from its trunk.",
-              "Grass and leaf colour comes from the biome, not from the block. The same build looks lush in a plains biome and dead grey in a desert or a snowy one — nothing is broken, the game is tinting it.",
+              "Grass and leaf colour comes from the biome, not from the block. The same build looks lush in a plains biome and dead grey in a desert or a snowy one: nothing is broken, the game is tinting it.",
               "Light level matters too: plants in an unlit interior break as soon as they are updated.",
             ],
           },
@@ -715,10 +715,10 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "steps",
             items: [
-              "For colour, change the biome rather than the blocks. On a server with WorldEdit, select the area and use //setbiome with the biome the build was made for — the map's page or its read-me usually says which.",
+              "For colour, change the biome rather than the blocks. On a server with WorldEdit, select the area and use //setbiome with the biome the build was made for. The map's page or its read-me usually says which.",
               "For plants that keep breaking, check what they are standing on and fix the ground first.",
               "For decaying leaves, make sure the trunk came across with the canopy, or replace the leaves with the persistent variant so they stop checking.",
-              "Paste with updates suppressed where your tool supports it — that stops the chain of breaks starting in the first place.",
+              "Paste with updates suppressed where your tool supports it. That stops the chain of breaks starting in the first place.",
             ],
           },
           {
@@ -750,7 +750,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
         blocks: [
           {
             kind: "text",
-            text: "These blocks fall whenever there is air beneath them and something tells them to check. Pasting places them in an order the game did not choose, so a block can exist for a moment before its support does — and that moment is enough. It is not a fault in the file: the same build sitting in the original world is perfectly stable, because it was never asked to re-check.",
+            text: "These blocks fall whenever there is air beneath them and something tells them to check. Pasting places them in an order the game did not choose, so a block can exist for a moment before its support does, and that moment is enough. It is not a fault in the file: the same build sitting in the original world is perfectly stable, because it was never asked to re-check.",
           },
         ],
       },
@@ -761,7 +761,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
             kind: "steps",
             items: [
               "Paste without block updates. In WorldEdit this is //fast or the no-update paste flag, depending on your version; FastAsyncWorldEdit does it by default. This is the real fix and it prevents the problem instead of repairing it.",
-              "If it has already collapsed, //undo, then paste again with updates off. Undo is reliable here — do not start rebuilding by hand.",
+              "If it has already collapsed, //undo, then paste again with updates off. Undo is reliable here. Do not start rebuilding by hand.",
               "For a build that genuinely has floating sand by design, replace the hidden support with a solid block, or swap the sand for its non-falling equivalent where the look allows it.",
             ],
           },
@@ -785,7 +785,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
         blocks: [
           {
             kind: "text",
-            text: "Open the saves folder and look at the world folder. Inside it there must be a file called level.dat. If instead you see another folder with the same name as the first, you unpacked one level too deep — move the inner folder up and the world appears. If level.dat is sitting loose in saves next to your other worlds, you unpacked one level too shallow.",
+            text: "Open the saves folder and look at the world folder. Inside it there must be a file called level.dat. If instead you see another folder with the same name as the first, you unpacked one level too deep. Move the inner folder up and the world appears. If level.dat is sitting loose in saves next to your other worlds, you unpacked one level too shallow.",
           },
         ],
       },
@@ -797,7 +797,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
             items: [
               "The world was made in a newer version than the one you are running. Minecraft refuses rather than guessing, and it is right to. Launch the version the map's page lists.",
               "The download did not finish. A truncated .zip often unpacks far enough to look complete and then fails on load.",
-              "level.dat is corrupted. Minecraft keeps a spare called level.dat_old in the same folder — rename it to level.dat and try again.",
+              "level.dat is corrupted. Minecraft keeps a spare called level.dat_old in the same folder. Rename it to level.dat and try again.",
               "The world needs a mod loader or a specific modpack, and you opened it in vanilla.",
             ],
           },
@@ -809,7 +809,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "steps",
             items: [
-              "Match the version first — it costs a minute and explains most of these.",
+              "Match the version first. It costs a minute and explains most of these.",
               "Download the file again from My purchases and unpack the fresh copy, in case the first one was cut short.",
               "Try the level.dat_old trick if the game names that file in its error.",
               "Send us the error text and the map name if none of it helps. A message with the actual error in it gets a real answer straight away; a message saying it does not work needs three rounds of questions first.",
@@ -817,7 +817,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           },
           {
             kind: "note",
-            text: "A world converted to a newer version cannot be converted back. If you want to keep playing on the old version, keep a copy of the folder before you open it on the new one — the upgrade happens on first load, without asking.",
+            text: "A world converted to a newer version cannot be converted back. If you want to keep playing on the old version, keep a copy of the folder before you open it on the new one: the upgrade happens on first load, without asking.",
           },
         ],
       },
@@ -835,7 +835,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
         blocks: [
           {
             kind: "text",
-            text: "You run the paste and the server stops responding — players time out, the console goes quiet, and either it recovers after a long pause or the watchdog kills it. The log often mentions a tick taking too long, or memory.",
+            text: "You run the paste and the server stops responding: players time out, the console goes quiet, and either it recovers after a long pause or the watchdog kills it. The log often mentions a tick taking too long, or memory.",
           },
         ],
       },
@@ -844,7 +844,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
         blocks: [
           {
             kind: "text",
-            text: "Plain WorldEdit does the whole paste inside a single server tick. A tick is meant to last fifty milliseconds; placing a few million blocks takes far longer, and the server's own watchdog decides the server has frozen and shuts it down. Nothing is broken — it was simply asked to do a week's work between two heartbeats.",
+            text: "Plain WorldEdit does the whole paste inside a single server tick. A tick is meant to last fifty milliseconds; placing a few million blocks takes far longer, and the server's own watchdog decides the server has frozen and shuts it down. Nothing is broken. It was simply asked to do a week's work between two heartbeats.",
           },
         ],
       },
@@ -890,7 +890,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
         blocks: [
           {
             kind: "text",
-            text: "The spawn point is stored in the world, but a server can override it, and a freshly configured server usually does — it picks a point of its own before anyone thinks to check. Pasted schematics have no spawn point at all, because a schematic stores blocks and nothing else.",
+            text: "The spawn point is stored in the world, but a server can override it, and a freshly configured server usually does. It picks a point of its own before anyone thinks to check. Pasted schematics have no spawn point at all, because a schematic stores blocks and nothing else.",
           },
         ],
       },
@@ -926,7 +926,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
         blocks: [
           {
             kind: "text",
-            text: "This is the single most common misunderstanding about schematics, and it is not your mistake — the two files arrive the same way and nothing explains the difference. A world is a folder with terrain, a spawn point and player data. A schematic is one file holding one structure and nothing around it. Putting it in the saves folder does nothing at all, because there is no world in it to open.",
+            text: "This is the single most common misunderstanding about schematics, and it is not your mistake: the two files arrive the same way and nothing explains the difference. A world is a folder with terrain, a spawn point and player data. A schematic is one file holding one structure and nothing around it. Putting it in the saves folder does nothing at all, because there is no world in it to open.",
           },
         ],
       },
@@ -936,8 +936,8 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "steps",
             items: [
-              "Install a mod loader — Fabric or NeoForge — for the version you want to build in. Forge works only on older game versions.",
-              "Install the WorldEdit mod for that loader. It is the same tool as the server plugin, in mod form — the article on getting WorldEdit says where to download it safely.",
+              "Install a mod loader (Fabric or NeoForge) for the version you want to build in. Forge works only on older game versions.",
+              "Install the WorldEdit mod for that loader. It is the same tool as the server plugin, in mod form. The article on getting WorldEdit says where to download it safely.",
               "Put the .schem file in the schematics folder inside your Minecraft directory. WorldEdit creates that folder the first time it runs.",
               "Open the world you want to build in, run //schem load with the file name, stand where you want it and run //paste.",
               "Use //undo if the position is wrong. It works as reliably in singleplayer as it does on a server.",
@@ -950,7 +950,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
         blocks: [
           {
             kind: "text",
-            text: "There is a mod-free route, but it is more work: open the world to LAN, or run a local server with the WorldEdit plugin and connect to it. Some people prefer that to installing a loader. There is no way to use a schematic in pure vanilla singleplayer with nothing added — the format is not something the game itself reads.",
+            text: "There is a mod-free route, but it is more work: open the world to LAN, or run a local server with the WorldEdit plugin and connect to it. Some people prefer that to installing a loader. There is no way to use a schematic in pure vanilla singleplayer with nothing added: the format is not something the game itself reads.",
           },
           {
             kind: "note",
@@ -983,7 +983,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
             kind: "steps",
             items: [
               "Install the Fabric loader for the version you play. Litematica is made for Fabric.",
-              "Download Litematica and MaLiLib from Modrinth or CurseForge — both are by masa, and MaLiLib is the library Litematica runs on. Take the builds for your exact game version.",
+              "Download Litematica and MaLiLib from Modrinth or CurseForge. Both are by masa, and MaLiLib is the library Litematica runs on. Take the builds for your exact game version.",
               "Put both jars into the mods folder, the same place as any other Fabric mod.",
               "Start the game, open a world and press M. If the Litematica menu opens, it is installed.",
             ],
@@ -1022,7 +1022,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
             items: [
               "Put the schematic into the schematics folder inside your Minecraft directory. Litematica creates it on first launch; launchers with instances keep one per instance.",
               "In game, press M, open Load Schematics, pick the file and load it. The build appears as a ghost where you are standing.",
-              "Open Schematic Placements from the same menu to move, rotate or mirror it until it sits where you want. Line it up before you place a single real block — moving it later means rebuilding.",
+              "Open Schematic Placements from the same menu to move, rotate or mirror it until it sits where you want. Line it up before you place a single real block: moving it later means rebuilding.",
               "Build from the bottom up. The render layers option shows one horizontal slice at a time, which is far easier to follow than the whole ghost at once.",
             ],
           },
@@ -1039,7 +1039,7 @@ export const WIKI_ARTICLES: WikiArticle[] = [
             kind: "list",
             items: [
               "The Material List, in the placement's menu, shows how many of each block the build needs, how many are still missing from the world, and how many you are carrying. It updates as you build, so it doubles as a shopping list.",
-              "The Schematic Verifier compares the ghost with what is actually there and highlights wrong and missing blocks. Run it at the end — on a big build there is always a stair facing the wrong way somewhere.",
+              "The Schematic Verifier compares the ghost with what is actually there and highlights wrong and missing blocks. Run it at the end: on a big build there is always a stair facing the wrong way somewhere.",
             ],
           },
         ],
@@ -1081,11 +1081,11 @@ export const WIKI_ARTICLES: WikiArticle[] = [
           {
             kind: "list",
             items: [
-              "Gaps where specific block types should be, while everything else is intact — you are on a version older than the build.",
-              "The world refuses to open with an error naming a version or a data format — same cause, further along.",
-              "Blocks are present but behave oddly: stairs facing wrong, walls not connecting, slabs merged — the block data was converted between formats and lost detail.",
-              "Everything is right but the greenery is the wrong colour — that is biome tinting, not a version problem. See the article on dead plants.",
-              "The build looks correct in singleplayer and broken on the server — the two are running different versions.",
+              "Gaps where specific block types should be, while everything else is intact. You are on a version older than the build.",
+              "The world refuses to open with an error naming a version or a data format: same cause, further along.",
+              "Blocks are present but behave oddly: stairs facing wrong, walls not connecting, slabs merged. The block data was converted between formats and lost detail.",
+              "Everything is right but the greenery is the wrong colour. That is biome tinting, not a version problem. See the article on dead plants.",
+              "The build looks correct in singleplayer and broken on the server: the two are running different versions.",
             ],
           },
         ],
@@ -1097,14 +1097,14 @@ export const WIKI_ARTICLES: WikiArticle[] = [
             kind: "steps",
             items: [
               "Read the versions listed on the map's page, in the specs column beside the description. That is what the build was made for.",
-              "Check what you are actually running — the launcher for singleplayer, the console output for a server. People are often not on the version they think.",
+              "Check what you are actually running: the launcher for singleplayer, the console output for a server. People are often not on the version they think.",
               "Open the map on a matching version before changing anything else. If the symptom disappears, you have your answer.",
               "Copy the world folder before opening it on a newer version, if you might want the old one back. The upgrade happens on first load and cannot be undone.",
             ],
           },
           {
             kind: "note",
-            text: "Versions on a map's page are stated by whoever made the build. They are the versions it was tested on, not a promise about every future update — Minecraft can change block behaviour in a way nobody predicted.",
+            text: "Versions on a map's page are stated by whoever made the build. They are the versions it was tested on, not a promise about every future update. Minecraft can change block behaviour in a way nobody predicted.",
           },
         ],
       },

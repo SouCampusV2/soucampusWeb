@@ -24,7 +24,7 @@ const PLANS = [
     name: "Free",
     price: "0€",
     description:
-      "Access to part of the build library — see what's on offer before subscribing.",
+      "Access to part of the build library, see what's on offer before subscribing.",
     accent: "blue" as Accent,
     span: "md:col-span-2",
   },
@@ -48,7 +48,7 @@ const PLANS = [
     name: "Support",
     price: "min 25€/mo",
     description:
-      "For teams and servers — multiple members, shared library access and priority on custom orders.",
+      "For teams and servers, multiple members, shared library access and priority on custom orders.",
     accent: "blue" as Accent,
     span: "md:col-span-3",
   },
@@ -56,7 +56,7 @@ const PLANS = [
     name: "Lifetime",
     price: "300€ once",
     description:
-      "One-time payment — lifetime access to the entire build library, including everything released in the future.",
+      "One-time payment, lifetime access to the entire build library, including everything released in the future.",
     accent: "orange" as Accent,
     span: "md:col-span-3",
   },
@@ -95,7 +95,7 @@ export function PricingSection() {
           Choose your plan
         </h2>
         <p className="mt-3 max-w-md text-zinc-600 dark:text-zinc-400">
-          A subscription unlocks the build library — everything you get is
+          A subscription unlocks the build library, everything you get is
           saved to your profile on the site.
 
           <br></br>  <i>Coming soon...</i>

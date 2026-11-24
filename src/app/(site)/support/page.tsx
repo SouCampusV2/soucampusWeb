@@ -42,7 +42,7 @@ export default function SupportPage() {
         <p className="mt-4 leading-7 text-zinc-600 dark:text-zinc-400">
           Question about an order, a missing download link, or something not
           working as expected? Reach us on Discord for the fastest reply, or
-          email us — a proper support form is on the way.
+          email us. A proper support form is on the way.
         </p>
         <div className="mt-8 flex flex-wrap items-center gap-4">
           {/* Стрелка с поворотом -45 при наведении — тот же приём и тот
@@ -78,7 +78,7 @@ export default function SupportPage() {
           человек пришёл за помощью, кнопка должна быть на первом экране. */}
       <Image
         src="/portfolio/pirate-rpg.jpeg"
-        alt="Pirate RPG — a pirate harbour town under a ship-shaped tavern"
+        alt="Pirate RPG, a pirate harbour town under a ship-shaped tavern"
         width={1680}
         height={945}
         sizes="(min-width: 1152px) 528px, (min-width: 640px) 50vw, 100vw"

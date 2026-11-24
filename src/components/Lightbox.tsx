@@ -84,7 +84,7 @@ export function Lightbox({
     <div
       role="dialog"
       aria-modal="true"
-      aria-label={`${title} — screenshot ${index + 1} of ${images.length}`}
+      aria-label={`${title}, screenshot ${index + 1} of ${images.length}`}
       onClick={() => onChange(null)}
       className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/90 p-4 backdrop-blur-sm"
     >
@@ -132,7 +132,7 @@ export function Lightbox({
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={images[index]}
-        alt={index === 0 ? title : `${title} — screenshot ${index + 1}`}
+        alt={index === 0 ? title : `${title}, screenshot ${index + 1}`}
         onClick={(e) => e.stopPropagation()}
         className="max-h-full max-w-full rounded-2xl object-contain"
       />

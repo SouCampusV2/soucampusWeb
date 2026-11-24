@@ -154,7 +154,7 @@ export default async function SuccessPage({
             Confirming your payment…
           </h1>
           <p className="mt-4 leading-7 text-zinc-600 dark:text-zinc-400">
-            This usually takes a few seconds. Keep this page open — it
+            This usually takes a few seconds. Keep this page open. It
             updates on its own.
           </p>
         </div>
@@ -262,7 +262,7 @@ export default async function SuccessPage({
             приходят вовсе. */}
         <p className="mt-10 text-sm leading-6 text-zinc-500 dark:text-zinc-400">
           At checkout you agreed: “{WAIVER_TEXT}” Faulty files are fixed or
-          refunded — see the{" "}
+          refunded, see the{" "}
           <Link href="/terms#refunds" className={`font-medium ${INLINE_LINK}`}>
             refund policy
           </Link>

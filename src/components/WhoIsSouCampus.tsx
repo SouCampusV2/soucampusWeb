@@ -58,7 +58,7 @@ export function WhoIsSouCampus() {
         <div className={`${CARD} pixel-texture relative min-h-[28rem] overflow-hidden md:row-span-2`}>
           <Image
             src="/aboutme/soucampusModel.png"
-            alt="SouCampus — my Minecraft skin"
+            alt="SouCampus, my Minecraft skin"
             width={276}
             height={368}
             quality={100}
@@ -74,7 +74,7 @@ export function WhoIsSouCampus() {
             crafting custom maps, structures and worlds on order. I started
             building with my father at six, became an official builder on a
             20,000-player server at twelve, and have worked with studios whose
-            builds reach the official Minecraft Marketplace — from rugged
+            builds reach the official Minecraft Marketplace, from rugged
             medieval fortresses to light fantasy cities.
           </p>
           <div>

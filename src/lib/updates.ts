@@ -223,7 +223,7 @@ export const UPDATES: UpdatePost[] = [
     area: "marketplace",
     title: "Real maps are coming to the marketplace",
     summary:
-      "The first maps built to be downloaded are in the works — they will start appearing on the storefront soon.",
+      "The first maps built to be downloaded are in the works. They will start appearing on the storefront soon.",
     cover: {
       src: "/portfolio/pirate-rpg.jpeg",
       alt: "A massive pirate RPG map of dozens of detailed buildings",
@@ -235,7 +235,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "Since July the marketplace has been a working shop with sample maps in it: real pages, search, filters, collections and a checkout — but no files behind the listings. It let me build and test every part of the shop before putting anything real on the shelf.",
+            text: "Since July the marketplace has been a working shop with sample maps in it: real pages, search, filters, collections and a checkout, but no files behind the listings. It let me build and test every part of the shop before putting anything real on the shelf.",
           },
         ],
       },
@@ -250,7 +250,7 @@ export const UPDATES: UpdatePost[] = [
             kind: "list",
             items: [
               "Every map page lists the Minecraft versions, file formats, size and type, so you know whether it fits before you open it.",
-              "Screenshots show the map itself — no mock-ups.",
+              "Screenshots show the map itself, no mock-ups.",
               "The download is a ready-to-use file, and the wiki explains what is inside it and how to put it on a server.",
             ],
           },
@@ -261,7 +261,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "Soon — but I would rather post here the day a map is actually there than promise a date. A post will say so the moment the first one can be bought and downloaded. The quickest way to hear about it is the Discord server.",
+            text: "Soon, but I would rather post here the day a map is actually there than promise a date. A post will say so the moment the first one can be bought and downloaded. The quickest way to hear about it is the Discord server.",
           },
         ],
       },
@@ -286,7 +286,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "A new section on the home page, right before the latest work, answers the first question a new visitor has: who actually builds these maps. In short — my skin, how it started, fifteen years in Minecraft, around ten regular clients and the places where new builds appear first.",
+            text: "A new section on the home page, right before the latest work, answers the first question a new visitor has: who actually builds these maps. In short: my skin, how it started, fifteen years in Minecraft, around ten regular clients and the places where new builds appear first.",
           },
         ],
       },
@@ -304,7 +304,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "The five steps of a commission — from the first message to the finished world — now sit on the contact page too, right under the price calculator, each with its own icon.",
+            text: "The five steps of a commission, from the first message to the finished world, now sit on the contact page too, right under the price calculator, each with its own icon.",
           },
         ],
       },
@@ -317,7 +317,7 @@ export const UPDATES: UpdatePost[] = [
     area: "studio",
     title: "Links that show the build",
     summary:
-      "Share a work or a post in Discord and it unfolds into a card with the screenshots — and every such page has a Copy link button.",
+      "Share a work or a post in Discord and it unfolds into a card with the screenshots, and every such page has a Copy link button.",
     cover: {
       src: "/portfolio/yuletide-isle.png",
       alt: "A floating snow island holding a festive village of red-roofed cabins",
@@ -338,7 +338,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "Every work and every post now has a Copy link button, so sending a build to a friend — or to a client who asked “what have you made before?” — takes one tap.",
+            text: "Every work and every post now has a Copy link button, so sending a build to a friend, or to a client who asked “what have you made before?”, takes one tap.",
           },
         ],
       },
@@ -351,7 +351,7 @@ export const UPDATES: UpdatePost[] = [
     area: "help",
     title: "An FAQ, and a home page that arrives faster",
     summary:
-      "Twenty-five answers about commissions, shop maps and Minecraft in one place — and a lighter home page.",
+      "Twenty-five answers about commissions, shop maps and Minecraft in one place, and a lighter home page.",
     cover: {
       src: "/portfolio/ironholt.png",
       alt: "A sprawling RPG city of stone walls, towers and red roofs",
@@ -368,15 +368,15 @@ export const UPDATES: UpdatePost[] = [
           {
             kind: "list",
             items: [
-              "How I work — from collecting the details to the layout we agree on before a single block is placed, and how you can follow the build.",
-              "Ordering and payment — where to order, how the price is worked out, the two ways to pay, revisions and refunds.",
-              "Shop maps and commissions — what you can do with a map you bought, and why a commissioned map is fully yours.",
-              "Minecraft maps in general — Java versions, what a schematic is, and how to get a map onto your own server.",
+              "How I work: from collecting the details to the layout we agree on before a single block is placed, and how you can follow the build.",
+              "Ordering and payment: where to order, how the price is worked out, the two ways to pay, revisions and refunds.",
+              "Shop maps and commissions: what you can do with a map you bought, and why a commissioned map is fully yours.",
+              "Minecraft maps in general: Java versions, what a schematic is, and how to get a map onto your own server.",
             ],
           },
           {
             kind: "text",
-            text: "Where the wiki already has a step-by-step guide, the answer is short and links to it. More questions will keep arriving — if yours is missing, ask it in Discord and it may well end up on the page.",
+            text: "Where the wiki already has a step-by-step guide, the answer is short and links to it. More questions will keep arriving. If yours is missing, ask it in Discord and it may well end up on the page.",
           },
         ],
       },
@@ -385,7 +385,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "The home page was downloading code it never used — the part of the site that handles accounts, even though the studio side shows no account at all. It now loads only where it is needed, which takes about a fifth off the home page's scripts, and the first screen's text no longer waits for them to show up.",
+            text: "The home page was downloading code it never used: the part of the site that handles accounts, even though the studio side shows no account at all. It now loads only where it is needed, which takes about a fifth off the home page's scripts, and the first screen's text no longer waits for them to show up.",
           },
         ],
       },
@@ -419,7 +419,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "A portfolio page now opens with a large cover and three quick facts about the build: its size, how long it took, and what it cost — or, for a personal project, what kind of build it is. The size is also given in football pitches — 200×200 blocks means little if you have never played Minecraft, a few pitches means a lot.",
+            text: "A portfolio page now opens with a large cover and three quick facts about the build: its size, how long it took, and what it cost, or, for a personal project, what kind of build it is. The size is also given in football pitches: 200×200 blocks means little if you have never played Minecraft, a few pitches means a lot.",
           },
           {
             kind: "text",
@@ -445,7 +445,7 @@ export const UPDATES: UpdatePost[] = [
     area: "studio",
     title: "The home page grows its own world",
     summary:
-      "The first screen is now a Minecraft-style world generated from a single number — a different one on every visit.",
+      "The first screen is now a Minecraft-style world generated from a single number, a different one on every visit.",
     cover: {
       src: "/portfolio/amberhive-hollow.png",
       alt: "A fantasy garden sanctuary of giant flowers and winding paths",
@@ -481,7 +481,7 @@ export const UPDATES: UpdatePost[] = [
     slug: "a-faster-storefront",
     date: "2026-09-07",
     area: "marketplace",
-    title: "The storefront loads faster — and holds still",
+    title: "The storefront loads faster, and holds still",
     summary:
       "Maps now arrive together with the page, so nothing jumps around while you read.",
     cover: {
@@ -520,7 +520,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "Search engines read that first frame too. Before the fix they saw a shop with no maps in it; now they see the same catalogue you do — which is what lets a map be found by someone searching for it.",
+            text: "Search engines read that first frame too. Before the fix they saw a shop with no maps in it; now they see the same catalogue you do, which is what lets a map be found by someone searching for it.",
           },
         ],
       },
@@ -545,7 +545,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "Some questions come up in Discord every week: where does a downloaded world go, why are some blocks missing, can I put this on my server. They all have good answers, and until now every one of those answers lived in a chat thread that scrolled away. The Wiki keeps them in one place, in plain steps, for anyone who needs them — at three in the morning, without waiting for a reply.",
+            text: "Some questions come up in Discord every week: where does a downloaded world go, why are some blocks missing, can I put this on my server. They all have good answers, and until now every one of those answers lived in a chat thread that scrolled away. The Wiki keeps them in one place, in plain steps, for anyone who needs them, at three in the morning, without waiting for a reply.",
           },
         ],
       },
@@ -555,10 +555,10 @@ export const UPDATES: UpdatePost[] = [
           {
             kind: "list",
             items: [
-              "Maps — installing a download, putting a world on a server, what's inside the archive, and which Minecraft versions a map will open in.",
-              "Commissions — how a custom build is ordered, how the price is worked out, and how long it takes.",
-              "Troubleshooting — symptom, cause, fix: missing blocks, a world that won't open, and the other surprises.",
-              "Account & support — purchases, downloads, and how to reach a person.",
+              "Maps: installing a download, putting a world on a server, what's inside the archive, and which Minecraft versions a map will open in.",
+              "Commissions: how a custom build is ordered, how the price is worked out, and how long it takes.",
+              "Troubleshooting: symptom, cause and fix for missing blocks, a world that won't open, and the other surprises.",
+              "Account & support: purchases, downloads, and how to reach a person.",
             ],
           },
         ],
@@ -593,7 +593,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "The marketplace now opens on rows of collections — Most popular, Recently added, Top rated — each with its own View all page. Choose a collection or a category and you get one clean list with a heading; the Collections pill takes you back to the rows.",
+            text: "The marketplace now opens on rows of collections (Most popular, Recently added, Top rated), each with its own View all page. Choose a collection or a category and you get one clean list with a heading; the Collections pill takes you back to the rows.",
           },
         ],
       },
@@ -607,7 +607,7 @@ export const UPDATES: UpdatePost[] = [
           {
             kind: "list",
             items: [
-              "Price, from and to — both ends included.",
+              "Price, from and to, both ends included.",
               "Minecraft version, file format, map type and game mode.",
               "Size and theme.",
               "Sorting: newest, oldest, price either way, name, or best rated.",
@@ -624,7 +624,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "Every storefront page now ends with a way to order a map of your own, straight in our Discord — with an offer on your first commission. If the map you're after doesn't exist yet, that's where it starts.",
+            text: "Every storefront page now ends with a way to order a map of your own, straight in our Discord, with an offer on your first commission. If the map you're after doesn't exist yet, that's where it starts.",
           },
         ],
       },
@@ -633,7 +633,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "On narrow screens your profile, settings, purchases and log out were hidden behind a menu that only opened on hover — and a phone never hovers. They now sit in the main menu, under a line of their own.",
+            text: "On narrow screens your profile, settings, purchases and log out were hidden behind a menu that only opened on hover, and a phone never hovers. They now sit in the main menu, under a line of their own.",
           },
         ],
       },
@@ -646,7 +646,7 @@ export const UPDATES: UpdatePost[] = [
     area: "account",
     title: "Sign in with Google",
     summary:
-      "One click to an account — and a privacy policy that says plainly what the site keeps.",
+      "One click to an account, and a privacy policy that says plainly what the site keeps.",
     cover: {
       src: "/portfolio/prismport.png",
       alt: "A rainbow-coloured island city with glowing towers and a small harbour",
@@ -658,7 +658,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "You can now create an account, or sign in to the one you have, with your Google account. The first time, you'll pick the name people will see on your profile and under your comments — Google doesn't choose it for you, and that first pick is free to change.",
+            text: "You can now create an account, or sign in to the one you have, with your Google account. The first time, you'll pick the name people will see on your profile and under your comments, Google doesn't choose it for you, and that first pick is free to change.",
           },
           {
             kind: "text",
@@ -671,7 +671,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "There's now a Privacy page. It lists what the site collects, why, and who else is involved — payments, email, hosting — and it describes what the site actually does, not a template of what sites usually do.",
+            text: "There's now a Privacy page. It lists what the site collects, why, and who else is involved (payments, email, hosting), and it describes what the site actually does, not a template of what sites usually do.",
           },
         ],
       },
@@ -705,7 +705,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "Each map has a single reaction, chosen by whoever made it. Anyone signed in can add theirs — no purchase needed. A reaction means “this looks great”, and that is usually decided before buying, not after.",
+            text: "Each map has a single reaction, chosen by whoever made it. Anyone signed in can add theirs, no purchase needed. A reaction means “this looks great”, and that is usually decided before buying, not after.",
           },
         ],
       },
@@ -731,7 +731,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "Under each map, a row of the maps that have the most in common with it — category, type, modes, theme. When nothing is close enough, the row simply isn't there: an empty row filled with unrelated maps would only waste your time.",
+            text: "Under each map, a row of the maps that have the most in common with it: category, type, modes, theme. When nothing is close enough, the row simply isn't there: an empty row filled with unrelated maps would only waste your time.",
           },
         ],
       },
@@ -755,7 +755,7 @@ export const UPDATES: UpdatePost[] = [
     area: "account",
     title: "Notifications arrive on their own",
     summary:
-      "The bell updates the moment something happens — no refresh, and nothing lost while the tab was closed.",
+      "The bell updates the moment something happens, no refresh, and nothing lost while the tab was closed.",
     cover: {
       src: "/portfolio/voidframe-enclave.jpg",
       alt: "A compact futuristic city sealed inside a glowing wireframe dome",
@@ -771,7 +771,7 @@ export const UPDATES: UpdatePost[] = [
           },
           {
             kind: "text",
-            text: "Close the tab and you miss nothing — everything waits for you in Notifications until you come back.",
+            text: "Close the tab and you miss nothing: everything waits for you in Notifications until you come back.",
           },
         ],
       },
@@ -808,7 +808,7 @@ export const UPDATES: UpdatePost[] = [
           },
           {
             kind: "note",
-            text: "The reply is the same whether or not an address has an account here. That's deliberate — otherwise the form could be used to find out who is registered.",
+            text: "The reply is the same whether or not an address has an account here. That's deliberate: otherwise the form could be used to find out who is registered.",
           },
         ],
       },
@@ -817,7 +817,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "Settings opens your settings, My purchases opens your purchases — each on a page of its own, instead of one page that tried to be all of them. Old links still work and take you to the right place.",
+            text: "Settings opens your settings, My purchases opens your purchases, each on a page of its own, instead of one page that tried to be all of them. Old links still work and take you to the right place.",
           },
         ],
       },
@@ -829,7 +829,7 @@ export const UPDATES: UpdatePost[] = [
     area: "studio",
     title: "Eleven new builds in the portfolio",
     summary:
-      "From a dragon-crowned cathedral to a snowed-in holiday island — plus more photos of builds already there.",
+      "From a dragon-crowned cathedral to a snowed-in holiday island, plus more photos of builds already there.",
     cover: {
       src: "/portfolio/sakura-hollow.png",
       alt: "Tiered pagodas and shrines among cherry blossoms, reflected in still turquoise water",
@@ -841,16 +841,16 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "Eleven builds joined the portfolio — commissions and personal projects from the last couple of years that had never been shown here. Each has its own page with size, time taken and price.",
+            text: "Eleven builds joined the portfolio: commissions and personal projects from the last couple of years that had never been shown here. Each has its own page with size, time taken and price.",
           },
           {
             kind: "list",
             items: [
-              "Dragon Cathedral — gothic spires with a fire-orange dragon coiled across the roof",
-              "Corsair Isle — a volcano island with a pirate village and a galleon at anchor",
-              "Sakura Hollow — pagodas and shrines on a quiet cherry-blossom island",
-              "Yuletide Isle — a floating snow island with a Christmas village",
-              "Arena Atoll — a compact PvP arena ringed by tree-topped pillars",
+              "Dragon Cathedral, gothic spires with a fire-orange dragon coiled across the roof",
+              "Corsair Isle, a volcano island with a pirate village and a galleon at anchor",
+              "Sakura Hollow, pagodas and shrines on a quiet cherry-blossom island",
+              "Yuletide Isle, a floating snow island with a Christmas village",
+              "Arena Atoll, a compact PvP arena ringed by tree-topped pillars",
               "Pinecliff Haven, Duskspire Quarter, Skyward Armada, Driftstone Isles, Emberpeak Village and Solace Spires",
             ],
           },
@@ -860,7 +860,7 @@ export const UPDATES: UpdatePost[] = [
             alt: "A pale gothic cathedral with a massive orange dragon draped across its nave",
             width: 1680,
             height: 708,
-            caption: "Dragon Cathedral — 600×600 blocks, built in a week.",
+            caption: "Dragon Cathedral, 600×600 blocks, built in a week.",
           },
           {
             kind: "image",
@@ -868,7 +868,7 @@ export const UPDATES: UpdatePost[] = [
             alt: "A tropical volcano island with golden-roofed huts, a dockside market and a moored galleon",
             width: 1680,
             height: 945,
-            caption: "Corsair Isle — 250×250 blocks.",
+            caption: "Corsair Isle, 250×250 blocks.",
           },
           {
             kind: "image",
@@ -877,7 +877,7 @@ export const UPDATES: UpdatePost[] = [
             width: 1680,
             height: 719,
             caption:
-              "Driftstone Isles — a set of 150×150 biome islands, each ready to drop into a world.",
+              "Driftstone Isles, a set of 150×150 biome islands, each ready to drop into a world.",
           },
         ],
       },
@@ -918,7 +918,7 @@ export const UPDATES: UpdatePost[] = [
             items: [
               "A gallery of screenshots for every map, with a full-screen view.",
               "A proper description, laid out like a page rather than a paragraph.",
-              "Star ratings — and only people who own a map can rate it.",
+              "Star ratings, and only people who own a map can rate it.",
               "A public profile for whoever made the map, with everything else they've published.",
               "A cart, so several maps go through in one checkout.",
             ],
@@ -943,7 +943,7 @@ export const UPDATES: UpdatePost[] = [
     area: "studio",
     title: "Price your map before you ask",
     summary:
-      "A calculator on the Contact page turns a map's size into a price and a timeline — in your currency.",
+      "A calculator on the Contact page turns a map's size into a price and a timeline, in your currency.",
     cover: {
       src: "/portfolio/duskspire-quarter.png",
       alt: "An ornate fantasy palace above a winding river, in soft pink dusk light",
@@ -965,8 +965,8 @@ export const UPDATES: UpdatePost[] = [
           {
             kind: "list",
             items: [
-              `${BASE_RATE}€ per block of the map's side — a 100×100 map comes to ${100 * BASE_RATE}€.`,
-              "The rate is the same for every size — a large map is not charged extra per block.",
+              `${BASE_RATE}€ per block of the map's side, a 100×100 map comes to ${100 * BASE_RATE}€.`,
+              "The rate is the same for every size: a large map is not charged extra per block.",
               "A rectangular map is priced as the square of the same area, so neither side is overcharged.",
             ],
           },
@@ -985,7 +985,7 @@ export const UPDATES: UpdatePost[] = [
     area: "studio",
     title: "Lights off: a dark theme",
     summary:
-      "A switch in the footer, remembered on your next visit — without a flash of white on the way in.",
+      "A switch in the footer, remembered on your next visit, without a flash of white on the way in.",
     cover: {
       src: "/portfolio/nova-ringport.png",
       alt: "A neon space station ringed by a glowing pink planetary ring",
@@ -997,7 +997,7 @@ export const UPDATES: UpdatePost[] = [
         blocks: [
           {
             kind: "text",
-            text: "The sun-and-moon button next to the logo in the footer switches the whole site between light and dark. Your choice is remembered, and the page opens straight in it — no bright flash before the dark theme kicks in.",
+            text: "The sun-and-moon button next to the logo in the footer switches the whole site between light and dark. Your choice is remembered, and the page opens straight in it, no bright flash before the dark theme kicks in.",
           },
         ],
       },
@@ -1009,7 +1009,7 @@ export const UPDATES: UpdatePost[] = [
     area: "studio",
     title: "soucampus.online is live",
     summary:
-      "Sixteen builds, reviews from real clients, and a way to start a commission — the studio has a home of its own.",
+      "Sixteen builds, reviews from real clients, and a way to start a commission, the studio has a home of its own.",
     cover: {
       src: "/portfolio/sky-cathedral.png",
       alt: "A detailed church on floating islands surrounded by sakura trees",

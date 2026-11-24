@@ -85,7 +85,7 @@ export async function POST(request: Request) {
   const webhook = process.env.DISCORD_ANNOUNCE_WEBHOOK_URL;
   if (toDiscord && !webhook) {
     return NextResponse.json(
-      { error: "DISCORD_ANNOUNCE_WEBHOOK_URL is not set — nothing was sent." },
+      { error: "DISCORD_ANNOUNCE_WEBHOOK_URL is not set. Nothing was sent." },
       { status: 500 }
     );
   }

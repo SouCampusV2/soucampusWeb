@@ -167,14 +167,14 @@ export function checkMapSubmission(
   // отказывает в создании оплаты, и покупатель видит сбой (аудит
   // 2026-11, S-09). Ноль — бесплатная карта, она идёт мимо Stripe.
   if (input.priceCents > 0 && input.priceCents < PRICE_MIN_PAID_CENTS) {
-    return `A paid map costs at least €${(PRICE_MIN_PAID_CENTS / 100).toFixed(2)} — or make it free.`;
+    return `A paid map costs at least €${(PRICE_MIN_PAID_CENTS / 100).toFixed(2)}, or make it free.`;
   }
   if (!Array.isArray(input.galleryUrls) || input.galleryUrls.length + 1 > GALLERY_MAX) {
     return `You can have up to ${GALLERY_MAX} images.`;
   }
   for (const url of [input.coverUrl, ...input.galleryUrls]) {
     if (!isOwnImageUrl(url, supabaseUrl)) {
-      return "Images have to be uploaded here — links to other sites aren't accepted.";
+      return "Images have to be uploaded here. Links to other sites aren't accepted.";
     }
   }
   const specsProblem = checkSpecs(input.specs);

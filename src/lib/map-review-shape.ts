@@ -29,7 +29,7 @@ export type MapReview = {
 export function checkReviewBody(body: string): string | null {
   const length = body.trim().length;
   if (length < REVIEW_BODY_MIN) {
-    return `Tell others why — at least ${REVIEW_BODY_MIN} characters.`;
+    return `Tell others why, at least ${REVIEW_BODY_MIN} characters.`;
   }
   if (length > REVIEW_BODY_MAX) {
     return `Keep it under ${REVIEW_BODY_MAX} characters.`;

@@ -316,7 +316,7 @@ function FilterPanel({
             aria-label="Minimum price in euros"
             className={fieldClass}
           />
-          <span className="text-zinc-400">—</span>
+          <span className="text-zinc-400">to</span>
           <input
             value={draft.max}
             onChange={(event) =>

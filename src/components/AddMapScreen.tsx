@@ -61,7 +61,7 @@ export async function AddMapScreen({
             <span>
               Fixing something after a rejection?{" "}
               <strong>Edit the existing map</strong> instead of uploading it
-              again — a re-upload creates a second listing rather than replacing
+              again: a re-upload creates a second listing rather than replacing
               the first.
             </span>
           </p>
@@ -75,7 +75,7 @@ export async function AddMapScreen({
                   {product.title}
                 </Link>{" "}
                 <span className="text-xs text-orange-800/70 dark:text-orange-200/70">
-                  — needs changes
+                  · needs changes
                 </span>
               </li>
             ))}

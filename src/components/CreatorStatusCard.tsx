@@ -30,7 +30,7 @@ export function CreatorStatusCard({
         </h2>
         <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-600 dark:text-zinc-400">
           Sent <LocalTime value={application.createdAt} shape="date" />. We read
-          every one — the answer shows up right here.
+          every one. The answer shows up right here.
         </p>
       </Card>
     );

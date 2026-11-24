@@ -92,7 +92,7 @@ export function AboutFlowerIntro() {
             About me
           </h1>
           <p className="mt-6 text-lg leading-8 text-zinc-700 dark:text-zinc-300">
-            I&apos;m SouCampus. For 8 years I&apos;ve been building in Minecraft professionally — maps and worlds for servers, studios and
+            I&apos;m SouCampus. For 8 years I&apos;ve been building in Minecraft professionally, maps and worlds for servers, studios and
             Marketplace teams. My goal is to turn every idea into a map worth exploring.
           </p>
 

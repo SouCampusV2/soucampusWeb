@@ -85,7 +85,7 @@ function DraftItem({ item }: { item: Extract<InboxItem, { kind: "portfolio_draft
         </div>
       ) : (
         <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
-          No photos came through — add your own in the form.
+          No photos came through. Add your own in the form.
         </p>
       )}
       <dl className="mt-4 grid grid-cols-2 gap-x-6 gap-y-2 text-sm sm:grid-cols-3">
@@ -149,7 +149,7 @@ function ReviewItem({ itemKey, review }: { itemKey: string; review: ReviewFromDi
       ) : (
         // Одна оценка без слов — карточке отзыва на сайте нечего показать.
         <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
-          Rating only, no text — nothing to show on the site.
+          Rating only, no text: nothing to show on the site.
         </p>
       )}
 
@@ -160,16 +160,16 @@ function ReviewItem({ itemKey, review }: { itemKey: string; review: ReviewFromDi
             <TextField
               id={`${itemKey}-role`}
               label="Who they are"
-              hint="— Owner, GuardiumMC"
+              hint="· Owner, GuardiumMC"
               value={input.role}
               onChange={(v) => set("role", v)}
               required
             />
-            <TextField id={`${itemKey}-flag`} label="Flag" hint="— one emoji, optional" value={input.flag} onChange={(v) => set("flag", v)} />
+            <TextField id={`${itemKey}-flag`} label="Flag" hint="· one emoji, optional" value={input.flag} onChange={(v) => set("flag", v)} />
             <TextField
               id={`${itemKey}-slug`}
               label="Address"
-              hint={`— /reviews/${input.slug || "…"}`}
+              hint={`· /reviews/${input.slug || "…"}`}
               value={input.slug}
               onChange={(v) => set("slug", v.toLowerCase())}
               required

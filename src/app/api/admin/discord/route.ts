@@ -88,7 +88,7 @@ export async function POST(request: Request) {
     if (insertError) {
       if (insertError.code === "23505") {
         return NextResponse.json(
-          { error: "A review with this address already exists — change the address." },
+          { error: "A review with this address already exists. Change the address." },
           { status: 409 }
         );
       }

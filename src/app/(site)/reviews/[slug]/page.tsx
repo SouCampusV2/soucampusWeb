@@ -25,12 +25,12 @@ export async function generateMetadata({
   if (!review) return { title: "Not found" };
 
   return {
-    title: `${review.name} — client review`,
+    title: `${review.name}, client review`,
     description: review.text,
     alternates: { canonical: `/reviews/${review.slug}` },
     openGraph: {
       type: "article",
-      title: `${review.name} — client review`,
+      title: `${review.name}, client review`,
       description: review.text,
       url: `/reviews/${review.slug}`,
     },

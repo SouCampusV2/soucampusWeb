@@ -115,7 +115,7 @@ export async function POST(request: Request) {
   }
 
   if (body.action === "publish") {
-    if (row.status === "published") return NextResponse.json({ error: "Already published — use Update." }, { status: 409 });
+    if (row.status === "published") return NextResponse.json({ error: "Already published. Use Update." }, { status: 409 });
     const sent = await publishPost(webhook, post, fetch, color);
     if (!sent.ok) return NextResponse.json({ error: sent.error }, { status: 502 });
     await db

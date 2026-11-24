@@ -309,7 +309,7 @@ async function notifyAboutPurchase(input: PaidOrderInput): Promise<void> {
           titles.length === 1
             ? `You bought “${titles[0]}”`
             : `You bought ${titles.length} maps`,
-        body: `${titles.join(", ")} — the files are in your purchases.`,
+        body: `${titles.join(", ")}, the files are in your purchases.`,
         href: "/purchases",
       });
     }

@@ -110,7 +110,7 @@ export function WelcomeNameForm({ suggested }: { suggested: string }) {
 
       <p className="mt-3 text-sm text-zinc-500 dark:text-zinc-400">
         Letters, numbers and underscores. This is the name on your profile,
-        your comments and your maps — and your address here:{" "}
+        your comments and your maps, and your address here:{" "}
         <span className="font-medium text-zinc-950 dark:text-zinc-50">
           /@{username.trim() || "yourname"}
         </span>

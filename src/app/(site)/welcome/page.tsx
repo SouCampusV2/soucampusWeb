@@ -52,7 +52,7 @@ export default async function WelcomePage() {
           </h1>
           <p className="mt-4 text-zinc-600 dark:text-zinc-400">
             Google doesn&apos;t give us a username, so we made one up from your
-            email address. Change it to whatever you&apos;d rather be called —
+            email address. Change it to whatever you&apos;d rather be called,
             or keep it.
           </p>
         </div>

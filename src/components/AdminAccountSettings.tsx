@@ -225,7 +225,7 @@ function SessionsCard() {
       <h2 className="text-lg font-semibold text-zinc-950 dark:text-zinc-50">Other devices</h2>
       <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
         Signed in somewhere you no longer use, or worried someone has your password? End every other
-        session — this browser stays signed in.
+        session. This browser stays signed in.
       </p>
       <StatusLine status={status} />
       <div className="mt-6">

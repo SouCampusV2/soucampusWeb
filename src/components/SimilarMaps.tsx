@@ -23,7 +23,7 @@ export function SimilarMaps({ products }: { products: Product[] }) {
         Similar maps
       </h2>
       <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-        Picked by category, type and theme — not at random
+        Picked by category, type and theme, not at random
       </p>
 
       {/* ТА ЖЕ СЕТКА, ЧТО У КАТАЛОГА, ДОСЛОВНО — включая xl:grid-cols-4 и

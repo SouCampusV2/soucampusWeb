@@ -32,7 +32,7 @@ const HIDE_ERRORS: Record<string, string> = {
   pending: "This map is waiting to be reviewed. You can take it off the marketplace once it is approved.",
   rejected: "This map has not been approved yet, so it is not on the marketplace.",
   suspended:
-    "This map was taken off the marketplace by the site team. Edit it and it goes back for review — the reason is on the map.",
+    "This map was taken off the marketplace by the site team. Edit it and it goes back for review. The reason is on the map.",
   deleted:
     "This map was removed by the site team, so it can't be changed from here.",
 };
@@ -128,7 +128,7 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         error:
-          "This map was removed by the site team, so it can't be changed from here. The reason is on the map — reply to it through support if you think it's a mistake.",
+          "This map was removed by the site team, so it can't be changed from here. The reason is on the map. Reply to it through support if you think it's a mistake.",
       },
       { status: 403 }
     );
@@ -247,7 +247,7 @@ export async function POST(request: Request) {
   await notify(user.id, {
     kind: "map_deleted",
     title: `You deleted “${product.title}”`,
-    body: "It is off the marketplace and out of your resources. The file is still kept — write to support if you need it back.",
+    body: "It is off the marketplace and out of your resources. The file is still kept. Write to support if you need it back.",
     href: "/support",
   });
 

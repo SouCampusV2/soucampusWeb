@@ -141,7 +141,7 @@ export default async function PurchasesPage() {
                           бы соврать. */}
                       {item.fileBlocked ? (
                         <>
-                          File withdrawn —{" "}
+                          File withdrawn:{" "}
                           <Link href="/support" className="underline underline-offset-2">
                             contact support
                           </Link>

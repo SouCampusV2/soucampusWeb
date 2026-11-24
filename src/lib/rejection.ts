@@ -57,7 +57,7 @@ export const REJECTION_TEMPLATES: RejectionTemplate[] = [
     flag: "images",
     label: "Replace the screenshots",
     message:
-      "The screenshots need work — add clear, well-lit shots that actually show the build.",
+      "The screenshots need work. Add clear, well-lit shots that actually show the build.",
     requiresChange: "images",
     cooldownDays: 0,
   },
@@ -65,7 +65,7 @@ export const REJECTION_TEMPLATES: RejectionTemplate[] = [
     flag: "file",
     label: "Re-upload the map file",
     message:
-      "The map file has a problem — it didn't open, is incomplete, or doesn't match the screenshots. Please re-upload it.",
+      "The map file has a problem. It didn't open, is incomplete, or doesn't match the screenshots. Please re-upload it.",
     requiresChange: "file",
     cooldownDays: 0,
   },
@@ -73,7 +73,7 @@ export const REJECTION_TEMPLATES: RejectionTemplate[] = [
     flag: "description",
     label: "Rewrite the description",
     message:
-      "The description needs more detail — what's included, the size of the build, and which Minecraft versions it works with.",
+      "The description needs more detail: what's included, the size of the build, and which Minecraft versions it works with.",
     requiresChange: null,
     cooldownDays: 0,
   },
@@ -104,7 +104,7 @@ export const REJECTION_TEMPLATES: RejectionTemplate[] = [
     flag: "low_effort",
     label: "Not a finished map",
     message:
-      "This isn't a finished build — it's a draft, a test world or a handful of blocks. Send it when it's something someone would pay for.",
+      "This isn't a finished build. It's a draft, a test world or a handful of blocks. Send it when it's something someone would pay for.",
     requiresChange: null,
     cooldownDays: 3,
   },
@@ -180,13 +180,13 @@ export const TAKEDOWN_TEMPLATES: ReasonTemplate[] = [
     code: "not_as_described",
     label: "Doesn't match the description",
     message:
-      "The map doesn't match what the page promises — the build, the size or the contents are different from the description and screenshots.",
+      "The map doesn't match what the page promises: the build, the size or the contents are different from the description and screenshots.",
   },
   {
     code: "broken_file",
     label: "The file is broken",
     message:
-      "The download is broken — the file doesn't open, is incomplete, or isn't the map it claims to be. Fix it and send it back for review.",
+      "The download is broken: the file doesn't open, is incomplete, or isn't the map it claims to be. Fix it and send it back for review.",
   },
   {
     code: "stolen_content",
@@ -198,7 +198,7 @@ export const TAKEDOWN_TEMPLATES: ReasonTemplate[] = [
     code: "misleading_images",
     label: "Misleading screenshots",
     message:
-      "The screenshots show something other than what buyers get — renders, other people's builds, or areas that aren't in the file.",
+      "The screenshots show something other than what buyers get: renders, other people's builds, or areas that aren't in the file.",
   },
   {
     code: "buyer_complaints",
@@ -210,7 +210,7 @@ export const TAKEDOWN_TEMPLATES: ReasonTemplate[] = [
     code: "rules",
     label: "Against the site rules",
     message:
-      "The listing breaks the site rules — check the terms and reply to this if you think it's a mistake.",
+      "The listing breaks the site rules. Check the terms and reply to this if you think it's a mistake.",
   },
 ];
 
@@ -234,7 +234,7 @@ export const DELETION_TEMPLATES: ReasonTemplate[] = [
     code: "duplicate",
     label: "Duplicate listing",
     message:
-      "The map was removed as a duplicate — the same build is already listed.",
+      "The map was removed as a duplicate: the same build is already listed.",
   },
   {
     code: "prohibited",
@@ -282,7 +282,7 @@ export const REVOCATION_TEMPLATES: ReasonTemplate[] = [
     code: "rules",
     label: "Breaking the site rules",
     message:
-      "Your listings break the site rules — see the terms. Creator access is closed and your maps are off the marketplace.",
+      "Your listings break the site rules. See the terms. Creator access is closed and your maps are off the marketplace.",
   },
   {
     code: "prohibited",
@@ -294,7 +294,7 @@ export const REVOCATION_TEMPLATES: ReasonTemplate[] = [
     code: "creator_request",
     label: "The creator asked us to",
     message:
-      "Creator access was closed at your own request. Your maps are off the marketplace — ask us and we'll open it again.",
+      "Creator access was closed at your own request. Your maps are off the marketplace. Ask us and we'll open it again.",
   },
 ];
 

@@ -65,8 +65,8 @@ export function ModerationActions({
         refresh();
         setError(
           code === "changed"
-            ? "The creator edited this map after you opened it — check the new version before approving."
-            : "This map was already handled — refreshing the queue."
+            ? "The creator edited this map after you opened it. Check the new version before approving."
+            : "This map was already handled, refreshing the queue."
         );
         return;
       }
@@ -88,7 +88,7 @@ export function ModerationActions({
         <span className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
           What needs fixing?{" "}
           <span className="font-normal text-zinc-500 dark:text-zinc-400">
-            — the creator sees this as a checklist
+            · the creator sees this as a checklist
           </span>
         </span>
 
@@ -138,7 +138,7 @@ export function ModerationActions({
         >
           Anything else{" "}
           <span className="font-normal text-zinc-500 dark:text-zinc-400">
-            — optional, added under the list
+            · optional, added under the list
           </span>
         </label>
         <textarea

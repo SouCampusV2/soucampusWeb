@@ -20,7 +20,7 @@ import { clouds, paintClouds, terrain } from "@/lib/world-gen";
 // ⚠️ Стекла, как на сайте, нет: next/og (satori) не умеет backdrop-filter,
 // поэтому панель почти непрозрачная.
 
-export const alt = "SouCampus builds — custom Minecraft builds on order";
+export const alt = "SouCampus builds · custom Minecraft builds on order";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

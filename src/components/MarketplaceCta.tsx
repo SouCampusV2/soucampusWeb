@@ -21,7 +21,7 @@ const HEADING = "We'll build it for you";
 const OFFER = "€25 off your first commission";
 const OFFER_NOTE = "for maps from 250×250 blocks";
 const SUBTEXT =
-  "Spawns, hubs, adventure maps — built to your brief. Tell us what you need and get a price and a timeline the same day.";
+  "Spawns, hubs, adventure maps, built to your brief. Tell us what you need and get a price and a timeline the same day.";
 const CTA_LABEL = "Order in Discord";
 
 // ⚠️ Кнопка ведёт ПРЯМО в Discord, и этим отличается от кнопок «Order a

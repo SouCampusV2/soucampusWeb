@@ -124,7 +124,7 @@ export function checkReviewInput(input: ReviewInput): string | null {
   const bad = (v: unknown, max: number) =>
     typeof v !== "string" || v.trim().length === 0 || v.length > max;
   if (bad(input.name, REVIEW_LIMITS.name)) return "Add the client's name.";
-  if (bad(input.role, REVIEW_LIMITS.role)) return "Add who they are — e.g. “Owner, GuardiumMC”.";
+  if (bad(input.role, REVIEW_LIMITS.role)) return "Add who they are, e.g. “Owner, GuardiumMC”.";
   if (bad(input.text, REVIEW_LIMITS.text)) return "The review needs its text.";
   // Флаг необязателен (карточка без него просто не рисует флаг), но
   // короткий: это один эмодзи, а не поле для текста.

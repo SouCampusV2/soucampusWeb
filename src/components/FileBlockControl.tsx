@@ -90,7 +90,7 @@ export function FileBlockControl({
       >
         Why is this file blocked?{" "}
         <span className="font-normal text-zinc-500 dark:text-zinc-400">
-          — buyers lose the download until you unblock it
+          · buyers lose the download until you unblock it
         </span>
       </label>
       <textarea

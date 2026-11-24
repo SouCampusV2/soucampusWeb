@@ -402,7 +402,7 @@ export function ProfileEditForm({
             >
               Username{" "}
               <span className="font-normal text-zinc-500 dark:text-zinc-400">
-                — soucampus.online/@{username.toLowerCase() || "…"}
+                · soucampus.online/@{username.toLowerCase() || "…"}
               </span>
             </label>
             <input
@@ -457,7 +457,7 @@ export function ProfileEditForm({
         <p className="-mt-2 text-xs text-zinc-500 dark:text-zinc-400">
           {lockedUntil ? (
             <>
-              You changed it recently — next change available on{" "}
+              You changed it recently. Next change available on{" "}
               <span className="font-medium text-zinc-700 dark:text-zinc-300">
                 {formatDayMonthYear(lockedUntil)}
               </span>
@@ -466,7 +466,7 @@ export function ProfileEditForm({
           ) : (
             <>
               Letters, numbers and underscores. This is your name, your login
-              and your profile link at once — you can change it once every{" "}
+              and your profile link at once. You can change it once every{" "}
               {USERNAME_COOLDOWN_DAYS} days, and the old one is then free for
               anyone else to take.
             </>
@@ -521,7 +521,7 @@ export function ProfileEditForm({
           >
             About you{" "}
             <span className="font-normal text-zinc-500 dark:text-zinc-400">
-              — shown publicly on your creator page
+              · shown publicly on your creator page
             </span>
           </label>
           <textarea
@@ -546,7 +546,7 @@ export function ProfileEditForm({
           <p className="mb-1.5 text-sm font-medium text-zinc-700 dark:text-zinc-300">
             Links{" "}
             <span className="font-normal text-zinc-500 dark:text-zinc-400">
-              — Discord, X, YouTube and more
+              · Discord, X, YouTube and more
             </span>
           </p>
           <div className="flex flex-wrap items-center gap-2">
@@ -632,7 +632,7 @@ export function ProfileEditForm({
           Appearance
         </h2>
         <p className="mt-1 text-sm text-zinc-500 dark:text-zinc-400">
-          Light or dark — remembered in this browser.
+          Light or dark, remembered in this browser.
         </p>
         <ThemeToggle className="mt-3" />
       </div>

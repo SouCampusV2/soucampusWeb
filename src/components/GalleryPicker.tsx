@@ -118,7 +118,7 @@ export function useImagePicker(
       onError(
         `${hasExisting ? "New images" : "All images"} together must be ${formatBytes(
           IMAGES_TOTAL_MAX_BYTES
-        )} or less — these add up to ${formatBytes(pendingBytes + adding)}.`
+        )} or less. These add up to ${formatBytes(pendingBytes + adding)}.`
       );
       return;
     }
@@ -212,7 +212,7 @@ export function GalleryPicker({
         Images
         <RequiredMark />{" "}
         <span className="font-normal text-zinc-500 dark:text-zinc-400">
-          — drag or use the arrows to reorder, star sets the cover
+          · drag or use the arrows to reorder, star sets the cover
         </span>
       </label>
 

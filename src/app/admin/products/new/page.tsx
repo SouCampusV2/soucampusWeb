@@ -82,7 +82,7 @@ export default async function AddMapPage() {
                 <>
                   This account is an admin but not a creator, and the database
                   files every map under a creator. Grant{" "}
-                  <code>is_creator</code> in <code>profiles</code> first — the
+                  <code>is_creator</code> in <code>profiles</code> first, the
                   form would be rejected on submit otherwise.
                 </>
               )}
@@ -105,7 +105,7 @@ export default async function AddMapPage() {
       </h1>
       <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">
         Submitted maps go through the review queue before they reach the
-        marketplace — your own included.
+        marketplace, your own included.
       </p>
 
       <AddMapScreen

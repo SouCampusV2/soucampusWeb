@@ -332,7 +332,7 @@ export function UploadMapForm({
               className="hidden"
             />
             <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-              Add screenshots and tables anywhere in the description — this is the
+              Add screenshots and tables anywhere in the description. This is the
               full page buyers read.
             </p>
             {descChecked && (
@@ -347,7 +347,7 @@ export function UploadMapForm({
             <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Map file
               <RequiredMark />{" "}
-              <span className="font-normal text-zinc-500 dark:text-zinc-400">— {MAP_FILE_TYPES_LABEL}, up to 15 MB</span>
+              <span className="font-normal text-zinc-500 dark:text-zinc-400">· {MAP_FILE_TYPES_LABEL}, up to 15 MB</span>
             </span>
             <button
               type="button"

@@ -256,7 +256,7 @@ export function DiscordPostEditor({
           <TextField
             id="username"
             label="Posted as"
-            hint="— not “Discord”"
+            hint="· not “Discord”"
             value={post.username ?? ""}
             onChange={(v) => set("username", v.trim() ? v : null)}
           />
@@ -269,7 +269,7 @@ export function DiscordPostEditor({
         </div>
         {published && (
           <p className="-mt-3 text-xs text-zinc-500 dark:text-zinc-400">
-            Discord keeps the name and avatar a post was published with — Update
+            Discord keeps the name and avatar a post was published with. Update
             changes everything else.
           </p>
         )}
@@ -291,7 +291,7 @@ export function DiscordPostEditor({
           <label htmlFor="body" className={LABEL}>
             Text{" "}
             <span className={HINT}>
-              — server emoji as <code>&lt;:name:id&gt;</code>, small line starts with <code>-# </code>
+              · server emoji as <code>&lt;:name:id&gt;</code>, small line starts with <code>-# </code>
             </span>
           </label>
           <textarea
@@ -306,7 +306,7 @@ export function DiscordPostEditor({
         {/* Ссылки списком: «- [текст](адрес) - **подпись**». */}
         <div>
           <p className={LABEL}>
-            Links <span className={HINT}>— a list under the text; the bold note is optional</span>
+            Links <span className={HINT}>· a list under the text; the bold note is optional</span>
           </p>
           <ul className="space-y-3">
             {post.links.map((link, index) => (
@@ -360,7 +360,7 @@ export function DiscordPostEditor({
             ссылкой. */}
         <div>
           <p className={LABEL}>
-            Pictures <span className={HINT}>— up to {MAX_IMAGES}, in this order</span>
+            Pictures <span className={HINT}>· up to {MAX_IMAGES}, in this order</span>
           </p>
           {post.imageUrls.length > 0 && (
             <ul className="mb-3 space-y-2">
@@ -464,7 +464,7 @@ export function DiscordPostEditor({
               <TextField
                 id="roleId"
                 label="Role ID"
-                hint="— in Discord: Server Settings → Roles → right-click the role → Copy Role ID (needs Developer Mode)"
+                hint="· in Discord: Server Settings → Roles → right-click the role → Copy Role ID (needs Developer Mode)"
                 value={post.roleId ?? ""}
                 onChange={setRoleId}
               />
@@ -475,7 +475,7 @@ export function DiscordPostEditor({
         {/* Кнопки-ссылки под постом — по желанию, поэтому свёрнуты. */}
         <details className="group" open={post.buttons.length > 0}>
           <summary className="cursor-pointer text-sm font-medium text-zinc-700 dark:text-zinc-300">
-            Buttons under the post <span className={HINT}>— optional, up to {MAX_BUTTONS}</span>
+            Buttons under the post <span className={HINT}>· optional, up to {MAX_BUTTONS}</span>
           </summary>
           <ul className="mt-3 space-y-2">
             {post.buttons.map((button, index) => (

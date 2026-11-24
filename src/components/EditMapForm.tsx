@@ -205,11 +205,11 @@ export function EditMapForm({
     for (const flag of product.rejectionFlags) {
       const requirement = templateFor(flag)?.requiresChange;
       if (requirement === "file" && !mapFile) {
-        setError("You were asked to re-upload the map file — pick a new file before resubmitting.");
+        setError("You were asked to re-upload the map file. Pick a new file before resubmitting.");
         return;
       }
       if (requirement === "images" && !images.some((i) => i.kind === "new")) {
-        setError("You were asked to replace the screenshots — add at least one new image before resubmitting.");
+        setError("You were asked to replace the screenshots. Add at least one new image before resubmitting.");
         return;
       }
     }
@@ -334,7 +334,7 @@ export function EditMapForm({
         <p className="flex gap-2.5 rounded-2xl bg-orange-50 px-4 py-3 text-sm text-orange-800 dark:bg-orange-950/40 dark:text-orange-200">
           <Warning size={18} weight="fill" className="mt-0.5 shrink-0" />
           <span>
-            This map is live. Text and images update right away — but
+            This map is live. Text and images update right away, but
             <strong> replacing the map file </strong> takes it off the marketplace
             until it&apos;s reviewed again.
           </span>
@@ -413,7 +413,7 @@ export function EditMapForm({
             <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
               Map file{" "}
               <span className="font-normal text-zinc-500 dark:text-zinc-400">
-                — leave it alone to keep the current one
+                · leave it alone to keep the current one
               </span>
             </span>
             <button
