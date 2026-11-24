@@ -15,11 +15,22 @@ import { checkPortfolioUrl, checkDiscord } from "@/lib/contact-links";
 // удобство (ошибка у поля до отправки), решает обработчик.
 const MAX_ABOUT = 2000;
 
-export function CreatorApplicationForm() {
+// Два режима (24.11): подача новой заявки и правка своей, пока она ждёт
+// разбора. В правке нет галочки 18+ — она уже подтверждена при подаче, и
+// дату подтверждения сервер не перезаписывает.
+export function CreatorApplicationForm({
+  initial,
+  onCancel,
+}: {
+  /** Есть — это правка уже поданной заявки (PATCH), а не новая. */
+  initial?: { about: string; portfolio: string; discord: string };
+  onCancel?: () => void;
+} = {}) {
+  const editing = Boolean(initial);
   const refresh = useRefresh();
-  const [about, setAbout] = useState("");
-  const [portfolio, setPortfolio] = useState("");
-  const [discord, setDiscord] = useState("");
+  const [about, setAbout] = useState(initial?.about ?? "");
+  const [portfolio, setPortfolio] = useState(initial?.portfolio ?? "");
+  const [discord, setDiscord] = useState(initial?.discord ?? "");
   const [adult, setAdult] = useState(false);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,13 +54,13 @@ export function CreatorApplicationForm() {
     setError(null);
 
     const response = await fetch("/api/creator/application", {
-      method: "POST",
+      method: editing ? "PATCH" : "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         about: about.trim().slice(0, MAX_ABOUT),
         portfolio,
         discord,
-        adult,
+        ...(editing ? {} : { adult }),
       }),
     }).catch(() => null);
 
@@ -69,12 +80,15 @@ export function CreatorApplicationForm() {
       setError(
         data?.message ??
           data?.error ??
-          "Could not send the application. Try again in a moment."
+          (editing
+            ? "Could not save the changes. Try again in a moment."
+            : "Could not send the application. Try again in a moment.")
       );
       return;
     }
 
     refresh();
+    onCancel?.();
   }
 
   return (
@@ -140,7 +154,9 @@ export function CreatorApplicationForm() {
       </div>
 
       {/* Только 18+ (решение владельца, docs/SCANNER.md § 1). Дату
-          подтверждения пишет сервер, галочка без неё ничего не стоит. */}
+          подтверждения пишет сервер, галочка без неё ничего не стоит.
+          В правке её нет: подтверждено при подаче. */}
+      {!editing && (
       <label className="flex cursor-pointer items-start gap-2.5 text-sm text-zinc-700 dark:text-zinc-300">
         <input
           type="checkbox"
@@ -151,18 +167,33 @@ export function CreatorApplicationForm() {
         />
         <span>I&apos;m 18 or older.</span>
       </label>
+      )}
 
       {error && (
         <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
       )}
 
-      <Button
-        type="submit"
-        size="md"
-        loading={pending} disabled={pending || !about.trim() || !adult}
-      >
-        {pending ? "Sending…" : "Send application"}
-      </Button>
+      <div className="flex flex-wrap items-center gap-2">
+        <Button
+          type="submit"
+          size="md"
+          loading={pending}
+          disabled={pending || !about.trim() || (!editing && !adult)}
+        >
+          {editing
+            ? pending
+              ? "Saving…"
+              : "Save changes"
+            : pending
+              ? "Sending…"
+              : "Send application"}
+        </Button>
+        {onCancel && (
+          <Button type="button" size="md" variant="secondary" onClick={onCancel} disabled={pending}>
+            Cancel
+          </Button>
+        )}
+      </div>
     </form>
   );
 }

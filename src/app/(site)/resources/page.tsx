@@ -84,29 +84,33 @@ export default async function ResourcesPage() {
       <PageGlow color="rgba(249,115,22,0.28)" />
       <section className="relative pb-28 pt-20">
         <div className="mx-auto max-w-3xl">
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <h1
-              className={`${displayFont.className} text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
-            >
-              Your resources
-            </h1>
-            {/* Кнопка «добавить» в шапке — только когда карты уже есть.
-                В пустом списке она была бы вторым таким же призывом
-                рядом с большим блоком ниже. */}
-            <div className="flex items-center gap-2">
+          {/* Заголовок по центру — как у My purchases и Settings (24.11,
+              владелец: три страницы одного меню выравнивались по-разному).
+              Кнопки — строкой под ним, тоже по центру. */}
+          <h1
+            className={`${displayFont.className} text-center text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
+          >
+            Your resources
+          </h1>
+          {/* Кнопки шапки — только когда карты уже есть. «Добавить» в
+              пустом списке была бы вторым таким же призывом рядом с
+              большим блоком ниже; «обновить» без карт и тем более без
+              статуса креатора проверять нечего (24.11, владелец). */}
+          {creator && products.length > 0 && (
+            <div className="mt-6 flex items-center justify-center gap-2">
               {/* Статус карт меняет модерация, а не владелец страницы:
                   одобрили, сняли, отклонили — узнать об этом можно было
                   только перезагрузкой. */}
               <RefreshButton label="Check the status of your maps" />
               {/* Под паузой кнопку не показываем: она вела бы на
                   форму, с которой человека сразу разворачивает. */}
-              {creator && products.length > 0 && !blockedUntil && (
+              {!blockedUntil && (
                 <Button href="/resources/new" size="sm">
                   Add a map
                 </Button>
               )}
             </div>
-          </div>
+          )}
 
           {/* Три состояния, и порядок проверок важен. Ещё не креатор —
               показываем заявку, а не «добавь первую карту»: кнопка вела

@@ -1,9 +1,9 @@
 import Link from "next/link";
-import { Clock, XCircle, SealCheck } from "@phosphor-icons/react/dist/ssr";
+import { XCircle, SealCheck } from "@phosphor-icons/react/dist/ssr";
 import { CreatorApplicationForm } from "@/components/CreatorApplicationForm";
+import { PendingApplication } from "@/components/PendingApplication";
 import { INLINE_LINK } from "@/components/Button";
 import type { CreatorApplication } from "@/lib/creator-applications";
-import { LocalTime } from "@/components/LocalTime";
 
 // «Стать креатором» — на /resources, вместо списка карт у того, кому
 // загружать ещё нельзя.
@@ -22,16 +22,10 @@ export function CreatorStatusCard({
   application: CreatorApplication | null;
 }) {
   if (application?.status === "pending") {
+    // Статус, всё поданное и Edit — PendingApplication.tsx (24.11).
     return (
       <Card>
-        <Clock size={28} className="mx-auto text-zinc-400" aria-hidden />
-        <h2 className="mt-4 text-lg font-semibold text-zinc-950 dark:text-zinc-50">
-          Application sent
-        </h2>
-        <p className="mx-auto mt-2 max-w-sm text-sm text-zinc-600 dark:text-zinc-400">
-          Sent <LocalTime value={application.createdAt} shape="date" />. We read
-          every one. The answer shows up right here.
-        </p>
+        <PendingApplication application={application} />
       </Card>
     );
   }

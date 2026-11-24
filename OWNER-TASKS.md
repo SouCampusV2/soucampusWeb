@@ -23,6 +23,10 @@
 
 - [ ] `supabase/migrations/20261124120000_product_buy_url.sql` — сначала
       preview, потом прод (SQL Editor, целиком).
+- [ ] `supabase/migrations/20261124130000_fix_application_notify.sql` — на
+      обеих базах, порядок любой: от кода не зависит. Без неё заявка в
+      креаторы не подаётся вообще («Could not send the application»).
+      Проверка: обычным аккаунтом подать заявку на `/resources`.
 - [ ] Сказать мне — выкачу на прод. Проверка: в правке карты поле
       «BuiltByBit page», вставить ссылку `https://builtbybit.com/...` →
       на странице карты кнопка «Buy on BuiltByBit».

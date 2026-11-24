@@ -128,3 +128,83 @@ export async function POST(request: Request) {
 
   return NextResponse.json({ ok: true });
 }
+
+// Правка своей заявки, пока её не разобрали (24.11, просьба владельца:
+// «показать заявку и мочь её редактировать, пока не ответили»).
+//
+// Меняются только три поля текста. Статус, причина отказа и дата 18+ —
+// не отсюда: их пишет админка (статус) или они уже подтверждены при
+// подаче. Условие status = 'pending' стоит в самом запросе update, а не
+// проверкой перед ним — так правка не перепишет заявку, которую админ
+// успел разобрать между открытием формы и нажатием Save (тот же приём,
+// что в /api/admin/applications).
+export async function PATCH(request: Request) {
+  const supabase = await createSupabaseServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) {
+    return NextResponse.json({ error: "auth required" }, { status: 401 });
+  }
+
+  const limited = await enforceRateLimit("creator-application", user.id);
+  if (limited) return limited;
+
+  const body = (await request.json().catch(() => ({}))) as {
+    about?: unknown;
+    portfolio?: unknown;
+    discord?: unknown;
+  };
+
+  const about = typeof body.about === "string" ? body.about.trim() : "";
+  if (!about) {
+    return NextResponse.json(
+      { error: "Tell us a little about your building." },
+      { status: 400 }
+    );
+  }
+
+  const link = checkPortfolioUrl(typeof body.portfolio === "string" ? body.portfolio : "");
+  const contact = checkDiscord(typeof body.discord === "string" ? body.discord : "");
+  if (!link.ok || !contact.ok) {
+    return NextResponse.json(
+      {
+        error: "Check the highlighted fields.",
+        portfolioError: link.ok ? null : link.error,
+        discordError: contact.ok ? null : contact.error,
+      },
+      { status: 400 }
+    );
+  }
+
+  // Служебным ключом: политики update у creator_applications нет ни для
+  // кого (и не будет — запись только через шлюз). Владение — условием
+  // user_id = сессия, а не id из тела запроса.
+  const { data, error } = await getSupabaseAdmin()
+    .from("creator_applications")
+    .update({
+      about: about.slice(0, MAX_ABOUT),
+      portfolio_url: link.value || null,
+      discord: contact.value || null,
+    })
+    .eq("user_id", user.id)
+    .eq("status", "pending")
+    .select("id")
+    .maybeSingle();
+
+  if (error) {
+    console.error("Заявка в креаторы: правка не удалась:", error.message);
+    return NextResponse.json(
+      { error: "Could not save the changes. Try again in a moment." },
+      { status: 500 }
+    );
+  }
+  if (!data) {
+    return NextResponse.json(
+      { error: "This application has already been answered. Refresh the page." },
+      { status: 409 }
+    );
+  }
+
+  return NextResponse.json({ ok: true });
+}
