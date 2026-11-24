@@ -24,6 +24,8 @@ import {
 import { checkProfileLink, profileLinkLabel, type ProfileLink } from "@/lib/profile-links";
 import { ProfileLinksDialog } from "@/components/ProfileLinksDialog";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { useUnsavedGuard } from "@/lib/use-unsaved-guard";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 // GIF уходит в шлюз как есть — обрезка через <canvas> убила бы анимацию.
 // Поэтому у него прежние потолки: настоящий предел (IMAGE_MAX_BYTES)
@@ -374,6 +376,10 @@ export function ProfileEditForm({
     bannerUrl !== initial.bannerUrl ||
     JSON.stringify(links) !== JSON.stringify(initial.links);
 
+  // Пока идёт сохранение, не спрашиваем: после него страница обновится
+  // сама, и правки уже не «несохранённые».
+  const guard = useUnsavedGuard(dirty, pending);
+
   return (
     // Форма слева, превью справа (просьба владельца 26.10). Колонки 5:7
     // внутри рамки страницы max-w-6xl (DESIGN.md): полям формы хватает
@@ -704,6 +710,17 @@ export function ProfileEditForm({
         }}
       />
     )}
+      {/* «Уйти без сохранения?» — ссылка, «назад» в браузере (24.11,
+          use-unsaved-guard.ts). На перезагрузку браузер покажет своё. */}
+      <ConfirmDialog
+        open={guard.open}
+        title="Leave without saving?"
+        description="Your changes on this page will be lost."
+        confirmLabel="Leave"
+        cancelLabel="Back to editing"
+        onConfirm={guard.leave}
+        onCancel={guard.stay}
+      />
     </div>
   );
 }
@@ -794,10 +811,12 @@ function ProfilePreview({
         <button
           type="button"
           onClick={onPickBanner}
-          className="absolute right-3 top-3 z-10 inline-flex h-8 items-center gap-1.5 rounded-full border border-dashed border-zinc-300 px-3 text-xs font-medium text-zinc-600 transition-colors hover:border-orange-500 hover:text-orange-600 dark:border-zinc-700 dark:text-zinc-400 dark:hover:border-orange-400 dark:hover:text-orange-400"
+          // Оранжевая обводка (24.11, владелец: «непонятно, что это кнопка»
+          // — была серая пунктирная), иконка справа, как во всех кнопках.
+          className="absolute right-3 top-3 z-10 inline-flex h-9 items-center gap-1.5 rounded-full border-2 border-orange-500 bg-[#fbfbff]/80 px-3.5 text-xs font-semibold text-orange-600 backdrop-blur-sm transition-colors hover:bg-orange-500 hover:text-zinc-950 dark:border-orange-400 dark:bg-zinc-950/70 dark:text-orange-400 dark:hover:bg-orange-400 dark:hover:text-zinc-950"
         >
-          <ImageSquare size={14} aria-hidden />
           Add banner
+          <ImageSquare size={14} aria-hidden />
         </button>
       )}
 

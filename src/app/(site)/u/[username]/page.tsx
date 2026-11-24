@@ -26,6 +26,7 @@ import { Button } from "@/components/Button";
 import { PageGlow } from "@/components/PageGlow";
 import { CreatorOwnerActions } from "@/components/CreatorOwnerActions";
 import { SortableMapGrid } from "@/components/SortableMapGrid";
+import { VisitorViewBanner } from "@/components/VisitorViewBanner";
 import { LocalTime } from "@/components/LocalTime";
 import { getRecentCommentsByUser } from "@/lib/comments";
 import { getProfileStats } from "@/lib/profile-stats";
@@ -268,6 +269,9 @@ export default async function CreatorPage({
     // Клип — на полноширинном <main>, max-w — на обёртке внутри (см. PageGlow).
     <main className="relative w-full flex-1 overflow-x-clip">
       <PageGlow color="rgba(251,146,60,0.28)" />
+      <div className="relative px-6 pt-4 sm:px-10">
+        <VisitorViewBanner />
+      </div>
 
       {/* С баннером — без верхнего отступа: баннер начинается от самого
           верха страницы (см. ниже). */}

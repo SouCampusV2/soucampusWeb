@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { GearSix, PencilSimple } from "@phosphor-icons/react";
+import { usePathname } from "next/navigation";
+import { Eye, GearSix, PencilSimple } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { CREATOR_SIGNUPS_OPEN } from "@/lib/flags";
@@ -42,7 +43,12 @@ function useOwner(creatorId: string, needCreatorFlag: boolean) {
       } = await supabase.auth.getSession();
       if (!active) return;
 
-      const owner = session?.user.id === creatorId;
+      // ?view=visitor — «как видят другие» (24.11): владелец смотрит свой
+      // профиль без своих кнопок. Читаем адрес в эффекте, а не через
+      // useSearchParams: страница профиля статическая, и хук потребовал
+      // бы Suspense вокруг всей шапки.
+      const asVisitor = new URLSearchParams(window.location.search).get("view") === "visitor";
+      const owner = session?.user.id === creatorId && !asVisitor;
       setIsOwner(owner);
       if (!owner || !needCreatorFlag) return;
 
@@ -86,6 +92,9 @@ export function OwnerEditLink({ creatorId }: { creatorId: string }) {
   );
 }
 
+const ICON_BUTTON =
+  "inline-flex size-10 items-center justify-center rounded-full border border-zinc-950/[0.08] text-zinc-600 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:border-white/10 dark:text-zinc-300 dark:hover:bg-white/[0.06] dark:hover:text-white";
+
 export function CreatorOwnerActions({
   creatorId,
 }: {
@@ -93,17 +102,12 @@ export function CreatorOwnerActions({
   creatorId: string;
 }) {
   const { isOwner, isCreator } = useOwner(creatorId, true);
+  const pathname = usePathname();
 
   if (!isOwner || isCreator === null) return null;
 
   return (
-    <div className="mt-4 flex flex-wrap justify-center gap-3 sm:justify-start">
-      {/* Настройки — кнопкой рядом с остальными действиями владельца, а не
-          карандашом у ника (24.11, просьба владельца). Есть всегда: свой
-          профиль правит и тот, кто не автор. */}
-      <Button href="/settings" size="sm" variant="secondary">
-        Settings <GearSix size={18} weight="bold" aria-hidden />
-      </Button>
+    <div className="mt-4 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
       {/* Кнопка есть только у автора. Предлагать «стать автором», когда
           приём закрыт, значит вести на страницу, которая ответит отказом. */}
       {isCreator ? (
@@ -117,6 +121,17 @@ export function CreatorOwnerActions({
           </Button>
         )
       )}
+      {/* Настройки и «как видят другие» — маленькими круглыми иконками,
+          серыми (24.11: кнопка-таблетка Settings владельцу не понравилась,
+          «небольшую иконочку, и не оранжевым»). Подпись — в title и
+          aria-label. «Как видят другие» — обычная ссылка с перезагрузкой:
+          кнопки владельца проверяются один раз при загрузке. */}
+      <Link href="/settings" aria-label="Settings" title="Settings" className={ICON_BUTTON}>
+        <GearSix size={20} weight="bold" aria-hidden />
+      </Link>
+      <a href={`${pathname}?view=visitor`} aria-label="View as visitor" title="View as visitor" className={ICON_BUTTON}>
+        <Eye size={20} weight="bold" aria-hidden />
+      </a>
     </div>
   );
 }

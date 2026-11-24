@@ -40,6 +40,8 @@ import {
   useImagePicker,
   type GalleryImage,
 } from "@/components/GalleryPicker";
+import { useUnsavedGuard } from "@/lib/use-unsaved-guard";
+import { ConfirmDialog } from "@/components/ConfirmDialog";
 
 const FORM_CATEGORIES = SHOP_CATEGORIES.filter((c) => c.slug !== "free");
 
@@ -153,6 +155,7 @@ export function EditMapForm({
     reactionOptionId !== product.reactionOptionId ||
     descriptionChanged;
   const isResubmit = product.state === "rejected" || product.state === "suspended";
+  const guard = useUnsavedGuard(changed, pending);
 
   async function insertDescriptionImage(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -475,6 +478,17 @@ export function EditMapForm({
           Cancel
         </Button>
       </div>
+      {/* «Уйти без сохранения?» — ссылка, «назад» в браузере (24.11,
+          use-unsaved-guard.ts). На перезагрузку браузер покажет своё. */}
+      <ConfirmDialog
+        open={guard.open}
+        title="Leave without saving?"
+        description="Your changes on this page will be lost."
+        confirmLabel="Leave"
+        cancelLabel="Back to editing"
+        onConfirm={guard.leave}
+        onCancel={guard.stay}
+      />
     </form>
   );
 }

@@ -22,6 +22,10 @@ import {
   BookOpen,
   Lifebuoy,
   Question,
+  GearSix,
+  Package,
+  ShoppingBag,
+  SignOut,
   type Icon,
 } from "@phosphor-icons/react";
 import { Avatar } from "@/components/Avatar";
@@ -135,8 +139,23 @@ const GROUPS: NavGroup[] = [
 ];
 
 
+// Одно стекло на ВСЕ выпадашки навбара — Studio, Marketplace и меню
+// аккаунта (24.11: владелец заметил, что фон у них разный; рецептов было
+// два — 95% заливки у групп и 80% с бликом у аккаунта). Рецепт аккаунта:
+// сильный блюр, слабая заливка, светлая грань, блик в углу (GlassGlare).
 const GLASS =
-  "rounded-3xl border border-white/60 bg-[#fbfbff]/95 shadow-xl shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 dark:border-white/10 dark:bg-zinc-900/95";
+  "overflow-hidden rounded-2xl border border-white/60 bg-[#fbfbff]/80 shadow-xl shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-110 dark:border-white/10 dark:bg-zinc-900/85 dark:backdrop-brightness-75";
+
+/** Блик в левом верхнем углу стекла: ровная заливка читается пластиком. */
+function GlassGlare() {
+  return (
+    <div
+      aria-hidden
+      // -z-10: блик позиционирован, пункты — нет; без этого он лёг бы поверх текста.
+      className="pointer-events-none absolute -left-1/4 -top-1/3 -z-10 h-2/3 w-2/3 rounded-full bg-[#fbfbff]/40 blur-3xl dark:bg-white/10"
+    />
+  );
+}
 
 // Справочные страницы под вкладками HelpTabs. На них ни одна группа не
 // подсвечена (решение 17.11): они общие для студии и магазина — FAQ стоит
@@ -236,7 +255,10 @@ export function Navbar() {
         {/* Фиксированная высота, не «по содержимому»: навбар всегда одной
             высоты, чем бы ни был заполнен — 4.5rem на телефоне, 5rem от sm. */}
         <nav className="flex h-[4.5rem] items-center justify-between gap-3 px-4 sm:h-20 sm:px-5">
-          <div ref={groupsRef} className="flex min-w-0 items-center gap-3 lg:gap-5">
+          {/* self-stretch на всю высоту навбара — у колонки групп и у каждой
+              группы: тогда top-full у панели значит низ пилюли, и панель
+              открывается вплотную под навбаром, как меню аккаунта (24.11). */}
+          <div ref={groupsRef} className="flex min-w-0 items-center gap-3 self-stretch lg:gap-5">
             {/* Знак и ник — всегда на главную, с волной. */}
             <Link
               href="/"
@@ -250,7 +272,7 @@ export function Navbar() {
               </span>
             </Link>
 
-            <div className="hidden items-center gap-1 min-[760px]:flex">
+            <div className="hidden items-center gap-1 self-stretch min-[760px]:flex">
               {GROUPS.map((g) => {
                 const inGroup = isHelpPage(pathname)
                   ? false
@@ -258,7 +280,7 @@ export function Navbar() {
                     ? isMarketplaceActive
                     : !isMarketplaceActive && g.items.some((i) => isActive(i.href, pathname));
                 return (
-                  <div key={g.key} className="relative">
+                  <div key={g.key} className="relative flex items-center self-stretch">
                     <button
                       type="button"
                       onClick={() => setGroup(group === g.key ? null : g.key)}
@@ -274,7 +296,8 @@ export function Navbar() {
                       <CaretDown size={12} weight="bold" className={group === g.key ? "rotate-180" : ""} aria-hidden />
                     </button>
                     {group === g.key && (
-                      <div className={`absolute left-0 top-[calc(100%+14px)] z-50 w-80 p-3 ${GLASS}`}>
+                      <div className={`absolute left-0 top-full z-50 w-80 p-3 ${GLASS}`}>
+                        <GlassGlare />
                         <GroupItems group={g} pathname={pathname} onPick={() => setGroup(null)} />
                       </div>
                     )}
@@ -508,8 +531,11 @@ type AccountProps = {
 // Пункт выпадающего меню на десктопе. Строкой-константой, а не classNames
 // в каждом Link: пунктов пять, и одинаковыми они должны быть по
 // определению, а не по внимательности.
+// Пункт меню аккаунта: текст слева, иконка справа (24.11 — «иконки к
+// settings», «все иконки справа»).
+const MENU_ICON = "shrink-0 text-zinc-500 dark:text-zinc-400";
 const MENU_ITEM =
-  "block px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50";
+  "flex items-center justify-between gap-6 px-4 py-2.5 text-sm font-medium text-zinc-700 transition-colors hover:bg-zinc-950/[0.05] hover:text-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-50/[0.06] dark:hover:text-zinc-50";
 
 // Пункт мобильной выпадашки: без hover (на тач-экране его нет) и с
 // паддингом самой выпадашки.
@@ -598,13 +624,8 @@ function AccountMenu({
             читается как пластик, настоящее стекло ловит свет неравномерно.
             Заливка при этом плотная: сквозь почти прозрачную просвечивал
             контент страницы, а блюр размывает, но не гасит контраст. */}
-        <div className="relative min-w-[11rem] overflow-hidden rounded-2xl border border-white/60 bg-[#fbfbff]/80 shadow-xl shadow-zinc-950/10 backdrop-blur-2xl backdrop-saturate-150 backdrop-brightness-110 dark:border-white/10 dark:bg-zinc-900/85 dark:backdrop-brightness-75">
-          <div
-            aria-hidden
-            // -z-10: блик позиционирован, пункты меню — нет, поэтому без
-            // этого он бы рисовался ПОВЕРХ текста.
-            className="pointer-events-none absolute -left-1/4 -top-1/3 -z-10 h-2/3 w-2/3 rounded-full bg-[#fbfbff]/40 blur-3xl dark:bg-white/10"
-          />
+        <div className={`relative min-w-[13rem] ${GLASS}`}>
+          <GlassGlare />
           {/* Имя первой строкой — только там, где его нет у самого аватара
               (портфолио-сторона). В магазине ник написан рядом с аватаром,
               и повторять его в меню значило бы сказать одно дважды. */}
@@ -619,6 +640,7 @@ function AccountMenu({
           )}
           <Link href="/settings" className={MENU_ITEM}>
             Settings
+            <GearSix size={18} aria-hidden className={MENU_ICON} />
           </Link>
           {/* Свои карты — управление, а не публичная витрина.
 
@@ -632,12 +654,14 @@ function AccountMenu({
           {CREATOR_SIGNUPS_OPEN && (
             <Link href="/resources" className={MENU_ITEM}>
               Your resources
+              <Package size={18} aria-hidden className={MENU_ICON} />
             </Link>
           )}
           {/* Покупки — отдельным пунктом (просьба владельца 2026-07-27):
               раньше они прятались за Settings, хотя это разные вещи. */}
           <Link href="/purchases" className={MENU_ITEM}>
             My purchases
+            <ShoppingBag size={18} aria-hidden className={MENU_ICON} />
           </Link>
           <button
             type="button"
@@ -645,6 +669,7 @@ function AccountMenu({
             className={`${MENU_ITEM} w-full cursor-pointer text-left`}
           >
             Log out
+            <SignOut size={18} aria-hidden className={MENU_ICON} />
           </button>
         </div>
       </div>
