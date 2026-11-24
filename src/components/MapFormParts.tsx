@@ -187,7 +187,8 @@ export function PriceField({
         htmlFor={id}
         className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
       >
-        Price (EUR){" "}
+        Price (EUR)
+        <RequiredMark />{" "}
         <span className="font-normal text-zinc-500 dark:text-zinc-400">— 0 for free</span>
       </label>
       <input
@@ -205,6 +206,27 @@ export function PriceField({
         className="w-full rounded-2xl border border-zinc-950/[0.08] bg-transparent px-4 py-3 text-sm text-zinc-950 placeholder:text-zinc-400 focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-500/25 dark:border-zinc-50/[0.08] dark:text-zinc-50 dark:placeholder:text-zinc-500"
       />
     </div>
+  );
+}
+
+/**
+ * Звёздочка у обязательного поля (24.11, просьба владельца: «отметить,
+ * какие поля обязательные»). Пояснение «* required» — одной строкой над
+ * формой (RequiredLegend), а не у каждого поля.
+ */
+export function RequiredMark() {
+  return (
+    <span aria-hidden className="text-orange-600 dark:text-orange-400">
+      {" "}*
+    </span>
+  );
+}
+
+export function RequiredLegend() {
+  return (
+    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+      <span className="text-orange-600 dark:text-orange-400">*</span> required
+    </p>
   );
 }
 
@@ -232,6 +254,7 @@ export function TextField({
         className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300"
       >
         {label}
+        {required && <RequiredMark />}
         {hint && (
           <span className="font-normal text-zinc-500 dark:text-zinc-400"> {hint}</span>
         )}

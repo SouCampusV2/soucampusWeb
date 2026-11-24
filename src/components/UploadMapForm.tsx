@@ -31,7 +31,7 @@ import {
 } from "@/lib/products";
 import { uploadImage, uploadMapFile } from "@/lib/upload-client";
 import { createMap } from "@/lib/map-client";
-import { TextField, PriceField } from "@/components/MapFormParts";
+import { TextField, PriceField, RequiredMark, RequiredLegend } from "@/components/MapFormParts";
 import {
   checkImageFile,
   checkMapFile,
@@ -255,86 +255,102 @@ export function UploadMapForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-8 rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-950"
+      className="space-y-8 rounded-3xl border border-zinc-200 bg-[#fbfbff] p-6 dark:border-zinc-800 dark:bg-zinc-950 sm:p-8"
     >
-      <GalleryPicker picker={gallery} />
+      <RequiredLegend />
 
-      {/* Title / summary */}
-      <div className="space-y-4">
-        <TextField id="title" label="Title" value={title} onChange={setTitle} required />
-        <TextField id="summary" label="Short summary" value={summary} onChange={setSummary} required maxLength={140} />
-      </div>
+      {/* Две колонки с lg — как в форме правки (24.11): картинки справа
+          липкой колонкой, остальное слева; на телефоне картинки первыми. */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="order-first lg:order-last">
+          <div className="lg:sticky lg:top-24">
+            <GalleryPicker picker={gallery} compact />
+          </div>
+        </div>
 
-      {/* Category + price */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <SelectField
-          id="category"
-          label="Category"
-          value={category}
-          onChange={(v) => setCategory(v as ProductCategory)}
-          options={FORM_CATEGORIES.map((c) => ({ value: c.slug, label: c.label }))}
-        />
+        <div className="min-w-0 space-y-8">
 
-        <PriceField value={priceInput} onChange={setPriceInput} freeOnly={freeOnly} />
-      </div>
+          {/* Title / summary */}
+          <div className="space-y-4">
+            <TextField id="title" label="Title" value={title} onChange={setTitle} required />
+            <TextField id="summary" label="Short summary" value={summary} onChange={setSummary} required maxLength={140} />
+          </div>
 
-      {/* Характеристики. Стоят ДО описания намеренно: пока автор их
-          отмечает, он вспоминает про карту то, что потом опишет
-          словами. Обратный порядок заставлял бы возвращаться наверх. */}
-      <SpecFields value={specs} onChange={setSpecs} />
+          {/* Category + price */}
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <SelectField
+              id="category"
+              label="Category"
+              value={category}
+              onChange={(v) => setCategory(v as ProductCategory)}
+              options={FORM_CATEGORIES.map((c) => ({ value: c.slug, label: c.label }))}
+            />
 
-      <ReactionPicker
-        options={reactionOptions}
-        value={reactionOptionId}
-        onChange={setReactionOptionId}
-      />
+            <PriceField value={priceInput} onChange={setPriceInput} freeOnly={freeOnly} />
+          </div>
 
-      {/* Description — Tiptap WYSIWYG */}
-      <div>
-        <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Description
-        </span>
-        <RichTextEditor
-          onReady={setEditor}
-          onPickImage={() => descImageInput.current?.click()}
-        />
-        <input
-          ref={descImageInput}
-          type="file"
-          accept="image/*"
-          onChange={insertDescriptionImage}
-          className="hidden"
-        />
-        <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
-          Add screenshots and tables anywhere in the description — this is the
-          full page buyers read.
-        </p>
-      </div>
+          {/* Характеристики. Стоят ДО описания намеренно: пока автор их
+              отмечает, он вспоминает про карту то, что потом опишет
+              словами. Обратный порядок заставлял бы возвращаться наверх. */}
+          <SpecFields value={specs} onChange={setSpecs} />
 
-      {/* Map file */}
-      <div>
-        <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Map file <span className="font-normal text-zinc-500 dark:text-zinc-400">— {MAP_FILE_TYPES_LABEL}, up to 15 MB</span>
-        </span>
-        <button
-          type="button"
-          onClick={() => fileInput.current?.click()}
-          className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-zinc-950/[0.15] px-4 py-3.5 text-left text-sm text-zinc-500 transition-colors hover:border-orange-500 hover:text-orange-600 dark:border-zinc-50/[0.15] dark:text-zinc-400 dark:hover:border-orange-400 dark:hover:text-orange-400"
-        >
-          <FileArrowUp size={20} />
-          {mapFile ? (
-            <span className="truncate text-zinc-950 dark:text-zinc-50">{mapFile.name}</span>
-          ) : (
-            "Click to choose a file"
-          )}
-        </button>
-        <input
-          ref={fileInput}
-          type="file"
-          accept={MAP_FILE_ACCEPT}
-          onChange={pickMapFile}
-          className="hidden"
-        />
+          <ReactionPicker
+            options={reactionOptions}
+            value={reactionOptionId}
+            onChange={setReactionOptionId}
+          />
+
+          {/* Description — Tiptap WYSIWYG */}
+          <div>
+            <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Description
+              <RequiredMark />
+            </span>
+            <RichTextEditor
+              onReady={setEditor}
+              onPickImage={() => descImageInput.current?.click()}
+            />
+            <input
+              ref={descImageInput}
+              type="file"
+              accept="image/*"
+              onChange={insertDescriptionImage}
+              className="hidden"
+            />
+            <p className="mt-1.5 text-xs text-zinc-500 dark:text-zinc-400">
+              Add screenshots and tables anywhere in the description — this is the
+              full page buyers read.
+            </p>
+          </div>
+
+          {/* Map file */}
+          <div>
+            <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Map file
+              <RequiredMark />{" "}
+              <span className="font-normal text-zinc-500 dark:text-zinc-400">— {MAP_FILE_TYPES_LABEL}, up to 15 MB</span>
+            </span>
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-zinc-950/[0.15] px-4 py-3.5 text-left text-sm text-zinc-500 transition-colors hover:border-orange-500 hover:text-orange-600 dark:border-zinc-50/[0.15] dark:text-zinc-400 dark:hover:border-orange-400 dark:hover:text-orange-400"
+            >
+              <FileArrowUp size={20} />
+              {mapFile ? (
+                <span className="truncate text-zinc-950 dark:text-zinc-50">{mapFile.name}</span>
+              ) : (
+                "Click to choose a file"
+              )}
+            </button>
+            <input
+              ref={fileInput}
+              type="file"
+              accept={MAP_FILE_ACCEPT}
+              onChange={pickMapFile}
+              className="hidden"
+            />
+          </div>
+        </div>
       </div>
 
       {error && (

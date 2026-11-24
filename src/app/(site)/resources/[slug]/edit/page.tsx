@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Unbounded } from "next/font/google";
 import { createSupabaseServer } from "@/lib/supabase-server";
@@ -9,7 +8,7 @@ import { isAdminProfile, isCreator } from "@/lib/creator-applications";
 import { getReactionOptions } from "@/lib/reactions";
 import { EditMapForm, RejectionNote } from "@/components/EditMapForm";
 import { PageGlow } from "@/components/PageGlow";
-import { INLINE_LINK } from "@/components/Button";
+import { BackArrow } from "@/components/BackArrow";
 
 const displayFont = Unbounded({ weight: "800", subsets: ["latin"] });
 
@@ -54,14 +53,11 @@ export default async function EditOwnMapPage({
     <main className="relative w-full overflow-x-clip px-6">
       <PageGlow color="rgba(249,115,22,0.28)" />
       <section className="relative pb-28 pt-20">
-        <div className="mx-auto max-w-3xl">
-          <p className="text-sm">
-            <Link href="/resources" className={INLINE_LINK}>
-              Your resources
-            </Link>
-          </p>
+        {/* 6xl, а не 3xl: форма с 24.11 в две колонки (картинки справа). */}
+        <div className="mx-auto max-w-6xl">
+          <BackArrow href="/resources" label="Your resources" showLabel />
           <h1
-            className={`${displayFont.className} mt-4 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
+            className={`${displayFont.className} mt-6 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
           >
             Edit map
           </h1>

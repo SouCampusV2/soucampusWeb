@@ -15,6 +15,7 @@ import {
   checkImageFile,
   formatBytes,
 } from "@/lib/upload-limits";
+import { RequiredMark } from "@/components/MapFormParts";
 
 // Галерея карты — ОДНА на обе формы (2026-09-11).
 //
@@ -183,7 +184,17 @@ export type ImagePicker = ReturnType<typeof useImagePicker>;
  * Drag & drop нативный, HTML5 — без новой зависимости ради одной
  * возможности «перетащить миниатюру».
  */
-export function GalleryPicker({ picker }: { picker: ImagePicker }) {
+export function GalleryPicker({
+  picker,
+  compact = false,
+}: {
+  picker: ImagePicker;
+  /**
+   * Узкая правая колонка формы (lg и шире, 24.11): две плитки в ряд
+   * вместо четырёх — в 22rem четыре превращаются в марки.
+   */
+  compact?: boolean;
+}) {
   const {
     images,
     coverIndex,
@@ -198,13 +209,16 @@ export function GalleryPicker({ picker }: { picker: ImagePicker }) {
   return (
     <div>
       <label className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-        Images{" "}
+        Images
+        <RequiredMark />{" "}
         <span className="font-normal text-zinc-500 dark:text-zinc-400">
           — drag or use the arrows to reorder, star sets the cover
         </span>
       </label>
 
-      <div className="mt-2 grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div
+        className={`mt-2 grid grid-cols-2 gap-3 ${compact ? "sm:grid-cols-4 lg:grid-cols-2" : "sm:grid-cols-4"}`}
+      >
         {images.map((image, index) => (
           <div
             key={imageSrc(image)}

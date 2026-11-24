@@ -43,7 +43,7 @@ export default async function AddMapForCreatorPage() {
     <main className="relative w-full overflow-x-clip px-6">
       <PageGlow color="rgba(249,115,22,0.28)" />
       <section className="relative pb-28 pt-20">
-        <div className="mx-auto max-w-3xl">
+        <div className="mx-auto max-w-6xl">
           <h1
             className={`${displayFont.className} text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
           >

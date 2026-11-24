@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useRefresh } from "@/lib/useRefresh";
 import dynamic from "next/dynamic";
@@ -17,7 +17,7 @@ const RichTextEditor = dynamic(
 import { FileArrowUp, Warning } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { SelectField } from "@/components/SelectField";
-import { TextField, PriceField } from "@/components/MapFormParts";
+import { TextField, PriceField, RequiredMark, RequiredLegend } from "@/components/MapFormParts";
 import {
   SHOP_CATEGORIES,
   type ProductCategory,
@@ -111,6 +111,45 @@ export function EditMapForm({
 
   // Редактор кладёт себя сюда, когда догрузится (см. RichTextEditor).
   const [editor, setEditor] = useState<Editor | null>(null);
+
+  // Изменилось ли описание. HTML сравниваем с тем, что выдал САМ редактор
+  // при загрузке, а не с product.description: Tiptap нормализует разметку
+  // (атрибуты, пустые абзацы), и сравнение с исходной строкой считало бы
+  // «изменённым» нетронутое описание.
+  const initialDescription = useRef<string | null>(null);
+  const [descriptionChanged, setDescriptionChanged] = useState(false);
+  useEffect(() => {
+    if (!editor) return;
+    initialDescription.current = editor.getHTML();
+    const onUpdate = () =>
+      setDescriptionChanged(editor.getHTML() !== initialDescription.current);
+    editor.on("update", onUpdate);
+    return () => {
+      editor.off("update", onUpdate);
+    };
+  }, [editor]);
+
+  // Save changes неактивна, пока ничего не поменяли (24.11, просьба
+  // владельца — так же, как в настройках профиля). Исключение —
+  // отклонённая и приостановленная карта: там кнопка «Resubmit», и
+  // отправить её заново — само по себе действие.
+  const imagesChanged =
+    images.length !== product.images.length ||
+    coverIndex !== 0 ||
+    images.some(
+      (image, i) => image.kind === "new" || image.url !== product.images[i]
+    );
+  const changed =
+    title !== product.title ||
+    summary !== product.summary ||
+    priceInput !== (product.priceCents / 100).toFixed(2) ||
+    category !== (product.category ?? FORM_CATEGORIES[0].slug) ||
+    imagesChanged ||
+    mapFile !== null ||
+    JSON.stringify(specs) !== JSON.stringify(product.specs) ||
+    reactionOptionId !== product.reactionOptionId ||
+    descriptionChanged;
+  const isResubmit = product.state === "rejected" || product.state === "suspended";
 
   async function insertDescriptionImage(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
@@ -248,8 +287,10 @@ export function EditMapForm({
   return (
     <form
       onSubmit={handleSubmit}
-      className="space-y-8 rounded-3xl border border-zinc-200 bg-[#fbfbff] p-8 dark:border-zinc-800 dark:bg-zinc-950"
+      className="space-y-8 rounded-3xl border border-zinc-200 bg-[#fbfbff] p-6 dark:border-zinc-800 dark:bg-zinc-950 sm:p-8"
     >
+      <RequiredLegend />
+
       {/* Чек-лист из отказа — первым делом: человек пришёл сюда чинить
           именно это. Пункты, которые мы проверим при отправке, помечены
           отдельно, чтобы отказ не выглядел набором пожеланий. */}
@@ -297,87 +338,99 @@ export function EditMapForm({
         </p>
       )}
 
-      <GalleryPicker picker={gallery} />
+      {/* Две колонки с lg (24.11, просьба владельца: «не мотать так много
+          вниз»): картинки справа липкой колонкой, всё остальное слева. На
+          телефоне — одна колонка, картинки первыми, как было. */}
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_22rem]">
+        <div className="order-first lg:order-last">
+          <div className="lg:sticky lg:top-24">
+            <GalleryPicker picker={gallery} compact />
+          </div>
+        </div>
 
-      <div className="space-y-4">
-        <TextField id="title" label="Title" value={title} onChange={setTitle} required />
-        <TextField
-          id="summary"
-          label="Short summary"
-          value={summary}
-          onChange={setSummary}
-          required
-          maxLength={140}
-        />
-      </div>
+        <div className="min-w-0 space-y-8">
+          <div className="space-y-4">
+            <TextField id="title" label="Title" value={title} onChange={setTitle} required />
+            <TextField
+              id="summary"
+              label="Short summary"
+              value={summary}
+              onChange={setSummary}
+              required
+              maxLength={140}
+            />
+          </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <SelectField
-          id="category"
-          label="Category"
-          value={category}
-          onChange={(v) => setCategory(v as ProductCategory)}
-          options={FORM_CATEGORIES.map((c) => ({ value: c.slug, label: c.label }))}
-        />
-        <PriceField value={priceInput} onChange={setPriceInput} freeOnly={freeOnly} />
-      </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <SelectField
+              id="category"
+              label="Category"
+              value={category}
+              onChange={(v) => setCategory(v as ProductCategory)}
+              options={FORM_CATEGORIES.map((c) => ({ value: c.slug, label: c.label }))}
+            />
+            <PriceField value={priceInput} onChange={setPriceInput} freeOnly={freeOnly} />
+          </div>
 
-      {/* Характеристики — на том же месте и в том же порядке, что в
-          форме загрузки: правка не должна выглядеть другой формой. */}
-      <SpecFields value={specs} onChange={setSpecs} />
+          {/* Характеристики — на том же месте и в том же порядке, что в
+              форме загрузки: правка не должна выглядеть другой формой. */}
+          <SpecFields value={specs} onChange={setSpecs} />
 
-      <ReactionPicker
-        options={reactionOptions}
-        value={reactionOptionId}
-        onChange={setReactionOptionId}
-      />
+          <ReactionPicker
+            options={reactionOptions}
+            value={reactionOptionId}
+            onChange={setReactionOptionId}
+          />
 
-      <div>
-        <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Description
-        </span>
-        <RichTextEditor
-          content={product.description}
-          onReady={setEditor}
-          onPickImage={() => descImageInput.current?.click()}
-        />
-        <input
-          ref={descImageInput}
-          type="file"
-          accept="image/*"
-          onChange={insertDescriptionImage}
-          className="hidden"
-        />
-      </div>
+          <div>
+            <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Description
+              <RequiredMark />
+            </span>
+            <RichTextEditor
+              content={product.description}
+              onReady={setEditor}
+              onPickImage={() => descImageInput.current?.click()}
+            />
+            <input
+              ref={descImageInput}
+              type="file"
+              accept="image/*"
+              onChange={insertDescriptionImage}
+              className="hidden"
+            />
+          </div>
 
-      <div>
-        <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
-          Map file{" "}
-          <span className="font-normal text-zinc-500 dark:text-zinc-400">
-            — leave it alone to keep the current one
-          </span>
-        </span>
-        <button
-          type="button"
-          onClick={() => fileInput.current?.click()}
-          className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-zinc-950/[0.15] px-4 py-3.5 text-left text-sm text-zinc-500 transition-colors hover:border-orange-500 hover:text-orange-600 dark:border-zinc-50/[0.15] dark:text-zinc-400 dark:hover:border-orange-400 dark:hover:text-orange-400"
-        >
-          <FileArrowUp size={20} />
-          {mapFile ? (
-            <span className="truncate text-zinc-950 dark:text-zinc-50">{mapFile.name}</span>
-          ) : product.filePath ? (
-            "Replace the current file"
-          ) : (
-            "Click to choose a file"
-          )}
-        </button>
-        <input
-          ref={fileInput}
-          type="file"
-          accept={MAP_FILE_ACCEPT}
-          onChange={pickMapFile}
-          className="hidden"
-        />
+          <div>
+            <span className="mb-1.5 block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              Map file{" "}
+              <span className="font-normal text-zinc-500 dark:text-zinc-400">
+                — leave it alone to keep the current one
+              </span>
+            </span>
+            <button
+              type="button"
+              onClick={() => fileInput.current?.click()}
+              className="flex w-full items-center gap-3 rounded-2xl border border-dashed border-zinc-950/[0.15] px-4 py-3.5 text-left text-sm text-zinc-500 transition-colors hover:border-orange-500 hover:text-orange-600 dark:border-zinc-50/[0.15] dark:text-zinc-400 dark:hover:border-orange-400 dark:hover:text-orange-400"
+            >
+              <FileArrowUp size={20} />
+              {mapFile ? (
+                <span className="truncate text-zinc-950 dark:text-zinc-50">{mapFile.name}</span>
+              ) : product.filePath ? (
+                "Replace the current file"
+              ) : (
+                "Click to choose a file"
+              )}
+            </button>
+            <input
+              ref={fileInput}
+              type="file"
+              accept={MAP_FILE_ACCEPT}
+              onChange={pickMapFile}
+              className="hidden"
+            />
+          </div>
+        </div>
       </div>
 
       {error && (
@@ -387,12 +440,13 @@ export function EditMapForm({
       )}
 
       <div className="flex gap-3">
-        <Button type="submit" variant="primary" disabled={pending} className="flex-1">
-          {pending
-            ? "Saving…"
-            : product.state === "rejected" || product.state === "suspended"
-              ? "Resubmit for review"
-              : "Save changes"}
+        <Button
+          type="submit"
+          variant="primary"
+          disabled={pending || (!changed && !isResubmit)}
+          className="flex-1"
+        >
+          {pending ? "Saving…" : isResubmit ? "Resubmit for review" : "Save changes"}
         </Button>
         <Button href={doneHref} variant="secondary" className="flex-1">
           Cancel

@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getAdminUser } from "@/lib/admin";
 import { getOwnProduct } from "@/lib/moderation";
 import { EditMapForm, RejectionNote } from "@/components/EditMapForm";
 import { getReactionOptions } from "@/lib/reactions";
-import { INLINE_LINK } from "@/components/Button";
+import { BackArrow } from "@/components/BackArrow";
 
 export const metadata: Metadata = {
   title: "Edit map",
@@ -55,14 +54,10 @@ export default async function AdminEditMapPage({
   const reactionOptions = await getReactionOptions();
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
-      <p className="text-sm">
-        <Link href="/admin/products" className={INLINE_LINK}>
-          Back to the catalog
-        </Link>
-      </p>
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
+      <BackArrow href="/admin/products" label="All products" showLabel />
 
-      <h1 className="mt-4 text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
+      <h1 className="mt-6 text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
         Edit map
       </h1>
 
