@@ -16,6 +16,19 @@
 
 ## 🔴 Ждут действия
 
+### ⭐ Письмо о покупке — пароль ящика в Vercel ⬅ новое, 24.11
+
+Код в проде, но без переменных письмо не уходит (в логе Vercel
+`[mail] SMTP не настроен`). Значения — те же, что в Supabase →
+Authentication → SMTP Settings.
+
+- [ ] Vercel → Environment Variables, **Production и Preview**:
+      `SMTP_HOST=smtp.hostinger.com`, `SMTP_PORT=465`,
+      `SMTP_USER=support@soucampus.online` (полный адрес ящика),
+      `SMTP_PASS=<пароль ящика>` → Redeploy.
+- [ ] Проверка: покупка на preview тестовой картой `4242…` — письмо
+      «Your map “…” is ready to download» на почту аккаунта.
+
 ### ⭐ Отзывы Jorge и Zhyrr, тире в отзывах ⬅ новое, 24.11
 
 Код (аватары) — в `dev`, на прод уедет следующим мёржем.

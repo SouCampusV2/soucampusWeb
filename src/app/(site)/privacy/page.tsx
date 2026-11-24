@@ -229,7 +229,7 @@ const SECTIONS: Section[] = [
       { term: "Stripe", text: "Payments." },
       {
         term: "Hostinger",
-        text: "Outgoing email, such as confirmation and password-reset messages, and our own server, which runs the Discord bot and the checks on uploaded files.",
+        text: "Outgoing email, such as confirmation and password-reset messages and the receipt we send after a paid purchase, and our own server, which runs the Discord bot and the checks on uploaded files.",
       },
       { term: "Google", text: "Only if you choose to sign in with it." },
     ],

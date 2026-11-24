@@ -1,6 +1,8 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getStripe } from "@/lib/stripe";
 import { notify } from "@/lib/notifications";
+import { sendMail } from "@/lib/mail";
+import { buildPurchaseEmail, orderRefFrom } from "@/lib/purchase-email";
 import { DELIVERY_FIELDS, deliverablePath, type DeliveryRow } from "@/lib/downloads";
 import {
   PRODUCT_FILES_BUCKET,
@@ -312,6 +314,21 @@ async function notifyAboutPurchase(input: PaidOrderInput): Promise<void> {
       });
     }
 
+    // Письмо покупателю (24.11) — подтверждение на «долговечном
+    // носителе» по праву ЕС, см. шапку purchase-email.ts. Только за
+    // деньги: письмо на каждую бесплатную карту было бы спамом. Ушло или
+    // нет — заказ уже записан; sendMail сам не бросает и пишет в лог.
+    if (input.totalCents > 0 && input.customerEmail) {
+      const mail = buildPurchaseEmail({
+        items: input.items,
+        totalCents: input.totalCents,
+        currency: input.currency,
+        orderRef: orderRefFrom(input.stripeSessionId),
+        date: new Date(),
+      });
+      await sendMail({ to: input.customerEmail, ...mail });
+    }
+
     // Авторов берём из products, а не из позиций заказа: в order_items
     // лежит снимок названия и цены, но не автор.
     const { data: products, error } = await getSupabaseAdmin()
@@ -341,6 +358,7 @@ async function notifyAboutPurchase(input: PaidOrderInput): Promise<void> {
         href: "/resources",
       });
     }
+
   } catch (err) {
     console.error(
       "Уведомления о покупке не отправлены:",
