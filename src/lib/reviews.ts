@@ -24,6 +24,8 @@ export type Review = {
 // значило бы рисовать то, чего клиент не присылал.
 // Есть тест: каждый путь отсюда обязан существовать в public/.
 export const REVIEW_AVATARS: Record<string, string[]> = {
+  zhyrr: ["/reviews/zhyrr.png"],
+  jorge: ["/reviews/jorge.png"],
   erik: ["/reviews/erik.png"],
   ghost: ["/reviews/ghost.png"],
   rambomine: ["/reviews/rambomine.png"],

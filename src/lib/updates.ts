@@ -89,6 +89,66 @@ export type UpdatePost = {
 // getAllUpdates() по дате. Пишем новые сверху — так удобнее читать файл.
 export const UPDATES: UpdatePost[] = [
   {
+    slug: "a-flower-of-its-own",
+    date: "2026-11-24",
+    area: "studio",
+    title: "A flower of its own, and a site that is easier to find your way around",
+    summary:
+      "SouCampus has its own mark now, the navbar splits into Studio and Marketplace, help lives under one set of tabs, and the Wiki learned schematics.",
+    cover: {
+      src: "/portfolio/dragon-shrine.png",
+      alt: "A blue and gold dragon coiled above a temple complex of red pagoda roofs in a misty jungle",
+      pictured: { name: "Dragon Shrine", slug: "dragon-shrine" },
+    },
+    body: [
+      {
+        heading: "The pixel flower",
+        blocks: [
+          {
+            kind: "text",
+            text: "The site finally has a mark: a pixel flower, with a fan of petals as its second form. Flowers grow in the generated world on the home page, the fan fills step by step in How an order works as you scroll past it, the About page opens with a big green one, and the tab in your browser shows it too. Even the 404 page got one.",
+          },
+        ],
+      },
+      {
+        heading: "One navbar, two sides",
+        blocks: [
+          {
+            kind: "text",
+            text: "The top bar is the same on every page and splits the site in two: Studio, for the builds I make to order, and Marketplace, for maps you can download. Each opens a panel with everything on that side, and on a phone the same groups sit behind one menu button.",
+          },
+        ],
+      },
+      {
+        heading: "Help in one place",
+        blocks: [
+          {
+            kind: "list",
+            items: [
+              "FAQ, Wiki, Terms and Privacy now sit under one set of tabs with one header, so moving between them no longer feels like changing sites.",
+              "The FAQ has a section about the shop, including how refunds work.",
+              "The Wiki has a new Schematics section: where to get WorldEdit or FAWE safely, and how to build a schematic in survival with Litematica.",
+            ],
+          },
+        ],
+      },
+      {
+        heading: "Smaller things",
+        blocks: [
+          {
+            kind: "list",
+            items: [
+              "Recent projects on the home page are now simply the three newest works.",
+              "How an order works ends with a sixth step that leads straight to the contact page.",
+              "Two new reviews, from Jorge of Keystone Games and from Zhyrr.",
+            ],
+          },
+        ],
+      },
+    ],
+    link: { href: "/wiki", label: "Open the Wiki" },
+  },
+  {
     slug: "real-maps-are-coming",
     date: "2026-10-11",
     area: "marketplace",

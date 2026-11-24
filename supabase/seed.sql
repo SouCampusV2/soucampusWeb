@@ -72,13 +72,13 @@ values
 
 insert into public.reviews (slug, name, role, flag, review_text, accent, sort_order)
 values
-  ('erik', 'Erik', 'Server Owner, Luckycraft', '🇳🇱', 'Worked with SouCampus for over a year across multiple projects — fast communication, reliably great results, and rarely needs creative direction.', 'orange', 1),
-  ('ghost', 'Ghost', 'Owner, GuardiumMC', '🇺🇸', 'Consistently impressed by his creativity and skill — every build feels like it belongs in a living world, with a soul and story behind the design.', 'lime', 2),
-  ('rambomine', 'rambomine', 'Owner, RamboMC', '🇳🇱', 'Incredibly skilled and reliable — builds match the vision perfectly, deadlines are respected, and the attention to detail stands out every time.', 'orange', 3),
-  ('the-erik-cz', 'TheErikCZ', 'Founder, BreadBuilds', '🇨🇿', 'Worked with SouCampus from early commissions to now supplying builds for our shop — hugely talented, with a great eye for detail.', 'lime', 4),
-  ('scooter', 'Scooter', 'Owner, Stranded', '🇳🇱', 'Fast, responsive and easy to work with — every build has consistently exceeded expectations.', 'orange', 5),
-  ('luke-and-sven', 'Luke & Sven', 'Owners, AstroSMP', '🇳🇱', 'Fantastic results that genuinely improved the player experience on our servers — fast delivery, fair pricing, and an easy recommendation.', 'lime', 6),
-  ('nathan', 'Nathan', 'Owner, LunaSMP', '🇳🇱', 'Loved the creativity and the communication — our new spawn is a hit with players. Nothing to complain about.', 'orange', 7);
+  ('erik', 'Erik', 'Server Owner, Luckycraft', '🇳🇱', 'Worked with SouCampus for over a year across multiple projects: fast communication, reliably great results, and rarely needs creative direction.', 'orange', 1),
+  ('ghost', 'Ghost', 'Owner, GuardiumMC', '🇺🇸', 'Consistently impressed by his creativity and skill. Every build feels like it belongs in a living world, with a soul and story behind the design.', 'lime', 2),
+  ('rambomine', 'rambomine', 'Owner, RamboMC', '🇳🇱', 'Incredibly skilled and reliable. Builds match the vision perfectly, deadlines are respected, and the attention to detail stands out every time.', 'orange', 3),
+  ('the-erik-cz', 'TheErikCZ', 'Founder, BreadBuilds', '🇨🇿', 'Worked with SouCampus from early commissions to now supplying builds for our shop. Hugely talented, with a great eye for detail.', 'lime', 4),
+  ('scooter', 'Scooter', 'Owner, Stranded', '🇳🇱', 'Fast, responsive and easy to work with. Every build has consistently exceeded expectations.', 'orange', 5),
+  ('luke-and-sven', 'Luke & Sven', 'Owners, AstroSMP', '🇳🇱', 'Fantastic results that genuinely improved the player experience on our servers: fast delivery, fair pricing, and an easy recommendation.', 'lime', 6),
+  ('nathan', 'Nathan', 'Owner, LunaSMP', '🇳🇱', 'Loved the creativity and the communication. Our new spawn is a hit with players. Nothing to complain about.', 'orange', 7);
 
 insert into public.stats (id, label, value, suffix, color, bar, sort_order)
 values
