@@ -451,35 +451,40 @@ export function CartView({ stripeTestMode }: { stripeTestMode: boolean }) {
                     рамки (владелец 24.11). drop-shadow повторяет зубцы.
                     Бумага тёплая: кремовая днём, графитовая ночью. */}
                 <div className="drop-shadow-[0_8px_18px_rgba(0,0,0,0.12)] dark:drop-shadow-[0_10px_24px_rgba(0,0,0,0.55)]">
+                {/* Цвета чека — сайта (24.11, «по цветам не очень»):
+                    оранжевая полоса сверху, бумага как карточки (белая
+                    днём, графитовая ночью), итог оранжевым. */}
                 <div
-                  className="bg-[#fffaf0] px-6 pb-9 pt-6 dark:bg-zinc-800"
+                  className="overflow-hidden bg-white pb-9 dark:bg-zinc-900"
                   style={{ clipPath: RECEIPT_EDGE }}
                 >
-                  <div className="flex items-center gap-2">
-                    <PixelFlower palette="orange" className="size-7" />
-                    <h2 className="font-extrabold text-zinc-950 dark:text-zinc-50">Order summary</h2>
+                  <div className="flex items-center gap-2 bg-orange-500 px-6 py-3 dark:bg-orange-500">
+                    <PixelFlower palette="cream" className="size-6" />
+                    <h2 className="font-extrabold text-zinc-950">Order summary</h2>
                   </div>
+                  <div className="px-6">
 
                   <ul className="mt-5 space-y-2.5 font-mono text-sm">
                     {available.map((item) => (
                       <li key={item.slug} className="flex items-baseline gap-2 text-zinc-900 dark:text-zinc-100">
                         <span className="truncate">{item.title}</span>
-                        <span aria-hidden className="min-w-4 flex-1 border-b border-dotted border-zinc-400 dark:border-zinc-500" />
+                        <span aria-hidden className="min-w-4 flex-1 border-b border-dotted border-zinc-300 dark:border-zinc-700" />
                         <span className="shrink-0">{item.priceCents === 0 ? "FREE" : formatCents(item.priceCents)}</span>
                       </li>
                     ))}
                     <li className="flex items-baseline gap-2 text-zinc-700 dark:text-zinc-300">
                       <span>Taxes</span>
-                      <span aria-hidden className="min-w-4 flex-1 border-b border-dotted border-zinc-400 dark:border-zinc-500" />
+                      <span aria-hidden className="min-w-4 flex-1 border-b border-dotted border-zinc-300 dark:border-zinc-700" />
                       <span className="shrink-0">at checkout</span>
                     </li>
                   </ul>
 
-                  <div className="mt-5 flex items-baseline justify-between border-t-2 border-dashed border-zinc-300 pt-4 font-mono dark:border-zinc-600">
+                  <div className="mt-5 flex items-baseline justify-between border-t-2 border-dashed border-zinc-200 pt-4 font-mono dark:border-zinc-700">
                     <span className="font-bold text-zinc-950 dark:text-zinc-50">TOTAL</span>
-                    <span className="text-2xl font-extrabold text-zinc-950 dark:text-zinc-50">
+                    <span className="text-2xl font-extrabold text-orange-600 dark:text-orange-400">
                       {formatCents(totalCents)}
                     </span>
+                  </div>
                   </div>
                 </div>
                 </div>

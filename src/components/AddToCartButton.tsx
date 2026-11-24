@@ -284,7 +284,7 @@ export function AddToCartButton({
   const isFree = product.priceCents === 0;
 
   return (
-    <div className="relative">
+    <div>
       {/* Цена из подписи убрана (решение владельца 2026-08-21): она стоит
           крупным шрифтом прямо над кнопкой, и повторять её значит
           удлинять кнопку ради того, что человек и так видит. */}
@@ -349,14 +349,15 @@ export function AddToCartButton({
         </>
       )}
 
-      {/* Сообщение всплывает ПОВЕРХ того, что ниже, а не держит под себя
-          место (24.11, владелец: «между реакцией и соглашением слишком
-          большой спейсинг» — это и был зарезервированный пустой слот).
-          Появление по-прежнему ничего не сдвигает: блок вне потока. */}
-      <div className="absolute inset-x-0 top-full z-20 mt-2" aria-live="polite">
+      {/* Сообщение — плашкой внизу экрана (24.11). Сначала под кнопками
+          держалось пустое место под него (владелец: «слишком большой
+          спейсинг»), потом оно всплывало поверх — и закрывало реакцию.
+          Внизу экрана оно не закрывает ничего на карточке и ничего не
+          сдвигает; уходит само через NOTICE_MS. */}
+      <div className="fixed inset-x-4 bottom-4 z-50 sm:inset-x-auto sm:right-6 sm:w-[26rem]" aria-live="polite">
         {notice && (
           <div
-            className={`flex items-center gap-2 rounded-xl px-3 py-2 text-sm shadow-lg ${
+            className={`flex items-center gap-2 rounded-2xl px-4 py-3 text-sm shadow-xl ${
               notice.tone === "success"
                 ? "bg-lime-100 text-zinc-800 dark:bg-lime-900 dark:text-zinc-100"
                 : "bg-orange-100 text-zinc-800 dark:bg-orange-900 dark:text-zinc-100"
