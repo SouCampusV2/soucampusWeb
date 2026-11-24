@@ -105,6 +105,7 @@ export function UploadMapForm({
   // Реакция карты. Необязательна — карта без реакции просто не показывает
   // кнопку рядом с «Add to cart».
   const [reactionOptionId, setReactionOptionId] = useState<string | null>(null);
+  const [buyUrl, setBuyUrl] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
 
   const [pending, setPending] = useState(false);
@@ -257,6 +258,7 @@ export function UploadMapForm({
         filePath,
         specs,
         reactionOptionId,
+        buyUrl: buyUrl.trim() || null,
       });
 
       router.push(everyFileScanned ? `${submittedHref}?checked=1` : submittedHref);
@@ -307,6 +309,17 @@ export function UploadMapForm({
               отмечает, он вспоминает про карту то, что потом опишет
               словами. Обратный порядок заставлял бы возвращаться наверх. */}
           <SpecFields value={specs} onChange={setSpecs} />
+
+          {/* Ссылка «Buy on BuiltByBit» (24.11): есть — вместо покупки на
+              сайте на странице карты кнопка, уводящая туда. */}
+          <TextField
+            id="buyUrl"
+            label="BuiltByBit page"
+            hint="· optional. With a link, the map page shows Buy on BuiltByBit instead of buying here"
+            value={buyUrl}
+            onChange={setBuyUrl}
+            maxLength={300}
+          />
 
           <ReactionPicker
             options={reactionOptions}

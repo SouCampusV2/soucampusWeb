@@ -44,6 +44,7 @@ function make(overrides: Partial<Product> = {}): Product {
     creatorId: null,
     specs: { ...EMPTY_SPECS },
     reactionOptionId: null,
+    buyUrl: null,
     ...overrides,
   };
 }

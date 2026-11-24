@@ -3,6 +3,7 @@ import {
   GALLERY_MAX,
   PRICE_MAX_CENTS,
   checkMapSubmission,
+  isBuiltByBitUrl,
   isOwnImageUrl,
   outcomeOfAuthorEdit,
   type MapSubmission,
@@ -29,6 +30,7 @@ function submission(patch: Partial<MapSubmission> = {}): MapSubmission {
     filePath: "u1/1-map.zip",
     specs: EMPTY_SPECS,
     reactionOptionId: null,
+    buyUrl: null,
     ...patch,
   };
 }
@@ -209,5 +211,22 @@ describe("outcomeOfAuthorEdit — повторяет guard_product_author_edit",
 
   it("спрятанную без подмены файла не трогает", () => {
     expect(outcomeOfAuthorEdit("hidden", false)).toBeNull();
+  });
+});
+
+describe("isBuiltByBitUrl", () => {
+  it("accepts a BuiltByBit page over https", () => {
+    expect(isBuiltByBitUrl("https://builtbybit.com/resources/hollow-wharf.123/")).toBe(true);
+    expect(isBuiltByBitUrl("https://www.builtbybit.com/resources/x.1/")).toBe(true);
+  });
+  it("refuses other sites, plain http and look-alike hosts", () => {
+    expect(isBuiltByBitUrl("http://builtbybit.com/resources/x.1/")).toBe(false);
+    expect(isBuiltByBitUrl("https://builtbybit.com.evil.com/x")).toBe(false);
+    expect(isBuiltByBitUrl("https://evil.com/?u=builtbybit.com")).toBe(false);
+    expect(isBuiltByBitUrl("https://user@builtbybit.com/x")).toBe(false);
+  });
+  it("is checked by the map gateway", () => {
+    expect(checkMapSubmission(submission({ buyUrl: "https://evil.com/x" }), SUPABASE)).toMatch(/builtbybit/i);
+    expect(checkMapSubmission(submission({ buyUrl: "https://builtbybit.com/resources/x.1/" }), SUPABASE)).toBeNull();
   });
 });

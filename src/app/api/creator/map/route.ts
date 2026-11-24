@@ -258,6 +258,7 @@ async function create(
       specs: map.specs,
       fileSizeBytes: size,
       reactionOptionId: map.reactionOptionId,
+      buyUrl: map.buyUrl ?? null,
       galleryUrls: map.galleryUrls,
     });
     return NextResponse.json({ ok: true, slug });
@@ -374,6 +375,7 @@ async function update(
     category: map.category,
     ...specsToColumns(map.specs),
     reaction_option_id: map.reactionOptionId,
+    buy_url: map.buyUrl ?? null,
   };
   // Файл и его вес пишем ТОЛЬКО когда файл заменили: иначе правка
   // описания затирала бы верный размер нулём.

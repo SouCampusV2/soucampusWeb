@@ -67,6 +67,7 @@ describe("rowToProduct", () => {
       // миграции 20260821170000). Карта тогда просто не показывает
       // кнопку рядом с «Add to cart».
       reactionOptionId: null,
+      buyUrl: null,
       // category — производная от slug: в строке колонки нет (старые
       // товары, заведённые до миграции 20260730120000).
       category: deriveCategory("medieval-spawn"),

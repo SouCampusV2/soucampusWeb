@@ -106,6 +106,7 @@ export function EditMapForm({
   // первой правке потеряет то, что отметил при загрузке.
   const [specs, setSpecs] = useState(product.specs);
   const [reactionOptionId, setReactionOptionId] = useState(product.reactionOptionId);
+  const [buyUrl, setBuyUrl] = useState(product.buyUrl ?? "");
   const fileInput = useRef<HTMLInputElement>(null);
 
   const [pending, setPending] = useState(false);
@@ -153,6 +154,7 @@ export function EditMapForm({
     mapFile !== null ||
     JSON.stringify(specs) !== JSON.stringify(product.specs) ||
     reactionOptionId !== product.reactionOptionId ||
+    buyUrl.trim() !== (product.buyUrl ?? "") ||
     descriptionChanged;
   const isResubmit = product.state === "rejected" || product.state === "suspended";
   const guard = useUnsavedGuard(changed, pending);
@@ -274,6 +276,7 @@ export function EditMapForm({
         filePath: mapFile ? filePath : null,
         specs,
         reactionOptionId,
+        buyUrl: buyUrl.trim() || null,
       });
 
       // 5) Уборка мусора в Storage — старые файл и картинки, на которые
@@ -381,6 +384,17 @@ export function EditMapForm({
           {/* Характеристики — на том же месте и в том же порядке, что в
               форме загрузки: правка не должна выглядеть другой формой. */}
           <SpecFields value={specs} onChange={setSpecs} />
+
+          {/* Ссылка «Buy on BuiltByBit» (24.11): есть — вместо покупки на
+              сайте на странице карты кнопка, уводящая туда. */}
+          <TextField
+            id="buyUrl"
+            label="BuiltByBit page"
+            hint="· optional. With a link, the map page shows Buy on BuiltByBit instead of buying here"
+            value={buyUrl}
+            onChange={setBuyUrl}
+            maxLength={300}
+          />
 
           <ReactionPicker
             options={reactionOptions}

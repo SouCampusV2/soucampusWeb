@@ -47,7 +47,30 @@ export type MapSubmission = {
   filePath: string | null;
   specs: EditableSpecs;
   reactionOptionId: string | null;
+  /** Страница на BuiltByBit или null. Проверка — isBuiltByBitUrl. */
+  buyUrl: string | null;
 };
+
+/**
+ * Ссылка «Buy on BuiltByBit» (24.11): только https и только BuiltByBit —
+ * кнопка с нашей страницы не должна уводить куда угодно. Та же проверка
+ * стоит в базе (products_buy_url_check).
+ */
+export function isBuiltByBitUrl(value: string): boolean {
+  try {
+    const url = new URL(value);
+    return (
+      url.protocol === "https:" &&
+      (url.hostname === "builtbybit.com" || url.hostname === "www.builtbybit.com") &&
+      !url.username &&
+      !url.port &&
+      value.length <= 300 &&
+      !/\s/.test(value)
+    );
+  } catch {
+    return false;
+  }
+}
 
 // ------------------------------------------------------------
 // Потолки.
@@ -181,6 +204,9 @@ export function checkMapSubmission(
   if (specsProblem) return specsProblem;
   if (input.reactionOptionId !== null && typeof input.reactionOptionId !== "string") {
     return "Pick a reaction from the list, or none at all.";
+  }
+  if (input.buyUrl !== null && (typeof input.buyUrl !== "string" || !isBuiltByBitUrl(input.buyUrl))) {
+    return "The buy link has to be a page on builtbybit.com, starting with https://.";
   }
   return null;
 }

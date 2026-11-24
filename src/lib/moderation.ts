@@ -241,6 +241,8 @@ export type EditableProduct = {
   specs: EditableSpecs;
   /** Выбранная реакция (20260821170000); null — карта без реакции. */
   reactionOptionId: string | null;
+  /** Страница на BuiltByBit (20261124120000). */
+  buyUrl: string | null;
 };
 
 export async function getOwnProduct(
@@ -251,7 +253,7 @@ export async function getOwnProduct(
   const { data, error } = await supabase
     .from("products")
     .select(
-      "id, slug, title, summary, description, image_url, price_cents, category, state, rejection_reason, rejection_flags, file_path, product_images(url, position), mc_versions, map_type, map_types, game_modes, themes, map_size, file_formats, reaction_option_id"
+      "id, slug, title, summary, description, image_url, price_cents, category, state, rejection_reason, rejection_flags, file_path, product_images(url, position), mc_versions, map_type, map_types, game_modes, themes, map_size, file_formats, reaction_option_id, buy_url"
     )
     .eq("creator_id", userId)
     .eq("slug", slug)
@@ -285,6 +287,7 @@ export async function getOwnProduct(
     map_size: string | null;
     file_formats: string[] | null;
     reaction_option_id: string | null;
+    buy_url?: string | null;
   };
 
   // Обложка первой, остальные по position — та же сборка галереи, что в
@@ -321,6 +324,7 @@ export async function getOwnProduct(
       fileFormats: row.file_formats ?? [],
     },
     reactionOptionId: row.reaction_option_id ?? null,
+    buyUrl: row.buy_url ?? null,
     filePath: row.file_path,
   };
 }

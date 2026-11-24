@@ -170,6 +170,20 @@ export async function POST(request: Request) {
     (product): product is NonNullable<(typeof products)[number]> => product !== null
   );
 
+  // ── Карта, которая продаётся на BuiltByBit, у нас не покупается (24.11).
+  // Кнопки «Add to cart» у неё нет, но в корзине она могла остаться с тех
+  // пор, как ссылки ещё не было.
+  const external = wanted.find((product) => product.buyUrl);
+  if (external) {
+    return NextResponse.json(
+      {
+        error: "sold elsewhere",
+        message: `“${external.title}” is sold on BuiltByBit. Remove it from the order and buy it there.`,
+      },
+      { status: 409 }
+    );
+  }
+
   // ── Заблокированный файл не продаём (24.11) ──────────────────────────
   //
   // Block file в админке отнимал скачивание у купивших, но карта

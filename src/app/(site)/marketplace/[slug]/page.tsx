@@ -1,6 +1,6 @@
 import { cache } from "react";
 import Link from "next/link";
-import { Archive, DownloadSimple, Lifebuoy, ShieldCheck } from "@phosphor-icons/react/dist/ssr";
+import { Archive, ArrowSquareOut, DownloadSimple, Lifebuoy, ShieldCheck } from "@phosphor-icons/react/dist/ssr";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { sanitizeDescription } from "@/lib/sanitize";
@@ -19,6 +19,7 @@ import { CommentSection } from "@/components/CommentSection";
 import { getMapReviews } from "@/lib/map-reviews";
 import { MapReviewList } from "@/components/MapReviewList";
 import { ReactionButton } from "@/components/ReactionButton";
+import { BuyOnBuiltByBit } from "@/components/BuyOnBuiltByBit";
 import { AddToCartButton } from "@/components/AddToCartButton";
 import { ProductGallery } from "@/components/ProductGallery";
 import { RICH_TEXT_CLASS } from "@/lib/rich-text";
@@ -252,17 +253,21 @@ export default async function ProductPage({
               {product.price}
             </p>
             <div className="mt-3">
-              <AddToCartButton
-                productId={product.id}
-                creatorId={product.creatorId}
-                product={{
-                  slug: product.slug,
-                  title: product.title,
-                  price: product.price,
-                  priceCents: product.priceCents,
-                  image: product.image,
-                }}
-              />
+              {product.buyUrl ? (
+                <BuyOnBuiltByBit href={product.buyUrl} />
+              ) : (
+                <AddToCartButton
+                  productId={product.id}
+                  creatorId={product.creatorId}
+                  product={{
+                    slug: product.slug,
+                    title: product.title,
+                    price: product.price,
+                    priceCents: product.priceCents,
+                    image: product.image,
+                  }}
+                />
+              )}
             </div>
           </div>
 
@@ -338,7 +343,7 @@ export default async function ProductPage({
                     : "bg-orange-100 text-orange-800 dark:bg-orange-950 dark:text-orange-300"
                 }`}
               >
-                {product.priceCents === 0 ? "Free map" : "One-time purchase"}
+                {product.buyUrl ? "Sold on BuiltByBit" : product.priceCents === 0 ? "Free map" : "One-time purchase"}
               </span>
               <p className="mt-3 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
                 {product.price}
@@ -346,17 +351,21 @@ export default async function ProductPage({
             </div>
 
             <div className="mt-6 hidden lg:block">
-              <AddToCartButton
-                productId={product.id}
-                creatorId={product.creatorId}
-                product={{
-                  slug: product.slug,
-                  title: product.title,
-                  price: product.price,
-                  priceCents: product.priceCents,
-                  image: product.image,
-                }}
-              />
+              {product.buyUrl ? (
+                <BuyOnBuiltByBit href={product.buyUrl} />
+              ) : (
+                <AddToCartButton
+                  productId={product.id}
+                  creatorId={product.creatorId}
+                  product={{
+                    slug: product.slug,
+                    title: product.title,
+                    price: product.price,
+                    priceCents: product.priceCents,
+                    image: product.image,
+                  }}
+                />
+              )}
             </div>
 
             {/* Реакция — сразу под кнопкой покупки, там же, где решают.
@@ -375,11 +384,17 @@ export default async function ProductPage({
             )}
 
             <ul className="mt-6 space-y-3 border-t border-zinc-950/[0.06] pt-5 text-sm dark:border-white/10">
-              {[
-                { text: "Instant .zip download", Icon: DownloadSimple },
-                { text: "Stays in My purchases", Icon: Archive },
-                { text: "Checked for viruses on upload", Icon: ShieldCheck },
-              ].map(({ text, Icon }) => (
+              {(product.buyUrl
+                ? [
+                    { text: "Paid and delivered on BuiltByBit", Icon: ArrowSquareOut },
+                    { text: "Checked for viruses on upload", Icon: ShieldCheck },
+                  ]
+                : [
+                    { text: "Instant .zip download", Icon: DownloadSimple },
+                    { text: "Stays in My purchases", Icon: Archive },
+                    { text: "Checked for viruses on upload", Icon: ShieldCheck },
+                  ]
+              ).map(({ text, Icon }) => (
                 <li key={text} className="flex items-center justify-between gap-3 text-zinc-800 dark:text-zinc-200">
                   {text}
                   <Icon size={18} weight="duotone" aria-hidden className="shrink-0 text-orange-500 dark:text-orange-400" />

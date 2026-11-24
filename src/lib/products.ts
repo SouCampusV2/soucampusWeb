@@ -188,6 +188,8 @@ export type Product = {
    * живёт ответ на «как выглядит эта реакция».
    */
   reactionOptionId: string | null;
+  /** Страница карты на BuiltByBit (20261124120000): есть — покупка там. */
+  buyUrl: string | null;
 };
 
 /** См. Product.specs. Вынесено типом — набор ездит целиком. */
@@ -561,6 +563,8 @@ type ProductRow = {
   published_at?: string | null;
   /** Из 20260821170000. */
   reaction_option_id?: string | null;
+  /** Из 20261124120000. */
+  buy_url?: string | null;
 };
 
 export function rowToProduct(row: ProductRow): Product {
@@ -617,6 +621,7 @@ export function rowToProduct(row: ProductRow): Product {
       publishedAt: row.published_at ?? null,
     },
     reactionOptionId: row.reaction_option_id ?? null,
+    buyUrl: row.buy_url ?? null,
   };
 }
 
@@ -634,7 +639,7 @@ const PRODUCT_FIELDS_NO_IMAGES =
 // легко снять целиком, если база окажется без миграции, — см.
 // isMissingOptional ниже.
 const PRODUCT_SPEC_FIELDS =
-  "mc_versions, map_type, map_types, game_modes, themes, map_size, file_formats, tags, file_size_bytes, published_at, reaction_option_id";
+  "mc_versions, map_type, map_types, game_modes, themes, map_size, file_formats, tags, file_size_bytes, published_at, reaction_option_id, buy_url";
 
 const PRODUCT_FIELDS = `${PRODUCT_FIELDS_NO_IMAGES}, creator_id, category, product_images(url, position), ${PRODUCT_SPEC_FIELDS}`;
 
@@ -661,7 +666,8 @@ function isMissingOptional(message: string): boolean {
     message.includes("tags") ||
     message.includes("file_size_bytes") ||
     message.includes("published_at") ||
-    message.includes("reaction_option_id")
+    message.includes("reaction_option_id") ||
+    message.includes("buy_url")
   );
 }
 
@@ -827,6 +833,8 @@ export type CreateProductInput = {
   fileSizeBytes: number;
   /** Выбранная автором реакция; null — карта без реакции. */
   reactionOptionId: string | null;
+  /** Страница на BuiltByBit; null — покупка на сайте. */
+  buyUrl: string | null;
   /** Скриншоты сверх обложки, по порядку. */
   galleryUrls: string[];
 };
@@ -894,6 +902,7 @@ export async function createProduct(
         ...specsToColumns(input.specs),
         file_size_bytes: input.fileSizeBytes,
         reaction_option_id: input.reactionOptionId,
+        buy_url: input.buyUrl,
       })
       .select("id, slug")
       .single();
