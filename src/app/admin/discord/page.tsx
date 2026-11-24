@@ -2,7 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { type Project } from "@/lib/projects";
 import { getAllProjectsForAdmin } from "@/lib/projects-admin";
-import { getProduct, type Product } from "@/lib/products";
+import { getAllProducts, getProduct, type Product } from "@/lib/products";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { SITE_URL } from "@/lib/site";
 import { LocalTime } from "@/components/LocalTime";
@@ -181,8 +181,10 @@ export default async function AdminDiscordPage({
     );
   }
 
-  const [projects, { data: postRows, error: postsError }] = await Promise.all([
+  const [projects, products, { data: postRows, error: postsError }] = await Promise.all([
     getAllProjectsForAdmin(),
+    // Живые карты витрины — для «New post from a map» (24.11).
+    getAllProducts(),
     db
       .from("discord_posts")
       .select("id, project_slug, product_slug, channel, post, status, published_at, updated_at")
@@ -225,11 +227,7 @@ export default async function AdminDiscordPage({
           New post from a work
         </summary>
         <p className="px-4 pb-2 text-xs text-zinc-500 dark:text-zinc-400">
-          Goes to Portfolio. A post about a map starts from its row in{" "}
-          <Link href="/admin/products" className="underline">
-            Catalog
-          </Link>{" "}
-          → Post to Discord.
+          Goes to Portfolio.
         </p>
         <ul className="grid gap-2 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3">
           {projects.map((project) => (
@@ -247,6 +245,45 @@ export default async function AdminDiscordPage({
             </li>
           ))}
         </ul>
+      </details>
+
+      {/* Новый пост — из карты магазина (24.11, просьба владельца). Та же
+          дверь, что «Post to Discord» в строке каталога (?product=), только
+          здесь, рядом с работами: владелец её в каталоге не нашёл. Платная
+          карта идёт в Premade, бесплатная — в Free (channelForProduct). */}
+      <details className="group mt-4 rounded-3xl border border-zinc-200 bg-[#fbfbff] dark:border-zinc-800 dark:bg-zinc-950">
+        <summary className={`m-4 w-fit list-none ${BUTTON_PILL} ${BUTTON_COLORS.primary}`}>
+          New post from a map
+        </summary>
+        <p className="px-4 pb-2 text-xs text-zinc-500 dark:text-zinc-400">
+          Paid maps go to {SHOWCASE_CHANNELS.premade.label}, free maps to{" "}
+          {SHOWCASE_CHANNELS.free.label}. Only maps live on the marketplace are listed.
+        </p>
+        {products.length === 0 ? (
+          <p className="px-4 pb-4 text-sm text-zinc-500 dark:text-zinc-400">
+            No live maps yet.
+          </p>
+        ) : (
+          <ul className="grid gap-2 px-4 pb-4 sm:grid-cols-2 lg:grid-cols-3">
+            {products.map((product) => (
+              <li key={product.slug}>
+                <Link
+                  href={`/admin/discord?tab=showcase&product=${encodeURIComponent(product.slug)}`}
+                  className="flex items-center gap-3 rounded-2xl p-2 transition-colors hover:bg-zinc-950/[0.04] dark:hover:bg-zinc-50/[0.05]"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={product.image} alt="" className="h-10 w-14 shrink-0 rounded-lg object-cover" />
+                  <span className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-950 dark:text-zinc-50">
+                    {product.title}
+                  </span>
+                  <span className="shrink-0 text-xs text-zinc-500 dark:text-zinc-400">
+                    {product.priceCents === 0 ? "Free" : product.price}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </details>
 
       {channelFilter && (
