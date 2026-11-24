@@ -90,7 +90,7 @@ export function RecentProjects({ projects }: { projects: Project[] }) {
     .slice(0, 3);
 
   return (
-    <section className="mx-auto max-w-6xl px-6 pt-16 sm:pt-28">
+    <section className="mx-auto w-full max-w-6xl px-6 pt-16 sm:pt-28">
       <HashHighlight />
       <FadeIn>
         <h2 className="text-3xl font-bold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-4xl">
@@ -102,7 +102,7 @@ export function RecentProjects({ projects }: { projects: Project[] }) {
       </p>
 
       {a && (
-        <FadeIn y={24} className="mt-10 grid gap-4 lg:grid-cols-[3fr_2fr] lg:grid-rows-2">
+        <FadeIn y={24} className="mt-10 grid w-full gap-4 lg:grid-cols-[3fr_2fr] lg:grid-rows-2">
           <Tile project={a} big />
           {b && <Tile project={b} />}
           {c && <Tile project={c} />}

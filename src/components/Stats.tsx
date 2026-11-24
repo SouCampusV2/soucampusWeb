@@ -67,7 +67,7 @@ const CHIP: Record<string, string> = { orders: "Builds", reach: "Reach", clients
 // одна на все три.
 export function Stats({ stats }: { stats: Stat[] }) {
   return (
-    <section className="mx-auto max-w-6xl px-6 pt-10 sm:pt-16">
+    <section className="mx-auto w-full max-w-6xl px-6 pt-10 sm:pt-16">
       <div className="relative overflow-hidden rounded-[2.5rem] bg-[radial-gradient(120%_90%_at_50%_0%,#fdba74_0%,#f97316_45%,#c2410c_100%)] px-6 py-14 text-white sm:py-16">
         <Sparkles />
         <div className="relative grid gap-10 sm:grid-cols-3 sm:gap-0">
