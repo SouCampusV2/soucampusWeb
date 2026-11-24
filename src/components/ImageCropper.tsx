@@ -264,7 +264,7 @@ export function ImageCropper({
             type="button"
             variant="primary"
             onClick={apply}
-            disabled={!image || working}
+            loading={working} disabled={!image || working}
             className="flex-1"
           >
             {working ? "Cropping…" : "Apply"}

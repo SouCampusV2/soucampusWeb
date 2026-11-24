@@ -256,7 +256,7 @@ export function AuthForm({ mode, next }: { mode: Mode; next?: string }) {
           variant="primary"
           // При регистрации блокируем, пока пароль не прошёл все правила
           // И пароли не совпали.
-          disabled={pending || (isSignup && (!passwordOk || !passwordsMatch))}
+          loading={pending} disabled={pending || (isSignup && (!passwordOk || !passwordsMatch))}
           className="w-full"
         >
           {pending

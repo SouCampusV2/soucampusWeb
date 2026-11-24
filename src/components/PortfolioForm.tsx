@@ -309,7 +309,7 @@ export function PortfolioForm({
       )}
 
       <div className="flex flex-wrap gap-3">
-        <Button type="submit" variant="primary" disabled={pending} className="flex-1">
+        <Button type="submit" variant="primary" loading={pending} disabled={pending} className="flex-1">
           {pending ? "Saving…" : editing ? "Save changes" : "Add to portfolio"}
         </Button>
         <Button href="/admin/portfolio" variant="secondary" className="flex-1">

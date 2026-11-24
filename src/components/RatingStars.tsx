@@ -201,7 +201,7 @@ function ReviewDialog({
         )}
 
         <div className="mt-5 flex gap-3">
-          <Button type="button" variant="primary" onClick={post} disabled={saving || !ready} className="flex-1">
+          <Button type="button" variant="primary" onClick={post} loading={saving} disabled={saving || !ready} className="flex-1">
             {saving ? "Posting…" : initial?.body ? "Update review" : "Post review"}
           </Button>
           <Button type="button" variant="secondary" onClick={onClose} className="flex-1">

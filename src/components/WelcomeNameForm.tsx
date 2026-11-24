@@ -145,7 +145,7 @@ export function WelcomeNameForm({ suggested }: { suggested: string }) {
         <Button
           type="submit"
           variant="primary"
-          disabled={pending || username.trim() === ""}
+          loading={pending} disabled={pending || username.trim() === ""}
           className="w-full"
         >
           {pending ? "Saving…" : "Continue"}

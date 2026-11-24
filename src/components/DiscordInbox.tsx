@@ -207,7 +207,7 @@ function ReviewItem({ itemKey, review }: { itemKey: string; review: ReviewFromDi
             </p>
           )}
           <div className="flex flex-wrap gap-3">
-            <Button type="submit" variant="primary" disabled={pending}>
+            <Button type="submit" variant="primary" loading={pending} disabled={pending}>
               {pending ? "Adding…" : "Add to reviews"}
             </Button>
             <Button type="button" variant="secondary" onClick={() => setOpen(false)}>

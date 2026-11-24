@@ -140,7 +140,7 @@ export function ForgotPasswordForm({
       )}
 
       <div className="mt-6">
-        <Button type="submit" variant="primary" disabled={pending} className="w-full">
+        <Button type="submit" variant="primary" loading={pending} disabled={pending} className="w-full">
           {pending ? "Sending…" : isSignedIn ? "Email me a link" : "Send reset link"}
         </Button>
       </div>

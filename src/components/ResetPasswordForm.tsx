@@ -207,7 +207,7 @@ export function ResetPasswordForm() {
         <Button
           type="submit"
           variant="primary"
-          disabled={pending || !passwordOk || !passwordsMatch}
+          loading={pending} disabled={pending || !passwordOk || !passwordsMatch}
           className="w-full"
         >
           {pending ? "Saving…" : "Set new password"}

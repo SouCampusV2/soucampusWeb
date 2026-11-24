@@ -73,8 +73,10 @@ describe("checkStoredFile", () => {
   const verdict = (outcome: ScanOutcome) => async () => outcome;
 
   it("чистый или пропущенный файл — ok", async () => {
-    expect(await checkStoredFile(storage("u"), "p", "map", verdict({ verdict: "clean" }))).toEqual({ ok: true });
-    expect(await checkStoredFile(storage("u"), "p", "image", verdict({ verdict: "skipped" }))).toEqual({ ok: true });
+    // scanned: проверка антивирусом была (clean) или её не было (skipped)
+    // — от этого зависит пометка «✓ Checked for viruses» в форме.
+    expect(await checkStoredFile(storage("u"), "p", "map", verdict({ verdict: "clean" }))).toEqual({ ok: true, scanned: true });
+    expect(await checkStoredFile(storage("u"), "p", "image", verdict({ verdict: "skipped" }))).toEqual({ ok: true, scanned: false });
   });
 
   it("негодный и заражённый — причина для reject(), заражённый помечен", async () => {

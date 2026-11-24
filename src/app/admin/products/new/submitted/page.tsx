@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { CheckCircle } from "@phosphor-icons/react/dist/ssr";
 import { Button } from "@/components/Button";
+import { VirusCheckedNote } from "@/components/VirusCheckedNote";
 
 export const metadata: Metadata = {
   title: "Submitted for review",
@@ -14,7 +15,15 @@ export const metadata: Metadata = {
 // раньше: человек, дошедший до этого экрана, пришёл из каталога
 // админки, и естественное «дальше» для него — очередь разбора, где его
 // карта только что оказалась.
-export default function AddMapSubmittedPage() {
+// ?checked=1 ставит форма, когда КАЖДЫЙ файл прошёл антивирус на VPS
+// (UploadMapForm, 24.11). Параметр в адресе подделать может только сам
+// человек для себя — пометка ничего не открывает, только сообщает.
+export default async function AddMapSubmittedPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ checked?: string }>;
+}) {
+  const { checked } = await searchParams;
   return (
     <div className="mx-auto max-w-3xl px-6 py-16 text-center">
       <CheckCircle
@@ -25,6 +34,11 @@ export default function AddMapSubmittedPage() {
       <h1 className="mt-6 text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
         Submitted for review
       </h1>
+      {checked === "1" && (
+        <div className="mt-3">
+          <VirusCheckedNote>Every file was checked for viruses</VirusCheckedNote>
+        </div>
+      )}
       <p className="mx-auto mt-3 max-w-md text-sm text-zinc-500 dark:text-zinc-400">
         The map is in the queue. It reaches the marketplace once it&apos;s
         approved — your own maps go through the same review as anyone

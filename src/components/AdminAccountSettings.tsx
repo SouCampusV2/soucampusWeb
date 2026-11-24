@@ -138,7 +138,7 @@ function PasswordCard({ email }: { email: string }) {
         <Button
           type="submit"
           variant="primary"
-          disabled={pending || !passwordMeetsRules(password) || !matches}
+          loading={pending} disabled={pending || !passwordMeetsRules(password) || !matches}
           className="w-full"
         >
           {pending ? "Saving…" : "Change password"}
@@ -192,7 +192,7 @@ function EmailCard({ email }: { email: string }) {
         <Button
           type="submit"
           variant="primary"
-          disabled={pending || !next.includes("@") || next.trim() === email}
+          loading={pending} disabled={pending || !next.includes("@") || next.trim() === email}
           className="w-full"
         >
           {pending ? "Sending…" : "Change email"}
@@ -229,7 +229,7 @@ function SessionsCard() {
       </p>
       <StatusLine status={status} />
       <div className="mt-6">
-        <Button type="button" variant="secondary" onClick={signOutOthers} disabled={pending} className="w-full">
+        <Button type="button" variant="secondary" onClick={signOutOthers} loading={pending} disabled={pending} className="w-full">
           {pending ? "Signing out…" : "Sign out other devices"}
         </Button>
       </div>

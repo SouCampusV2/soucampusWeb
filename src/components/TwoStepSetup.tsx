@@ -207,7 +207,7 @@ export function TwoStepSetup() {
         )}
 
         <div className="mt-6 flex gap-3">
-          <Button type="submit" size="sm" disabled={pending} className="flex-1">
+          <Button type="submit" size="sm" loading={pending} disabled={pending} className="flex-1">
             {pending ? "Checking…" : "Turn on"}
           </Button>
           <Button
@@ -282,7 +282,7 @@ export function TwoStepSetup() {
       )}
 
       <div className="mt-6">
-        <Button type="button" size="sm" onClick={start} disabled={pending} className="w-full">
+        <Button type="button" size="sm" onClick={start} loading={pending} disabled={pending} className="w-full">
           {pending ? "Starting…" : factors.length ? "Add another app" : "Turn on two-step sign-in"}
         </Button>
       </div>

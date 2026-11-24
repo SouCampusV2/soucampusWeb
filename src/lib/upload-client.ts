@@ -42,7 +42,14 @@ export async function problemFromGateway(response: Response): Promise<string> {
  * Бросает Error с текстом для человека — формы ловят его тем же
  * catch'ем, что и всё остальное.
  */
-export async function uploadMapFile(file: File): Promise<string> {
+/**
+ * onChecked — сообщить форме, прошёл ли файл антивирус на самом деле
+ * (ответ confirm, поле scanned; 24.11). Нужен для пометки «✓ Checked for
+ * viruses»: без сканера на сервере её показывать нельзя.
+ */
+export type OnChecked = (scanned: boolean) => void;
+
+export async function uploadMapFile(file: File, onChecked?: OnChecked): Promise<string> {
   // 1) Разрешение. Сервер проверяет права, лимит, размер и расширение,
   // сам строит путь и выдаёт одноразовый токен ровно на него.
   const signResponse = await fetch("/api/creator/upload", {
@@ -84,7 +91,11 @@ export async function uploadMapFile(file: File): Promise<string> {
   if (!confirmResponse.ok) throw new Error(await problemFromGateway(confirmResponse));
 
   // Проверенный файл уже на постоянном пути: путь из sign больше не годится.
-  const { path: finalPath } = (await confirmResponse.json()) as { path: string };
+  const { path: finalPath, scanned } = (await confirmResponse.json()) as {
+    path: string;
+    scanned?: boolean;
+  };
+  onChecked?.(scanned === true);
   return finalPath;
 }
 
@@ -102,7 +113,8 @@ export async function uploadMapFile(file: File): Promise<string> {
  */
 export async function uploadImage(
   file: File,
-  kind: "product" | "avatar" | "banner" | "portfolio"
+  kind: "product" | "avatar" | "banner" | "portfolio",
+  onChecked?: OnChecked
 ): Promise<string> {
   const sign = await fetch("/api/creator/image", {
     method: "POST",
@@ -154,7 +166,11 @@ export async function uploadImage(
     body: JSON.stringify({ action: "confirm", kind, path, fileName: file.name }),
   });
   if (!confirm.ok) throw new Error(await problemFromGateway(confirm));
-  const { path: finalPath } = (await confirm.json()) as { path: string };
+  const { path: finalPath, scanned } = (await confirm.json()) as {
+    path: string;
+    scanned?: boolean;
+  };
+  onChecked?.(scanned === true);
 
   const { data } = supabase.storage.from(bucket).getPublicUrl(finalPath);
   // ?v=… у аватара и баннера сбивает кэш браузера и CDN: путь

@@ -522,7 +522,7 @@ export function DiscordPostEditor({
         )}
 
         <div className="flex flex-wrap gap-3">
-          <Button type="button" variant="secondary" onClick={() => run("save")} disabled={pending !== null}>
+          <Button type="button" variant="secondary" onClick={() => run("save")} loading={pending === "save"} disabled={pending !== null}>
             {pending === "save" ? "Saving…" : "Save draft"}
           </Button>
           {published ? (
@@ -531,7 +531,7 @@ export function DiscordPostEditor({
                 type="button"
                 variant="primary"
                 onClick={() => run("update")}
-                disabled={pending !== null || problem !== null || !webhookConfigured}
+                loading={pending === "update"} disabled={pending !== null || problem !== null || !webhookConfigured}
               >
                 {pending === "update" ? "Updating…" : "Update in Discord"}
               </Button>
@@ -539,7 +539,7 @@ export function DiscordPostEditor({
                 type="button"
                 variant="secondary"
                 onClick={() => run("unpublish")}
-                disabled={pending !== null || !webhookConfigured}
+                loading={pending === "unpublish"} disabled={pending !== null || !webhookConfigured}
               >
                 {pending === "unpublish" ? "Removing…" : "Remove from Discord"}
               </Button>
@@ -549,7 +549,7 @@ export function DiscordPostEditor({
               type="button"
               variant="primary"
               onClick={() => run("publish")}
-              disabled={pending !== null || problem !== null || !webhookConfigured}
+              loading={pending === "publish"} disabled={pending !== null || problem !== null || !webhookConfigured}
             >
               {pending === "publish" ? "Publishing…" : "Publish"}
             </Button>

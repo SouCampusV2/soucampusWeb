@@ -18,6 +18,7 @@ import { FileArrowUp, Warning } from "@phosphor-icons/react";
 import { Button } from "@/components/Button";
 import { SelectField } from "@/components/SelectField";
 import { TextField, PriceField, RequiredMark, RequiredLegend } from "@/components/MapFormParts";
+import { VirusCheckedNote } from "@/components/VirusCheckedNote";
 import {
   SHOP_CATEGORIES,
   type ProductCategory,
@@ -108,6 +109,8 @@ export function EditMapForm({
   const [pending, setPending] = useState(false);
 
   const descImageInput = useRef<HTMLInputElement>(null);
+  // Как в форме загрузки: прошла ли картинка описания антивирус (24.11).
+  const [descChecked, setDescChecked] = useState<boolean | null>(null);
 
   // Редактор кладёт себя сюда, когда догрузится (см. RichTextEditor).
   const [editor, setEditor] = useState<Editor | null>(null);
@@ -165,7 +168,7 @@ export function EditMapForm({
     // Через шлюз (/api/creator/image): путь строит сервер, он же
     // проверяет права, вес и первые байты уже загруженного объекта.
     try {
-      const url = await uploadImage(file, "product");
+      const url = await uploadImage(file, "product", setDescChecked);
       editor.chain().focus().setImage({ src: url }).run();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't upload the image.");
@@ -399,6 +402,11 @@ export function EditMapForm({
               onChange={insertDescriptionImage}
               className="hidden"
             />
+            {descChecked && (
+              <div className="mt-2">
+                <VirusCheckedNote>Image checked for viruses</VirusCheckedNote>
+              </div>
+            )}
           </div>
 
           <div>
@@ -443,10 +451,16 @@ export function EditMapForm({
         <Button
           type="submit"
           variant="primary"
-          disabled={pending || (!changed && !isResubmit)}
+          loading={pending} disabled={pending || (!changed && !isResubmit)}
           className="flex-1"
         >
-          {pending ? "Saving…" : isResubmit ? "Resubmit for review" : "Save changes"}
+          {pending
+            ? mapFile || images.some((i) => i.kind === "new")
+              ? "Uploading and checking…"
+              : "Saving…"
+            : isResubmit
+              ? "Resubmit for review"
+              : "Save changes"}
         </Button>
         <Button href={doneHref} variant="secondary" className="flex-1">
           Cancel

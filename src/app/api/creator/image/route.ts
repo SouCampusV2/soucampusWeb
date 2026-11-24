@@ -405,7 +405,7 @@ async function confirm(
     console.error("Шлюз картинок: временный файл не удалился:", removeError.message);
   }
 
-  return NextResponse.json({ ok: true, path: finalPath, size: clean.bytes.length });
+  return NextResponse.json({ ok: true, path: finalPath, size: clean.bytes.length, scanned: scan.scanned });
 }
 
 /**

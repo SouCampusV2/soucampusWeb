@@ -210,7 +210,7 @@ export function AnnounceForm({
         <Button
           size="md"
           className="group gap-2"
-          disabled={!title.trim() || busy}
+          loading={busy} disabled={!title.trim() || busy}
           onClick={() => {
             setResult(null);
             if (toEveryone) setConfirming(true);
@@ -242,7 +242,7 @@ export function AnnounceForm({
                 : "This goes to every account and can't be taken back."}
           </p>
           <div className="mt-3 flex gap-2">
-            <Button size="sm" disabled={busy} onClick={send}>
+            <Button size="sm" loading={busy} disabled={busy} onClick={send}>
               {busy ? "Sending…" : "Yes, send it"}
             </Button>
             <Button

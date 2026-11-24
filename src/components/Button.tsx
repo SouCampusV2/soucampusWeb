@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CircleNotch } from "@phosphor-icons/react/dist/ssr";
 
 type Variant = "primary" | "secondary" | "tertiary";
 type Size = "sm" | "md" | "lg";
@@ -195,6 +196,14 @@ type ButtonProps = {
    * запроса.
    */
   native?: boolean;
+  /**
+   * Кнопка занята — сохраняет, загружает, отправляет (24.11, просьба
+   * владельца: «чтобы реально было видно»). Слева крутится иконка, кнопка
+   * нажимается один раз, но НЕ бледнеет, как disabled: бледная кнопка
+   * читается «нельзя», а здесь «идёт работа». Текст («Saving…») — у того,
+   * кто зовёт: что именно происходит, знает только он.
+   */
+  loading?: boolean;
 };
 
 export function Button({
@@ -211,6 +220,7 @@ export function Button({
   type = "button",
   disabled = false,
   native = false,
+  loading = false,
 }: ButtonProps) {
   // primary и secondary — «таблетки» с горизонтальным паддингом; tertiary
   // это текст-ссылка, ей паддинг не нужен.
@@ -244,10 +254,16 @@ export function Button({
   return (
     <button
       type={type}
-      className={`${classes} disabled:cursor-not-allowed disabled:opacity-60`}
+      className={`${classes} ${
+        loading ? "cursor-wait" : "disabled:cursor-not-allowed disabled:opacity-60"
+      }`}
       onClick={onClick}
-      disabled={disabled}
+      disabled={disabled || loading}
+      aria-busy={loading || undefined}
     >
+      {loading && (
+        <CircleNotch size={18} weight="bold" aria-hidden className="shrink-0 animate-spin" />
+      )}
       {children}
     </button>
   );

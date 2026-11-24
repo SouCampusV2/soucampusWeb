@@ -159,7 +159,7 @@ export function CreatorApplicationForm() {
       <Button
         type="submit"
         size="md"
-        disabled={pending || !about.trim() || !adult}
+        loading={pending} disabled={pending || !about.trim() || !adult}
       >
         {pending ? "Sending…" : "Send application"}
       </Button>

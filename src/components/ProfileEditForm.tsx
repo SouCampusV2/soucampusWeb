@@ -595,7 +595,7 @@ export function ProfileEditForm({
         {/* Неактивна, пока сохранять нечего (просьба владельца 26.10):
             активная кнопка на нетронутой форме обещает, что что-то
             изменилось. */}
-        <Button type="submit" variant="primary" disabled={pending || !dirty} className="flex-1">
+        <Button type="submit" variant="primary" loading={pending} disabled={pending || !dirty} className="flex-1">
           {pending ? "Saving…" : "Save changes"}
         </Button>
         <Button href="/purchases" variant="secondary" className="flex-1">

@@ -131,7 +131,7 @@ export function GoogleSignInButton({
         type="button"
         variant="secondary"
         onClick={signIn}
-        disabled={pending}
+        loading={pending} disabled={pending}
         colorClassName="rounded-full border-2 border-zinc-300 text-zinc-800 hover:border-zinc-400 hover:bg-zinc-100 dark:border-zinc-700 dark:text-zinc-100 dark:hover:border-zinc-600 dark:hover:bg-zinc-800"
         className="w-full gap-3"
       >

@@ -32,6 +32,7 @@ import {
 import { uploadImage, uploadMapFile } from "@/lib/upload-client";
 import { createMap } from "@/lib/map-client";
 import { TextField, PriceField, RequiredMark, RequiredLegend } from "@/components/MapFormParts";
+import { VirusCheckedNote } from "@/components/VirusCheckedNote";
 import {
   checkImageFile,
   checkMapFile,
@@ -115,8 +116,10 @@ export function UploadMapForm({
   const [stage, setStage] = useState<"file" | "images" | "saving">("file");
 
   const STAGE_LABEL: Record<typeof stage, string> = {
-    file: "Uploading map file…",
-    images: "Uploading images…",
+    // «and checking»: с 24.11 файл на этом шаге проверяет антивирус на
+    // VPS — человеку честнее знать, на что уходят эти секунды.
+    file: "Uploading and checking the map file…",
+    images: "Uploading and checking images…",
     saving: "Saving…",
   };
 
@@ -133,6 +136,10 @@ export function UploadMapForm({
   // сиротой — приемлемо, это несколько килобайт в своей же папке.
   const descImageInput = useRef<HTMLInputElement>(null);
 
+  // Прошла ли последняя картинка описания антивирус (24.11) — под
+  // редактором «✓ Image checked for viruses». null — ещё не вставляли.
+  const [descChecked, setDescChecked] = useState<boolean | null>(null);
+
   async function insertDescriptionImage(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = "";
@@ -148,7 +155,7 @@ export function UploadMapForm({
     // проверяет права, вес и первые байты уже загруженного объекта.
     // Проверка выше осталась удобством — она бережёт время и трафик.
     try {
-      const url = await uploadImage(file, "product");
+      const url = await uploadImage(file, "product", setDescChecked);
       editor.chain().focus().setImage({ src: url }).run();
     } catch (err) {
       setError(err instanceof Error ? err.message : "Couldn't upload the image.");
@@ -202,7 +209,14 @@ export function UploadMapForm({
       // между чужой папкой и записью, — политика бакета; размер,
       // расширение и сигнатуру не проверял никто, кроме формы, то есть
       // никто. Разбор — в шапке src/app/api/creator/upload/route.ts.
-      const filePath = await uploadMapFile(mapFile);
+      // Все ли файлы прошли антивирус — для «✓ Every file was checked» на
+      // экране «отправлено». Один пропуск (сканер не подключён) — и
+      // пометки не будет: обещать за всех можно, только если за каждого.
+      let everyFileScanned = true;
+      const onChecked = (scanned: boolean) => {
+        if (!scanned) everyFileScanned = false;
+      };
+      const filePath = await uploadMapFile(mapFile, onChecked);
 
       // 2) Картинки — тоже через шлюз (/api/creator/image). ПАРАЛЛЕЛЬНО
       // (Promise.all), а не
@@ -218,7 +232,7 @@ export function UploadMapForm({
           // дело. Врать компилятору через `as` ради одной строки не
           // стоит: тип общий именно потому, что формы одинаковы.
           if (image.kind === "existing") return image.url;
-          return uploadImage(image.file, "product");
+          return uploadImage(image.file, "product", onChecked);
         })
       );
       const coverUrl = imageUrls[coverIndex];
@@ -245,7 +259,7 @@ export function UploadMapForm({
         reactionOptionId,
       });
 
-      router.push(submittedHref);
+      router.push(everyFileScanned ? `${submittedHref}?checked=1` : submittedHref);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong.");
       setPending(false);
@@ -321,6 +335,11 @@ export function UploadMapForm({
               Add screenshots and tables anywhere in the description — this is the
               full page buyers read.
             </p>
+            {descChecked && (
+              <div className="mt-2">
+                <VirusCheckedNote>Image checked for viruses</VirusCheckedNote>
+              </div>
+            )}
           </div>
 
           {/* Map file */}
@@ -360,7 +379,7 @@ export function UploadMapForm({
       )}
 
       <div className="flex gap-3">
-        <Button type="submit" variant="primary" disabled={pending} className="flex-1">
+        <Button type="submit" variant="primary" loading={pending} disabled={pending} className="flex-1">
           {pending ? STAGE_LABEL[stage] : "Submit for review"}
         </Button>
         {/* Отмена обязана возвращать туда, откуда пришли. 28.08 форма

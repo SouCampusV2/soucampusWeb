@@ -315,7 +315,7 @@ async function confirm(
     return NextResponse.json({ error: "upload unavailable" }, { status: 500 });
   }
 
-  return NextResponse.json({ ok: true, path: finalPath, size });
+  return NextResponse.json({ ok: true, path: finalPath, size, scanned: scan.scanned });
 }
 
 /**

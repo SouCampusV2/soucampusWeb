@@ -277,7 +277,7 @@ export function AddToCartButton({
           <Button
             size="lg"
             onClick={buyNow}
-            disabled={buying}
+            loading={buying} disabled={buying}
             className="w-full"
           >
             {buying ? "Getting it…" : "Get it for free"}
@@ -305,7 +305,7 @@ export function AddToCartButton({
             size="lg"
             variant="secondary"
             onClick={buyNow}
-            disabled={buying}
+            loading={buying} disabled={buying}
             className="mt-3 w-full"
           >
             {buying ? "Redirecting…" : "Buy now"}

@@ -118,7 +118,7 @@ export function TwoStepChallenge({ next }: { next?: string }) {
       )}
 
       <div className="mt-6">
-        <Button type="submit" size="sm" disabled={pending} className="w-full">
+        <Button type="submit" size="sm" loading={pending} disabled={pending} className="w-full">
           {pending ? "Checking…" : "Continue"}
         </Button>
       </div>

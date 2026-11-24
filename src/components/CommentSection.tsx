@@ -244,7 +244,7 @@ export function CommentSection({
             type="submit"
             variant="tertiary"
             size="sm"
-            disabled={!canWrite || pending || !body.trim()}
+            loading={pending} disabled={!canWrite || pending || !body.trim()}
           >
             {pending ? "Posting…" : "Post comment"}
           </Button>

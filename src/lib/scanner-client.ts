@@ -75,7 +75,12 @@ export type SignableStorage = {
 };
 
 export type StoredFileCheck =
-  | { ok: true }
+  /**
+   * scanned — прошёл ли файл антивирус на самом деле. false, когда сервис
+   * не подключён (нет SCANNER_URL): файл годен по проверкам сайта, но
+   * «✓ Checked for viruses» про него сказать нельзя (24.11).
+   */
+  | { ok: true; scanned: boolean }
   /** Файл негоден — роут удаляет его своим reject() и показывает причину. */
   | { ok: false; problem: string; infected: boolean }
   /** Проверить не вышло — ответ 500/503, файл остаётся непроверенным. */
@@ -104,5 +109,5 @@ export async function checkStoredFile(
     return { ok: false, problem: result.reason, infected: result.verdict === "infected" };
   }
   if (result.verdict === "error") return { ok: false, unavailable: result.reason, status: 503 };
-  return { ok: true };
+  return { ok: true, scanned: result.verdict === "clean" };
 }
