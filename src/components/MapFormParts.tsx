@@ -223,9 +223,13 @@ export function RequiredMark() {
 }
 
 export function RequiredLegend() {
+  // Полной фразой (24.11): одинокое «* required» над формой читалось как
+  // «что-то сверху обязательно», а не как пояснение к звёздочкам у полей.
   return (
-    <p className="text-xs text-zinc-500 dark:text-zinc-400">
-      <span className="text-orange-600 dark:text-orange-400">*</span> required
+    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+      Fields marked with{" "}
+      <span className="font-semibold text-orange-600 dark:text-orange-400">*</span>{" "}
+      are required.
     </p>
   );
 }

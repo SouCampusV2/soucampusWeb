@@ -55,11 +55,12 @@ export default async function AdminEditMapPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
-      <BackArrow href="/admin/products" label="All products" showLabel />
-
-      <h1 className="mt-6 text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
-        Edit map
-      </h1>
+      <div className="flex items-center gap-3">
+        <BackArrow href="/admin/products" label="All products" />
+        <h1 className="text-2xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50">
+          Edit map
+        </h1>
+      </div>
 
       <RejectionNote product={product} />
 

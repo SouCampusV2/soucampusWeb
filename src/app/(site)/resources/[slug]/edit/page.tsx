@@ -55,12 +55,16 @@ export default async function EditOwnMapPage({
       <section className="relative pb-28 pt-20">
         {/* 6xl, а не 3xl: форма с 24.11 в две колонки (картинки справа). */}
         <div className="mx-auto max-w-6xl">
-          <BackArrow href="/resources" label="Your resources" showLabel />
-          <h1
-            className={`${displayFont.className} mt-6 text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
-          >
-            Edit map
-          </h1>
+          {/* Кружок слева от заголовка, в одном ряду, без подписи — как на
+              странице карты и работы (24.11, просьба владельца). */}
+          <div className="flex items-center gap-3 sm:gap-4">
+            <BackArrow href="/resources" label="Your resources" />
+            <h1
+              className={`${displayFont.className} text-4xl font-extrabold tracking-tight text-zinc-950 dark:text-zinc-50 sm:text-5xl`}
+            >
+              Edit map
+            </h1>
+          </div>
 
           <RejectionNote product={product} />
 
