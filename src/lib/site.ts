@@ -12,6 +12,11 @@ export const SITE_URL = "https://soucampus.online";
 // Имя бренда для og:site_name, structured data и шаблона <title>.
 export const SITE_NAME = "SouCampus builds";
 
+// Страница студии на Trustpilot (завёл владелец 24.11). Отзывов там пока
+// нет — поэтому ссылка «оставить отзыв», а не рейтинг: число показываем,
+// только когда оно настоящее (IDEAS.md, «Отзывы с внешних площадок»).
+export const TRUSTPILOT_URL = "https://www.trustpilot.com/review/soucampus.online";
+
 // Короткое описание автора для structured data (ответ ИИ-поиска на «кто такой
 // SouCampus») и как запасной description. Держим одной фразой.
 export const SITE_TAGLINE =
@@ -29,6 +34,7 @@ export const SITE_SAMEAS: string[] = [
   "https://www.patreon.com/c/SouCampus",
   "https://www.reddit.com/user/SouCampus/",
   "https://www.youtube.com/@SouCampus",
+  "https://www.trustpilot.com/review/soucampus.online",
   "https://x.com/SouCampusBuilds",
 ];
 

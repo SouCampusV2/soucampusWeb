@@ -13,7 +13,7 @@
 // (supabase/email-templates/): почтовые клиенты режут внешний CSS.
 
 import { SELLER, WAIVER_TEXT } from "@/lib/legal";
-import { SITE_NAME, SITE_URL, SUPPORT_EMAIL } from "@/lib/site";
+import { SITE_NAME, SITE_URL, SUPPORT_EMAIL, TRUSTPILOT_URL } from "@/lib/site";
 
 export type PurchaseEmailInput = {
   items: { title: string; priceCents: number; quantity: number }[];
@@ -83,6 +83,8 @@ export function buildPurchaseEmail(input: PurchaseEmailInput): {
     `"${WAIVER_TEXT}"`,
     `If a file is broken or not what the page describes, write to us and we will fix it or refund you: ${refundsUrl}`,
     "",
+    `Happy with the map? A review on Trustpilot helps a lot: ${TRUSTPILOT_URL}`,
+    "",
     `Seller: ${SELLER.name}, ${SELLER.address} · ${SUPPORT_EMAIL}`,
   ].join("\n");
 
@@ -127,6 +129,7 @@ ${rows}
 </td></tr>
 </table>
 <p style="margin:0 0 8px; font-size:13px; line-height:1.6; color:#71717a;">Before paying you confirmed: “${escapeHtml(WAIVER_TEXT)}”</p>
+<p style="margin:0 0 16px; font-size:14px; line-height:1.6; color:#3f3f46;">Happy with the map? <a href="${TRUSTPILOT_URL}" style="color:#f97316; font-weight:700;">Leave a review on Trustpilot</a>, it helps a lot.</p>
 <p style="margin:0; font-size:13px; line-height:1.6; color:#71717a;">If a file is broken or not what the page describes, write to us and we will fix it or refund you. <a href="${refundsUrl}" style="color:#f97316;">Refund policy</a></p>
 </td></tr>
 <tr><td style="padding:24px 32px; background-color:#f4f4f7; border-top:1px solid #e4e4e7; font-size:12px; line-height:1.6; color:#a1a1aa;">

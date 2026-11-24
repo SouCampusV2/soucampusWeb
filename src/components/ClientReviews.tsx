@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from "react";
 import { motion } from "motion/react";
 import { ReviewAvatar } from "@/components/ReviewAvatar";
-import { Button } from "@/components/Button";
+import { TRUSTPILOT_URL } from "@/lib/site";
+import { Button, TERTIARY_COLORS, TERTIARY_UNDERLINE } from "@/components/Button";
 import { ArrowButton } from "@/components/ArrowButton";
 import { Flag } from "@/components/Flag";
 import type { Review } from "@/lib/reviews";
@@ -222,6 +223,15 @@ export function ClientReviews({ reviews }: { reviews: Review[] }) {
           </motion.div>
         </div>
       </div>
+
+      {/* Trustpilot (24.11): просьба оставить отзыв там, где его видно
+          вне сайта. Без рейтинга — пока отзывов нет, число вредило бы. */}
+      <p className="mx-auto mt-10 max-w-6xl px-6 text-center text-sm text-zinc-700 dark:text-zinc-300">
+        Worked with me?{" "}
+        <a href={TRUSTPILOT_URL} target="_blank" rel="noopener noreferrer" className={`font-semibold ${TERTIARY_COLORS} ${TERTIARY_UNDERLINE}`}>
+          Leave a review on Trustpilot
+        </a>
+      </p>
     </section>
   );
 }
