@@ -35,8 +35,13 @@ import type { CellRect } from "@/lib/world-gen";
 // округлённым до пикселя. При скорости ~0.1 пикселя за кадр шаг в пиксель
 // выпадал то через три кадра, то через пять — фон «потряхивало». Не
 // возвращать покадровую отрисовку ради движения.
-// Анимации ставятся на паузу, когда первый экран ушёл из вида, и не
-// запускаются вовсе при prefers-reduced-motion.
+// Анимации ставятся на паузу, когда первый экран ушёл из вида. При
+// prefers-reduced-motion мир плывёт вчетверо медленнее (REDUCED_SLOWDOWN),
+// облака сразу на месте, без проявления.
+// ⚠️ До 28.11 при этом флаге мир стоял совсем. Флаг ставит не браузер, а
+// Windows: «Показывать анимацию в Windows» выключено или «Обеспечить
+// наилучшее быстродействие». Владелец увидел неподвижную карту на своём
+// втором компьютере после такой «оптимизации» и решил двигать медленно.
 //
 // Сама генерация — в src/lib/world-gen.ts, и зовёт её Web Worker
 // (hero-world.worker.ts), а не этот компонент: так основной поток не
@@ -62,6 +67,9 @@ const FIRST_FADE_MS = 300;
 // небо. Разбор — docs/PERF.md, 25.09.
 const LAND_SCREEN_MS = 40000;
 const SKY_SCREEN_MS = 40000;
+// Во сколько раз медленнее при prefers-reduced-motion. Медленный ровный
+// дрейф почти не тревожит; мешают резкие и быстрые движения.
+const REDUCED_SLOWDOWN = 4;
 
 const randomSeed = () => Math.floor(Math.random() * 99999);
 
@@ -173,13 +181,10 @@ export function HeroWorld() {
     function drift(el: HTMLElement, tile: number, screenMs: number, direction: "left" | "right") {
       const from = direction === "left" ? 0 : -tile;
       const to = direction === "left" ? -tile : 0;
-      if (reduce) {
-        el.style.transform = `translate3d(${-tile / 2}px,0,0)`;
-        return;
-      }
+      const slow = reduce ? REDUCED_SLOWDOWN : 1;
       const a = el.animate(
         [{ transform: `translate3d(${from}px,0,0)` }, { transform: `translate3d(${to}px,0,0)` }],
-        { duration: (screenMs * tile) / box!.clientWidth, iterations: Infinity, easing: "linear" },
+        { duration: (screenMs * tile * slow) / box!.clientWidth, iterations: Infinity, easing: "linear" },
       );
       if (!visible) a.pause();
       anims.push(a);
@@ -194,7 +199,6 @@ export function HeroWorld() {
     let rampTimer = 0;
     function rampUp() {
       window.clearInterval(rampTimer);
-      if (reduce) return;
       const t0 = performance.now();
       const step = () => {
         const k = Math.min(1, (performance.now() - t0) / 2500);
